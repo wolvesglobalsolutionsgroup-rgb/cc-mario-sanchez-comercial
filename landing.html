@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Centro Comercial Mario Sánchez — Puerto La Cruz</title>
+  
+  <!-- High-Performance Preloads & DNS Prefetch -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="dns-prefetch" href="https://images.unsplash.com">
+  <link rel="dns-prefetch" href="https://unpkg.com">
+  <link rel="dns-prefetch" href="https://mt1.google.com">
+  <link rel="preload" as="image" href="puerto_la_cruz_drone.webp" type="image/webp" fetchpriority="high">
+  <link rel="preload" as="image" href="logo_cc_mario_sanchez.svg">
+
+  <!-- Favicon SVG -->
+  <link rel="icon" type="image/svg+xml" href="logo_cc_mario_sanchez.svg">
+
+  <!-- Leaflet Core CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Google Fonts: Outfit (Display & Editorial) & Manrope (Body) -->
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              void: '#04070d',
+              surface: '#080d17',
+              card: '#0e1626',
+              amber: '#f59e0b',
+              amberLight: '#fbbf24',
+              cyan: '#0ea5e9',
+              cyanLight: '#38bdf8',
+              emerald: '#10b981',
+              emeraldLight: '#34d399',
+              rose: '#f43f5e'
+            }
+          },
+          fontFamily: {
+            heading: ['Outfit', 'sans-serif'],
+            body: ['Manrope', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --amber-glow: rgba(245, 158, 11, 0.28);
+      --cyan-glow: rgba(14, 165, 233, 0.25);
+    }
+
+    body {
+      background-color: #04070d;
+      color: #f1f5f9;
+      font-family: 'Manrope', sans-serif;
+      overflow-x: hidden;
+      selection-background-color: #f59e0b;
+      selection-color: #000000;
+    }
+
+    /* FULL-SCREEN HERO CINEMATIC CANVAS */
+    .hero-canvas {
+      position: relative;
+      min-height: 100vh;
+      min-height: 100dvh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      overflow: hidden;
+    }
+
+    .hero-bg-media {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 30%;
+      z-index: 1;
+      transform: scale(1.03);
+      transition: transform 12s ease-out;
+    }
+    .hero-canvas:hover .hero-bg-media {
+      transform: scale(1.08);
+    }
+
+    .hero-vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 35%, rgba(4, 7, 13, 0.15) 0%, rgba(4, 7, 13, 0.75) 65%, rgba(4, 7, 13, 0.98) 100%),
+                  linear-gradient(180deg, rgba(4, 7, 13, 0.7) 0%, transparent 35%, rgba(4, 7, 13, 0.95) 85%, #04070d 100%);
+      z-index: 2;
+    }
+
+    /* GLASS DOCK */
+    .glass-nav {
+      background: rgba(10, 16, 28, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    /* GLASS CARD */
+    .glass-card {
+      background: rgba(14, 22, 38, 0.8);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .glass-card:hover {
+      border-color: rgba(245, 158, 11, 0.45);
+      transform: translateY(-3px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), 0 0 25px var(--amber-glow);
+    }
+
+    /* PROGRESS BAR */
+    .metric-progress-track {
+      height: 3px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.15);
+      position: relative;
+      border-radius: 3px;
+    }
+    .metric-progress-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 45%;
+      background: #f59e0b;
+      box-shadow: 0 0 12px #f59e0b;
+    }
+
+    /* MAP PIN PILLS */
+    .map-pin-custom {
+      background: transparent !important;
+      border: none !important;
+    }
+
+    .pin-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(8, 13, 23, 0.95);
+      border: 1.5px solid #f59e0b;
+      color: #ffffff;
+      font-family: 'Outfit', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3.5px 9px;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8), 0 0 10px rgba(245, 158, 11, 0.3);
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+    .pin-pill:hover {
+      transform: translate(-50%, -50%) scale(1.1);
+      background: #f59e0b;
+      color: #000000;
+    }
+
+    /* SCROLL REVEAL */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* DRAWER / MODAL */
+    .drawer-backdrop {
+      background: rgba(4, 7, 13, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: opacity 0.3s ease;
+    }
+    .drawer-panel {
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+  </style>
+</head>
+<body class="bg-[#04070d] text-slate-100 min-h-screen flex flex-col">
+
+  <!-- TOP FIXED FLOATING NAVBAR -->
+  <header class="fixed top-0 inset-x-0 z-50 pt-3 sm:pt-5 px-4 sm:px-8 pointer-events-none">
+    <div class="max-w-7xl mx-auto w-full pointer-events-auto">
+      <div class="glass-nav rounded-2xl h-14 sm:h-16 px-5 sm:px-6 flex items-center justify-between shadow-2xl">
+        
+        <!-- Logo -->
+        <a href="#" class="flex items-center gap-3 group">
+          <img src="logo_cc_mario_sanchez.svg" alt="Logo CCMS" class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg border border-amber-500/40 p-0.5 bg-slate-900 shadow-md group-hover:scale-105 transition-transform">
+          <span class="font-heading font-extrabold text-sm sm:text-base tracking-tight text-white uppercase tracking-wider">
+            CC Mario Sánchez
+          </span>
+        </a>
+
+        <!-- Navigation Links -->
+        <nav class="hidden lg:flex items-center gap-8 font-heading text-xs font-semibold uppercase tracking-widest text-slate-300">
+          <a href="#servicios" class="hover:text-amber-400 transition-colors">Beneficios</a>
+          <a href="#mapa-interactivo" class="hover:text-amber-400 transition-colors">Espacios Disponibles</a>
+          <a href="#simulador" class="hover:text-amber-400 transition-colors">Simulador</a>
+          <a href="#resenas" class="hover:text-amber-400 transition-colors">Reseñas</a>
+          <a href="#contacto" class="hover:text-amber-400 transition-colors">Contacto</a>
+        </nav>
+
+        <!-- Right Action -->
+        <div class="flex items-center gap-3">
+          <a href="alquiler.html" class="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-heading font-extrabold text-xs uppercase tracking-wider transition-all shadow-lg shadow-amber-500/20">
+            <i class="fa-solid fa-map-location-dot"></i> <span>Portal de Alquiler</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       1. HERO SECTION (LAVILLA ARCHITECTURAL FORMAT + PUERTO LA CRUZ DRONE)
+       ========================================================================= -->
+  <section class="hero-canvas">
+    
+    <!-- DRONE PHOTOGRAPHY OF PUERTO LA CRUZ (FAST WEBP WITH PROGRESSIVE JPG FALLBACK) -->
+    <picture>
+      <source srcset="puerto_la_cruz_drone.webp" type="image/webp">
+      <img src="puerto_la_cruz_drone.jpg" alt="Toma Aérea Puerto La Cruz" class="hero-bg-media" fetchpriority="high" decoding="async">
+    </picture>
+    <div class="hero-vignette"></div>
+
+    <!-- BOTTOM HERO INFO & METRICS (LAVILLA FORMAT) -->
+    <div class="relative z-30 pb-10 sm:pb-14 px-6 sm:px-12 max-w-7xl mx-auto w-full pt-28">
+      <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-10">
+        
+        <!-- Bottom Left: Typography -->
+        <div class="flex flex-col max-w-2xl">
+          <span class="text-amber-400 font-heading text-xs font-extrabold uppercase tracking-widest mb-2 flex items-center gap-2">
+            <i class="fa-solid fa-location-dot"></i> Av. Municipal • Puerto La Cruz, Venezuela
+          </span>
+          <h1 class="font-heading font-black text-4xl sm:text-6xl lg:text-7xl tracking-tight text-white uppercase leading-[0.95] drop-shadow-2xl">
+            CC Mario Sánchez
+          </h1>
+          <p class="text-slate-200 text-sm sm:text-base font-normal mt-3 leading-relaxed drop-shadow-md">
+            El nuevo centro comercial, empresarial y de servicios de Puerto La Cruz. Locales, contenedores modulares, galpones y más de 230 puestos de estacionamiento.
+          </p>
+        </div>
+
+        <!-- Bottom Right: Live Metric Telemetry Cards -->
+        <div class="glass-card rounded-2xl p-6 flex flex-col gap-4 min-w-[320px] sm:min-w-[420px] shadow-2xl">
+          
+          <div class="grid grid-cols-4 gap-3 text-center divide-x divide-white/10">
+            
+            <div class="flex flex-col items-center">
+              <span class="font-heading font-black text-xl sm:text-2xl text-amber-400">5.190</span>
+              <span class="text-[9.5px] uppercase font-bold text-slate-400 tracking-wider mt-0.5">m² Plaza</span>
+            </div>
+
+            <div class="flex flex-col items-center pl-2">
+              <span class="font-heading font-black text-xl sm:text-2xl text-white">20.00</span>
+              <span class="text-[9.5px] uppercase font-bold text-slate-400 tracking-wider mt-0.5">m Gandolas</span>
+            </div>
+
+            <div class="flex flex-col items-center pl-2">
+              <span class="font-heading font-black text-xl sm:text-2xl text-cyan-400">14.207</span>
+              <span class="text-[9.5px] uppercase font-bold text-slate-400 tracking-wider mt-0.5">m² Total</span>
+            </div>
+
+            <div class="flex flex-col items-center pl-2">
+              <span class="font-heading font-black text-xl sm:text-2xl text-emerald-400">+230</span>
+              <span class="text-[9.5px] uppercase font-bold text-slate-400 tracking-wider mt-0.5">Parking</span>
+            </div>
+
+          </div>
+
+          <!-- Progress Slider Bar -->
+          <div class="metric-progress-track">
+            <div class="metric-progress-fill"></div>
+          </div>
+
+          <div class="flex items-center justify-between text-[11.5px] text-slate-300 font-heading font-semibold">
+            <span>Estado: <strong class="text-emerald-400 font-bold">Espacios Disponibles</strong></span>
+            <a href="https://wa.me/584247380002" target="_blank" rel="noopener noreferrer" class="text-amber-400 hover:text-amber-300 flex items-center gap-1 font-bold">
+              <span>Hablar con Asesor</span> <i class="fa-solid fa-angle-right text-[9px]"></i>
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       2. BENEFICIOS Y SERVICIOS
+       ========================================================================= -->
+  <section id="servicios" class="py-24 bg-gradient-to-b from-[#04070d] via-[#080d17] to-[#04070d] relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto mb-16 reveal">
+        <span class="text-amber-400 font-heading text-xs font-bold uppercase tracking-widest block mb-2">Infraestructura de Primera</span>
+        <h2 class="font-heading font-black text-3xl sm:text-5xl text-white tracking-tight">Todo lo que tu Negocio Necesita</h2>
+        <p class="text-slate-400 text-sm sm:text-base mt-3 leading-relaxed">
+          Diseñado para maximizar tus ventas y facilitar la logística de tu empresa en Puerto La Cruz.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 reveal">
+        
+        <div class="glass-card rounded-2xl p-7 flex flex-col gap-4">
+          <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 text-xl">
+            <i class="fa-solid fa-truck-moving"></i>
+          </div>
+          <h3 class="font-heading font-extrabold text-xl text-white">Acceso Continuo para Gandolas</h3>
+          <p class="text-slate-400 text-xs sm:text-sm leading-relaxed">
+            Pasillo vial exclusivo de 20 metros libres y patio de maniobras sur. Entrada y salida continua sin contraflujo ni restricciones.
+          </p>
+        </div>
+
+        <div class="glass-card rounded-2xl p-7 flex flex-col gap-4">
+          <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 text-xl">
+            <i class="fa-solid fa-square-parking"></i>
+          </div>
+          <h3 class="font-heading font-extrabold text-xl text-white">Más de 230 Puestos de Estacionamiento</h3>
+          <p class="text-slate-400 text-xs sm:text-sm leading-relaxed">
+            Comodidad garantizada para tus clientes con puestos frontales a locales y batería a 90° frente a la plaza comercial.
+          </p>
+        </div>
+
+        <div class="glass-card rounded-2xl p-7 flex flex-col gap-4">
+          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-xl">
+            <i class="fa-solid fa-bolt"></i>
+          </div>
+          <h3 class="font-heading font-extrabold text-xl text-white">Acometida Eléctrica Trifásica</h3>
+          <p class="text-slate-400 text-xs sm:text-sm leading-relaxed">
+            Factibilidad para 220V y 440V industrial, ideal para refrigeración masiva, talleres, maquinarias pesadas y servidores.
+          </p>
+        </div>
+
+        <div class="glass-card rounded-2xl p-7 flex flex-col gap-4">
+          <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 text-xl">
+            <i class="fa-solid fa-cubes"></i>
+          </div>
+          <h3 class="font-heading font-extrabold text-xl text-white">Plaza Modular para Contenedores</h3>
+          <p class="text-slate-400 text-xs sm:text-sm leading-relaxed">
+            Área de 5.190 m² lista para instalar conceptos modernos de contenedores marítimos, food trucks, oficinas modulares y retail.
+          </p>
+        </div>
+
+        <div class="glass-card rounded-2xl p-7 flex flex-col gap-4">
+          <div class="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 text-xl">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <h3 class="font-heading font-extrabold text-xl text-white">Seguridad y Control 24/7</h3>
+          <p class="text-slate-400 text-xs sm:text-sm leading-relaxed">
+            Circuito cerrado, control de acceso vehicular en la entrada de la Av. Municipal y monitoreo permanente para proteger tu inversión.
+          </p>
+        </div>
+
+        <div class="glass-card rounded-2xl p-7 flex flex-col gap-4">
+          <div class="w-12 h-12 rounded-xl bg-amber-400/10 border border-amber-400/30 flex items-center justify-center text-amber-300 text-xl">
+            <i class="fa-solid fa-map-pin"></i>
+          </div>
+          <h3 class="font-heading font-extrabold text-xl text-white">Ubicación Neurálgica en PLC</h3>
+          <p class="text-slate-400 text-xs sm:text-sm leading-relaxed">
+            A minutos del Paseo de la Cruz y el Mar, Estadio Alfonso Chico Carrasquel y con parada directa del BTR Chuparín.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       3. HERRAMIENTA INTERACTIVA: MAPA SATELITAL DE LOTES DISPONIBLES
+       ========================================================================= -->
+  <section id="mapa-interactivo" class="py-24 bg-[#080d17] border-y border-white/5 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto mb-14 reveal">
+        <span class="text-amber-400 font-heading text-xs font-bold uppercase tracking-widest block mb-2">Herramienta Interactiva en Vivo</span>
+        <h2 class="font-heading font-black text-3xl sm:text-5xl text-white tracking-tight">Explorador de Lotes & Espacios</h2>
+        <p class="text-slate-400 text-sm sm:text-base mt-2">
+          Haz clic en cualquier espacio del mapa o del listado para consultar metraje, fotos y detalles en tiempo real.
+        </p>
+      </div>
+
+      <!-- MAP + CATALOG SPLIT WRAPPER -->
+      <div class="glass-card rounded-3xl overflow-hidden border border-white/10 grid grid-cols-1 lg:grid-cols-12 h-[680px] shadow-2xl reveal">
+        
+        <!-- MAP COLUMN (7 cols) -->
+        <div class="lg:col-span-7 relative h-80 lg:h-full bg-slate-950">
+          <div id="interactive-map" class="w-full h-full"></div>
+          
+          <!-- MAP FILTER PILLS -->
+          <div class="absolute top-4 left-4 z-[900] flex flex-wrap items-center gap-2 bg-slate-900/90 backdrop-blur-md p-1.5 rounded-xl border border-white/10 shadow-lg">
+            <button class="map-filter-btn active px-3 py-1.5 rounded-lg text-xs font-heading font-bold bg-amber-500 text-slate-950" onclick="filterMap('all', this)">Todos (10)</button>
+            <button class="map-filter-btn px-3 py-1.5 rounded-lg text-xs font-heading font-bold text-slate-300 hover:text-white" onclick="filterMap('macro-lotes', this)">Huella 5.190 m²</button>
+            <button class="map-filter-btn px-3 py-1.5 rounded-lg text-xs font-heading font-bold text-slate-300 hover:text-white" onclick="filterMap('locales', this)">Locales</button>
+            <button class="map-filter-btn px-3 py-1.5 rounded-lg text-xs font-heading font-bold text-slate-300 hover:text-white" onclick="filterMap('galpones', this)">Galpones</button>
+          </div>
+        </div>
+
+        <!-- LISTING COLUMN (5 cols) -->
+        <div class="lg:col-span-5 bg-slate-900/95 flex flex-col h-full overflow-hidden border-t lg:border-t-0 lg:border-l border-white/10">
+          
+          <div class="p-5 border-b border-white/10 flex items-center justify-between bg-black/20">
+            <div>
+              <h3 class="font-heading font-extrabold text-base text-white">Inventario de Espacios</h3>
+              <p class="text-xs text-amber-400 font-semibold" id="catalog-header-count">10 espacios disponibles</p>
+            </div>
+            <a href="alquiler.html" class="text-xs text-slate-400 hover:text-amber-400 flex items-center gap-1.5 font-heading font-bold transition-colors">
+              <span>Portal Dedicado</span> <i class="fa-solid fa-up-right-from-square text-[10px]"></i>
+            </a>
+          </div>
+
+          <!-- Space Cards List -->
+          <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-3" id="spaces-list-box">
+            <!-- Injected dynamically via JS -->
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       4. SIMULADOR DE METRAJE Y COTIZACIÓN DINÁMICO
+       ========================================================================= -->
+  <section id="simulador" class="py-24 bg-[#04070d] relative">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-2xl mx-auto mb-14 reveal">
+        <span class="text-amber-400 font-heading text-xs font-bold uppercase tracking-widest block mb-2">Calculadora Interactiva</span>
+        <h2 class="font-heading font-black text-3xl sm:text-5xl text-white tracking-tight">Simulador de Metraje</h2>
+        <p class="text-slate-400 text-sm mt-2">Mueve la barra deslizante y selecciona tu tipo de negocio para calcular el espacio ideal.</p>
+      </div>
+
+      <div class="glass-card rounded-3xl p-8 sm:p-10 border border-white/10 reveal">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+          
+          <!-- Controls -->
+          <div class="md:col-span-7 flex flex-col gap-6">
+            
+            <!-- Type of business -->
+            <div>
+              <label class="font-heading font-bold text-sm text-slate-200 block mb-3">Tipo de Operación Comercial:</label>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <button type="button" class="sim-btn active px-3 py-2.5 rounded-xl border border-amber-500 bg-amber-500/20 text-amber-300 font-heading font-bold text-xs text-center transition-all" onclick="setSimType('retail', this)">Retail / Tienda</button>
+                <button type="button" class="sim-btn px-3 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 font-heading font-bold text-xs text-center transition-all" onclick="setSimType('containers', this)">Contenedores</button>
+                <button type="button" class="sim-btn px-3 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 font-heading font-bold text-xs text-center transition-all" onclick="setSimType('logistica', this)">Logística</button>
+                <button type="button" class="sim-btn px-3 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 font-heading font-bold text-xs text-center transition-all" onclick="setSimType('automotriz', this)">Taller / Showroom</button>
+              </div>
+            </div>
+
+            <!-- Slider Area -->
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <label class="font-heading font-bold text-sm text-slate-200">Superficie Estimada Requerida:</label>
+                <span class="font-heading font-bold text-amber-400 text-2xl" id="sim-area-val">500 m²</span>
+              </div>
+              <input type="range" id="sim-range" min="50" max="1500" step="25" value="500" class="w-full accent-amber-500 h-2.5 bg-slate-800 rounded-lg cursor-pointer" oninput="updateSim()">
+              <div class="flex justify-between text-[11px] text-slate-400 font-heading mt-2">
+                <span>50 m² (Local)</span>
+                <span>500 m² (Módulo)</span>
+                <span>1.500 m² (Macro-Lote)</span>
+              </div>
+            </div>
+
+            <!-- Visual Capacity Gauge -->
+            <div class="p-4 rounded-xl bg-slate-900/80 border border-white/10 flex items-center justify-between">
+              <span class="text-xs text-slate-300 font-medium">Capacidad de Estacionamiento Estimada:</span>
+              <span class="text-xs font-heading font-bold text-emerald-400" id="sim-parking-est">~15 a 20 vehículos</span>
+            </div>
+          </div>
+
+          <!-- Calculated Output Card -->
+          <div class="md:col-span-5 bg-slate-900/95 border border-amber-500/40 rounded-2xl p-6 flex flex-col justify-between shadow-2xl min-h-[320px]">
+            <div>
+              <span class="text-[10px] font-heading uppercase font-bold text-amber-400 tracking-wider block mb-1">Recomendación Arquitectónica:</span>
+              <h3 class="font-heading font-black text-xl text-white leading-tight" id="sim-result-title">Macro-Lote C o Módulo Central</h3>
+              
+              <div class="mt-4 flex flex-col gap-3 text-xs text-slate-300">
+                <div class="flex items-start gap-2.5">
+                  <i class="fa-solid fa-check text-emerald-400 mt-0.5"></i>
+                  <span>Capacidad: <strong class="text-white" id="sim-result-cap">~12 Contenedores de 40ft</strong></span>
+                </div>
+                <div class="flex items-start gap-2.5">
+                  <i class="fa-solid fa-bolt text-amber-400 mt-0.5"></i>
+                  <span>Acometida: <strong class="text-white" id="sim-result-power">Trifásica 220V/440V</strong></span>
+                </div>
+                <div class="flex items-start gap-2.5">
+                  <i class="fa-solid fa-truck text-cyan-400 mt-0.5"></i>
+                  <span>Vialidad: <strong class="text-white" id="sim-result-access">Pasillo Oeste 20m (Gandolas)</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <a href="https://wa.me/584247380002?text=%C2%A1Hola!%20Utilic%C3%A9%20el%20simulador%20y%20deseo%20cotizar%20un%20espacio%20de%20500%20m2%20para%20CC%20Mario%20S%C3%A1nchez." target="_blank" rel="noopener noreferrer" id="sim-wa-btn" class="mt-6 inline-flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 text-white font-heading font-extrabold text-xs shadow-lg shadow-emerald-500/20 transition-all">
+              <i class="fa-brands fa-whatsapp text-sm"></i> Cotizar este metraje por WhatsApp
+            </a>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       5. RESEÑAS Y TESTIMONIOS
+       ========================================================================= -->
+  <section id="resenas" class="py-24 bg-gradient-to-b from-[#080d17] to-[#04070d] border-t border-white/5 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto mb-16 reveal">
+        <span class="text-amber-400 font-heading text-xs font-bold uppercase tracking-widest block mb-2">Comunidad & Confianza</span>
+        <h2 class="font-heading font-black text-3xl sm:text-5xl text-white tracking-tight">Lo que Dicen Nuestros Aliados</h2>
+        <p class="text-slate-400 text-sm sm:text-base mt-3 leading-relaxed">
+          Empresas y comerciantes que ya operan y apuestan al crecimiento en Puerto La Cruz.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 reveal">
+        
+        <div class="glass-card rounded-2xl p-8 flex flex-col justify-between">
+          <div class="flex flex-col gap-4">
+            <div class="flex text-amber-400 text-sm gap-1">
+              <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+            </div>
+            <p class="text-slate-300 text-sm leading-relaxed italic">
+              "Tener acceso directo para gandolas sobre la Avenida Municipal nos ahorró horas de logística diaria. La ubicación es la mejor de toda la zona metropolitana."
+            </p>
+          </div>
+          <div class="mt-6 pt-4 border-t border-white/10 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-amber-500/20 text-amber-400 font-heading font-bold flex items-center justify-center text-sm">
+              RO
+            </div>
+            <div>
+              <h4 class="font-heading font-bold text-sm text-white">Repuestos de Oriente</h4>
+              <span class="text-xs text-slate-400">Distribución Automotriz</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-8 flex flex-col justify-between">
+          <div class="flex flex-col gap-4">
+            <div class="flex text-amber-400 text-sm gap-1">
+              <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+            </div>
+            <p class="text-slate-300 text-sm leading-relaxed italic">
+              "El concepto modular con contenedores marítimos y terrazas le da una vida moderna increíble al centro comercial. El flujo de clientes es permanente gracias a la parada de BTR."
+            </p>
+          </div>
+          <div class="mt-6 pt-4 border-t border-white/10 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-cyan-500/20 text-cyan-400 font-heading font-bold flex items-center justify-center text-sm">
+              FM
+            </div>
+            <div>
+              <h4 class="font-heading font-bold text-sm text-white">Franquicia Gastronómica</h4>
+              <span class="text-xs text-slate-400">Plaza Central Modular</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-8 flex flex-col justify-between">
+          <div class="flex flex-col gap-4">
+            <div class="flex text-amber-400 text-sm gap-1">
+              <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+            </div>
+            <p class="text-slate-300 text-sm leading-relaxed italic">
+              "La capacidad eléctrica trifásica y la altura de los techos en los galpones nos permitieron instalar montacargas y estanterías industriales sin ningún problema."
+            </p>
+          </div>
+          <div class="mt-6 pt-4 border-t border-white/10 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 font-heading font-bold flex items-center justify-center text-sm">
+              SL
+            </div>
+            <div>
+              <h4 class="font-heading font-bold text-sm text-white">Servicios Logísticos del Este</h4>
+              <span class="text-xs text-slate-400">Almacenaje y Encomiendas</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       6. FORMULARIO DE POSTULACIÓN DE EMPRESAS (CRM CAPTACIÓN)
+       ========================================================================= -->
+  <section id="contacto" class="py-24 bg-gradient-to-b from-slate-950 to-[#04070d] border-t border-white/5 relative">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-2xl mx-auto mb-14 reveal">
+        <span class="text-amber-400 font-heading text-xs font-bold uppercase tracking-widest block mb-2">Contacto & Alquiler</span>
+        <h2 class="font-heading font-black text-3xl sm:text-5xl text-white tracking-tight">Postula tu Negocio</h2>
+        <p class="text-slate-400 text-sm mt-3 leading-relaxed">
+          Completa el formulario para consultar disponibilidad. Un asesor administrativo se comunicará de inmediato contigo.
+        </p>
+      </div>
+
+      <div class="glass-card rounded-3xl p-8 sm:p-10 border border-white/15 shadow-2xl relative reveal">
+        <form id="lead-form" onsubmit="handleLeadSubmit(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          
+          <div>
+            <label class="block text-xs font-heading font-bold text-slate-300 uppercase tracking-wider mb-2">Nombre y Apellido *</label>
+            <input type="text" id="lead-name" required placeholder="Ej: Carlos Mendoza" class="w-full bg-slate-900/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors font-body">
+          </div>
+
+          <div>
+            <label class="block text-xs font-heading font-bold text-slate-300 uppercase tracking-wider mb-2">Empresa o Razón Social *</label>
+            <input type="text" id="lead-company" required placeholder="Ej: Distribuidora & Inversiones C.A." class="w-full bg-slate-900/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors font-body">
+          </div>
+
+          <div>
+            <label class="block text-xs font-heading font-bold text-slate-300 uppercase tracking-wider mb-2">Teléfono / WhatsApp *</label>
+            <input type="tel" id="lead-phone" required placeholder="+58 414 000 0000" class="w-full bg-slate-900/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors font-body">
+          </div>
+
+          <div>
+            <label class="block text-xs font-heading font-bold text-slate-300 uppercase tracking-wider mb-2">Correo Electrónico</label>
+            <input type="email" id="lead-email" placeholder="contacto@empresa.com" class="w-full bg-slate-900/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors font-body">
+          </div>
+
+          <div>
+            <label class="block text-xs font-heading font-bold text-slate-300 uppercase tracking-wider mb-2">Tipo de Espacio Deseado *</label>
+            <select id="lead-space" class="w-full bg-slate-900/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-500 transition-colors font-body">
+              <option value="LOT-A1">Macro-Lote A (1.500 m² - Noroeste)</option>
+              <option value="LOT-B1">Macro-Lote B (1.500 m² - Suroeste)</option>
+              <option value="LOT-C1">Macro-Lote C (1.190 m² - Sureste)</option>
+              <option value="LOT-D1">Macro-Lote D (1.000 m² - Noreste)</option>
+              <option value="LOC-N01">Local Comercial Frontal (95 m²)</option>
+              <option value="LOC-N02">Local Comercial Frontal (110 m²)</option>
+              <option value="LOC-O04">Showroom Doble Altura (120 m²)</option>
+              <option value="DEP-E01">Galpón / Almacén (250 m²)</option>
+              <option value="OTRO">Otro requerimiento a medida</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-heading font-bold text-slate-300 uppercase tracking-wider mb-2">Rubro Comercial *</label>
+            <select id="lead-rubro" class="w-full bg-slate-900/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-500 transition-colors font-body">
+              <option value="Repuestos Automotrices / Industrial">Repuestos Automotrices / Maquinaria</option>
+              <option value="Retail / Ferretería / Minimarket">Retail / Ferretería / Minimarket</option>
+              <option value="Patio de Contenedores / Modular">Patio de Contenedores / Modular</option>
+              <option value="Almacén Logístico / Encomiendas">Almacén Logístico / Encomiendas</option>
+              <option value="Gastronomía / Food Trucks">Gastronomía / Food Trucks</option>
+              <option value="Servicios Corporativos / Bancarios">Servicios Corporativos / Bancarios</option>
+            </select>
+          </div>
+
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-heading font-bold text-slate-300 uppercase tracking-wider mb-2">Mensaje o Requerimientos</label>
+            <textarea id="lead-msg" rows="3" placeholder="Indica detalles de requerimientos eléctricos, horario de carga o fecha prevista..." class="w-full bg-slate-900/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors font-body"></textarea>
+          </div>
+
+          <div class="sm:col-span-2 flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-white/10">
+            <span class="text-xs text-slate-400 flex items-center gap-2">
+              <i class="fa-solid fa-shield-halved text-emerald-400"></i> Atención directa por la administración.
+            </span>
+            <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-heading font-black text-sm shadow-xl shadow-amber-500/30 transition-all hover:scale-105 cursor-pointer">
+              <i class="fa-solid fa-paper-plane"></i> Enviar Postulación
+            </button>
+          </div>
+        </form>
+
+        <!-- Success toast -->
+        <div id="lead-toast" class="hidden mt-6 p-4 rounded-xl bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 text-sm font-medium flex items-center gap-3">
+          <i class="fa-solid fa-circle-check text-emerald-400 text-xl"></i>
+          <div>
+            <strong>¡Postulación Registrada!</strong> Redirigiendo al WhatsApp de administración...
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       7. FOOTER
+       ========================================================================= -->
+  <footer class="bg-black/95 border-t border-white/10 py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-slate-400 font-medium">
+      
+      <div class="flex items-center gap-3">
+        <img src="logo_cc_mario_sanchez.svg" alt="Logo" class="w-9 h-9 rounded-lg">
+        <div>
+          <span class="text-white font-bold font-heading text-sm block">Centro Comercial Mario Sánchez</span>
+          <span>Av. Municipal, Puerto La Cruz • Anzoátegui, Venezuela</span>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-center gap-6 font-heading font-semibold text-xs">
+        <a href="alquiler.html" class="hover:text-amber-400 transition-colors">Portal de Alquiler</a>
+        <a href="https://wa.me/584247380002" target="_blank" rel="noopener noreferrer" class="hover:text-emerald-400 transition-colors">Contacto WhatsApp</a>
+      </div>
+
+      <div class="text-center md:text-right font-heading text-xs text-slate-500">
+        <span>Administración: <strong>+58 424-7380002</strong></span><br>
+        <span>© 2026 Todos los derechos reservados</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- =========================================================================
+       8. MODAL / DRAWER DE DETALLES DEL LOTE EMBEBIDO
+       ========================================================================= -->
+  <div id="detail-modal" class="fixed inset-0 z-[1000] hidden">
+    <!-- Backdrop -->
+    <div class="drawer-backdrop absolute inset-0 opacity-0" id="modal-backdrop" onclick="closeDetailModal()"></div>
+    
+    <!-- Modal Dialog -->
+    <div class="absolute inset-x-4 top-1/2 -translate-y-1/2 max-w-xl mx-auto glass-card rounded-3xl p-6 sm:p-8 border border-white/15 shadow-2xl z-10 scale-95 opacity-0 transition-all duration-300" id="modal-dialog">
+      <div class="flex items-start justify-between gap-4 mb-4">
+        <div>
+          <span class="text-[10px] font-heading uppercase font-bold text-amber-400 tracking-wider block" id="modal-code">LOTE</span>
+          <h3 class="font-heading font-black text-2xl text-white" id="modal-title">Nombre del Espacio</h3>
+        </div>
+        <button onclick="closeDetailModal()" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Image -->
+      <div class="rounded-2xl overflow-hidden h-52 mb-5 border border-white/10 bg-slate-900">
+        <img id="modal-img" src="" alt="Espacio" class="w-full h-full object-cover">
+      </div>
+
+      <!-- Specs Grid -->
+      <div class="grid grid-cols-2 gap-3 text-xs mb-6">
+        <div class="p-3 rounded-xl bg-white/5 border border-white/5">
+          <span class="text-slate-400 block text-[10px]">Superficie:</span>
+          <strong class="text-white font-heading text-sm" id="modal-area">0 m²</strong>
+        </div>
+        <div class="p-3 rounded-xl bg-white/5 border border-white/5">
+          <span class="text-slate-400 block text-[10px]">Estado:</span>
+          <strong class="text-emerald-400 font-heading text-sm" id="modal-status">Disponible</strong>
+        </div>
+        <div class="p-3 rounded-xl bg-white/5 border border-white/5">
+          <span class="text-slate-400 block text-[10px]">Acometida Eléctrica:</span>
+          <strong class="text-amber-400 font-heading" id="modal-power">Trifásica 220V/440V</strong>
+        </div>
+        <div class="p-3 rounded-xl bg-white/5 border border-white/5">
+          <span class="text-slate-400 block text-[10px]">Acceso Vial:</span>
+          <strong class="text-cyan-400 font-heading" id="modal-road">Pasillo 20m</strong>
+        </div>
+      </div>
+
+      <p class="text-slate-300 text-xs leading-relaxed mb-6" id="modal-desc">Descripción del espacio comercial.</p>
+
+      <div class="flex items-center gap-3">
+        <a id="modal-wa-btn" href="#" target="_blank" rel="noopener noreferrer" class="flex-1 inline-flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 text-white font-heading font-extrabold text-xs shadow-lg shadow-emerald-500/25 transition-all">
+          <i class="fa-brands fa-whatsapp text-sm"></i> Contactar por WhatsApp
+        </a>
+        <button onclick="closeDetailModal()" class="px-5 py-3.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-300 font-heading font-bold text-xs transition-colors">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT FOR LEAFLET MAP, CARDS & SIMULATOR -->
+  <script>
+    // 1. Initial Leaflet Map inside Landing
+    const map = L.map('interactive-map', {
+      center: [10.20468, -64.63290],
+      zoom: 18,
+      minZoom: 15,
+      maxZoom: 21,
+      zoomControl: false
+    });
+
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    // Google Satellite Layer
+    L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+      maxZoom: 22,
+      maxNativeZoom: 20,
+      attribution: '© Google Earth'
+    }).addTo(map);
+
+    // 2. Spaces Catalog Data with 100% Reliable High-Res Images & Fallbacks
+    const spacesData = [
+      {
+        id: "LOT-A1",
+        name: "Macro-Lote A (Noroeste)",
+        category: "macro-lotes",
+        area: "1.500 m²",
+        status: "Disponible",
+        color: "#f59e0b",
+        image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
+        road: "Pasillo Oeste (20.00 m Libres)",
+        power: "Trifásica 220V/440V Industrial",
+        use: "Patio de Contenedores / Showroom de Maquinaria",
+        desc: "Macro-Lote de 1.500 m² con frente directo al Pasillo Oeste de 20m. Acometida para transformador propio y rodamiento continuo para gandolas.",
+        coords: [
+          [10.2052798, -64.6330805],
+          [10.2052164, -64.6327943],
+          [10.2048550, -64.6328720],
+          [10.2049080, -64.6331557]
+        ]
+      },
+      {
+        id: "LOT-B1",
+        name: "Macro-Lote B (Suroeste)",
+        category: "macro-lotes",
+        area: "1.500 m²",
+        status: "Disponible",
+        color: "#fbbf24",
+        image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80",
+        road: "Doble Frente (Pasillo O 20m + Patio Sur 20m)",
+        power: "Trifásica 220V/440V Industrial",
+        use: "Galpón Desmontable / Taller Integral",
+        desc: "Ubicación estratégica en esquina sur-oeste con doble frente vial de 20 metros para maniobras pesadas.",
+        coords: [
+          [10.2049080, -64.6331557],
+          [10.2048550, -64.6328720],
+          [10.2044937, -64.6329497],
+          [10.2045362, -64.6332309]
+        ]
+      },
+      {
+        id: "LOT-C1",
+        name: "Macro-Lote C (Sureste)",
+        category: "macro-lotes",
+        area: "1.190 m²",
+        status: "Disponible",
+        color: "#0ea5e9",
+        image: "https://images.unsplash.com/photo-1587293852726-70cdb56c2866?auto=format&fit=crop&w=800&q=80",
+        road: "Patio Sur + Retorno Este 23.8m",
+        power: "Trifásica 220V/440V",
+        use: "Almacén Mayorista / Feria Comercial",
+        desc: "Espacio de 1.190 m² en la zona sureste. Ideal para almacenaje mayorista o feria comercial modular.",
+        coords: [
+          [10.2048550, -64.6328720],
+          [10.2048021, -64.6325883],
+          [10.2044512, -64.6326685],
+          [10.2044937, -64.6329497]
+        ]
+      },
+      {
+        id: "LOT-D1",
+        name: "Macro-Lote D (Noreste)",
+        category: "macro-lotes",
+        area: "1.000 m²",
+        status: "Disponible",
+        color: "#a855f7",
+        image: "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80",
+        road: "Acceso Norte + Retorno Este",
+        power: "Trifásica 220V",
+        use: "Franquicia Retail / Showroom Motos",
+        desc: "Excelente visibilidad desde el acceso norte hacia el interior del centro comercial. 1.000 m² planos.",
+        coords: [
+          [10.2052164, -64.6327943],
+          [10.2051530, -64.6325082],
+          [10.2048021, -64.6325883],
+          [10.2048550, -64.6328720]
+        ]
+      },
+      {
+        id: "LOC-N01",
+        name: "Local Comercial Norte 01",
+        category: "locales",
+        area: "95 m²",
+        status: "Disponible",
+        color: "#10b981",
+        image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80",
+        road: "Retiro Norte (Estacionamiento Clientes)",
+        power: "Bifásica / 220V",
+        use: "Cafetería / Boutique / Farmacia",
+        desc: "Local frontal con vitrina de cristal hacia el estacionamiento norte. 95 m² con baño y opción de mezzanina.",
+        coords: [
+          [10.20542, -64.63315],
+          [10.20540, -64.63295],
+          [10.20534, -64.63296],
+          [10.20536, -64.63316]
+        ]
+      },
+      {
+        id: "LOC-N02",
+        name: "Local Comercial Norte 02",
+        category: "locales",
+        area: "110 m²",
+        status: "Disponible",
+        color: "#10b981",
+        image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80",
+        road: "Retiro Norte (Frente a Clientes)",
+        power: "Bifásica / 220V",
+        use: "Minimarket / Consultorio / Retail",
+        desc: "Local de 110 m² contiguo a la entrada principal con alto flujo peatonal y vehicular.",
+        coords: [
+          [10.20540, -64.63295],
+          [10.20538, -64.63275],
+          [10.20532, -64.63276],
+          [10.20534, -64.63296]
+        ]
+      },
+      {
+        id: "LOC-O04",
+        name: "Local Showroom Oeste 04",
+        category: "locales",
+        area: "120 m²",
+        status: "Disponible",
+        color: "#10b981",
+        image: "https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80",
+        road: "Pasillo Oeste (20.00 m)",
+        power: "Trifásica 220V",
+        use: "Venta de Repuestos / Taller Rápido",
+        desc: "Showroom de doble altura con puerta santamaría para vehículos livianos y venta al público.",
+        coords: [
+          [10.20505, -64.63345],
+          [10.20503, -64.63335],
+          [10.20485, -64.63338],
+          [10.20487, -64.63348]
+        ]
+      },
+      {
+        id: "GAL-S01",
+        name: "Galpón Repuestos de Oriente",
+        category: "galpones",
+        area: "850 m²",
+        status: "Arrendado",
+        color: "#f43f5e",
+        image: "https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=800&q=80",
+        road: "Patio Sur de Maniobras",
+        power: "Trifásica 440V",
+        use: "Distribución Automotriz (En Operación)",
+        desc: "Galpón industrial actualmente operativo como centro de distribución automotriz de la empresa Repuestos de Oriente.",
+        coords: [
+          [10.20435, -64.63310],
+          [10.20432, -64.63270],
+          [10.20415, -64.63274],
+          [10.20418, -64.63314]
+        ]
+      },
+      {
+        id: "DEP-E01",
+        name: "Depósito Logístico Este 01",
+        category: "galpones",
+        area: "250 m²",
+        status: "Disponible",
+        color: "#a855f7",
+        image: "https://images.unsplash.com/photo-1586528116493-a029325540fa?auto=format&fit=crop&w=800&q=80",
+        road: "Pasillo Este (23.80 m)",
+        power: "Trifásica 220V",
+        use: "Almacén Seco / Montacargas",
+        desc: "Almacén techado con piso de cemento pulido de alta resistencia para racks y montacargas.",
+        coords: [
+          [10.20495, -64.63235],
+          [10.20493, -64.63225],
+          [10.20465, -64.63230],
+          [10.20467, -64.63240]
+        ]
+      },
+      {
+        id: "DEP-E02",
+        name: "Depósito Comercial Este 02",
+        category: "galpones",
+        area: "180 m²",
+        status: "Disponible",
+        color: "#a855f7",
+        image: "https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=800&q=80",
+        road: "Pasillo Este (23.80 m)",
+        power: "Trifásica 220V",
+        use: "Depósito de Encomiendas / Mercancía",
+        desc: "Módulo de depósito cerrado para custodia de inventario de alto valor.",
+        coords: [
+          [10.20465, -64.63230],
+          [10.20463, -64.63220],
+          [10.20440, -64.63225],
+          [10.20442, -64.63235]
+        ]
+      }
+    ];
+
+    const mapLayers = {};
+    const polyGroup = L.layerGroup().addTo(map);
+
+    spacesData.forEach(item => {
+      const poly = L.polygon(item.coords, {
+        color: item.color,
+        weight: 2,
+        fillColor: item.color,
+        fillOpacity: item.status === 'Arrendado' ? 0.2 : 0.45
+      }).addTo(polyGroup);
+
+      const marker = L.marker(poly.getBounds().getCenter(), {
+        icon: L.divIcon({
+          className: 'map-pin-custom',
+          html: `<div class="pin-pill"><span>${item.id}</span> (${item.area})</div>`,
+          iconSize: null
+        })
+      }).addTo(polyGroup);
+
+      const selectAction = () => openDetailModal(item.id);
+      poly.on('click', selectAction);
+      marker.on('click', selectAction);
+
+      mapLayers[item.id] = { poly, marker, data: item };
+    });
+
+    // Render Cards in Side List
+    const listContainer = document.getElementById('spaces-list-box');
+    function renderList(items) {
+      listContainer.innerHTML = '';
+      items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = `p-3 rounded-xl bg-white/5 border border-white/10 hover:border-amber-500/50 cursor-pointer transition-all flex gap-3 items-center group`;
+        card.id = `map-card-${item.id}`;
+        card.onclick = () => openDetailModal(item.id);
+
+        card.innerHTML = `
+          <img src="${item.image}" alt="${item.name}" onerror="this.src='https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80'" class="w-16 h-16 rounded-lg object-cover flex-shrink-0 group-hover:scale-105 transition-transform bg-slate-800">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-1">
+              <span class="font-heading font-extrabold text-xs text-white truncate">${item.name}</span>
+              <span class="text-[10px] font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">${item.area}</span>
+            </div>
+            <p class="text-[11px] text-slate-400 truncate mt-0.5">${item.use}</p>
+            <div class="flex items-center justify-between mt-1.5 pt-1.5 border-t border-white/5 text-[10.5px]">
+              <span class="${item.status === 'Arrendado' ? 'text-rose-400' : 'text-emerald-400'} font-semibold">${item.status}</span>
+              <span class="text-amber-400 font-bold group-hover:underline flex items-center gap-1">
+                Ver Detalles <i class="fa-solid fa-arrow-right text-[9px]"></i>
+              </span>
+            </div>
+          </div>
+        `;
+        listContainer.appendChild(card);
+      });
+    }
+
+    function openDetailModal(id) {
+      const item = spacesData.find(s => s.id === id);
+      if (!item) return;
+
+      // Highlight on map
+      Object.values(mapLayers).forEach(l => l.poly.setStyle({ weight: 2, fillOpacity: l.data.status === 'Arrendado' ? 0.2 : 0.45 }));
+      if (mapLayers[id]) {
+        mapLayers[id].poly.setStyle({ weight: 4.5, fillOpacity: 0.75, color: '#ffffff' });
+        map.flyToBounds(mapLayers[id].poly.getBounds(), { padding: [50, 50], duration: 0.8 });
+      }
+
+      // Populate Modal
+      document.getElementById('modal-code').innerText = item.id;
+      document.getElementById('modal-title').innerText = item.name;
+      document.getElementById('modal-img').src = item.image;
+      document.getElementById('modal-area').innerText = item.area;
+      document.getElementById('modal-status').innerText = item.status;
+      document.getElementById('modal-status').className = item.status === 'Arrendado' ? 'text-rose-400 font-heading text-sm' : 'text-emerald-400 font-heading text-sm';
+      document.getElementById('modal-power').innerText = item.power;
+      document.getElementById('modal-road').innerText = item.road;
+      document.getElementById('modal-desc').innerText = item.desc;
+
+      const waMsg = encodeURIComponent(`¡Hola Marisol! Me interesa consultar la disponibilidad y condiciones del espacio [${item.id}: ${item.name} (${item.area})] en el Centro Comercial Mario Sánchez.`);
+      document.getElementById('modal-wa-btn').href = `https://wa.me/584247380002?text=${waMsg}`;
+
+      // Open Modal with Animation
+      const modal = document.getElementById('detail-modal');
+      const backdrop = document.getElementById('modal-backdrop');
+      const dialog = document.getElementById('modal-dialog');
+
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        backdrop.classList.remove('opacity-0');
+        backdrop.classList.add('opacity-100');
+        dialog.classList.remove('scale-95', 'opacity-0');
+        dialog.classList.add('scale-100', 'opacity-100');
+      }, 10);
+    }
+
+    function closeDetailModal() {
+      const modal = document.getElementById('detail-modal');
+      const backdrop = document.getElementById('modal-backdrop');
+      const dialog = document.getElementById('modal-dialog');
+
+      backdrop.classList.remove('opacity-100');
+      backdrop.classList.add('opacity-0');
+      dialog.classList.remove('scale-100', 'opacity-100');
+      dialog.classList.add('scale-95', 'opacity-0');
+
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 300);
+    }
+
+    function filterMap(cat, btn) {
+      document.querySelectorAll('.map-filter-btn').forEach(b => {
+        b.className = 'map-filter-btn px-3 py-1.5 rounded-lg text-xs font-heading font-bold text-slate-300 hover:text-white';
+      });
+      btn.className = 'map-filter-btn active px-3 py-1.5 rounded-lg text-xs font-heading font-bold bg-amber-500 text-slate-950';
+
+      let filtered = spacesData;
+      if (cat === 'macro-lotes') filtered = spacesData.filter(s => s.category === 'macro-lotes');
+      if (cat === 'locales') filtered = spacesData.filter(s => s.category === 'locales');
+      if (cat === 'galpones') filtered = spacesData.filter(s => s.category === 'galpones');
+
+      spacesData.forEach(s => {
+        const visible = filtered.some(f => f.id === s.id);
+        if (visible) {
+          if (!map.hasLayer(mapLayers[s.id].poly)) map.addLayer(mapLayers[s.id].poly);
+          if (!map.hasLayer(mapLayers[s.id].marker)) map.addLayer(mapLayers[s.id].marker);
+        } else {
+          if (map.hasLayer(mapLayers[s.id].poly)) map.removeLayer(mapLayers[s.id].poly);
+          if (map.hasLayer(mapLayers[s.id].marker)) map.removeLayer(mapLayers[s.id].marker);
+        }
+      });
+
+      renderList(filtered);
+    }
+
+    renderList(spacesData);
+
+    // 3. Dynamic Simulator Logic
+    let currentType = 'retail';
+    function setSimType(type, btn) {
+      currentType = type;
+      document.querySelectorAll('.sim-btn').forEach(b => {
+        b.className = 'sim-btn px-3 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 font-heading font-bold text-xs text-center transition-all';
+      });
+      btn.className = 'sim-btn active px-3 py-2.5 rounded-xl border border-amber-500 bg-amber-500/20 text-amber-300 font-heading font-bold text-xs text-center transition-all';
+      updateSim();
+    }
+
+    function updateSim() {
+      const area = parseInt(document.getElementById('sim-range').value);
+      document.getElementById('sim-area-val').innerText = `${area} m²`;
+
+      const titleEl = document.getElementById('sim-result-title');
+      const capEl = document.getElementById('sim-result-cap');
+      const powerEl = document.getElementById('sim-result-power');
+      const accessEl = document.getElementById('sim-result-access');
+      const parkingEstEl = document.getElementById('sim-parking-est');
+
+      // Calculate Parking
+      const parkingSlots = Math.round(area / 25);
+      parkingEstEl.innerText = `~${parkingSlots} a ${parkingSlots + 6} vehículos`;
+
+      if (area <= 120) {
+        titleEl.innerText = "Local Comercial Frontal o Showroom Oeste";
+        capEl.innerText = `~${Math.round(area / 6)} a ${Math.round(area / 4)} personas de aforo`;
+        powerEl.innerText = "Bifásica / 220V";
+        accessEl.innerText = "Retiro Norte (Estacionamiento Clientes)";
+      } else if (area <= 400) {
+        titleEl.innerText = "Depósito Logístico Este o Showroom Ampliado";
+        capEl.innerText = `~${Math.round(area / 45)} Contenedores 40ft / ${Math.round(area * 0.8)} pallets`;
+        powerEl.innerText = "Trifásica 220V";
+        accessEl.innerText = "Pasillo Este (23.80 m Libres)";
+      } else if (area <= 1190) {
+        titleEl.innerText = "Macro-Lote C (Sureste - 1.190 m²)";
+        capEl.innerText = `~15 a 18 Contenedores 40ft o Galpón Mediano`;
+        powerEl.innerText = "Trifásica Industrial 220V/440V";
+        accessEl.innerText = "Patio Sur de Maniobras (20.00 m)";
+      } else {
+        titleEl.innerText = "Macro-Lote A o B (1.500 m² c/u)";
+        capEl.innerText = `~25 Contenedores o Nave Logística Pesada`;
+        powerEl.innerText = "Trifásica Industrial 440V con Transformador";
+        accessEl.innerText = "Pasillo Oeste (20.00 m Gandolas)";
+      }
+
+      const typeLabels = {
+        retail: "Retail / Tienda Comercial",
+        containers: "Plaza de Contenedores Modulares",
+        logistica: "Distribución Logística / Almacén",
+        automotriz: "Taller Automotriz / Showroom"
+      };
+
+      const waText = encodeURIComponent(`¡Hola! Utilicé el simulador del CC Mario Sánchez y deseo cotizar un espacio de [${area} m²] para el rubro de [${typeLabels[currentType]}].`);
+      document.getElementById('sim-wa-btn').href = `https://wa.me/584247380002?text=${waText}`;
+    }
+
+    // Initialize Simulator on load
+    updateSim();
+
+    // 4. Lead Form Submission
+    function handleLeadSubmit(e) {
+      e.preventDefault();
+      
+      const leadData = {
+        id: 'LEAD-' + Date.now(),
+        date: new Date().toISOString(),
+        name: document.getElementById('lead-name').value.trim(),
+        company: document.getElementById('lead-company').value.trim(),
+        phone: document.getElementById('lead-phone').value.trim(),
+        email: document.getElementById('lead-email').value.trim(),
+        space: document.getElementById('lead-space').value,
+        rubro: document.getElementById('lead-rubro').value,
+        msg: document.getElementById('lead-msg').value.trim()
+      };
+
+      const existingLeads = JSON.parse(localStorage.getItem('ccms_leads') || '[]');
+      existingLeads.push(leadData);
+      localStorage.setItem('ccms_leads', JSON.stringify(existingLeads));
+
+      document.getElementById('lead-toast').classList.remove('hidden');
+
+      const msg = encodeURIComponent(
+        `*POSTULACIÓN COMERCIAL - CC MARIO SÁNCHEZ*\n` +
+        `• Nombre: ${leadData.name}\n` +
+        `• Empresa: ${leadData.company}\n` +
+        `• Teléfono: ${leadData.phone}\n` +
+        `• Espacio Solicitado: ${leadData.space}\n` +
+        `• Rubro: ${leadData.rubro}\n` +
+        `• Mensaje: ${leadData.msg || 'Sin nota'}`
+      );
+
+      setTimeout(() => {
+        window.open(`https://wa.me/584247380002?text=${msg}`, '_blank');
+      }, 1200);
+    }
+
+    // 5. Scroll Reveal Observer
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>
