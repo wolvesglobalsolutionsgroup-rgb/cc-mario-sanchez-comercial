@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>CC Mario Sánchez — Portal Inmobiliario & Espacios Comerciales</title>
+  
+  <!-- High-Performance Preconnects & DNS Prefetch -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="dns-prefetch" href="https://images.unsplash.com">
+  <link rel="dns-prefetch" href="https://unpkg.com">
+  <link rel="dns-prefetch" href="https://mt1.google.com">
+  <link rel="preload" as="image" href="logo_cc_mario_sanchez.svg">
+
+  <!-- Favicon SVG -->
+  <link rel="icon" type="image/svg+xml" href="logo_cc_mario_sanchez.svg">
+
+  <!-- Leaflet Core CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Google Fonts: Outfit & Manrope -->
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+
+  <style>
+    :root {
+      --bg-dark: #04070d;
+      --bg-surface: #080d17;
+      --bg-surface-glass: rgba(10, 16, 28, 0.92);
+      --bg-card: rgba(14, 22, 38, 0.85);
+      --bg-card-hover: rgba(22, 34, 58, 0.95);
+      
+      --border-subtle: rgba(255, 255, 255, 0.1);
+      --border-highlight: rgba(245, 158, 11, 0.5);
+      
+      --amber: #f59e0b;
+      --amber-light: #fbbf24;
+      --cyan: #0ea5e9;
+      --cyan-light: #38bdf8;
+      --emerald: #10b981;
+      --emerald-light: #34d399;
+      --rose: #f43f5e;
+      --purple: #a855f7;
+      
+      --txt-primary: #f8fafc;
+      --txt-secondary: #94a3b8;
+      --txt-muted: #64748b;
+      
+      --font-heading: 'Outfit', sans-serif;
+      --font-body: 'Manrope', sans-serif;
+      
+      --sidebar-w: 420px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      height: 100%;
+      height: 100dvh;
+      width: 100vw;
+      background: var(--bg-dark);
+      color: var(--txt-primary);
+      font-family: var(--font-body);
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      height: 100dvh;
+      width: 100vw;
+      position: relative;
+    }
+
+    /* TOP COMMERCIAL NAVBAR */
+    .navbar {
+      height: 64px;
+      background: rgba(4, 7, 13, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      z-index: 1000;
+      flex-shrink: 0;
+      gap: 12px;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-logo-img {
+      width: 38px;
+      height: 38px;
+      border-radius: 9px;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      background: #0b1120;
+      flex-shrink: 0;
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .brand-text h1 {
+      font-family: var(--font-heading);
+      font-size: 15px;
+      font-weight: 800;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.2;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      color: var(--txt-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 1px;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .btn-nav-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-family: var(--font-heading);
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .btn-nav-back:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: var(--amber-light);
+    }
+
+    .btn-nav-wa {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      color: #ffffff;
+      font-family: var(--font-heading);
+      font-size: 12px;
+      font-weight: 800;
+      text-decoration: none;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .btn-nav-wa:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45);
+    }
+
+    /* MAIN VIEWPORT */
+    .main-wrapper {
+      flex: 1;
+      display: flex;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #map {
+      flex: 1;
+      height: 100%;
+      width: 100%;
+      background: #04070d;
+      z-index: 1;
+    }
+
+    /* FILTER BAR - NON OVERLAPPING PILLS */
+    .filter-bar {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 900;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(8, 13, 23, 0.94);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-subtle);
+      padding: 4px 6px;
+      border-radius: 25px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+      max-width: calc(100vw - 24px);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .filter-bar::-webkit-scrollbar { display: none; }
+
+    .filter-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--txt-secondary);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-family: var(--font-heading);
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+    .filter-btn:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .filter-btn.active {
+      background: var(--amber);
+      color: #000000;
+      font-weight: 800;
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
+    }
+
+    /* RIGHT SIDEBAR CATALOG */
+    .sidebar {
+      width: var(--sidebar-w);
+      height: 100%;
+      background: var(--bg-surface-glass);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-left: 1px solid var(--border-subtle);
+      z-index: 950;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      box-shadow: -10px 0 35px rgba(0, 0, 0, 0.65);
+      transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .sidebar-head {
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(0, 0, 0, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sidebar-title h2 {
+      font-family: var(--font-heading);
+      font-size: 15px;
+      font-weight: 800;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .sidebar-title p {
+      font-size: 11px;
+      color: var(--amber-light);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .cards-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .cards-container::-webkit-scrollbar { width: 4px; }
+    .cards-container::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 4px;
+    }
+
+    /* SPACE CARD */
+    .space-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .space-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(245, 158, 11, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+    }
+    .space-card.selected {
+      border-color: var(--amber);
+      background: rgba(245, 158, 11, 0.08);
+      box-shadow: 0 0 0 1px var(--amber), 0 8px 30px rgba(245, 158, 11, 0.2);
+    }
+
+    .card-photo-wrapper {
+      width: 100%;
+      height: 110px;
+      position: relative;
+      background: #0b101d;
+      overflow: hidden;
+    }
+
+    .card-photo-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+    .space-card:hover .card-photo-img {
+      transform: scale(1.04);
+    }
+
+    .card-photo-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(4, 7, 13, 0.85) 100%);
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding: 8px 10px;
+    }
+
+    .card-code-tag {
+      font-family: var(--font-heading);
+      font-size: 10.5px;
+      font-weight: 800;
+      background: rgba(0, 0, 0, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      padding: 2.5px 7px;
+      border-radius: 5px;
+      backdrop-filter: blur(6px);
+    }
+
+    .badge-status {
+      font-family: var(--font-heading);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2.5px 8px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .status-disp {
+      background: rgba(16, 185, 129, 0.9);
+      color: #ffffff;
+    }
+    .status-nego {
+      background: rgba(245, 158, 11, 0.9);
+      color: #000000;
+    }
+    .status-arren {
+      background: rgba(244, 63, 94, 0.85);
+      color: #ffffff;
+    }
+
+    .card-body {
+      padding: 10px 12px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .card-title {
+      font-family: var(--font-heading);
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.25;
+    }
+
+    .card-specs-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      padding: 6px 8px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .spec-box .lbl {
+      font-size: 9px;
+      color: var(--txt-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .spec-box .val {
+      font-family: var(--font-heading);
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-top: 1px;
+    }
+
+    .card-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding-top: 6px;
+      margin-top: 2px;
+    }
+
+    .btn-card-link {
+      font-family: var(--font-heading);
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--amber-light);
+      background: transparent;
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+
+    /* OFFCANVAS EXPANDED DOSSIER DRAWER */
+    #drawer {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 460px;
+      height: 100%;
+      background: rgba(8, 13, 23, 0.98);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border-left: 1px solid var(--border-highlight);
+      box-shadow: -15px 0 50px rgba(0, 0, 0, 0.85);
+      z-index: 1050;
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+    }
+    #drawer.open {
+      transform: translateX(0);
+    }
+
+    .drawer-hero {
+      position: relative;
+      height: 200px;
+      width: 100%;
+      background: #000;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .drawer-hero-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.9;
+    }
+
+    .drawer-hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(8, 13, 23, 0.95) 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 14px 18px;
+    }
+
+    .drawer-hero-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .btn-close-drawer {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.15s;
+    }
+    .btn-close-drawer:hover {
+      background: rgba(244, 63, 94, 0.4);
+      border-color: rgba(244, 63, 94, 0.6);
+    }
+
+    .drawer-code {
+      font-family: var(--font-heading);
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--amber-light);
+      letter-spacing: 0.6px;
+    }
+
+    .drawer-title {
+      font-family: var(--font-heading);
+      font-size: 19px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-top: 1px;
+    }
+
+    .drawer-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .drawer-section {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 10px;
+      padding: 14px;
+    }
+
+    .drawer-section-title {
+      font-family: var(--font-heading);
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--txt-secondary);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .drawer-specs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .drawer-spec-item .lbl {
+      font-size: 9.5px;
+      color: var(--txt-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .drawer-spec-item .val {
+      font-family: var(--font-heading);
+      font-size: 13px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-top: 1px;
+    }
+
+    .usecases-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .usecase-item {
+      font-size: 12px;
+      color: #e2e8f0;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      line-height: 1.4;
+    }
+    .usecase-item i {
+      color: var(--emerald-light);
+      margin-top: 3px;
+      font-size: 11px;
+    }
+
+    .drawer-footer {
+      padding: 14px 18px;
+      border-top: 1px solid var(--border-subtle);
+      background: rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .btn-wa-booking {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-family: var(--font-heading);
+      font-size: 13px;
+      font-weight: 800;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);
+      transition: all 0.15s ease;
+    }
+    .btn-wa-booking:hover {
+      transform: translateY(-1px);
+    }
+
+    /* SMART MAP LABELS - NO OVERLAPPING */
+    .map-label-clean {
+      background: transparent !important;
+      border: none !important;
+    }
+
+    .pin-pill-clean {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(8, 13, 23, 0.92);
+      border: 1.5px solid var(--amber);
+      color: #ffffff;
+      font-family: var(--font-heading);
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2.5px 7px;
+      border-radius: 6px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.8);
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+      pointer-events: auto;
+    }
+    .pin-pill-clean:hover {
+      transform: translate(-50%, -50%) scale(1.1);
+      background: var(--amber);
+      color: #000000;
+    }
+
+    .pin-pill-clean.emerald {
+      border-color: var(--emerald-light);
+    }
+    .pin-pill-clean.cyan {
+      border-color: var(--cyan-light);
+    }
+
+    /* MOBILE FAB */
+    .mobile-fab {
+      display: none;
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 999;
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #000000;
+      padding: 10px 20px;
+      border-radius: 25px;
+      font-family: var(--font-heading);
+      font-size: 13px;
+      font-weight: 800;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
+      cursor: pointer;
+    }
+
+    @media (max-width: 960px) {
+      .navbar {
+        height: 60px;
+        padding: 0 12px;
+      }
+      .brand-text h1 {
+        font-size: 13.5px;
+      }
+      .brand-sub {
+        font-size: 10px;
+      }
+      .btn-nav-back span {
+        display: none;
+      }
+      .btn-nav-wa span {
+        display: none;
+      }
+      .btn-nav-back, .btn-nav-wa {
+        padding: 8px 10px;
+      }
+
+      .filter-bar {
+        top: 8px;
+        left: 8px;
+        max-width: calc(100vw - 16px);
+      }
+
+      .mobile-fab {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .sidebar {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 70dvh;
+        border-left: none;
+        border-top: 1px solid var(--border-subtle);
+        border-radius: 18px 18px 0 0;
+        transform: translateY(100%);
+      }
+      .sidebar.open {
+        transform: translateY(0);
+      }
+
+      #drawer {
+        width: 100%;
+        height: 80dvh;
+        bottom: 0;
+        top: auto;
+        border-left: none;
+        border-top: 1px solid var(--border-highlight);
+        border-radius: 18px 18px 0 0;
+        transform: translateY(100%);
+      }
+      #drawer.open {
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  
+  <!-- TOP COMMERCIAL NAVBAR -->
+  <header class="navbar">
+    <div class="brand-section">
+      <img src="logo_cc_mario_sanchez.svg" alt="Logo CCMS" class="brand-logo-img">
+      <div class="brand-text">
+        <h1>CC Mario Sánchez</h1>
+        <div class="brand-sub">
+          <i class="fa-solid fa-location-dot" style="color: var(--amber);"></i> Av. Municipal, Puerto La Cruz
+        </div>
+      </div>
+    </div>
+
+    <div class="nav-actions">
+      <!-- BACK TO LANDING PAGE -->
+      <a href="landing.html" class="btn-nav-back" title="Volver a la Página Principal">
+        <i class="fa-solid fa-arrow-left"></i> <span>Volver a Inicio</span>
+      </a>
+
+      <!-- WHATSAPP DIRECT TO MARISOL SÁNCHEZ (+58 424-7380002) -->
+      <a href="https://wa.me/584247380002?text=%C2%A1Hola!%20Deseo%20consultar%20disponibilidad%20de%20espacios%20en%20el%20Centro%20Comercial%20Mario%20S%C3%A1nchez." target="_blank" rel="noopener noreferrer" class="btn-nav-wa" title="Contactar por WhatsApp">
+        <i class="fa-brands fa-whatsapp" style="font-size: 15px;"></i> <span>Asesor WhatsApp</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- MAIN VIEWPORT -->
+  <div class="main-wrapper">
+    
+    <!-- FILTER BAR -->
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="filterCatalog('all', this)">
+        <i class="fa-solid fa-layer-group"></i> Todos (10)
+      </button>
+      <button class="filter-btn" onclick="filterCatalog('macro-lotes', this)">
+        <i class="fa-solid fa-vector-square" style="color: var(--amber);"></i> Huella (5.190 m²)
+      </button>
+      <button class="filter-btn" onclick="filterCatalog('locales', this)">
+        <i class="fa-solid fa-store" style="color: var(--cyan-light);"></i> Locales
+      </button>
+      <button class="filter-btn" onclick="filterCatalog('galpones', this)">
+        <i class="fa-solid fa-warehouse" style="color: var(--purple);"></i> Galpones
+      </button>
+      <button class="filter-btn" onclick="filterCatalog('disponibles', this)">
+        <i class="fa-solid fa-circle-check" style="color: var(--emerald-light);"></i> Disponibles
+      </button>
+    </div>
+
+    <!-- LEAFLET MAP -->
+    <div id="map"></div>
+
+    <!-- RIGHT SIDEBAR CATALOG -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-head">
+        <div class="sidebar-title">
+          <h2><i class="fa-solid fa-building-circle-arrow-right" style="color: var(--amber);"></i> Catálogo de Espacios</h2>
+          <p id="catalog-counter">10 espacios listados</p>
+        </div>
+      </div>
+
+      <div class="cards-container" id="cards-container">
+        <!-- Rendered via JS -->
+      </div>
+    </aside>
+
+    <!-- OFFCANVAS DOSSIER DRAWER -->
+    <div id="drawer">
+      <div class="drawer-hero">
+        <img src="" alt="Foto Espacio" class="drawer-hero-img" id="drawer-hero-img" onerror="this.src='https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80'">
+        <div class="drawer-hero-overlay">
+          <div class="drawer-hero-top">
+            <span class="badge-status status-disp" id="drawer-badge-status">Disponible</span>
+            <button class="btn-close-drawer" id="drawer-close" title="Cerrar Ficha">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+          <div class="drawer-hero-bottom">
+            <span class="drawer-code" id="drawer-code">LOT-A1</span>
+            <h2 class="drawer-title" id="drawer-title">Macro-Lote A</h2>
+          </div>
+        </div>
+      </div>
+
+      <div class="drawer-content">
+        <div class="drawer-section">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <span style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Superficie</span>
+            <span style="font-family: var(--font-heading); font-size: 17px; font-weight: 800; color: var(--amber);" id="drawer-area">1.500 m²</span>
+          </div>
+          <p style="font-size: 12.5px; color: var(--txt-secondary); line-height: 1.5;" id="drawer-desc">
+            Descripción técnica del espacio.
+          </p>
+        </div>
+
+        <div class="drawer-section">
+          <div class="drawer-section-title">
+            <i class="fa-solid fa-sliders" style="color: var(--cyan-light);"></i> Especificaciones Técnicas
+          </div>
+          <div class="drawer-specs-grid">
+            <div class="drawer-spec-item">
+              <span class="lbl">Vialidad Frontal</span>
+              <span class="val" id="drawer-road">Pasillo Oeste 20.00 m</span>
+            </div>
+            <div class="drawer-spec-item">
+              <span class="lbl">Acometida Eléctrica</span>
+              <span class="val" id="drawer-power">Trifásica 220V/440V</span>
+            </div>
+            <div class="drawer-spec-item">
+              <span class="lbl">Acceso a Gandolas</span>
+              <span class="val" id="drawer-truck">Continuo (Horario)</span>
+            </div>
+            <div class="drawer-spec-item">
+              <span class="lbl">Estacionamientos</span>
+              <span class="val" id="drawer-parking">Batería 90°</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="drawer-section">
+          <div class="drawer-section-title">
+            <i class="fa-solid fa-lightbulb" style="color: var(--amber);"></i> Aptitud Comercial y Usos
+          </div>
+          <ul class="usecases-list" id="drawer-usecases">
+            <!-- Injected via JS -->
+          </ul>
+        </div>
+      </div>
+
+      <div class="drawer-footer">
+        <a href="#" target="_blank" rel="noopener noreferrer" class="btn-wa-booking" id="drawer-wa-link">
+          <i class="fa-brands fa-whatsapp" style="font-size: 16px;"></i> <span>Consultar por WhatsApp</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- MOBILE FAB -->
+    <button class="mobile-fab" id="mobile-fab">
+      <i class="fa-solid fa-list-check"></i> <span>Ver Espacios (10)</span>
+    </button>
+  </div>
+</div>
+
+<!-- LEAFLET & PORTAL ENGINE SCRIPT -->
+<script>
+  // 1. Initial Leaflet Map
+  const map = L.map('map', {
+    center: [10.20468, -64.63290],
+    zoom: 18,
+    minZoom: 15,
+    maxZoom: 21,
+    zoomControl: false
+  });
+
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+  // Satellite Layer
+  L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+    maxZoom: 22,
+    maxNativeZoom: 20,
+    attribution: '© Google Earth'
+  }).addTo(map);
+
+  // 2. Real Estate Database with Real Architectural Photography & 100% Stable URLs
+  const catalog = [
+    {
+      id: "LOT-A1",
+      name: "Macro-Lote A (Noroeste)",
+      category: "macro-lotes",
+      area: "1.500 m²",
+      status: "disponible",
+      statusText: "Disponible",
+      color: "#f59e0b",
+      image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
+      road: "Pasillo Oeste (20.00 m)",
+      power: "Trifásica 220V/440V",
+      truck: "Canal Gandolas Exclusivo",
+      parking: "Batería 90° (~35 puestos)",
+      description: "Ubicación en el cuadrante noroeste de la Huella Central. Posee frente directo a la Avenida de Servicio de 20 metros libres y acceso inmediato.",
+      useCases: [
+        "Patio de contenedores comerciales o módulos habitacionales/oficinas.",
+        "Showroom de camiones, maquinarias o repuestos automotrices.",
+        "Centro ferretero y distribución al mayor."
+      ],
+      coords: [
+        [10.2052798, -64.6330805],
+        [10.2052164, -64.6327943],
+        [10.2048550, -64.6328720],
+        [10.2049080, -64.6331557]
+      ]
+    },
+    {
+      id: "LOT-B1",
+      name: "Macro-Lote B (Suroeste)",
+      category: "macro-lotes",
+      area: "1.500 m²",
+      status: "disponible",
+      statusText: "Disponible",
+      color: "#fbbf24",
+      image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80",
+      road: "Pasillo O (20m) + Patio Sur (20m)",
+      power: "Trifásica Industrial",
+      truck: "Doble Frente de Maniobra",
+      parking: "Acceso Lateral Directo",
+      description: "Esquina estratégica suroeste con doble frente vial de 20 metros. Máxima maniobrabilidad para camiones y gandolas sin contraflujo.",
+      useCases: [
+        "Galpón desmontable en estructura de acero o centro de ensamblaje.",
+        "Taller automotriz integral / Centro de lubricación pesada.",
+        "Patio logístico de carga y descarga continua."
+      ],
+      coords: [
+        [10.2049080, -64.6331557],
+        [10.2048550, -64.6328720],
+        [10.2044937, -64.6329497],
+        [10.2045362, -64.6332309]
+      ]
+    },
+    {
+      id: "LOT-C1",
+      name: "Macro-Lote C (Sureste)",
+      category: "macro-lotes",
+      area: "1.190 m²",
+      status: "disponible",
+      statusText: "Disponible",
+      color: "#0ea5e9",
+      image: "https://images.unsplash.com/photo-1587293852726-70cdb56c2866?auto=format&fit=crop&w=800&q=80",
+      road: "Patio Sur (20m) + Pasillo E (23.8m)",
+      power: "Acometida Industrial",
+      truck: "Vía Retorno 23.80 m",
+      parking: "Estacionamiento Clientes",
+      description: "Ubicado en el cuadrante sureste con frente hacia el Patio Sur de maniobras y retorno este de 23.80 m.",
+      useCases: [
+        "Almacén seco para alimentos, farmacia o consumo masivo.",
+        "Feria comercial techada o patio de food-trucks.",
+        "Centro de envíos, encomiendas y logística de última milla."
+      ],
+      coords: [
+        [10.2048550, -64.6328720],
+        [10.2048021, -64.6325883],
+        [10.2044512, -64.6326685],
+        [10.2044937, -64.6329497]
+      ]
+    },
+    {
+      id: "LOT-D1",
+      name: "Macro-Lote D (Noreste)",
+      category: "macro-lotes",
+      area: "1.000 m²",
+      status: "disponible",
+      statusText: "Disponible",
+      color: "#a855f7",
+      image: "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80",
+      road: "Retiro Norte (23.86m) + Pasillo E",
+      power: "Trifásica 220V",
+      truck: "Salida Directa Av. Municipal",
+      parking: "Retiro Norte (Clientes)",
+      description: "Esquina noreste con visual directa desde el eje de acceso. Punto de alto tráfico peatonal y vehicular.",
+      useCases: [
+        "Franquicia comercial o restaurante.",
+        "Showroom de motocicletas o electrodomésticos.",
+        "Sede corporativa o agencia bancaria."
+      ],
+      coords: [
+        [10.2052164, -64.6327943],
+        [10.2051530, -64.6325082],
+        [10.2048021, -64.6325883],
+        [10.2048550, -64.6328720]
+      ]
+    },
+    // LOCALES
+    {
+      id: "LOC-N01",
+      name: "Local Comercial Norte 01",
+      category: "locales",
+      area: "95 m²",
+      status: "disponible",
+      statusText: "Disponible",
+      color: "#10b981",
+      image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80",
+      road: "Retiro Norte (23.86 m)",
+      power: "Bifásica / 220V",
+      truck: "Vehículos Ligeros",
+      parking: "Frontal Inmediato",
+      description: "Local comercial con vitrina frente a la zona de estacionamiento de clientes del Retiro Norte.",
+      useCases: ["Cafetería / Bakery gourmet.", "Oficina de servicios o seguros.", "Farmacia de conveniencia."],
+      coords: [
+        [10.20542, -64.63315],
+        [10.20540, -64.63295],
+        [10.20534, -64.63296],
+        [10.20536, -64.63316]
+      ]
+    },
+    {
+      id: "LOC-N02",
+      name: "Local Comercial Norte 02",
+      category: "locales",
+      area: "110 m²",
+      status: "disponible",
+      statusText: "Disponible",
+      color: "#10b981",
+      image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80",
+      road: "Retiro Norte (23.86 m)",
+      power: "220V Bifásica",
+      truck: "Acceso Frontal",
+      parking: "Frontal Inmediato",
+      description: "Espacio comercial contiguo a la entrada con alto flujo de clientes y estacionamiento directo.",
+      useCases: ["Ferretería ligera / Iluminación.", "Tienda de tecnología / Retail.", "Minimarket."],
+      coords: [
+        [10.20540, -64.63295],
+        [10.20538, -64.63275],
+        [10.20532, -64.63276],
+        [10.20534, -64.63296]
+      ]
+    },
+    {
+      id: "LOC-O04",
+      name: "Local Showroom Oeste 04",
+      category: "locales",
+      area: "120 m²",
+      status: "disponible",
+      statusText: "Disponible",
+      color: "#10b981",
+      image: "https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80",
+      road: "Pasillo Oeste (20.00 m)",
+      power: "220V Trifásica",
+      truck: "Frente a Pasillo Gandolas",
+      parking: "Batería 90° al Frente",
+      description: "Showroom comercial de doble altura con portón corredizo para vehículos livianos y mezzanina.",
+      useCases: ["Venta de repuestos pesados.", "Distribución de lubricantes.", "Taller rápido."],
+      coords: [
+        [10.20505, -64.63345],
+        [10.20503, -64.63335],
+        [10.20485, -64.63338],
+        [10.20487, -64.63348]
+      ]
+    },
+    // GALPONES
+    {
+      id: "GAL-S01",
+      name: "Galpón Repuestos de Oriente",
+      category: "galpones",
+      area: "850 m²",
+      status: "arrendado",
+      statusText: "Arrendado",
+      color: "#f43f5e",
+      image: "https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=800&q=80",
+      road: "Patio Sur (20.00 m)",
+      power: "Industrial 440V",
+      truck: "Muelle de Carga",
+      parking: "Patio Exclusivo",
+      description: "Sede principal activa de Repuestos de Oriente con patio de maniobras de 20 metros.",
+      useCases: ["Centro de distribución automotriz (En Operación)."],
+      coords: [
+        [10.20435, -64.63310],
+        [10.20432, -64.63270],
+        [10.20415, -64.63274],
+        [10.20418, -64.63314]
+      ]
+    },
+    {
+      id: "DEP-E01",
+      name: "Depósito Logístico Este 01",
+      category: "galpones",
+      area: "250 m²",
+      status: "disponible",
+      statusText: "Disponible",
+      color: "#a855f7",
+      image: "https://images.unsplash.com/photo-1586528116493-a029325540fa?auto=format&fit=crop&w=800&q=80",
+      road: "Pasillo Este (23.80 m)",
+      power: "Trifásica 220V",
+      truck: "Acceso Lateral Gandolas",
+      parking: "Pasillo 23.80 m",
+      description: "Galpón cerrado para almacenaje de alta rotación con piso reforzado para montacargas.",
+      useCases: ["Almacén de distribución.", "Empaque e-commerce.", "Taller metalmecánico."],
+      coords: [
+        [10.20495, -64.63235],
+        [10.20493, -64.63225],
+        [10.20465, -64.63230],
+        [10.20467, -64.63240]
+      ]
+    },
+    {
+      id: "DEP-E02",
+      name: "Depósito Comercial Este 02",
+      category: "galpones",
+      area: "180 m²",
+      status: "disponible",
+      statusText: "Disponible",
+      color: "#a855f7",
+      image: "https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=800&q=80",
+      road: "Pasillo Este (23.80 m)",
+      power: "220V Trifásica",
+      truck: "Acceso Lateral",
+      parking: "Pasillo 23.80 m",
+      description: "Depósito cerrado con portón para descarga directa de camiones medianos.",
+      useCases: ["Depósito de materiales.", "Archivo y custodia de inventario."],
+      coords: [
+        [10.20465, -64.63230],
+        [10.20463, -64.63220],
+        [10.20440, -64.63225],
+        [10.20442, -64.63235]
+      ]
+    }
+  ];
+
+  // 3. Render Geometry & Polygons (Only Clean Visible Labels on Key Zones to Prevent Overlapping)
+  const mapItems = {};
+  const layersGroup = L.layerGroup().addTo(map);
+
+  catalog.forEach(item => {
+    const poly = L.polygon(item.coords, {
+      color: item.color,
+      weight: 2,
+      fillColor: item.color,
+      fillOpacity: item.status === 'arrendado' ? 0.2 : 0.45
+    }).addTo(layersGroup);
+
+    // Clean label only on center
+    const center = poly.getBounds().getCenter();
+    const marker = L.marker(center, {
+      icon: L.divIcon({
+        className: 'map-label-clean',
+        html: `
+          <div class="pin-pill-clean ${item.category === 'locales' ? 'emerald' : ''}">
+            <span>${item.id}</span>
+          </div>
+        `,
+        iconSize: null
+      })
+    }).addTo(layersGroup);
+
+    const trigger = () => openLotDossier(item.id);
+    poly.on('click', trigger);
+    marker.on('click', trigger);
+
+    mapItems[item.id] = { poly, marker, data: item };
+  });
+
+  // 4. Render Catalog Cards
+  const cardsContainer = document.getElementById('cards-container');
+  const counterText = document.getElementById('catalog-counter');
+
+  function renderCatalogCards(items) {
+    cardsContainer.innerHTML = '';
+    counterText.innerText = `${items.length} espacios listados`;
+
+    items.forEach(item => {
+      const card = document.createElement('div');
+      card.className = `space-card`;
+      card.id = `card-${item.id}`;
+      card.onclick = () => openLotDossier(item.id);
+
+      let statusBadgeClass = 'status-disp';
+      if (item.status === 'arrendado') statusBadgeClass = 'status-arren';
+
+      card.innerHTML = `
+        <div class="card-photo-wrapper">
+          <img src="${item.image}" alt="${item.name}" onerror="this.src='https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80'" class="card-photo-img">
+          <div class="card-photo-overlay">
+            <span class="card-code-tag">${item.id}</span>
+            <span class="badge-status ${statusBadgeClass}">${item.statusText}</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <h3 class="card-title">${item.name}</h3>
+          <div class="card-specs-row">
+            <div class="spec-box">
+              <span class="lbl">Superficie</span>
+              <span class="val" style="color: var(--amber);">${item.area}</span>
+            </div>
+            <div class="spec-box">
+              <span class="lbl">Vialidad</span>
+              <span class="val">${item.road.split('(')[0]}</span>
+            </div>
+          </div>
+          <div class="card-bottom">
+            <span style="font-size: 11px; color: var(--txt-muted);">${item.useCases[0].substring(0, 32)}...</span>
+            <button class="btn-card-link">
+              <span>Detalles</span> <i class="fa-solid fa-arrow-right" style="font-size: 9px;"></i>
+            </button>
+          </div>
+        </div>
+      `;
+
+      cardsContainer.appendChild(card);
+    });
+  }
+
+  // 5. Open Detailed Dossier Drawer
+  const drawer = document.getElementById('drawer');
+  const drawerCloseBtn = document.getElementById('drawer-close');
+
+  function openLotDossier(id) {
+    const item = catalog.find(c => c.id === id);
+    if (!item) return;
+
+    // Highlight card
+    document.querySelectorAll('.space-card').forEach(c => c.classList.remove('selected'));
+    const targetCard = document.getElementById(`card-${id}`);
+    if (targetCard) {
+      targetCard.classList.add('selected');
+      targetCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // Highlight map polygon
+    Object.values(mapItems).forEach(obj => {
+      obj.poly.setStyle({ weight: 2, fillOpacity: obj.data.status === 'arrendado' ? 0.2 : 0.45 });
+    });
+    if (mapItems[id]) {
+      mapItems[id].poly.setStyle({ weight: 4.5, fillOpacity: 0.75, color: '#ffffff' });
+      map.flyToBounds(mapItems[id].poly.getBounds(), { padding: [60, 60], duration: 0.8 });
+    }
+
+    // Populate drawer
+    document.getElementById('drawer-hero-img').src = item.image;
+    document.getElementById('drawer-code').innerText = item.id;
+    document.getElementById('drawer-title').innerText = item.name;
+    document.getElementById('drawer-area').innerText = item.area;
+    document.getElementById('drawer-desc').innerText = item.description;
+
+    const badgeStatus = document.getElementById('drawer-badge-status');
+    badgeStatus.innerText = item.statusText;
+    badgeStatus.className = `badge-status ${item.status === 'arrendado' ? 'status-arren' : 'status-disp'}`;
+
+    document.getElementById('drawer-road').innerText = item.road;
+    document.getElementById('drawer-power').innerText = item.power;
+    document.getElementById('drawer-truck').innerText = item.truck;
+    document.getElementById('drawer-parking').innerText = item.parking;
+
+    const usecasesList = document.getElementById('drawer-usecases');
+    usecasesList.innerHTML = '';
+    item.useCases.forEach(u => {
+      const li = document.createElement('li');
+      li.className = 'usecase-item';
+      li.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>${u}</span>`;
+      usecasesList.appendChild(li);
+    });
+
+    const waMsg = encodeURIComponent(`¡Hola Marisol! Me interesa solicitar información y disponibilidad del espacio [${item.id}: ${item.name} (${item.area})] en el CC Mario Sánchez.`);
+    document.getElementById('drawer-wa-link').href = `https://wa.me/584247380002?text=${waMsg}`;
+
+    drawer.classList.add('open');
+  }
+
+  drawerCloseBtn.onclick = () => drawer.classList.remove('open');
+
+  // 6. Filter Catalog
+  function filterCatalog(category, btn) {
+    if (btn) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    let filtered = catalog;
+    if (category === 'macro-lotes') filtered = catalog.filter(c => c.category === 'macro-lotes');
+    if (category === 'locales') filtered = catalog.filter(c => c.category === 'locales');
+    if (category === 'galpones') filtered = catalog.filter(c => c.category === 'galpones');
+    if (category === 'disponibles') filtered = catalog.filter(c => c.status === 'disponible');
+
+    catalog.forEach(item => {
+      const isVisible = filtered.some(f => f.id === item.id);
+      if (isVisible) {
+        if (!map.hasLayer(mapItems[item.id].poly)) map.addLayer(mapItems[item.id].poly);
+        if (!map.hasLayer(mapItems[item.id].marker)) map.addLayer(mapItems[item.id].marker);
+      } else {
+        if (map.hasLayer(mapItems[item.id].poly)) map.removeLayer(mapItems[item.id].poly);
+        if (map.hasLayer(mapItems[item.id].marker)) map.removeLayer(mapItems[item.id].marker);
+      }
+    });
+
+    renderCatalogCards(filtered);
+  }
+
+  // Initial Render
+  renderCatalogCards(catalog);
+
+  // 7. Mobile Drawer FAB
+  const mobileFab = document.getElementById('mobile-fab');
+  const sidebar = document.getElementById('sidebar');
+  if (mobileFab) {
+    mobileFab.onclick = () => {
+      sidebar.classList.toggle('open');
+      mobileFab.querySelector('span').innerText = sidebar.classList.contains('open') ? 'Cerrar Lista' : `Ver Espacios (${catalog.length})`;
+    };
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#04070d"/>
+    </radialGradient>
+
+    <!-- Amber Gold Architecture Facets -->
+    <linearGradient id="amberLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fde68a"/>
+      <stop offset="50%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+    <linearGradient id="amberDark" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#78350f"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+
+    <!-- Electric Cyan Structural Facets -->
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#67e8f9"/>
+      <stop offset="50%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#0e7490"/>
+    </linearGradient>
+    <linearGradient id="cyanDark" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0891b2"/>
+      <stop offset="100%" stop-color="#164e63"/>
+    </linearGradient>
+
+    <!-- Steel Titanium Beam -->
+    <linearGradient id="steelBeam" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="50%" stop-color="#475569"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Dark Architectural Tile Container -->
+  <rect width="500" height="500" rx="48" fill="url(#bgGrad)"/>
+  <rect width="496" height="496" x="2" y="2" rx="46" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5"/>
+
+  <!-- Subtle Blueprint Grid Lines -->
+  <g opacity="0.15" stroke="#38bdf8" stroke-width="1">
+    <line x1="50" y1="250" x2="450" y2="250" stroke-dasharray="4,8"/>
+    <line x1="250" y1="50" x2="250" y2="450" stroke-dasharray="4,8"/>
+    <circle cx="250" cy="250" r="160" fill="none" stroke-dasharray="3,6"/>
+    <circle cx="250" cy="250" r="190" fill="none" stroke="rgba(245,158,11,0.3)"/>
+  </g>
+
+  <!-- Central Monogram: Isometric Interlocking M & S Architectural Structure -->
+  <g transform="translate(0, -10)">
+    <!-- SHADOW BASE -->
+    <path d="M140 330 L250 395 L360 330 L250 265 Z" fill="rgba(0,0,0,0.5)" filter="url(#glow)"/>
+
+    <!-- LEFT WING OF 'M' (Isometric Prism Column) -->
+    <!-- Left Top Face -->
+    <path d="M140 180 L200 145 L200 285 L140 320 Z" fill="url(#amberLight)"/>
+    <!-- Left Inside Face -->
+    <path d="M200 145 L250 175 L250 315 L200 285 Z" fill="url(#amberDark)"/>
+
+    <!-- CENTER APEX / INTERLOCKING S-DIAGONAL -->
+    <!-- Dynamic Cyan S-Beam weaving through M -->
+    <path d="M250 175 L300 145 L300 285 L250 315 Z" fill="url(#cyanDark)"/>
+    <path d="M300 145 L360 180 L360 320 L300 285 Z" fill="url(#cyanGrad)"/>
+
+    <!-- INNER ROOF BEVEL / HORIZONTAL 'S' CANTILEVER -->
+    <path d="M200 145 L250 115 L300 145 L250 175 Z" fill="url(#amberLight)" filter="url(#glow)"/>
+    <path d="M140 180 L200 145 L250 175 L190 210 Z" fill="#fef08a" opacity="0.9"/>
+    
+    <!-- INTERLOCKING LOWER S-RETURN (Representing Logistics Flow & Circulation) -->
+    <path d="M250 315 L300 285 L360 320 L310 350 Z" fill="url(#cyanGrad)" filter="url(#glow)"/>
+
+    <!-- ARCHITECTURAL VERTICAL VOID (Negative Space Monogram Definition) -->
+    <polygon points="250,185 285,205 285,270 250,290 215,270 215,205" fill="#06090e" stroke="rgba(245,158,11,0.5)" stroke-width="2"/>
+    
+    <!-- CENTER GOLDEN RATIO CORE EMBLEM -->
+    <circle cx="250" cy="237" r="10" fill="#f59e0b" filter="url(#glow)"/>
+    <circle cx="250" cy="237" r="4" fill="#ffffff"/>
+  </g>
+
+  <!-- Precision Corner Compass Nodes -->
+  <g fill="#f59e0b" opacity="0.7">
+    <circle cx="44" cy="44" r="3"/>
+    <circle cx="456" cy="44" r="3"/>
+    <circle cx="44" cy="456" r="3"/>
+    <circle cx="456" cy="456" r="3"/>
+  </g>
+</svg>
