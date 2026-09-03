@@ -6,7 +6,11 @@
     { "source": "/landing", "destination": "/index.html" },
     { "source": "/landing.html", "destination": "/index.html" },
     { "source": "/alquiler", "destination": "/alquiler.html" },
-    { "source": "/alquiler.html", "destination": "/alquiler.html" }
+    { "source": "/alquiler.html", "destination": "/alquiler.html" },
+    { "source": "/gestion", "destination": "/gestion/index.html" },
+    { "source": "/onboarding", "destination": "/gestion/onboarding.html" },
+    { "source": "/login", "destination": "/gestion/login.html" },
+    { "source": "/gestion/(.*)", "destination": "/gestion/$1" }
   ],
   "headers": [
     {

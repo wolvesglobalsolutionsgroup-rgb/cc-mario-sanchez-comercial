@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="es" class="dark" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>CC Mario Sánchez — Gestión Inmobiliaria, Cobranzas & ERP</title>
+  
+  <!-- Favicon SVG -->
+  <link rel="icon" type="image/svg+xml" href="logo_cc_mario_sanchez.svg">
+
+  <!-- Google Fonts: Outfit & Manrope -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome 6 (100% Free CDN) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+
+  <!-- Dashboard Stylesheet (Light & Dark Dual Mode) -->
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+
+<div class="app-container">
+  
+  <!-- APP SIDEBAR -->
+  <aside class="app-sidebar" id="app-sidebar">
+    <div class="sidebar-header">
+      <img src="logo_cc_mario_sanchez.svg" alt="CCMS Logo" class="sidebar-brand-img">
+      <div>
+        <h2 class="sidebar-brand-title">CC Mario Sánchez</h2>
+        <span class="sidebar-brand-sub">ERP Inmobiliario</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-tab="inquilinos">
+        <i class="fa-solid fa-store" style="color: var(--cyan);"></i>
+        <span>Locales & Inquilinos</span>
+      </a>
+      <a href="#" class="nav-item" data-tab="cobranzas">
+        <i class="fa-solid fa-receipt" style="color: var(--emerald);"></i>
+        <span>Cobranzas & Recibos</span>
+      </a>
+      <a href="#" class="nav-item" data-tab="condominio">
+        <i class="fa-solid fa-calculator" style="color: var(--purple);"></i>
+        <span>Gastos Comunes</span>
+      </a>
+      <a href="#" class="nav-item" data-tab="calendario">
+        <i class="fa-solid fa-calendar-days" style="color: var(--amber);"></i>
+        <span>Calendario & Vencimientos</span>
+      </a>
+      <a href="#" class="nav-item" data-tab="alertas">
+        <i class="fa-solid fa-bell" style="color: var(--rose);"></i>
+        <span>Alertas WhatsApp & Gmail</span>
+      </a>
+      <a href="onboarding.html" class="nav-item">
+        <i class="fa-solid fa-user-plus" style="color: var(--amber);"></i>
+        <span>Nuevo Onboarding</span>
+      </a>
+
+      <div style="height: 1px; background: var(--border-subtle); margin: 8px 0;"></div>
+
+      <a href="../02_Portal_Comercial_Web/index.html" class="nav-item" target="_blank">
+        <i class="fa-solid fa-globe"></i>
+        <span>Portal Comercial Web</span>
+      </a>
+      <a href="../01_Levantamiento_Tecnico_GIS/index.html" class="nav-item" target="_blank">
+        <i class="fa-solid fa-map-location-dot"></i>
+        <span>Visor Técnico GIS</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="legal-badge">
+        <strong><i class="fa-solid fa-scale-balanced"></i> Gaceta Oficial 40.418</strong>
+        Ley de Arrendamiento Inmobiliario para Uso Comercial (Venezuela).
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN VIEWPORT -->
+  <main class="app-main">
+    
+    <!-- TOP NAVBAR -->
+    <header class="top-navbar">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle" title="Abrir Menú">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+
+        <!-- DUAL CURRENCY TICKER (BCV) CON MODAL EDITABLE -->
+        <div class="bcv-ticker" onclick="editBcvRate()" title="Click para actualizar tasa oficial BCV" style="cursor: pointer;">
+          <span class="bcv-label"><i class="fa-solid fa-landmark"></i> BCV Oficial:</span>
+          <span class="bcv-value" id="bcv-rate-val">72.50 Bs/USD</span>
+          <i class="fa-solid fa-pen-to-square" style="font-size: 10px; color: var(--txt-muted);"></i>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        
+        <!-- SELECTOR CUATRIMONEDA GLOBAL -->
+        <div class="currency-selector-bar">
+          <button class="cur-pill active" data-cur="USD">$ USD</button>
+          <button class="cur-pill" data-cur="EUR">€ EUR</button>
+          <button class="cur-pill" data-cur="VES">Bs. BCV</button>
+          <button class="cur-pill" data-cur="USDT">₮ USDT</button>
+        </div>
+
+        <!-- TOGGLE MODO CLARO / OSCURO -->
+        <button class="btn-theme-toggle" id="theme-toggle-btn" title="Cambiar Tema">
+          <i class="fa-solid fa-sun" style="color: var(--amber);"></i>
+        </button>
+
+        <a href="onboarding.html" class="btn-onboarding-cta">
+          <i class="fa-solid fa-plus"></i> <span>Registrar Inquilino</span>
+        </a>
+
+        <div style="display: flex; align-items: center; gap: 8px; border-left: 1px solid var(--border-subtle); padding-left: 10px;">
+          <div style="width: 34px; height: 34px; border-radius: 50%; background: var(--amber-glow); border: 1px solid var(--amber); display: flex; align-items: center; justify-content: center; color: var(--amber); font-weight: 800;">
+            MS
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENT WRAPPER -->
+    <div class="content-wrapper">
+      
+      <!-- BALANCES Y KPIS FINANCIEROS -->
+      <section class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <span class="kpi-title">Ocupación Inmueble</span>
+            <div class="kpi-icon-badge badge-cyan"><i class="fa-solid fa-building-circle-check"></i></div>
+          </div>
+          <div class="kpi-val" id="kpi-occupancy">0%</div>
+          <div class="kpi-sub" id="kpi-occupancy-sub">Calculando m²...</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <span class="kpi-title">Facturación Mensual</span>
+            <div class="kpi-icon-badge badge-amber"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+          </div>
+          <div class="kpi-val" id="kpi-billed">$0.00</div>
+          <div class="kpi-sub">Canon pactado + condominio</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <span class="kpi-title">Total Recaudado</span>
+            <div class="kpi-icon-badge badge-emerald"><i class="fa-solid fa-circle-check"></i></div>
+          </div>
+          <div class="kpi-val" id="kpi-collected">$0.00</div>
+          <div class="kpi-sub" id="kpi-collected-sub">0% de efectividad</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <span class="kpi-title">Cuentas por Cobrar (Mora)</span>
+            <div class="kpi-icon-badge badge-rose"><i class="fa-solid fa-triangle-exclamation"></i></div>
+          </div>
+          <div class="kpi-val" id="kpi-overdue">$0.00</div>
+          <div class="kpi-sub" id="kpi-overdue-sub">0 cuentas vencidas</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <span class="kpi-title">Egresos Operativos</span>
+            <div class="kpi-icon-badge badge-purple"><i class="fa-solid fa-money-bill-transfer"></i></div>
+          </div>
+          <div class="kpi-val" id="kpi-expenses">$0.00</div>
+          <div class="kpi-sub" id="kpi-expenses-sub">Gastos de áreas comunes</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <span class="kpi-title">Utilidad Neta Mes</span>
+            <div class="kpi-icon-badge badge-emerald"><i class="fa-solid fa-chart-line"></i></div>
+          </div>
+          <div class="kpi-val" id="kpi-netprofit">$0.00</div>
+          <div class="kpi-sub">Recaudado - Egresos</div>
+        </div>
+      </section>
+
+      <!-- TAB 1: LOCALES & INQUILINOS -->
+      <section class="tab-view" id="tab-inquilinos">
+        <div class="section-head">
+          <h3 class="section-title">
+            <i class="fa-solid fa-store" style="color: var(--amber);"></i> Directorio de Unidades y Arrendatarios
+          </h3>
+          <span style="font-size: 12px; color: var(--txt-secondary);">10 Unidades Comerciales e Industriales</span>
+        </div>
+
+        <div class="data-card">
+          <div class="table-responsive">
+            <table class="modern-table">
+              <thead>
+                <tr>
+                  <th>Espacio</th>
+                  <th>Arrendatario / RIF</th>
+                  <th>Área (m²)</th>
+                  <th>Canon Mensual</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tenants-table-body">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: COBRANZAS & RECIBOS -->
+      <section class="tab-view" id="tab-cobranzas" style="display: none;">
+        <div class="section-head">
+          <h3 class="section-title">
+            <i class="fa-solid fa-receipt" style="color: var(--emerald);"></i> Cobranzas y Conciliación Multimoneda
+          </h3>
+        </div>
+
+        <div class="data-card">
+          <div class="table-responsive">
+            <table class="modern-table">
+              <thead>
+                <tr>
+                  <th>N° Recibo / Período</th>
+                  <th>Unidad / Razón Social</th>
+                  <th>Monto Total</th>
+                  <th>Fecha Límite</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="invoices-table-body">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: GASTOS COMUNES Y CONDOMINIO -->
+      <section class="tab-view" id="tab-condominio" style="display: none;">
+        <div class="section-head">
+          <h3 class="section-title">
+            <i class="fa-solid fa-calculator" style="color: var(--purple);"></i> Distribución de Gastos Comunes (Condominio)
+          </h3>
+          <span style="font-size: 12px; color: var(--txt-secondary);">Art. 10 y 11 Ley Arrendamiento Comercial</span>
+        </div>
+
+        <div class="data-card">
+          <div class="table-responsive">
+            <table class="modern-table">
+              <thead>
+                <tr>
+                  <th>Concepto Operativo</th>
+                  <th>Categoría</th>
+                  <th>Monto Presupuestado</th>
+                  <th>Criterio de Distribución</th>
+                </tr>
+              </thead>
+              <tbody id="condo-table-body">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: CALENDARIO & VENCIMIENTOS -->
+      <section class="tab-view" id="tab-calendario" style="display: none;">
+        <div class="section-head">
+          <h3 class="section-title">
+            <i class="fa-solid fa-calendar-days" style="color: var(--amber);"></i> Cronograma de Vencimientos & Prórrogas Legales
+          </h3>
+          <span style="font-size: 12px; color: var(--txt-secondary);">Sincronización con Google Calendar</span>
+        </div>
+
+        <div id="calendar-events-list">
+          <!-- Injected via JS -->
+        </div>
+      </section>
+
+      <!-- TAB 5: ALERTAS WHATSAPP & GMAIL -->
+      <section class="tab-view" id="tab-alertas" style="display: none;">
+        <div class="section-head">
+          <h3 class="section-title">
+            <i class="fa-solid fa-bell" style="color: var(--rose);"></i> Centro de Avisos de Cobro y Alertas de Mora
+          </h3>
+          <span style="font-size: 12px; color: var(--txt-secondary);">Despacho automático WhatsApp Web & Gmail</span>
+        </div>
+
+        <div id="alerts-center-list">
+          <!-- Injected via JS -->
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- MODAL 1: REGISTRO DE PAGO CON SNAPSHOT & TXID -->
+<div class="modal-overlay" id="modal-payment">
+  <div class="modal-window">
+    <div class="modal-header">
+      <h3 class="modal-title"><i class="fa-solid fa-receipt" style="color: var(--emerald);"></i> Registrar y Conciliar Pago</h3>
+      <button class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form id="payment-form" class="modal-body">
+      <input type="hidden" id="pay-invoice-id">
+      
+      <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px; font-size: 12.5px;">
+        <div>Recibo: <strong id="pay-invoice-num" style="color: var(--amber);"></strong> | Unidad: <strong id="pay-unit"></strong></div>
+        <div style="margin-top: 5px; display: flex; gap: 14px; font-size: 11.5px; color: var(--txt-secondary);">
+          <div>Equiv. USD: <strong id="pay-eq-usd" style="color: var(--txt-primary);"></strong></div>
+          <div>Equiv. Bs. BCV: <strong id="pay-eq-ves" style="color: var(--amber);"></strong></div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Moneda Recibida</label>
+        <select class="form-control" id="pay-currency-select" onchange="updatePaymentEquivalents()" required>
+          <option value="USD">Dólares Estadounidenses (USD $)</option>
+          <option value="VES">Bolívares (VES Bs. - Tasa BCV)</option>
+          <option value="EUR">Euros (EUR €)</option>
+          <option value="USDT">Criptoactivos (USDT ₮ - TRC20/Binance)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Monto Recibido</label>
+        <input type="number" step="0.01" class="form-control" id="pay-amount" oninput="updatePaymentEquivalents()" required>
+      </div>
+
+      <div class="form-group">
+        <label>Método de Pago</label>
+        <select class="form-control" id="pay-method" onchange="updatePaymentEquivalents()" required>
+          <option value="Pago Móvil Banesco">Pago Móvil (Banesco / Mercantil / BDV)</option>
+          <option value="Transferencia Bancaria Bs">Transferencia Bancaria Nacional (Bs)</option>
+          <option value="Zelle">Zelle (USD)</option>
+          <option value="Transferencia Divisas (Custodia Banesco)">Transferencia Divisas (Custodia Banesco)</option>
+          <option value="Efectivo USD">Efectivo USD en Administración</option>
+          <option value="Cripto USDT (TRC20)">Cripto USDT (Red TRON - TRC20)</option>
+          <option value="Cripto Binance Pay">Binance Pay (ID de Pago)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Número de Referencia Bancaria</label>
+        <input type="text" class="form-control" id="pay-ref" placeholder="Ej: REF-88901234" required>
+      </div>
+
+      <div class="form-group" id="pay-txid-group" style="display: none;">
+        <label>Hash de Transacción Cripto (TxID 64 caracteres)</label>
+        <input type="text" class="form-control" id="pay-txid" placeholder="Ej: e4b2...8f9c (64 caracteres hex)">
+      </div>
+
+      <button type="submit" class="btn-onboarding-cta" style="width: 100%; justify-content: center; margin-top: 8px;">
+        <i class="fa-solid fa-check-double"></i> Confirmar Pago & Capturar Snapshot
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL 2: EXPEDIENTE DE INQUILINO -->
+<div class="modal-overlay" id="modal-dossier">
+  <div class="modal-window">
+    <div class="modal-header">
+      <h3 class="modal-title"><i class="fa-solid fa-folder-open" style="color: var(--amber);"></i> Expediente Jurídico del Arrendatario</h3>
+      <button class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body" style="font-size: 13px;">
+      <div style="display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px;">
+        <h4 id="dossier-company" style="font-family: var(--font-heading); font-size: 16px; color: var(--txt-primary);"></h4>
+        <span style="color: var(--amber); font-size: 12px;" id="dossier-trade"></span>
+        <div style="color: var(--txt-secondary);">RIF: <strong id="dossier-rif" style="color: var(--txt-primary);"></strong></div>
+        <div style="color: var(--txt-secondary);">Representante: <strong id="dossier-rep" style="color: var(--txt-primary);"></strong></div>
+        <div style="color: var(--txt-secondary);">Espacio Asignado: <strong id="dossier-unit" style="color: var(--amber);"></strong></div>
+        <div style="color: var(--txt-secondary);">Actividad Comercial: <span id="dossier-activity"></span></div>
+        <div style="color: var(--txt-secondary); margin-top: 4px;" id="dossier-contact"></div>
+      </div>
+
+      <div style="background: var(--bg-card); border: 1px solid var(--border-focus); border-radius: 8px; padding: 12px;">
+        <h5 style="font-family: var(--font-heading); color: var(--amber); font-size: 12px; text-transform: uppercase; margin-bottom: 6px;">
+          <i class="fa-solid fa-scale-balanced"></i> Condiciones Contractuales (G.O. 40.418)
+        </h5>
+        <div>Contrato N°: <strong id="dossier-contract-num" style="color: var(--txt-primary);"></strong></div>
+        <div>Vigencia: <span id="dossier-contract-dates"></span></div>
+        <div>Canon Mensual: <strong id="dossier-contract-rent" style="color: var(--emerald);"></strong></div>
+        <div>Depósito en Garantía: <span id="dossier-contract-deposit"></span></div>
+        <div style="margin-top: 6px; font-size: 11.5px; color: var(--txt-secondary); border-top: 1px dashed var(--border-subtle); padding-top: 6px;">
+          Prórroga Legal: <span id="dossier-legal-extension" style="color: var(--amber); font-weight: 600;"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 3: CALCULADORA LEGAL DE PRÓRROGA (ART. 25 G.O. 40.418) -->
+<div class="modal-overlay" id="modal-prorroga">
+  <div class="modal-window">
+    <div class="modal-header">
+      <h3 class="modal-title"><i class="fa-solid fa-scale-balanced" style="color: var(--amber);"></i> Calculadora de Prórroga Legal Comercial</h3>
+      <button class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size: 12.5px; color: var(--txt-secondary);">
+        Determinación obligatoria de permanencia legal conforme al <strong>Artículo 25 de la Ley de Arrendamiento Inmobiliario para Uso Comercial (Gaceta Oficial N° 40.418)</strong> para la unidad <strong id="pror-unit-code" style="color: var(--amber);"></strong>.
+      </p>
+
+      <div class="form-group">
+        <label>Años de Antigüedad o Duración del Contrato</label>
+        <input type="number" step="0.5" class="form-control" id="pror-years-input" value="1.0" min="0.5" max="30">
+      </div>
+
+      <button type="button" class="btn-onboarding-cta" onclick="calculateProrroga()" style="justify-content: center;">
+        <i class="fa-solid fa-calculator"></i> <span>Calcular Prórroga Legal</span>
+      </button>
+
+      <div id="pror-calc-result" style="display: none; background: var(--amber-glow); border: 1px solid var(--border-highlight); border-radius: 8px; padding: 14px; margin-top: 10px;">
+        <div style="font-size: 11px; color: var(--amber); font-weight: 700; text-transform: uppercase;">Prórroga Legal Asignada por Ley:</div>
+        <div id="pror-res-months" style="font-family: var(--font-heading); font-size: 22px; font-weight: 900; color: var(--txt-primary); margin: 4px 0;"></div>
+        <p id="pror-res-desc" style="font-size: 12px; color: var(--txt-secondary);"></p>
+        <div style="margin-top: 8px; font-size: 11px; color: var(--txt-muted); border-top: 1px dashed var(--border-subtle); padding-top: 6px;">
+          * Condición de aplicabilidad: El arrendatario debe encontrarse solvente en el pago de cánones y condominio.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCRIPTS DE ARQUITECTURA (100% GRATUITOS) -->
+<script src="js/venezuela-legal.js"></script>
+<script src="js/financial-engine.js"></script>
+<script src="js/google-workspace.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>

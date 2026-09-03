@@ -1,0 +1,704 @@
+/**
+ * ==============================================================================
+ * APLICACIÓN PRINCIPAL: GESTIÓN DE INQUILINOS, CONTABILIDAD Y COBRANZAS
+ * Centro Comercial Mario Sánchez — Puerto La Cruz, Venezuela
+ * Arquitectura Cuatrimoneda (USD / EUR / VES / USDT) & Modo Dual (Claro / Oscuro)
+ * ==============================================================================
+ */
+
+document.addEventListener('DOMContentLoaded', () => {
+  // 1. ESTADO GLOBAL
+  let currentCurrency = localStorage.getItem('ccms_active_currency') || 'USD'; // 'USD', 'EUR', 'VES', 'USDT'
+  let currentTheme = localStorage.getItem('ccms_theme') || 'dark'; // 'dark' o 'light'
+  let currentTab = 'inquilinos';
+
+  // 2. INICIALIZAR TEMA (MODO CLARO / OSCURO)
+  const themeToggleBtn = document.getElementById('theme-toggle-btn');
+  const htmlRoot = document.documentElement;
+
+  function applyTheme(theme) {
+    currentTheme = theme;
+    htmlRoot.setAttribute('data-theme', theme);
+    localStorage.setItem('ccms_theme', theme);
+    if (themeToggleBtn) {
+      themeToggleBtn.innerHTML = theme === 'dark' 
+        ? '<i class="fa-solid fa-sun" style="color: var(--amber);"></i>' 
+        : '<i class="fa-solid fa-moon" style="color: var(--cyan);"></i>';
+      themeToggleBtn.title = theme === 'dark' ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro';
+    }
+  }
+  applyTheme(currentTheme);
+
+  if (themeToggleBtn) {
+    themeToggleBtn.onclick = () => {
+      applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+    };
+  }
+
+  // 3. SELECTOR CUATRIMONEDA (USD / EUR / VES / USDT)
+  const curPills = document.querySelectorAll('.cur-pill');
+  function setActiveCurrency(cur) {
+    currentCurrency = cur;
+    localStorage.setItem('ccms_active_currency', cur);
+    curPills.forEach(btn => {
+      btn.classList.toggle('active', btn.getAttribute('data-cur') === cur);
+    });
+    renderAll();
+  }
+
+  curPills.forEach(btn => {
+    btn.onclick = () => setActiveCurrency(btn.getAttribute('data-cur'));
+  });
+
+  // 4. TICKER BCV EDITABLE
+  const bcvTickerVal = document.getElementById('bcv-rate-val');
+  function updateBcvDisplay() {
+    if (bcvTickerVal) {
+      bcvTickerVal.innerText = `${financialEngine.getRates().VES.toFixed(2)} Bs/USD`;
+    }
+  }
+  updateBcvDisplay();
+
+  // Modal para editar tasa BCV
+  window.editBcvRate = function() {
+    const current = financialEngine.getRates().VES;
+    const input = prompt("Ingrese la nueva Tasa Oficial del Banco Central de Venezuela (Bs/USD):", current);
+    if (input !== null) {
+      try {
+        financialEngine.setBcvRate(input);
+        updateBcvDisplay();
+        renderAll();
+        alert(`Tasa BCV actualizada a: ${financialEngine.getRates().VES.toFixed(2)} Bs/USD`);
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+  };
+
+  // 5. NAVEGACIÓN Y MENÚ MÓVIL
+  const sidebarEl = document.getElementById('app-sidebar');
+  const mobileToggleBtn = document.getElementById('mobile-menu-toggle');
+
+  if (mobileToggleBtn && sidebarEl) {
+    mobileToggleBtn.onclick = () => sidebarEl.classList.toggle('open');
+  }
+
+  document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      item.classList.add('active');
+      currentTab = item.getAttribute('data-tab');
+      
+      document.querySelectorAll('.tab-view').forEach(v => v.style.display = 'none');
+      const activeView = document.getElementById(`tab-${currentTab}`);
+      if (activeView) activeView.style.display = 'block';
+
+      if (window.innerWidth <= 1024 && sidebarEl) {
+        sidebarEl.classList.remove('open');
+      }
+    });
+  });
+
+  // Helper de conversión y formato dinámico
+  function formatMoney(amountInUsd) {
+    const converted = financialEngine.convert(amountInUsd, 'USD', currentCurrency);
+    return financialEngine.format(converted, currentCurrency);
+  }
+
+  // 6. RENDERIZACIÓN GLOBAL
+  function renderAll() {
+    renderKPIsAndBalances();
+    renderTenantsTable();
+    renderInvoicesTable();
+    renderCondoExpenses();
+    renderCalendarView();
+    renderAlertsCenter();
+  }
+
+  // A. BALANCES Y KPIS FINANCIEROS
+  function renderKPIsAndBalances() {
+    const units = dbService.getUnits();
+    const invoices = dbService.getInvoices();
+
+    // 1. Ocupación
+    const occupiedUnits = units.filter(u => u.status === 'arrendado');
+    const totalArea = units.reduce((acc, u) => acc + u.area_m2, 0);
+    const occupiedArea = occupiedUnits.reduce((acc, u) => acc + u.area_m2, 0);
+    const occupancyRate = Math.round((occupiedArea / totalArea) * 100);
+
+    document.getElementById('kpi-occupancy').innerText = `${occupancyRate}%`;
+    document.getElementById('kpi-occupancy-sub').innerText = `${occupiedArea.toLocaleString()} m² de 5.190 m²`;
+
+    // 2. Facturación Mes (Ingresos Proyectados)
+    const totalBilledUsd = invoices.reduce((acc, i) => acc + i.total_usd, 0);
+    document.getElementById('kpi-billed').innerText = formatMoney(totalBilledUsd);
+
+    // 3. Recaudado Efectivo (Cobranzas)
+    const paidInvoices = invoices.filter(i => i.status === 'pagado');
+    const totalPaidUsd = paidInvoices.reduce((acc, i) => acc + i.total_usd, 0);
+    const collectionPct = totalBilledUsd > 0 ? Math.round((totalPaidUsd / totalBilledUsd) * 100) : 0;
+    document.getElementById('kpi-collected').innerText = formatMoney(totalPaidUsd);
+    document.getElementById('kpi-collected-sub').innerText = `${collectionPct}% de recaudación efectiva`;
+
+    // 4. Cartera en Mora (Cuentas por Cobrar)
+    const overdueInvoices = invoices.filter(i => i.status === 'en_mora');
+    const totalOverdueUsd = overdueInvoices.reduce((acc, i) => acc + i.total_usd, 0);
+    document.getElementById('kpi-overdue').innerText = formatMoney(totalOverdueUsd);
+    document.getElementById('kpi-overdue-sub').innerText = `${overdueInvoices.length} cuentas con retraso`;
+
+    // 5. Egresos Operativos del Mes (Vigilancia, Luz, Cisterna, Mantenimiento)
+    const condoExpenses = [
+      { concept: 'Vigilancia 24/7', amount_usd: 1200 },
+      { concept: 'Energía Eléctrica Común (Corpoelec)', amount_usd: 350 },
+      { concept: 'Cisterna de Agua (40.000 L)', amount_usd: 220 },
+      { concept: 'Mantenimiento Preventivo Drenajes', amount_usd: 180 }
+    ];
+    const totalExpensesUsd = condoExpenses.reduce((acc, e) => acc + e.amount_usd, 0); // $1.950 USD
+    document.getElementById('kpi-expenses').innerText = formatMoney(totalExpensesUsd);
+    document.getElementById('kpi-expenses-sub').innerText = `4 conceptos de gastos comunes`;
+
+    // 6. Utilidad Neta Operativa (Recaudado - Egresos)
+    const netProfitUsd = totalPaidUsd - totalExpensesUsd;
+    const netEl = document.getElementById('kpi-netprofit');
+    if (netEl) {
+      netEl.innerText = formatMoney(netProfitUsd);
+      netEl.style.color = netProfitUsd >= 0 ? 'var(--emerald)' : 'var(--rose)';
+    }
+  }
+
+  // B. DIRECTORIO DE INQUILINOS & LOCALES
+  function renderTenantsTable() {
+    const tbody = document.getElementById('tenants-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const units = dbService.getUnits();
+    const tenants = dbService.getTenants();
+    const contracts = dbService.getContracts();
+
+    units.forEach(unit => {
+      const tr = document.createElement('tr');
+      const tenant = tenants.find(t => t.id === unit.tenant_id);
+      const contract = contracts.find(c => c.unit_code === unit.code);
+
+      let statusBadge = '';
+      if (unit.status === 'disponible') {
+        statusBadge = '<span class="status-pill pill-info"><i class="fa-solid fa-circle"></i> Disponible</span>';
+      } else if (tenant && tenant.status === 'moroso') {
+        statusBadge = '<span class="status-pill pill-overdue"><i class="fa-solid fa-circle-exclamation"></i> En Mora</span>';
+      } else if (contract && contract.status === 'por_vencer') {
+        statusBadge = '<span class="status-pill pill-warning"><i class="fa-solid fa-clock"></i> Por Vencer</span>';
+      } else {
+        statusBadge = '<span class="status-pill pill-active"><i class="fa-solid fa-circle-check"></i> Solvente</span>';
+      }
+
+      tr.innerHTML = `
+        <td>
+          <strong style="color: var(--amber); font-family: var(--font-heading); font-size: 13.5px;">${unit.code}</strong>
+          <div style="font-size: 11px; color: var(--txt-muted);">${unit.name}</div>
+        </td>
+        <td>
+          ${tenant ? `<strong>${tenant.business_name}</strong><div style="font-size: 11px; color: var(--txt-secondary);">RIF: ${tenant.rif} • ${tenant.trade_name || ''}</div>` : '<span style="color: var(--txt-muted); font-style: italic;">Sin Arrendatario</span>'}
+        </td>
+        <td>
+          <strong>${unit.area_m2.toLocaleString()} m²</strong>
+          <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase;">${unit.category}</div>
+        </td>
+        <td>
+          <strong>${formatMoney(unit.base_rent_usd)}</strong>
+          <div style="font-size: 10.5px; color: var(--amber);">Alícuota: ${(unit.condo_aliquot * 100).toFixed(1)}%</div>
+        </td>
+        <td>${statusBadge}</td>
+        <td>
+          <div style="display: flex; gap: 6px;">
+            ${tenant ? `
+              <button class="btn-action-icon" title="Ver Expediente Jurídico" onclick="window.openTenantDossier('${tenant.id}')">
+                <i class="fa-solid fa-folder-open"></i>
+              </button>
+              <button class="btn-action-icon btn-wa-action" title="Mensaje Instantáneo WhatsApp" onclick="window.openWhatsAppModal('${tenant.id}')">
+                <i class="fa-brands fa-whatsapp"></i>
+              </button>
+              <button class="btn-action-icon" title="Calcular Prórroga Legal" style="color: var(--amber);" onclick="window.openProrrogaModal('${unit.code}')">
+                <i class="fa-solid fa-scale-balanced"></i>
+              </button>
+            ` : `
+              <a href="onboarding.html?unit=${unit.code}" class="btn-action-icon" title="Asignar Arrendatario" style="text-decoration: none;">
+                <i class="fa-solid fa-user-plus" style="color: var(--amber);"></i>
+              </a>
+            `}
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // C. TABLA DE COBRANZAS Y CUOTAS
+  function renderInvoicesTable() {
+    const tbody = document.getElementById('invoices-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const invoices = dbService.getInvoices();
+    const tenants = dbService.getTenants();
+
+    invoices.forEach(inv => {
+      const tr = document.createElement('tr');
+      const tenant = tenants.find(t => t.id === inv.tenant_id) || { business_name: 'Desconocido', whatsapp: '' };
+
+      let statusBadge = '';
+      if (inv.status === 'pagado') {
+        statusBadge = '<span class="status-pill pill-active"><i class="fa-solid fa-circle-check"></i> Pagado</span>';
+      } else if (inv.status === 'en_mora') {
+        statusBadge = '<span class="status-pill pill-overdue"><i class="fa-solid fa-triangle-exclamation"></i> En Mora</span>';
+      } else {
+        statusBadge = '<span class="status-pill pill-warning"><i class="fa-solid fa-hourglass-half"></i> Pendiente</span>';
+      }
+
+      tr.innerHTML = `
+        <td>
+          <strong style="font-family: var(--font-heading);">${inv.invoice_number}</strong>
+          <div style="font-size: 11px; color: var(--txt-muted);">Período ${inv.period_month}/${inv.period_year}</div>
+        </td>
+        <td>
+          <strong style="color: var(--amber);">${inv.unit_code}</strong> — ${tenant.business_name}
+        </td>
+        <td>
+          <strong>${formatMoney(inv.total_usd)}</strong>
+          <div style="font-size: 10.5px; color: var(--txt-muted);">Canon: $${inv.rent_usd} | Cond: $${inv.condo_usd}</div>
+        </td>
+        <td>
+          <span>${inv.due_date}</span>
+        </td>
+        <td>${statusBadge}</td>
+        <td>
+          <div style="display: flex; gap: 6px;">
+            ${inv.status !== 'pagado' ? `
+              <button class="btn-action-icon" title="Registrar Pago Multimoneda" style="background: var(--emerald-glow); color: var(--emerald);" onclick="window.openPaymentModal('${inv.id}')">
+                <i class="fa-solid fa-receipt"></i>
+              </button>
+            ` : ''}
+            <button class="btn-action-icon" title="Imprimir Recibo Oficial" onclick="window.printReceipt('${inv.id}')">
+              <i class="fa-solid fa-print"></i>
+            </button>
+            <button class="btn-action-icon btn-wa-action" title="Aviso de Cobranza WhatsApp" onclick="window.openWhatsAppModal('${tenant.id}', '${inv.id}')">
+              <i class="fa-brands fa-whatsapp"></i>
+            </button>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // D. GASTOS COMUNES Y DISTRIBUCIÓN CONDOMINIAL
+  function renderCondoExpenses() {
+    const tbody = document.getElementById('condo-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const expenses = [
+      { concept: 'Vigilancia y Seguridad Armada 24/7', cat: 'Seguridad', amount_usd: 1200 },
+      { concept: 'Energía Eléctrica Común y Postes (Corpoelec)', cat: 'Servicios', amount_usd: 350 },
+      { concept: 'Suministro Cisterna de Agua (40.000 L)', cat: 'Servicios', amount_usd: 220 },
+      { concept: 'Mantenimiento Preventivo Drenajes y Asfalto', cat: 'Mantenimiento', amount_usd: 180 }
+    ];
+
+    expenses.forEach(exp => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><strong>${exp.concept}</strong></td>
+        <td><span class="status-pill pill-info">${exp.cat}</span></td>
+        <td><strong>${formatMoney(exp.amount_usd)}</strong></td>
+        <td><span style="font-size: 11.5px; color: var(--txt-muted);">Distribuido por alícuota m²</span></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // E. CALENDARIO DE VENCIMIENTOS
+  function renderCalendarView() {
+    const listEl = document.getElementById('calendar-events-list');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+
+    const events = [
+      {
+        title: 'Vencimiento Cuotas de Alquiler (Día 5 Hábiles)',
+        date: '2026-03-05',
+        type: 'cuota',
+        desc: 'Fecha límite de pago sin recargos según costumbre comercial del CC Mario Sánchez.'
+      },
+      {
+        title: 'Corte de Gastos Comunes y Condominio',
+        date: '2026-03-10',
+        type: 'condominio',
+        desc: 'Cierre de alícuotas ordinarias de electricidad de áreas comunes, aseo y vigilancia.'
+      },
+      {
+        title: 'Vencimiento Contrato FerroCruz Pro (Local 01)',
+        date: '2026-03-31',
+        type: 'contrato',
+        desc: 'Cumple 1 año de contrato. Arrendatario con opción a Prórroga Legal obligatoria (Art. 25 G.O. 40.418).'
+      },
+      {
+        title: 'Término de Prórroga Legal El Faro Market (Local 04)',
+        date: '2026-04-10',
+        type: 'prorroga',
+        desc: 'Finalización de los 6 meses de prórroga legal estipulados según la Ley de Arrendamiento Comercial.'
+      }
+    ];
+
+    events.forEach(evt => {
+      const card = document.createElement('div');
+      card.className = 'data-card';
+      card.style.padding = '16px 20px';
+      card.style.marginBottom = '12px';
+
+      const calUrl = GoogleWorkspace.createCalendarUrl(
+        evt.title,
+        evt.desc,
+        'CC Mario Sánchez, Puerto La Cruz',
+        evt.date
+      );
+
+      card.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="status-pill ${evt.type === 'contrato' ? 'pill-warning' : evt.type === 'prorroga' ? 'pill-overdue' : 'pill-info'}">
+                <i class="fa-solid fa-calendar-day"></i> ${evt.date}
+              </span>
+              <h4 style="font-family: var(--font-heading); font-size: 14.5px; color: var(--txt-primary);">${evt.title}</h4>
+            </div>
+            <p style="font-size: 12px; color: var(--txt-secondary); margin-top: 4px;">${evt.desc}</p>
+          </div>
+          <a href="${calUrl}" target="_blank" rel="noopener noreferrer" class="btn-action-icon" style="width: auto; padding: 6px 14px; gap: 6px; font-size: 12px; font-weight: 700; text-decoration: none;" title="Agregar a Google Calendar">
+            <i class="fa-brands fa-google"></i> <span>Google Calendar</span>
+          </a>
+        </div>
+      `;
+      listEl.appendChild(card);
+    });
+  }
+
+  // F. CENTRO DE ALERTAS
+  function renderAlertsCenter() {
+    const alertsContainer = document.getElementById('alerts-center-list');
+    if (!alertsContainer) return;
+    alertsContainer.innerHTML = '';
+
+    const tenants = dbService.getTenants();
+    const invoices = dbService.getInvoices();
+
+    invoices.filter(i => i.status !== 'pagado').forEach(inv => {
+      const tenant = tenants.find(t => t.id === inv.tenant_id);
+      if (!tenant) return;
+
+      const card = document.createElement('div');
+      card.className = 'data-card';
+      card.style.padding = '18px 20px';
+      card.style.marginBottom = '14px';
+
+      const waMsg = buildMultiCurrencyWhatsAppMessage(tenant, inv);
+      const waUrl = GoogleWorkspace.createWhatsAppUrl(tenant.whatsapp, waMsg);
+      const gmailUrl = GoogleWorkspace.createGmailUrl(tenant.email, `Aviso de Cobro Cuota ${inv.period_month}/${inv.period_year} — CC Mario Sánchez`, waMsg);
+
+      card.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="status-pill ${inv.status === 'en_mora' ? 'pill-overdue' : 'pill-warning'}">
+                ${inv.status === 'en_mora' ? 'Alerta de Retraso' : 'Aviso Preventivo'}
+              </span>
+              <strong style="font-size: 14px; color: var(--txt-primary);">${tenant.business_name} (${inv.unit_code})</strong>
+            </div>
+            <p style="font-size: 12px; color: var(--txt-secondary); margin-top: 4px;">
+              Cuota: $${inv.total_usd.toFixed(2)} USD • Bs. ${financialEngine.convert(inv.total_usd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 })} • ₮${inv.total_usd.toFixed(2)} USDT
+            </p>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="btn-action-icon btn-wa-action" style="width: auto; padding: 6px 14px; gap: 6px; font-weight: 700; text-decoration: none;">
+              <i class="fa-brands fa-whatsapp"></i> <span>Enviar WhatsApp</span>
+            </a>
+            <a href="${gmailUrl}" target="_blank" rel="noopener noreferrer" class="btn-action-icon" style="width: auto; padding: 6px 14px; gap: 6px; font-weight: 700; text-decoration: none;">
+              <i class="fa-regular fa-envelope"></i> <span>Gmail</span>
+            </a>
+          </div>
+        </div>
+      `;
+      alertsContainer.appendChild(card);
+    });
+  }
+
+  // --- GENERADOR DE MENSAJE MULTIMONEDA PARA WHATSAPP ---
+  function buildMultiCurrencyWhatsAppMessage(tenant, invoice) {
+    const totalUsd = invoice.total_usd;
+    const totalBs = financialEngine.convert(totalUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
+    const totalEur = financialEngine.convert(totalUsd, 'USD', 'EUR').toLocaleString('de-DE', { minimumFractionDigits: 2 });
+    const totalUsdt = totalUsd.toFixed(2);
+    const bcvRate = financialEngine.getRates().VES.toFixed(2);
+
+    return `🏛️ *CENTRO COMERCIAL MARIO SÁNCHEZ*\n` +
+      `*Departamento de Administración & Cobranzas*\n` +
+      `Av. Municipal, Puerto La Cruz, Venezuela\n\n` +
+      `Estimados *${tenant.business_name}* (${invoice.unit_code}):\n\n` +
+      `Le remitimos el aviso de cobro correspondiente al período *${invoice.period_month}/${invoice.period_year}*:\n\n` +
+      `💰 *DESGLOSE CUATRIMONEDA:*\n` +
+      `• *Dólares:* $${totalUsd.toFixed(2)} USD\n` +
+      `• *Bolívares (Tasa Oficial BCV ${bcvRate}):* Bs. ${totalBs}\n` +
+      `• *Euros:* €${totalEur} EUR\n` +
+      `• *Cripto USDT (TRC20/Binance):* ₮${totalUsdt} USDT\n\n` +
+      `🏦 *CUENTAS BANCARIAS AUTORIZADAS:*\n` +
+      `• *Banesco Corriente:* 0134-0982-12-0987654321\n` +
+      `• *Pago Móvil:* Banesco (0134) | RIF: J-40899123-1 | Telf: 0424-7380002\n` +
+      `• *Zelle / Custodia USD:* administracion@ccmariosanchez.com\n` +
+      `• *Billetera USDT (TRC20):* TXz9y8W7v6U5t4S3r2Q1p0OnMlKjIhGfEd\n\n` +
+      `⚖️ *Base Legal:* Ley de Arrendamiento Inmobiliario para Uso Comercial (Gaceta Oficial N° 40.418). Fecha límite de pago: *${invoice.due_date}*.\n\n` +
+      `Agradecemos remitir el comprobante o referencia bancaria/TxID a este canal para su conciliación inmediata.`;
+  }
+
+  // --- MODAL CONTROLLERS ---
+
+  // 1. WhatsApp Instantáneo Modal
+  window.openWhatsAppModal = function(tenantId, invoiceId = null) {
+    const tenant = dbService.getTenants().find(t => t.id === tenantId);
+    if (!tenant) return;
+
+    let invoice = null;
+    if (invoiceId) {
+      invoice = dbService.getInvoices().find(i => i.id === invoiceId);
+    } else {
+      invoice = dbService.getInvoices().find(i => i.tenant_id === tenantId && i.status !== 'pagado') 
+        || dbService.getInvoices().find(i => i.tenant_id === tenantId);
+    }
+
+    if (!invoice) {
+      invoice = { total_usd: 1000, period_month: 3, period_year: 2026, unit_code: tenant.unit_code || 'LOCAL', due_date: '2026-03-05' };
+    }
+
+    const message = buildMultiCurrencyWhatsAppMessage(tenant, invoice);
+    const url = GoogleWorkspace.createWhatsAppUrl(tenant.whatsapp, message);
+    window.open(url, '_blank');
+  };
+
+  // 2. Calculadora de Prórroga Legal (Art. 25 G.O. 40.418) Modal
+  window.openProrrogaModal = function(unitCode) {
+    const unit = dbService.getUnits().find(u => u.code === unitCode);
+    const modal = document.getElementById('modal-prorroga');
+    if (!modal) return;
+
+    document.getElementById('pror-unit-code').innerText = unitCode;
+    document.getElementById('pror-calc-result').style.display = 'none';
+    modal.classList.add('open');
+  };
+
+  window.calculateProrroga = function() {
+    const years = parseFloat(document.getElementById('pror-years-input').value) || 1;
+    const ext = VenezuelaLegal.calculateLegalExtension(years);
+
+    document.getElementById('pror-res-months').innerText = `${ext.months} Meses`;
+    document.getElementById('pror-res-desc').innerText = ext.description;
+    document.getElementById('pror-calc-result').style.display = 'block';
+  };
+
+  // 3. Modal Registro de Pago Multimoneda con Snapshot y TxID
+  window.openPaymentModal = function(invoiceId) {
+    const inv = dbService.getInvoices().find(i => i.id === invoiceId);
+    if (!inv) return;
+
+    document.getElementById('pay-invoice-id').value = invoiceId;
+    document.getElementById('pay-invoice-num').innerText = inv.invoice_number;
+    document.getElementById('pay-unit').innerText = inv.unit_code;
+    document.getElementById('pay-amount').value = inv.total_usd;
+    document.getElementById('pay-currency-select').value = 'USD';
+    
+    updatePaymentEquivalents();
+    document.getElementById('modal-payment').classList.add('open');
+  };
+
+  // Actualización dinámica de equivalencias en el modal de pago
+  window.updatePaymentEquivalents = function() {
+    const amount = parseFloat(document.getElementById('pay-amount').value) || 0;
+    const cur = document.getElementById('pay-currency-select').value;
+    const method = document.getElementById('pay-method').value;
+
+    const bcvRate = financialEngine.getRates().VES;
+    const usdEq = financialEngine.convert(amount, cur, 'USD');
+    const vesEq = financialEngine.convert(amount, cur, 'VES');
+
+    document.getElementById('pay-eq-usd').innerText = `$${usdEq.toFixed(2)} USD`;
+    document.getElementById('pay-eq-ves').innerText = `Bs. ${vesEq.toLocaleString('es-VE', { minimumFractionDigits: 2 })}`;
+
+    // Mostrar campo TxID si es Cripto USDT
+    const txidGroup = document.getElementById('pay-txid-group');
+    if (txidGroup) {
+      txidGroup.style.display = (cur === 'USDT' || method.includes('Cripto')) ? 'flex' : 'none';
+    }
+  };
+
+  // Enviar Formulario de Pago con Snapshot
+  const paymentForm = document.getElementById('payment-form');
+  if (paymentForm) {
+    paymentForm.onsubmit = (e) => {
+      e.preventDefault();
+      const invId = document.getElementById('pay-invoice-id').value;
+      const method = document.getElementById('pay-method').value;
+      const ref = document.getElementById('pay-ref').value.trim();
+      const amount = parseFloat(document.getElementById('pay-amount').value);
+      const currency = document.getElementById('pay-currency-select').value;
+      const txid = document.getElementById('pay-txid') ? document.getElementById('pay-txid').value.trim() : '';
+
+      // Validación cripto si aplica
+      if (currency === 'USDT' && txid) {
+        const val = financialEngine.validateTxID(txid, 'TRC20');
+        if (!val.isValid) {
+          alert('Advertencia: ' + val.message);
+          return;
+        }
+      }
+
+      try {
+        // Crear snapshot financiero
+        const snapshot = financialEngine.createPaymentSnapshot(amount, currency);
+
+        dbService.recordPayment(invId, {
+          payment_method: method,
+          reference_number: ref || txid,
+          txid: txid,
+          amount_paid: amount,
+          currency: currency,
+          snapshot: snapshot
+        });
+
+        document.getElementById('modal-payment').classList.remove('open');
+        paymentForm.reset();
+        renderAll();
+        alert(`¡Pago registrado y conciliado exitosamente!\nSnapshot financiero capturado: Tasa BCV ${snapshot.bcv_rate_applied} Bs/USD.`);
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    };
+  }
+
+  // 4. Expediente de Inquilino
+  window.openTenantDossier = function(tenantId) {
+    const tenant = dbService.getTenants().find(t => t.id === tenantId);
+    if (!tenant) return;
+    const contract = dbService.getContracts().find(c => c.tenant_id === tenantId);
+    const ext = VenezuelaLegal.calculateLegalExtension(1);
+
+    document.getElementById('dossier-company').innerText = tenant.business_name;
+    document.getElementById('dossier-trade').innerText = tenant.trade_name || 'N/A';
+    document.getElementById('dossier-rif').innerText = tenant.rif;
+    document.getElementById('dossier-rep').innerText = `${tenant.legal_rep_name} (C.I. ${tenant.legal_rep_dni})`;
+    document.getElementById('dossier-unit').innerText = tenant.unit_code;
+    document.getElementById('dossier-activity').innerText = tenant.commercial_activity;
+    document.getElementById('dossier-contact').innerText = `${tenant.phone} | WA: ${tenant.whatsapp} | ${tenant.email}`;
+
+    if (contract) {
+      document.getElementById('dossier-contract-num').innerText = contract.contract_number;
+      document.getElementById('dossier-contract-dates').innerText = `${contract.start_date} al ${contract.end_date}`;
+      document.getElementById('dossier-contract-rent').innerText = formatMoney(contract.rent_usd) + '/mes';
+      document.getElementById('dossier-contract-deposit').innerText = `$${contract.deposit_usd.toLocaleString()} USD (${contract.deposit_months} meses - Límite legal Art. 19)`;
+      document.getElementById('dossier-legal-extension').innerText = ext.description;
+    }
+
+    document.getElementById('modal-dossier').classList.add('open');
+  };
+
+  // 5. Imprimir Recibo Cuatrimoneda
+  window.printReceipt = function(invoiceId) {
+    const inv = dbService.getInvoices().find(i => i.id === invoiceId);
+    if (!inv) return;
+    const tenant = dbService.getTenants().find(t => t.id === inv.tenant_id);
+
+    const bcvRate = financialEngine.getRates().VES.toFixed(2);
+    const totalBs = financialEngine.convert(inv.total_usd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
+    const totalEur = financialEngine.convert(inv.total_usd, 'USD', 'EUR').toLocaleString('de-DE', { minimumFractionDigits: 2 });
+
+    const content = `
+      <div style="font-family: Arial, sans-serif; padding: 25px; color: #000; max-width: 680px; margin: 0 auto;">
+        <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 16px;">
+          <h2 style="margin: 0; font-size: 18px;">CENTRO COMERCIAL MARIO SÁNCHEZ</h2>
+          <p style="margin: 3px 0; font-size: 12px;">Av. Municipal, Puerto La Cruz, Estado Anzoátegui, Venezuela</p>
+          <h3 style="margin: 8px 0 0; font-size: 14px; color: #b45309;">RECIBO OFICIAL DE COBRANZA — N° ${inv.invoice_number}</h3>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 16px;">
+          <div>
+            <strong>ARRENDATARIO:</strong> ${tenant ? tenant.business_name : 'N/A'}<br>
+            <strong>RIF:</strong> ${tenant ? tenant.rif : 'N/A'}<br>
+            <strong>UNIDAD COMERCIAL:</strong> ${inv.unit_code}
+          </div>
+          <div style="text-align: right;">
+            <strong>PERÍODO:</strong> ${inv.period_month}/${inv.period_year}<br>
+            <strong>FECHA VALOR:</strong> ${inv.due_date}<br>
+            <strong>ESTADO:</strong> ${inv.status.toUpperCase()}
+          </div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px;">
+          <thead>
+            <tr style="background: #f1f5f9; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1;">
+              <th style="padding: 8px; text-align: left;">Concepto</th>
+              <th style="padding: 8px; text-align: right;">Monto USD</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">Canon Fijo de Arrendamiento Comercial (Art. 32 G.O. 40.418)</td>
+              <td style="padding: 8px; text-align: right; border-bottom: 1px solid #e2e8f0;">$${inv.rent_usd.toFixed(2)}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">Alícuota Gastos Comunes / Condominio</td>
+              <td style="padding: 8px; text-align: right; border-bottom: 1px solid #e2e8f0;">$${inv.condo_usd.toFixed(2)}</td>
+            </tr>
+            <tr style="font-weight: bold; background: #f8fafc;">
+              <td style="padding: 10px 8px;">TOTAL USD PACTADO:</td>
+              <td style="padding: 10px 8px; text-align: right;">$${inv.total_usd.toFixed(2)} USD</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; font-size: 11.5px; margin-bottom: 16px;">
+          <strong>Equivalencias Cuatrimoneda a la Fecha Valor:</strong>
+          <div style="margin-top: 4px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+            <div>• Bolívares (Tasa Oficial BCV ${bcvRate}): <strong>Bs. ${totalBs}</strong></div>
+            <div>• Euros (€): <strong>€${totalEur} EUR</strong></div>
+            <div>• Criptoactivos (USDT TRC20): <strong>₮${inv.total_usd.toFixed(2)} USDT</strong></div>
+            <div>• Dólares ($): <strong>$${inv.total_usd.toFixed(2)} USD</strong></div>
+          </div>
+        </div>
+
+        <div style="font-size: 10px; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 10px; text-align: center;">
+          Documento emitido de conformidad con la Ley de Regulación del Arrendamiento Inmobiliario para el Uso Comercial.<br>
+          Administración del Centro Comercial Mario Sánchez — Puerto La Cruz, Venezuela.
+        </div>
+      </div>
+    `;
+
+    const printWin = window.open('', '_blank', 'width=750,height=650');
+    printWin.document.write(content);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 250);
+  };
+
+  // Cerrar Modales
+  document.querySelectorAll('.modal-close').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
+    };
+  });
+
+  window.onclick = (e) => {
+    if (e.target.classList.contains('modal-overlay')) {
+      e.target.classList.remove('open');
+    }
+  };
+
+  // Render inicial
+  renderAll();
+});

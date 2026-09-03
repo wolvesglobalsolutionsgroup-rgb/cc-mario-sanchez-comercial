@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Acceso Administrativo — CC Mario Sánchez</title>
+  
+  <link rel="icon" type="image/svg+xml" href="logo_cc_mario_sanchez.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+  <link rel="stylesheet" href="css/dashboard.css">
+
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: radial-gradient(circle at top center, #0c1424 0%, #04070d 100%);
+    }
+    .login-card {
+      width: 100%;
+      max-width: 440px;
+      background: rgba(10, 16, 28, 0.88);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--border-focus);
+      border-radius: var(--radius-lg);
+      padding: 36px 30px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
+      position: relative;
+    }
+    .role-toggle {
+      display: flex;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 24px;
+    }
+    .role-btn {
+      flex: 1;
+      padding: 8px 12px;
+      background: transparent;
+      border: none;
+      color: var(--txt-secondary);
+      font-family: var(--font-heading);
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .role-btn.active {
+      background: var(--amber);
+      color: #000000;
+      font-weight: 800;
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-card">
+  
+  <div style="text-align: center; margin-bottom: 24px;">
+    <img src="logo_cc_mario_sanchez.svg" alt="CCMS Logo" style="width: 58px; height: 58px; margin-bottom: 12px;">
+    <h1 style="font-family: var(--font-heading); font-size: 22px; font-weight: 900; color: #ffffff;">CC Mario Sánchez</h1>
+    <p style="font-size: 12px; color: var(--amber-light); font-weight: 600; margin-top: 2px;">
+      Plataforma de Gestión Inmobiliaria & Cobranzas
+    </p>
+  </div>
+
+  <!-- SELECTOR DE ROL -->
+  <div class="role-toggle">
+    <button class="role-btn active" id="btn-role-admin" onclick="switchRole('admin')">
+      <i class="fa-solid fa-user-shield"></i> Administrador
+    </button>
+    <button class="role-btn" id="btn-role-tenant" onclick="switchRole('tenant')">
+      <i class="fa-solid fa-store"></i> Inquilino
+    </button>
+  </div>
+
+  <form id="login-form" onsubmit="handleLogin(event)" style="display: flex; flex-direction: column; gap: 16px;">
+    
+    <div class="form-group">
+      <label id="lbl-identifier">Correo Electrónico Administrador</label>
+      <input type="text" class="form-control" id="login-user" value="administracion@ccmariosanchez.com" required>
+    </div>
+
+    <div class="form-group">
+      <label>Contraseña de Seguridad</label>
+      <input type="password" class="form-control" id="login-pass" value="••••••••••••" required>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px;">
+      <label style="color: var(--txt-secondary); display: flex; align-items: center; gap: 6px; cursor: pointer;">
+        <input type="checkbox" checked style="accent-color: var(--amber);"> Recordar sesión
+      </label>
+      <a href="#" style="color: var(--amber-light); text-decoration: none;" onclick="alert('Contacte al Administrador Principal para restablecer credenciales.')">¿Olvidó su clave?</a>
+    </div>
+
+    <button type="submit" class="btn-onboarding-cta" style="width: 100%; justify-content: center; padding: 12px; margin-top: 8px;">
+      <i class="fa-solid fa-arrow-right-to-bracket"></i> <span>Ingresar al Portal</span>
+    </button>
+  </form>
+
+  <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-subtle); text-align: center; font-size: 11px; color: var(--txt-muted);">
+    <div>Av. Municipal, Puerto La Cruz, Venezuela</div>
+    <div style="margin-top: 2px;">Sistema auditado conforme a G.O. N° 40.418</div>
+  </div>
+
+</div>
+
+<script>
+  let currentRole = 'admin';
+
+  function switchRole(role) {
+    currentRole = role;
+    const btnAdmin = document.getElementById('btn-role-admin');
+    const btnTenant = document.getElementById('btn-role-tenant');
+    const lblUser = document.getElementById('lbl-identifier');
+    const inputUser = document.getElementById('login-user');
+
+    if (role === 'admin') {
+      btnAdmin.classList.add('active');
+      btnTenant.classList.remove('active');
+      lblUser.innerText = 'Correo Electrónico Administrador';
+      inputUser.value = 'administracion@ccmariosanchez.com';
+    } else {
+      btnTenant.classList.add('active');
+      btnAdmin.classList.remove('active');
+      lblUser.innerText = 'RIF Jurídico o Correo del Arrendatario';
+      inputUser.value = 'J-30987123-4';
+    }
+  }
+
+  function handleLogin(e) {
+    e.preventDefault();
+    localStorage.setItem('ccms_session_role', currentRole);
+    localStorage.setItem('ccms_session_user', document.getElementById('login-user').value);
+    window.location.href = 'index.html';
+  }
+</script>
+
+</body>
+</html>

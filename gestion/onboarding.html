@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Onboarding de Inquilinos — CC Mario Sánchez</title>
+  
+  <link rel="icon" type="image/svg+xml" href="logo_cc_mario_sanchez.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+  <link rel="stylesheet" href="css/dashboard.css">
+
+  <style>
+    .wizard-container {
+      max-width: 820px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+    .wizard-steps {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      position: relative;
+    }
+    .wizard-steps::before {
+      content: '';
+      position: absolute;
+      top: 20px;
+      left: 30px;
+      right: 30px;
+      height: 2px;
+      background: var(--border-subtle);
+      z-index: 1;
+    }
+    .step-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      position: relative;
+      z-index: 2;
+    }
+    .step-num {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #080d17;
+      border: 2px solid var(--border-subtle);
+      color: var(--txt-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-heading);
+      font-size: 15px;
+      font-weight: 800;
+      transition: all 0.2s;
+    }
+    .step-item.active .step-num {
+      border-color: var(--amber);
+      background: var(--amber);
+      color: #000000;
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+    }
+    .step-item.completed .step-num {
+      border-color: var(--emerald);
+      background: var(--emerald);
+      color: #ffffff;
+    }
+    .step-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--txt-secondary);
+      text-transform: uppercase;
+    }
+    .step-pane {
+      display: none;
+    }
+    .step-pane.active {
+      display: block;
+    }
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 640px) {
+      .form-grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body style="background-color: var(--bg-main);">
+
+<div class="wizard-container">
+  
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <img src="logo_cc_mario_sanchez.svg" alt="CCMS Logo" style="width: 40px; height: 40px;">
+      <div>
+        <h1 style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: #ffffff;">Alta & Onboarding de Inquilino</h1>
+        <p style="font-size: 12px; color: var(--amber-light);">Centro Comercial Mario Sánchez — Puerto La Cruz</p>
+      </div>
+    </div>
+    <a href="index.html" class="btn-action-icon" style="width: auto; padding: 6px 14px; text-decoration: none; font-size: 12px; font-weight: 700; gap: 6px;">
+      <i class="fa-solid fa-arrow-left"></i> <span>Volver al Dashboard</span>
+    </a>
+  </div>
+
+  <!-- WIZARD STEP INDICATORS -->
+  <div class="wizard-steps">
+    <div class="step-item active" id="step-ind-1">
+      <div class="step-num">1</div>
+      <span class="step-label">Unidad</span>
+    </div>
+    <div class="step-item" id="step-ind-2">
+      <div class="step-num">2</div>
+      <span class="step-label">Arrendatario</span>
+    </div>
+    <div class="step-item" id="step-ind-3">
+      <div class="step-num">3</div>
+      <span class="step-label">Contrato Legal</span>
+    </div>
+    <div class="step-item" id="step-ind-4">
+      <div class="step-num">4</div>
+      <span class="step-label">Confirmación</span>
+    </div>
+  </div>
+
+  <!-- STEP PANES -->
+  <div class="data-card" style="padding: 28px;">
+    
+    <!-- PASO 1: SELECCIÓN DE UNIDAD -->
+    <div class="step-pane active" id="pane-1">
+      <h3 style="font-family: var(--font-heading); font-size: 17px; margin-bottom: 6px; color: #ffffff;">
+        <i class="fa-solid fa-store" style="color: var(--amber);"></i> Paso 1: Seleccionar Unidad Inmobiliaria
+      </h3>
+      <p style="font-size: 12.5px; color: var(--txt-secondary); margin-bottom: 20px;">
+        Seleccione el espacio comercial que será asignado al nuevo arrendatario dentro del CC Mario Sánchez.
+      </p>
+
+      <div class="form-group">
+        <label>Espacio / Unidad</label>
+        <select class="form-control" id="ob-unit-select" required>
+          <!-- Options injected via JS -->
+        </select>
+      </div>
+
+      <div id="unit-preview-box" style="margin-top: 18px; padding: 16px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-subtle); border-radius: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h4 id="prev-unit-name" style="font-family: var(--font-heading); font-size: 15px; color: #ffffff;">Macro-Lote A</h4>
+            <span id="prev-unit-cat" style="font-size: 11px; color: var(--amber-light); text-transform: uppercase;"></span>
+          </div>
+          <div style="text-align: right;">
+            <div id="prev-unit-area" style="font-family: var(--font-heading); font-size: 16px; font-weight: 800; color: #ffffff;">1.500 m²</div>
+            <div id="prev-unit-rent" style="font-size: 12px; color: var(--emerald-light); font-weight: 700;">$3,500.00 USD/mes</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 24px;">
+        <button type="button" class="btn-onboarding-cta" onclick="goToStep(2)">
+          <span>Continuar a Datos del Inquilino</span> <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- PASO 2: DATOS DEL ARRENDATARIO -->
+    <div class="step-pane" id="pane-2">
+      <h3 style="font-family: var(--font-heading); font-size: 17px; margin-bottom: 6px; color: #ffffff;">
+        <i class="fa-solid fa-id-card" style="color: var(--cyan-light);"></i> Paso 2: Información Jurídica de la Empresa
+      </h3>
+      <p style="font-size: 12.5px; color: var(--txt-secondary); margin-bottom: 20px;">
+        Ingrese los datos constitutivos y de contacto del arrendatario para el contrato mercantil.
+      </p>
+
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Razón Social (Denominación Mercantil)</label>
+          <input type="text" class="form-control" id="ob-business-name" placeholder="Ej: Inversiones Puerto La Cruz, C.A." required>
+        </div>
+        <div class="form-group">
+          <label>Nombre Comercial / Marca</label>
+          <input type="text" class="form-control" id="ob-trade-name" placeholder="Ej: PLC Express">
+        </div>
+      </div>
+
+      <div class="form-grid-2" style="margin-top: 14px;">
+        <div class="form-group">
+          <label>RIF Jurídico</label>
+          <input type="text" class="form-control" id="ob-rif" placeholder="Ej: J-40899123-1" required>
+        </div>
+        <div class="form-group">
+          <label>Registro Mercantil (Tomo, Nro, Jurisdicción)</label>
+          <input type="text" class="form-control" id="ob-registry" placeholder="Ej: RM Segundo PLC, Tomo 22, Nro 405">
+        </div>
+      </div>
+
+      <div class="form-grid-2" style="margin-top: 14px;">
+        <div class="form-group">
+          <label>Nombre del Representante Legal</label>
+          <input type="text" class="form-control" id="ob-rep-name" placeholder="Ej: Alejandro José Rodríguez" required>
+        </div>
+        <div class="form-group">
+          <label>Cédula de Identidad del Representante</label>
+          <input type="text" class="form-control" id="ob-rep-dni" placeholder="Ej: V-15.890.312" required>
+        </div>
+      </div>
+
+      <div class="form-grid-2" style="margin-top: 14px;">
+        <div class="form-group">
+          <label>Teléfono Celular con WhatsApp</label>
+          <input type="text" class="form-control" id="ob-whatsapp" placeholder="Ej: +58 414-8199200" required>
+        </div>
+        <div class="form-group">
+          <label>Correo Electrónico Oficial</label>
+          <input type="email" class="form-control" id="ob-email" placeholder="Ej: admon@empresa.com" required>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top: 14px;">
+        <label>Actividad Comercial / Rubro de Operación</label>
+        <input type="text" class="form-control" id="ob-activity" placeholder="Ej: Distribución naviera, ferretería pesada, suministros médicos..." required>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; margin-top: 24px;">
+        <button type="button" class="btn-currency-toggle" onclick="goToStep(1)">
+          <i class="fa-solid fa-arrow-left"></i> <span>Atrás</span>
+        </button>
+        <button type="button" class="btn-onboarding-cta" onclick="goToStep(3)">
+          <span>Continuar a Condiciones Legales</span> <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- PASO 3: PARÁMETROS CONTRACTUALES Y LEGALES (G.O. 40.418) -->
+    <div class="step-pane" id="pane-3">
+      <h3 style="font-family: var(--font-heading); font-size: 17px; margin-bottom: 6px; color: #ffffff;">
+        <i class="fa-solid fa-scale-balanced" style="color: var(--amber);"></i> Paso 3: Condiciones Contractuales & Ley Venezolana
+      </h3>
+      <p style="font-size: 12.5px; color: var(--txt-secondary); margin-bottom: 20px;">
+        Parámetros adaptados a la Ley de Regulación del Arrendamiento Inmobiliario para el Uso Comercial.
+      </p>
+
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Método de Fijación de Canon (Art. 32)</label>
+          <select class="form-control" id="ob-rent-method">
+            <option value="CAF (Canon Fijo Art. 32)">CAF — Canon de Arrendamiento Fijo (Art. 32)</option>
+            <option value="CAP (Variable sobre Ventas)">CAP — Canon Variable sobre Ventas Brutas</option>
+            <option value="MIXTO (Fijo + Variable)">MIXTO — Porción Fija + Porción Variable</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Canon Acordado Mensual (USD)</label>
+          <input type="number" step="0.01" class="form-control" id="ob-rent-usd" required>
+        </div>
+      </div>
+
+      <div class="form-grid-2" style="margin-top: 14px;">
+        <div class="form-group">
+          <label>Meses de Depósito en Garantía (Art. 19)</label>
+          <select class="form-control" id="ob-deposit-months" onchange="updateDepositCalc()">
+            <option value="1">1 Mes de Canon</option>
+            <option value="2">2 Meses de Canon</option>
+            <option value="3" selected>3 Meses de Canon (Tope Máximo Legal Art. 19)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Monto Total Garantía (USD)</label>
+          <input type="number" step="0.01" class="form-control" id="ob-deposit-usd" readonly style="background: rgba(255,255,255,0.02); color: var(--amber-light); font-weight: 700;">
+        </div>
+      </div>
+
+      <div class="form-grid-2" style="margin-top: 14px;">
+        <div class="form-group">
+          <label>Fecha de Inicio del Contrato</label>
+          <input type="date" class="form-control" id="ob-start-date" value="2026-03-01" required>
+        </div>
+        <div class="form-group">
+          <label>Fecha de Término (Mínimo 1 año Art. 13)</label>
+          <input type="date" class="form-control" id="ob-end-date" value="2027-03-01" required>
+        </div>
+      </div>
+
+      <div style="margin-top: 18px; padding: 14px; background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; font-size: 12px; color: #e2e8f0;">
+        <strong><i class="fa-solid fa-shield-check" style="color: var(--emerald-light);"></i> Prórroga Legal Obligatoria Garantizada:</strong>
+        <p style="margin-top: 3px; color: var(--txt-secondary);">
+          Conforme al Artículo 25 (literal a) de la Ley, al vencer el año de contrato el arrendatario gozará de hasta <strong>6 meses de prórroga legal</strong> continua si está al día con sus cuotas.
+        </p>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; margin-top: 24px;">
+        <button type="button" class="btn-currency-toggle" onclick="goToStep(2)">
+          <i class="fa-solid fa-arrow-left"></i> <span>Atrás</span>
+        </button>
+        <button type="button" class="btn-onboarding-cta" onclick="goToStep(4)">
+          <span>Revisar Expediente</span> <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- PASO 4: CONFIRMACIÓN Y EMISIÓN -->
+    <div class="step-pane" id="pane-4">
+      <h3 style="font-family: var(--font-heading); font-size: 17px; margin-bottom: 6px; color: #ffffff;">
+        <i class="fa-solid fa-file-signature" style="color: var(--emerald-light);"></i> Paso 4: Revisión del Expediente & Activación
+      </h3>
+      <p style="font-size: 12.5px; color: var(--txt-secondary); margin-bottom: 20px;">
+        Verifique los datos consolidados antes de registrar el contrato y generar la primera cuota en el sistema.
+      </p>
+
+      <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 18px; font-size: 13px; line-height: 1.6;">
+        <div>Empresa: <strong id="sum-business" style="color: #ffffff;"></strong> (<span id="sum-rif"></span>)</div>
+        <div>Representante Legal: <strong id="sum-rep" style="color: #ffffff;"></strong></div>
+        <div>Unidad Asignada: <strong id="sum-unit" style="color: var(--amber);"></strong></div>
+        <div>Canon Pactado: <strong id="sum-rent" style="color: var(--emerald-light);"></strong> USD/mes</div>
+        <div>Garantía en Depósito: <span id="sum-deposit"></span> USD (Tope legal de 3 meses verificado)</div>
+        <div>Vigencia: <span id="sum-dates"></span> (1 año formal)</div>
+      </div>
+
+      <div style="margin-top: 20px;">
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #cbd5e1; cursor: pointer;">
+          <input type="checkbox" id="check-docs" checked style="accent-color: var(--amber);">
+          <span>Expediente digital verificado (RIF vigente, Registro Mercantil y Cédula del Representante consignados).</span>
+        </label>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; margin-top: 24px;">
+        <button type="button" class="btn-currency-toggle" onclick="goToStep(3)">
+          <i class="fa-solid fa-arrow-left"></i> <span>Atrás</span>
+        </button>
+        <button type="button" class="btn-onboarding-cta" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff;" onclick="submitOnboarding()">
+          <i class="fa-solid fa-check-circle"></i> <span>Completar Onboarding & Activar</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script src="js/venezuela-legal.js"></script>
+<script src="js/google-workspace.js"></script>
+<script src="js/supabase-client.js"></script>
+
+<script>
+  let currentStep = 1;
+  const units = dbService.getUnits();
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const select = document.getElementById('ob-unit-select');
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetUnit = urlParams.get('unit');
+
+    units.forEach(u => {
+      const opt = document.createElement('option');
+      opt.value = u.code;
+      opt.innerText = `${u.code} — ${u.name} (${u.area_m2} m²) [${u.status.toUpperCase()}]`;
+      if (targetUnit && u.code === targetUnit) opt.selected = true;
+      select.appendChild(opt);
+    });
+
+    select.onchange = updateUnitPreview;
+    updateUnitPreview();
+  });
+
+  function updateUnitPreview() {
+    const code = document.getElementById('ob-unit-select').value;
+    const u = units.find(x => x.code === code) || units[0];
+
+    document.getElementById('prev-unit-name').innerText = `${u.code}: ${u.name}`;
+    document.getElementById('prev-unit-cat').innerText = u.category;
+    document.getElementById('prev-unit-area').innerText = `${u.area_m2.toLocaleString()} m²`;
+    document.getElementById('prev-unit-rent').innerText = `$${u.base_rent_usd.toLocaleString()} USD/mes`;
+
+    document.getElementById('ob-rent-usd').value = u.base_rent_usd;
+    updateDepositCalc();
+  }
+
+  function updateDepositCalc() {
+    const rent = parseFloat(document.getElementById('ob-rent-usd').value) || 0;
+    const months = parseInt(document.getElementById('ob-deposit-months').value) || 3;
+    document.getElementById('ob-deposit-usd').value = (rent * months).toFixed(2);
+  }
+
+  function goToStep(step) {
+    if (step === 2) {
+      // Validate step 1
+    } else if (step === 3) {
+      const name = document.getElementById('ob-business-name').value.trim();
+      const rif = document.getElementById('ob-rif').value.trim();
+      const rep = document.getElementById('ob-rep-name').value.trim();
+      if (!name || !rif || !rep) {
+        alert('Por favor complete los campos obligatorios del Arrendatario (Razón Social, RIF y Representante Legal).');
+        return;
+      }
+    } else if (step === 4) {
+      updateSummary();
+    }
+
+    currentStep = step;
+    document.querySelectorAll('.step-pane').forEach((p, idx) => {
+      p.classList.toggle('active', idx + 1 === step);
+    });
+    document.querySelectorAll('.step-item').forEach((s, idx) => {
+      s.classList.toggle('active', idx + 1 === step);
+      s.classList.toggle('completed', idx + 1 < step);
+    });
+  }
+
+  function updateSummary() {
+    document.getElementById('sum-business').innerText = document.getElementById('ob-business-name').value;
+    document.getElementById('sum-rif').innerText = document.getElementById('ob-rif').value;
+    document.getElementById('sum-rep').innerText = `${document.getElementById('ob-rep-name').value} (${document.getElementById('ob-rep-dni').value})`;
+    document.getElementById('sum-unit').innerText = document.getElementById('ob-unit-select').value;
+    document.getElementById('sum-rent').innerText = parseFloat(document.getElementById('ob-rent-usd').value).toLocaleString();
+    document.getElementById('sum-deposit').innerText = parseFloat(document.getElementById('ob-deposit-usd').value).toLocaleString();
+    document.getElementById('sum-dates').innerText = `${document.getElementById('ob-start-date').value} al ${document.getElementById('ob-end-date').value}`;
+  }
+
+  function submitOnboarding() {
+    const tenantData = {
+      rif: document.getElementById('ob-rif').value.trim(),
+      business_name: document.getElementById('ob-business-name').value.trim(),
+      trade_name: document.getElementById('ob-trade-name').value.trim(),
+      commercial_registry: document.getElementById('ob-registry').value.trim(),
+      legal_rep_name: document.getElementById('ob-rep-name').value.trim(),
+      legal_rep_dni: document.getElementById('ob-rep-dni').value.trim(),
+      email: document.getElementById('ob-email').value.trim(),
+      phone: document.getElementById('ob-whatsapp').value.trim(),
+      whatsapp: document.getElementById('ob-whatsapp').value.trim(),
+      commercial_activity: document.getElementById('ob-activity').value.trim(),
+      unit_code: document.getElementById('ob-unit-select').value
+    };
+
+    const contractData = {
+      start_date: document.getElementById('ob-start-date').value,
+      end_date: document.getElementById('ob-end-date').value,
+      rent_usd: document.getElementById('ob-rent-usd').value,
+      rent_method: document.getElementById('ob-rent-method').value,
+      deposit_usd: document.getElementById('ob-deposit-usd').value,
+      deposit_months: document.getElementById('ob-deposit-months').value
+    };
+
+    try {
+      dbService.addTenant(tenantData, contractData);
+      alert('¡Inquilino y Contrato registrados exitosamente en el sistema!');
+      window.location.href = 'index.html';
+    } catch (err) {
+      alert('Error al registrar: ' + err.message);
+    }
+  }
+</script>
+
+</body>
+</html>

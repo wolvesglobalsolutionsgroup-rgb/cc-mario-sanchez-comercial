@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <!-- Paleta Dorada / Ámbar Premium -->
+    <linearGradient id="goldLinear" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="50%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+
+    <linearGradient id="goldLight" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#fef08a" />
+    </linearGradient>
+
+    <linearGradient id="subtleBevel" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.4" />
+    </linearGradient>
+
+    <!-- Sombra de Profundidad -->
+    <filter id="goldGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#f59e0b" flood-opacity="0.35" />
+    </filter>
+
+    <filter id="cardShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.8" />
+    </filter>
+  </defs>
+
+  <!-- Fondo Carbón Negro (#04070d) con Borde Sutil Glassmorphism -->
+  <rect width="400" height="400" rx="48" fill="#04070d" />
+  <rect x="2" y="2" width="396" height="396" rx="46" fill="none" stroke="url(#goldLinear)" stroke-width="1.5" stroke-opacity="0.25" />
+
+  <!-- Trama Geométrica de Ingeniería (Patios Logísticos & Galpones) -->
+  <g opacity="0.08" stroke="#ffffff" stroke-width="1">
+    <line x1="60" y1="60" x2="340" y2="340" />
+    <line x1="340" y1="60" x2="60" y2="340" />
+    <circle cx="200" cy="200" r="140" fill="none" />
+    <circle cx="200" cy="200" r="100" fill="none" />
+  </g>
+
+  <!-- ISOTIPO: MONOGRAMA ARQUITECTÓNICO "MS" -->
+  <g filter="url(#goldGlow)">
+    
+    <!-- Silueta Estructural de Techos / Galpones Industriales (Naves del "M") -->
+    <path d="M 90 270 L 90 145 L 145 95 L 200 145 L 255 95 L 310 145 L 310 270" 
+          fill="none" 
+          stroke="url(#goldLinear)" 
+          stroke-width="16" 
+          stroke-linecap="round" 
+          stroke-linejoin="round" />
+
+    <!-- Tirantes y Vigas Arquitectónicas Interiores del 'M' -->
+    <path d="M 90 145 L 200 240 L 310 145" 
+          fill="none" 
+          stroke="url(#goldLight)" 
+          stroke-width="10" 
+          stroke-linecap="round" 
+          stroke-linejoin="round" />
+
+    <line x1="145" y1="95" x2="145" y2="270" stroke="url(#goldLinear)" stroke-width="6" stroke-opacity="0.4" stroke-dasharray="4 6" />
+    <line x1="255" y1="95" x2="255" y2="270" stroke="url(#goldLinear)" stroke-width="6" stroke-opacity="0.4" stroke-dasharray="4 6" />
+
+    <!-- Elipse Dinámica Central / Lazo Entrelazado del 'S' -->
+    <!-- Tramo Superior del 'S' envolviendo el núcleo estructural -->
+    <path d="M 260 160 C 260 120, 210 115, 185 135 C 155 155, 140 190, 195 210 C 260 232, 250 280, 205 285 C 160 290, 135 255, 135 240" 
+          fill="none" 
+          stroke="url(#goldLight)" 
+          stroke-width="15" 
+          stroke-linecap="round" 
+          stroke-linejoin="round" />
+
+    <!-- Núcleo Central Simbólico (Cúspide de Inversión y Comercio) -->
+    <polygon points="200,75 212,95 200,105 188,95" fill="url(#goldLight)" />
+    
+    <!-- Base de Cimentación / Pórtico Comercial -->
+    <line x1="75" y1="285" x2="325" y2="285" stroke="url(#goldLinear)" stroke-width="8" stroke-linecap="round" />
+    <line x1="105" y1="300" x2="295" y2="300" stroke="url(#goldLinear)" stroke-width="4" stroke-linecap="round" stroke-opacity="0.6" />
+  </g>
+
+  <!-- Tipografía Corporativa Minimalista Integrada -->
+  <text x="200" y="340" 
+        font-family="'Outfit', 'Montserrat', 'Helvetica', sans-serif" 
+        font-size="18" 
+        font-weight="900" 
+        letter-spacing="5" 
+        fill="#ffffff" 
+        text-anchor="middle">
+    MARIO SÁNCHEZ
+  </text>
+  <text x="200" y="360" 
+        font-family="'Manrope', 'Segoe UI', sans-serif" 
+        font-size="10.5" 
+        font-weight="700" 
+        letter-spacing="4" 
+        fill="#f59e0b" 
+        text-anchor="middle">
+    CENTRO COMERCIAL
+  </text>
+</svg>
