@@ -102,9 +102,22 @@
     .hero-vignette {
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at 50% 35%, rgba(4, 7, 13, 0.15) 0%, rgba(4, 7, 13, 0.70) 70%, rgba(4, 7, 13, 0.95) 100%),
-                  linear-gradient(180deg, rgba(4, 7, 13, 0.65) 0%, transparent 35%, rgba(4, 7, 13, 0.85) 85%, #04070d 100%);
+      background: radial-gradient(circle at 50% 35%, rgba(4, 7, 13, 0.15) 0%, rgba(4, 7, 13, 0.65) 65%, #04070d 100%),
+                  linear-gradient(180deg, rgba(4, 7, 13, 0.65) 0%, transparent 35%, rgba(4, 7, 13, 0.70) 70%, #04070d 100%);
       z-index: 2;
+    }
+
+    /* SEAMLESS BOTTOM FADE TO ELIMINATE ANY HARD CUT */
+    .hero-canvas::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 180px;
+      background: linear-gradient(180deg, transparent 0%, rgba(4, 7, 13, 0.5) 40%, rgba(4, 7, 13, 0.95) 80%, #04070d 100%);
+      z-index: 2;
+      pointer-events: none;
     }
 
     @media (max-width: 768px) {
@@ -112,7 +125,7 @@
         min-height: 100vh;
         min-height: 100dvh;
         justify-content: flex-end;
-        padding-bottom: 2rem;
+        padding-bottom: 1.5rem;
       }
       .hero-bg-media {
         object-position: center center;
@@ -121,9 +134,13 @@
         background: linear-gradient(180deg, 
           rgba(4, 7, 13, 0.60) 0%, 
           rgba(4, 7, 13, 0.15) 25%, 
-          rgba(4, 7, 13, 0.35) 60%, 
-          rgba(4, 7, 13, 0.88) 100%
+          rgba(4, 7, 13, 0.35) 55%, 
+          rgba(4, 7, 13, 0.85) 80%, 
+          #04070d 100%
         );
+      }
+      .hero-canvas::after {
+        height: 140px;
       }
     }
 
