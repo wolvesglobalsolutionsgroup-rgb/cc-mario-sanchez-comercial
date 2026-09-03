@@ -11,7 +11,8 @@
   <link rel="dns-prefetch" href="https://images.unsplash.com">
   <link rel="dns-prefetch" href="https://unpkg.com">
   <link rel="dns-prefetch" href="https://mt1.google.com">
-  <link rel="preload" as="image" href="puerto_la_cruz_drone.webp" type="image/webp" fetchpriority="high">
+  <link rel="preload" as="image" href="puerto_la_cruz_drone_mobile.webp" type="image/webp" media="(max-width: 768px)" fetchpriority="high">
+  <link rel="preload" as="image" href="puerto_la_cruz_drone.webp" type="image/webp" media="(min-width: 769px)" fetchpriority="high">
   <link rel="preload" as="image" href="logo_cc_mario_sanchez.svg">
 
   <!-- Favicon SVG -->
@@ -77,11 +78,10 @@
       position: relative;
       min-height: 100vh;
       min-height: 100dvh;
-      width: 100vw;
+      width: 100%;
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
-      overflow: hidden;
     }
 
     .hero-bg-media {
@@ -90,21 +90,41 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      object-position: center 30%;
+      object-position: center center;
       z-index: 1;
-      transform: scale(1.03);
+      transform: scale(1.02);
       transition: transform 12s ease-out;
     }
     .hero-canvas:hover .hero-bg-media {
-      transform: scale(1.08);
+      transform: scale(1.06);
     }
 
     .hero-vignette {
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at 50% 35%, rgba(4, 7, 13, 0.15) 0%, rgba(4, 7, 13, 0.75) 65%, rgba(4, 7, 13, 0.98) 100%),
-                  linear-gradient(180deg, rgba(4, 7, 13, 0.7) 0%, transparent 35%, rgba(4, 7, 13, 0.95) 85%, #04070d 100%);
+      background: radial-gradient(circle at 50% 35%, rgba(4, 7, 13, 0.15) 0%, rgba(4, 7, 13, 0.70) 70%, rgba(4, 7, 13, 0.95) 100%),
+                  linear-gradient(180deg, rgba(4, 7, 13, 0.65) 0%, transparent 35%, rgba(4, 7, 13, 0.85) 85%, #04070d 100%);
       z-index: 2;
+    }
+
+    @media (max-width: 768px) {
+      .hero-canvas {
+        min-height: 100vh;
+        min-height: 100dvh;
+        justify-content: flex-end;
+        padding-bottom: 2rem;
+      }
+      .hero-bg-media {
+        object-position: center center;
+      }
+      .hero-vignette {
+        background: linear-gradient(180deg, 
+          rgba(4, 7, 13, 0.60) 0%, 
+          rgba(4, 7, 13, 0.15) 25%, 
+          rgba(4, 7, 13, 0.35) 60%, 
+          rgba(4, 7, 13, 0.88) 100%
+        );
+      }
     }
 
     /* GLASS DOCK */
@@ -239,53 +259,55 @@
        ========================================================================= -->
   <section class="hero-canvas">
     
-    <!-- DRONE PHOTOGRAPHY OF PUERTO LA CRUZ (FAST WEBP WITH PROGRESSIVE JPG FALLBACK) -->
+    <!-- DRONE PHOTOGRAPHY OF PUERTO LA CRUZ (RESPONSIVE 9:16 FOR MOBILE / WIDESCREEN FOR DESKTOP) -->
     <picture>
+      <source media="(max-width: 768px)" srcset="puerto_la_cruz_drone_mobile.webp" type="image/webp">
+      <source media="(max-width: 768px)" srcset="puerto_la_cruz_drone_mobile.jpg" type="image/jpeg">
       <source srcset="puerto_la_cruz_drone.webp" type="image/webp">
       <img src="puerto_la_cruz_drone.jpg" alt="Toma Aérea Puerto La Cruz" class="hero-bg-media" fetchpriority="high" decoding="async">
     </picture>
     <div class="hero-vignette"></div>
 
     <!-- BOTTOM HERO INFO & METRICS (LAVILLA FORMAT) -->
-    <div class="relative z-30 pb-10 sm:pb-14 px-6 sm:px-12 max-w-7xl mx-auto w-full pt-28">
-      <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-10">
+    <div class="relative z-30 pb-6 sm:pb-14 px-4 sm:px-12 max-w-7xl mx-auto w-full pt-20 sm:pt-28">
+      <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-5 sm:gap-8 lg:gap-10">
         
         <!-- Bottom Left: Typography -->
         <div class="flex flex-col max-w-2xl">
-          <span class="text-amber-400 font-heading text-xs font-extrabold uppercase tracking-widest mb-2 flex items-center gap-2">
+          <span class="text-amber-400 font-heading text-[11px] sm:text-xs font-extrabold uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
             <i class="fa-solid fa-location-dot"></i> Av. Municipal • Puerto La Cruz, Venezuela
           </span>
-          <h1 class="font-heading font-black text-4xl sm:text-6xl lg:text-7xl tracking-tight text-white uppercase leading-[0.95] drop-shadow-2xl">
+          <h1 class="font-heading font-black text-3xl sm:text-6xl lg:text-7xl tracking-tight text-white uppercase leading-[1.02] drop-shadow-2xl">
             CC Mario Sánchez
           </h1>
-          <p class="text-slate-200 text-sm sm:text-base font-normal mt-3 leading-relaxed drop-shadow-md">
+          <p class="text-slate-200 text-xs sm:text-base font-normal mt-2 sm:mt-3 leading-relaxed drop-shadow-md">
             El nuevo centro comercial, empresarial y de servicios de Puerto La Cruz. Locales, contenedores modulares, galpones y más de 230 puestos de estacionamiento.
           </p>
         </div>
 
         <!-- Bottom Right: Live Metric Telemetry Cards -->
-        <div class="glass-card rounded-2xl p-6 flex flex-col gap-4 min-w-[320px] sm:min-w-[420px] shadow-2xl">
+        <div class="glass-card rounded-2xl p-4 sm:p-6 flex flex-col gap-3 sm:gap-4 w-full lg:w-auto min-w-0 sm:min-w-[420px] shadow-2xl">
           
-          <div class="grid grid-cols-4 gap-3 text-center divide-x divide-white/10">
+          <div class="grid grid-cols-4 gap-2 sm:gap-3 text-center divide-x divide-white/10">
             
             <div class="flex flex-col items-center">
-              <span class="font-heading font-black text-xl sm:text-2xl text-amber-400">5.190</span>
-              <span class="text-[9.5px] uppercase font-bold text-slate-400 tracking-wider mt-0.5">m² Plaza</span>
+              <span class="font-heading font-black text-lg sm:text-2xl text-amber-400">5.190</span>
+              <span class="text-[8.5px] sm:text-[9.5px] uppercase font-bold text-slate-400 tracking-wider mt-0.5">m² Plaza</span>
             </div>
 
-            <div class="flex flex-col items-center pl-2">
-              <span class="font-heading font-black text-xl sm:text-2xl text-white">20.00</span>
-              <span class="text-[9.5px] uppercase font-bold text-slate-400 tracking-wider mt-0.5">m Gandolas</span>
+            <div class="flex flex-col items-center pl-1 sm:pl-2">
+              <span class="font-heading font-black text-lg sm:text-2xl text-white">20.00</span>
+              <span class="text-[8.5px] sm:text-[9.5px] uppercase font-bold text-slate-400 tracking-wider mt-0.5">m Gandolas</span>
             </div>
 
-            <div class="flex flex-col items-center pl-2">
-              <span class="font-heading font-black text-xl sm:text-2xl text-cyan-400">14.207</span>
-              <span class="text-[9.5px] uppercase font-bold text-slate-400 tracking-wider mt-0.5">m² Total</span>
+            <div class="flex flex-col items-center pl-1 sm:pl-2">
+              <span class="font-heading font-black text-lg sm:text-2xl text-cyan-400">14.207</span>
+              <span class="text-[8.5px] sm:text-[9.5px] uppercase font-bold text-slate-400 tracking-wider mt-0.5">m² Total</span>
             </div>
 
-            <div class="flex flex-col items-center pl-2">
-              <span class="font-heading font-black text-xl sm:text-2xl text-emerald-400">+230</span>
-              <span class="text-[9.5px] uppercase font-bold text-slate-400 tracking-wider mt-0.5">Parking</span>
+            <div class="flex flex-col items-center pl-1 sm:pl-2">
+              <span class="font-heading font-black text-lg sm:text-2xl text-emerald-400">+230</span>
+              <span class="text-[8.5px] sm:text-[9.5px] uppercase font-bold text-slate-400 tracking-wider mt-0.5">Parking</span>
             </div>
 
           </div>
@@ -295,7 +317,7 @@
             <div class="metric-progress-fill"></div>
           </div>
 
-          <div class="flex items-center justify-between text-[11.5px] text-slate-300 font-heading font-semibold">
+          <div class="flex items-center justify-between text-[11px] sm:text-[11.5px] text-slate-300 font-heading font-semibold">
             <span>Estado: <strong class="text-emerald-400 font-bold">Espacios Disponibles</strong></span>
             <a href="https://wa.me/584247380002" target="_blank" rel="noopener noreferrer" class="text-amber-400 hover:text-amber-300 flex items-center gap-1 font-bold">
               <span>Hablar con Asesor</span> <i class="fa-solid fa-angle-right text-[9px]"></i>
@@ -402,19 +424,21 @@
       </div>
 
       <!-- MAP + CATALOG SPLIT WRAPPER -->
-      <div class="glass-card rounded-3xl overflow-hidden border border-white/10 grid grid-cols-1 lg:grid-cols-12 h-[680px] shadow-2xl reveal">
+      <div class="glass-card rounded-3xl overflow-hidden border border-white/10 flex flex-col lg:grid lg:grid-cols-12 min-h-[700px] lg:h-[680px] shadow-2xl reveal">
         
         <!-- MAP COLUMN (7 cols) -->
-        <div class="lg:col-span-7 relative h-80 lg:h-full bg-slate-950">
-          <div id="interactive-map" class="w-full h-full"></div>
+        <div class="lg:col-span-7 flex flex-col relative h-[390px] sm:h-[450px] lg:h-full bg-slate-950">
           
-          <!-- MAP FILTER PILLS -->
-          <div class="absolute top-4 left-4 z-[900] flex flex-wrap items-center gap-2 bg-slate-900/90 backdrop-blur-md p-1.5 rounded-xl border border-white/10 shadow-lg">
-            <button class="map-filter-btn active px-3 py-1.5 rounded-lg text-xs font-heading font-bold bg-amber-500 text-slate-950" onclick="filterMap('all', this)">Todos (10)</button>
-            <button class="map-filter-btn px-3 py-1.5 rounded-lg text-xs font-heading font-bold text-slate-300 hover:text-white" onclick="filterMap('macro-lotes', this)">Huella 5.190 m²</button>
-            <button class="map-filter-btn px-3 py-1.5 rounded-lg text-xs font-heading font-bold text-slate-300 hover:text-white" onclick="filterMap('locales', this)">Locales</button>
-            <button class="map-filter-btn px-3 py-1.5 rounded-lg text-xs font-heading font-bold text-slate-300 hover:text-white" onclick="filterMap('galpones', this)">Galpones</button>
+          <!-- MAP FILTER TABS (CLEAN DEDICATED ROW ABOVE MAP CANVAS - NEVER OVERLAPS PINS) -->
+          <div class="px-3 py-2 sm:px-4 sm:py-2.5 bg-slate-900/95 border-b border-white/10 flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-none z-10 shrink-0">
+            <button class="map-filter-btn active shrink-0 px-3 py-1.5 rounded-lg text-xs font-heading font-bold bg-amber-500 text-slate-950 transition-all" onclick="filterMap('all', this)">Todos (10)</button>
+            <button class="map-filter-btn shrink-0 px-3 py-1.5 rounded-lg text-xs font-heading font-bold text-slate-300 hover:text-white transition-all" onclick="filterMap('macro-lotes', this)">Huella 5.190 m²</button>
+            <button class="map-filter-btn shrink-0 px-3 py-1.5 rounded-lg text-xs font-heading font-bold text-slate-300 hover:text-white transition-all" onclick="filterMap('locales', this)">Locales</button>
+            <button class="map-filter-btn shrink-0 px-3 py-1.5 rounded-lg text-xs font-heading font-bold text-slate-300 hover:text-white transition-all" onclick="filterMap('galpones', this)">Galpones</button>
           </div>
+
+          <!-- MAP CONTAINER (100% UNOBSTRUCTED) -->
+          <div id="interactive-map" class="w-full flex-1 min-h-0"></div>
         </div>
 
         <!-- LISTING COLUMN (5 cols) -->
@@ -800,6 +824,10 @@
       maxNativeZoom: 20,
       attribution: '© Google Earth'
     }).addTo(map);
+
+    // Responsive Map Invalidate
+    setTimeout(() => map.invalidateSize(), 350);
+    window.addEventListener('resize', () => map.invalidateSize());
 
     // 2. Spaces Catalog Data with 100% Reliable High-Res Images & Fallbacks
     const spacesData = [
