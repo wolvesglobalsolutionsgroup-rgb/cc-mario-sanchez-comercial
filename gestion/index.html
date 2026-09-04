@@ -408,8 +408,8 @@
                 <span>Exportar CSV</span>
               </button>
 
-              <button type="button" class="btn-onboarding-cta" onclick="openExpenseModal()" style="padding: 6px 14px; font-size: 12px; background: var(--purple); border-color: var(--purple);" data-roles="admin">
-                <i class="fa-solid fa-plus"></i> <span>Registrar Gasto / Factura</span>
+              <button type="button" class="btn-onboarding-cta" id="btn-open-expense-modal" onclick="openExpenseModal()" style="padding: 7px 14px; font-size: 12px; background: var(--purple); border-color: var(--purple); display: inline-flex; align-items: center; gap: 6px;" data-roles="admin" title="Registrar Gasto Común o Factura de Proveedor">
+                <i class="fa-solid fa-file-invoice-dollar"></i> <span class="btn-label-desktop">Registrar Gasto / Factura</span><span class="btn-label-mobile">+ Gasto</span>
               </button>
             </div>
           </div>
@@ -627,33 +627,58 @@
         </div>
 
         <!-- TARJETA 3: EDITOR DE PLANTILLAS DE MENSAJES (WHATSAPP & GMAIL) -->
-        <div class="data-card" style="padding: 22px; margin-top: 20px;">
-          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">
+        <!-- TARJETA 3: EDITOR DE PLANTILLAS DE MENSAJES (WHATSAPP & GMAIL) -->
+        <div class="data-card" style="padding: 20px; margin-top: 20px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px;">
             <div style="display: flex; align-items: center; gap: 10px;">
               <div class="kpi-icon-badge badge-emerald"><i class="fa-brands fa-whatsapp"></i></div>
               <div>
                 <h4 style="font-family: var(--font-heading); font-size: 15px; color: var(--txt-primary);">Editor de Mensajes & Plantillas de Cobro</h4>
-                <p style="font-size: 11px; color: var(--txt-secondary);">Variables dinámicas disponibles: <code>{inquilino}</code>, <code>{unidad}</code>, <code>{periodo}</code>, <code>{monto_usd}</code>, <code>{monto_bs}</code>, <code>{tasa_bcv}</code>, <code>{fecha_limite}</code></p>
+                <p style="font-size: 11px; color: var(--txt-secondary);">Personalice los textos automatizados para WhatsApp Web y correo electrónico.</p>
               </div>
             </div>
-            <button type="button" class="btn-action-icon" onclick="resetDefaultTemplates()" title="Restablecer plantilla original" style="width: auto; padding: 6px 12px; font-size: 11px; gap: 6px;">
+            <button type="button" class="btn-action-icon" onclick="resetDefaultTemplates()" title="Restablecer plantilla original de Gaceta Oficial 40.418" style="width: auto; padding: 6px 12px; font-size: 11px; gap: 6px;">
               <i class="fa-solid fa-rotate-left"></i> <span>Restablecer Plantilla</span>
             </button>
+          </div>
+
+          <!-- BOTONES DE INSERCIÓN RÁPIDA DE VARIABLES DINÁMICAS -->
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 6px;">
+              <i class="fa-solid fa-tags" style="color: var(--amber);"></i> Insertar Variable Dinámica (Clic para agregar):
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+              <button type="button" class="template-var-pill" onclick="insertVarToActiveTemplate('{inquilino}')">+{inquilino}</button>
+              <button type="button" class="template-var-pill" onclick="insertVarToActiveTemplate('{unidad}')">+{unidad}</button>
+              <button type="button" class="template-var-pill" onclick="insertVarToActiveTemplate('{periodo}')">+{periodo}</button>
+              <button type="button" class="template-var-pill" onclick="insertVarToActiveTemplate('{monto_usd}')">+{monto_usd}</button>
+              <button type="button" class="template-var-pill" onclick="insertVarToActiveTemplate('{monto_bs}')">+{monto_bs}</button>
+              <button type="button" class="template-var-pill" onclick="insertVarToActiveTemplate('{tasa_bcv}')">+{tasa_bcv}</button>
+              <button type="button" class="template-var-pill" onclick="insertVarToActiveTemplate('{fecha_limite}')">+{fecha_limite}</button>
+            </div>
           </div>
 
           <form id="form-config-mensajes" onsubmit="saveMensajesConfig(event)" style="display: flex; flex-direction: column; gap: 16px;">
             <div class="form-group">
               <label><i class="fa-solid fa-comment-dots" style="color: var(--amber);"></i> Plantilla: Aviso Preventivo de Cobro (WhatsApp / Correo)</label>
-              <textarea class="form-control" id="cfg-msg-preventive" rows="4" style="font-family: monospace; font-size: 12px; resize: vertical;" required></textarea>
+              <textarea class="form-control" id="cfg-msg-preventive" rows="4" style="font-family: monospace; font-size: 12px; resize: vertical;" oninput="updateTemplateLivePreview()" onfocus="window.activeTemplateTextarea = this" required></textarea>
+              <div style="margin-top: 4px;">
+                <span style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Vista Previa del Mensaje:</span>
+                <div id="preview-msg-preventive" class="template-preview-box"></div>
+              </div>
             </div>
 
             <div class="form-group">
               <label><i class="fa-solid fa-triangle-exclamation" style="color: var(--rose);"></i> Plantilla: Alerta de Retraso o Mora Legal (G.O. 40.418)</label>
-              <textarea class="form-control" id="cfg-msg-mora" rows="4" style="font-family: monospace; font-size: 12px; resize: vertical;" required></textarea>
+              <textarea class="form-control" id="cfg-msg-mora" rows="4" style="font-family: monospace; font-size: 12px; resize: vertical;" oninput="updateTemplateLivePreview()" onfocus="window.activeTemplateTextarea = this" required></textarea>
+              <div style="margin-top: 4px;">
+                <span style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Vista Previa del Mensaje:</span>
+                <div id="preview-msg-mora" class="template-preview-box"></div>
+              </div>
             </div>
 
-            <div style="display: flex; justify-content: flex-end;">
-              <button type="submit" class="btn-onboarding-cta" style="padding: 10px 24px;">
+            <div style="display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap;">
+              <button type="submit" class="btn-onboarding-cta" style="padding: 10px 24px; width: auto;">
                 <i class="fa-solid fa-check"></i> <span>Guardar Todas las Plantillas</span>
               </button>
             </div>
@@ -763,23 +788,23 @@
         </div>
 
         <!-- SELECTOR DE TIPO DE INFORME Y PARÁMETROS -->
-        <div class="data-card" style="padding: 16px 20px; margin-bottom: 20px;">
-          <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end;">
-            <div style="flex: 2; min-width: 240px;">
+        <div class="data-card" style="padding: 16px 18px; margin-bottom: 20px;">
+          <div style="display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end;">
+            <div style="flex: 2 1 260px; min-width: 0; width: 100%;">
               <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">
                 <i class="fa-solid fa-folder-tree"></i> Tipo de Informe:
               </label>
-              <select id="report-type-select" class="form-control" onchange="onReportTypeChange()" style="padding: 7px 10px; font-size: 13px;">
+              <select id="report-type-select" class="form-control" onchange="onReportTypeChange()" style="padding: 8px 10px; font-size: 13px; text-overflow: ellipsis;">
                 <option value="recaudacion">1. Informe Mensual de Recaudación & Cobranzas</option>
                 <option value="condominio">2. Informe de Gastos Comunes & Liquidación Condominial</option>
                 <option value="solvencia">3. Estado de Cuenta & Certificado de Solvencia por Inquilino</option>
               </select>
             </div>
 
-            <div id="report-param-period" style="display: flex; gap: 10px; flex: 1.5; min-width: 200px;">
-              <div style="flex: 1;">
+            <div id="report-param-period" style="display: flex; gap: 10px; flex: 1.5 1 200px; min-width: 0; width: 100%;">
+              <div style="flex: 1; min-width: 0;">
                 <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">Mes:</label>
-                <select id="report-param-month" class="form-control" onchange="generateSelectedReport()" style="padding: 7px 10px; font-size: 13px;">
+                <select id="report-param-month" class="form-control" onchange="generateSelectedReport()" style="padding: 8px 10px; font-size: 13px;">
                   <option value="1">Enero</option>
                   <option value="2">Febrero</option>
                   <option value="3" selected>Marzo</option>
@@ -794,20 +819,20 @@
                   <option value="12">Diciembre</option>
                 </select>
               </div>
-              <div style="flex: 1;">
+              <div style="flex: 1; min-width: 0;">
                 <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">Año:</label>
-                <select id="report-param-year" class="form-control" onchange="generateSelectedReport()" style="padding: 7px 10px; font-size: 13px;">
+                <select id="report-param-year" class="form-control" onchange="generateSelectedReport()" style="padding: 8px 10px; font-size: 13px;">
                   <option value="2026" selected>2026</option>
                   <option value="2025">2025</option>
                 </select>
               </div>
             </div>
 
-            <div id="report-param-tenant-wrapper" style="display: none; flex: 2; min-width: 220px;">
+            <div id="report-param-tenant-wrapper" style="display: none; flex: 2 1 240px; min-width: 0; width: 100%;">
               <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">
                 <i class="fa-solid fa-store"></i> Inquilino / Arrendatario:
               </label>
-              <select id="report-param-tenant" class="form-control" onchange="generateSelectedReport()" style="padding: 7px 10px; font-size: 13px;">
+              <select id="report-param-tenant" class="form-control" onchange="generateSelectedReport()" style="padding: 8px 10px; font-size: 13px;">
                 <!-- Injected via JS -->
               </select>
             </div>
@@ -972,17 +997,28 @@
         <input type="text" class="form-control" id="pay-txid" placeholder="Ej: e4b2...8f9c (64 caracteres hex)">
       </div>
 
-      <!-- CARGA DE COMPROBANTE DE PAGO (IMAGEN O PDF) -->
+      <!-- CARGA DE COMPROBANTE DE PAGO (DRAG & DROP + BOTÓN MÓVIL) -->
       <div class="form-group" style="margin-top: 4px;">
         <label><i class="fa-solid fa-paperclip" style="color: var(--amber);"></i> Adjuntar Comprobante de Pago (Voucher / Captura / PDF)</label>
-        <input type="file" class="form-control" id="pay-receipt-file" accept="image/*,.pdf" onchange="handleReceiptFileChange(event)" style="padding: 7px;">
-        <div id="receipt-preview-container" style="display: none; margin-top: 8px; padding: 10px; background: rgba(255,255,255,0.03); border: 1px dashed var(--border-focus); border-radius: 8px; align-items: center; justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <i class="fa-solid fa-file-circle-check" style="color: var(--emerald); font-size: 16px;"></i>
-            <span id="receipt-file-name" style="font-size: 11.5px; color: var(--txt-primary); max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+        <input type="file" id="pay-receipt-file" accept="image/*,.pdf" onchange="handleReceiptFileChange(event)" style="display: none;">
+        
+        <div class="custom-file-dropzone amber-zone" id="pay-receipt-dropzone" onclick="document.getElementById('pay-receipt-file').click()">
+          <i class="fa-solid fa-cloud-arrow-up dropzone-icon"></i>
+          <span class="dropzone-main-text">Arrastra el comprobante aquí o haz clic para examinar</span>
+          <span class="dropzone-sub-text">Soporta JPG, PNG o PDF bancario (Máx. 10 MB)</span>
+          <span class="dropzone-mobile-btn"><i class="fa-solid fa-camera"></i> Subir Comprobante (Cámara o Archivo)</span>
+        </div>
+
+        <div id="receipt-preview-container" class="file-preview-card" style="display: none;">
+          <div class="file-preview-info">
+            <i class="fa-solid fa-file-circle-check" id="pay-preview-icon" style="color: var(--emerald); font-size: 20px;"></i>
+            <div style="min-width: 0;">
+              <div id="receipt-file-name" class="file-preview-name"></div>
+              <div id="receipt-file-size" class="file-preview-size"></div>
+            </div>
           </div>
-          <button type="button" onclick="removeReceiptFile()" style="background: none; border: none; color: var(--rose); cursor: pointer; font-size: 12px;">
-            <i class="fa-solid fa-trash"></i>
+          <button type="button" class="file-preview-remove" onclick="removeReceiptFile(event)" title="Eliminar comprobante adjunto">
+            <i class="fa-solid fa-trash-can"></i>
           </button>
         </div>
       </div>
@@ -1108,7 +1144,7 @@
     <form id="bank-account-form" onsubmit="saveBankAccount(event)" class="modal-body" style="display: flex; flex-direction: column; gap: 12px;">
       <input type="hidden" id="bank-acc-id" value="">
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div class="form-grid-2">
         <div class="form-group">
           <label>Nombre del Banco / Plataforma</label>
           <input type="text" class="form-control" id="bank-acc-bank" placeholder="Ej: Banesco Banco Universal / Binance" required>
@@ -1124,7 +1160,7 @@
         <input type="text" class="form-control" id="bank-acc-holder" placeholder="Ej: Inversiones y Servicios C.A." required>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div class="form-grid-2">
         <div class="form-group">
           <label>RIF / Documento de Identidad</label>
           <input type="text" class="form-control" id="bank-acc-rif" placeholder="Ej: J-12345678-0" required>
@@ -1244,7 +1280,7 @@
         <input type="text" class="form-control" id="exp-concept" placeholder="Ej: Vigilancia y Seguridad Armada 24/7" required>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div class="form-grid-2">
         <div class="form-group">
           <label>Categoría</label>
           <select class="form-control" id="exp-category" required>
@@ -1259,8 +1295,8 @@
         </div>
         <div class="form-group">
           <label>Período de Imputación (Mes / Año)</label>
-          <div style="display: flex; gap: 6px;">
-            <select class="form-control" id="exp-month" required style="flex: 1;">
+          <div style="display: flex; gap: 8px; width: 100%;">
+            <select class="form-control" id="exp-month" required style="flex: 1; min-width: 0;">
               <option value="1">Enero</option>
               <option value="2">Febrero</option>
               <option value="3" selected>Marzo</option>
@@ -1274,7 +1310,7 @@
               <option value="11">Noviembre</option>
               <option value="12">Diciembre</option>
             </select>
-            <select class="form-control" id="exp-year" required style="width: 90px;">
+            <select class="form-control" id="exp-year" required style="width: 90px; flex-shrink: 0;">
               <option value="2025">2025</option>
               <option value="2026" selected>2026</option>
               <option value="2027">2027</option>
@@ -1283,7 +1319,7 @@
         </div>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div class="form-grid-2">
         <div class="form-group">
           <label>Razón Social del Proveedor</label>
           <input type="text" class="form-control" id="exp-provider" placeholder="Ej: Seguridad Blindada de Oriente, C.A." required>
@@ -1294,7 +1330,7 @@
         </div>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div class="form-grid-2">
         <div class="form-group">
           <label>N° Factura Fiscal</label>
           <input type="text" class="form-control" id="exp-invoice-num" placeholder="Ej: FAC-2026-0891" required>
@@ -1305,7 +1341,7 @@
         </div>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div class="form-grid-2">
         <div class="form-group">
           <label>Monto Base Facturado (USD $)</label>
           <input type="number" step="0.01" class="form-control" id="exp-amount-usd" placeholder="0.00" oninput="updateExpenseEquivalents()" required>
@@ -1338,17 +1374,28 @@
         </div>
       </div>
 
-      <!-- CARGA DE FACTURA DIGITAL / SOPORTE FISCAL -->
+      <!-- CARGA DE FACTURA DIGITAL / SOPORTE FISCAL (DRAG & DROP + BOTÓN MÓVIL) -->
       <div class="form-group">
         <label><i class="fa-solid fa-paperclip" style="color: var(--purple);"></i> Adjuntar Factura / Soporte Fiscal (PDF o Imagen)</label>
-        <input type="file" class="form-control" id="exp-proof-file" accept="image/*,.pdf" onchange="handleExpenseFileChange(event)" style="padding: 7px;">
-        <div id="exp-proof-preview-container" style="display: none; margin-top: 8px; padding: 8px 12px; background: rgba(255,255,255,0.03); border: 1px dashed var(--border-focus); border-radius: 8px; align-items: center; justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <i class="fa-solid fa-file-pdf" style="color: var(--purple); font-size: 16px;"></i>
-            <span id="exp-file-name" style="font-size: 11.5px; color: var(--txt-primary); max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+        <input type="file" id="exp-proof-file" accept="image/*,.pdf" onchange="handleExpenseFileChange(event)" style="display: none;">
+        
+        <div class="custom-file-dropzone" id="exp-proof-dropzone" onclick="document.getElementById('exp-proof-file').click()">
+          <i class="fa-solid fa-cloud-arrow-up dropzone-icon"></i>
+          <span class="dropzone-main-text">Arrastra y suelta tu factura aquí o haz clic para examinar</span>
+          <span class="dropzone-sub-text">Soporta JPG, PNG o PDF fiscal (Máx. 10 MB)</span>
+          <span class="dropzone-mobile-btn"><i class="fa-solid fa-file-arrow-up"></i> Adjuntar Factura (Cámara o Archivo)</span>
+        </div>
+
+        <div id="exp-proof-preview-container" class="file-preview-card" style="display: none;">
+          <div class="file-preview-info">
+            <i class="fa-solid fa-file-circle-check" id="exp-preview-icon" style="color: var(--purple); font-size: 20px;"></i>
+            <div style="min-width: 0;">
+              <div id="exp-file-name" class="file-preview-name"></div>
+              <div id="exp-file-size" class="file-preview-size"></div>
+            </div>
           </div>
-          <button type="button" onclick="removeExpenseFile()" style="background: none; border: none; color: var(--rose); cursor: pointer; font-size: 12px;">
-            <i class="fa-solid fa-trash"></i>
+          <button type="button" class="file-preview-remove" onclick="removeExpenseFile(event)" title="Eliminar archivo adjunto">
+            <i class="fa-solid fa-trash-can"></i>
           </button>
         </div>
       </div>
@@ -1356,7 +1403,7 @@
       <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px;">
         <button type="button" class="btn-currency-toggle" onclick="closeExpenseModal()">Cancelar</button>
         <button type="submit" class="btn-onboarding-cta" style="background: var(--purple); border-color: var(--purple);">
-          <i class="fa-solid fa-floppy-disk"></i> Guardar Gasto y Liquidar
+          <i class="fa-solid fa-floppy-disk"></i> <span>Guardar Gasto y Liquidar</span>
         </button>
       </div>
     </form>

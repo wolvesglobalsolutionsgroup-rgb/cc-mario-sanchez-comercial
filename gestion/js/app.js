@@ -1471,6 +1471,23 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('pay-method').value = pending.payment_method;
       document.getElementById('pay-ref').value = pending.reference_number || '';
     }
+
+    // Inicializar dropzone y soporte visual de comprobante
+    window.removeReceiptFile();
+    const proofToDisplay = (pending && pending.receipt_proof) ? pending.receipt_proof : (inv && inv.receipt_proof ? inv.receipt_proof : null);
+    if (proofToDisplay) {
+      currentUploadedProof = proofToDisplay;
+      const previewCont = document.getElementById('receipt-preview-container');
+      const dropzone = document.getElementById('pay-receipt-dropzone');
+      const nameEl = document.getElementById('receipt-file-name');
+      const sizeEl = document.getElementById('receipt-file-size');
+      const iconEl = document.getElementById('pay-preview-icon');
+      if (previewCont) previewCont.style.display = 'flex';
+      if (dropzone) dropzone.style.display = 'none';
+      if (nameEl) nameEl.textContent = proofToDisplay.name || 'Comprobante_Pago_Adjunto';
+      if (sizeEl && proofToDisplay.size) sizeEl.textContent = `${(proofToDisplay.size / 1024).toFixed(1)} KB • Archivo cargado`;
+      if (iconEl && proofToDisplay.type && proofToDisplay.type.includes('pdf')) iconEl.className = 'fa-solid fa-file-pdf';
+    }
     
     updatePaymentEquivalents();
     document.getElementById('modal-payment').classList.add('open');
@@ -1653,16 +1670,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // Manejador de archivo comprobante de pago (base64)
+  // Manejador de archivo comprobante de pago (base64) con soporte Drag & Drop
   let currentUploadedProof = null;
   window.handleReceiptFileChange = function(e) {
-    const file = e.target.files[0];
+    const file = (e.target && e.target.files && e.target.files[0])
+      ? e.target.files[0]
+      : (e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files[0] : null);
     if (!file) return;
 
-    // Validación de tamaño (Máx 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert("El archivo seleccionado excede el límite máximo de 5MB.");
-      e.target.value = '';
+    // Validación de tamaño (Máx 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert("El comprobante seleccionado excede el límite máximo de 10MB.");
+      const input = document.getElementById('pay-receipt-file');
+      if (input) input.value = '';
       return;
     }
 
@@ -1670,26 +1690,36 @@ document.addEventListener('DOMContentLoaded', () => {
     reader.onload = function(evt) {
       currentUploadedProof = {
         name: file.name,
-        type: file.type,
+        type: file.type || 'application/octet-stream',
         size: file.size,
         data: evt.target.result // Base64 Data URL
       };
       const previewCont = document.getElementById('receipt-preview-container');
+      const dropzone = document.getElementById('pay-receipt-dropzone');
       const nameEl = document.getElementById('receipt-file-name');
-      if (previewCont && nameEl) {
-        nameEl.innerText = `${file.name} (${Math.round(file.size / 1024)} KB)`;
-        previewCont.style.display = 'flex';
+      const sizeEl = document.getElementById('receipt-file-size');
+      const iconEl = document.getElementById('pay-preview-icon');
+
+      if (previewCont) previewCont.style.display = 'flex';
+      if (dropzone) dropzone.style.display = 'none';
+      if (nameEl) nameEl.textContent = file.name;
+      if (sizeEl) sizeEl.textContent = `${(file.size / 1024).toFixed(1)} KB • ${(file.type || 'Documento').split('/')[1] || 'archivo'}`;
+      if (iconEl) {
+        iconEl.className = file.type && file.type.includes('pdf') ? 'fa-solid fa-file-pdf' : 'fa-solid fa-file-image';
       }
     };
     reader.readAsDataURL(file);
   };
 
-  window.removeReceiptFile = function() {
+  window.removeReceiptFile = function(e) {
+    if (e && e.stopPropagation) e.stopPropagation();
     currentUploadedProof = null;
     const fileInput = document.getElementById('pay-receipt-file');
     if (fileInput) fileInput.value = '';
     const previewCont = document.getElementById('receipt-preview-container');
+    const dropzone = document.getElementById('pay-receipt-dropzone');
     if (previewCont) previewCont.style.display = 'none';
+    if (dropzone) dropzone.style.display = 'flex';
   };
 
   // Visor de Comprobante de Pago
@@ -1745,7 +1775,61 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (document.getElementById('cfg-msg-preventive')) document.getElementById('cfg-msg-preventive').value = cfg.msg_preventive_template;
     if (document.getElementById('cfg-msg-mora')) document.getElementById('cfg-msg-mora').value = cfg.msg_mora_template;
+
+    window.updateTemplateLivePreview();
   }
+
+  // --- EDITOR INTERACTIVO DE PLANTILLAS Y VISTA PREVIA ---
+  window.activeTemplateTextarea = null;
+
+  window.insertVarToActiveTemplate = function(varName) {
+    let textarea = window.activeTemplateTextarea;
+    if (!textarea) {
+      textarea = document.getElementById('cfg-msg-preventive');
+    }
+    if (!textarea) return;
+
+    const start = textarea.selectionStart || 0;
+    const end = textarea.selectionEnd || 0;
+    const text = textarea.value;
+    textarea.value = text.substring(0, start) + varName + text.substring(end);
+    textarea.selectionStart = textarea.selectionEnd = start + varName.length;
+    textarea.focus();
+    window.updateTemplateLivePreview();
+  };
+
+  window.updateTemplateLivePreview = function() {
+    const sampleData = {
+      '{inquilino}': 'Inversiones FarmaPlus C.A.',
+      '{unidad}': 'Local L-04',
+      '{periodo}': 'Septiembre 2026',
+      '{monto_usd}': '$420.00 USD',
+      '{monto_bs}': 'Bs. 17,220.00',
+      '{tasa_bcv}': '41.00 Bs/USD',
+      '{fecha_limite}': '05/09/2026'
+    };
+
+    const renderSample = (tpl) => {
+      if (!tpl || !tpl.trim()) {
+        return '<span style="color:#64748b;font-style:italic;">Escriba una plantilla para visualizar la vista previa...</span>';
+      }
+      let res = escapeHtml(tpl);
+      for (const [key, val] of Object.entries(sampleData)) {
+        res = res.split(key).join(`<span style="background:rgba(217,119,6,0.25);color:#fbbf24;padding:1px 5px;border-radius:4px;font-weight:700;">${val}</span>`);
+      }
+      // Reemplazo básico de asteriscos para simular negrita en WhatsApp
+      res = res.replace(/\*(.*?)\*/g, '<strong>$1</strong>');
+      return res.replace(/\n/g, '<br>');
+    };
+
+    const prevEl = document.getElementById('cfg-msg-preventive');
+    const moraEl = document.getElementById('cfg-msg-mora');
+    const prevBox = document.getElementById('preview-msg-preventive');
+    const moraBox = document.getElementById('preview-msg-mora');
+
+    if (prevBox && prevEl) prevBox.innerHTML = renderSample(prevEl.value);
+    if (moraBox && moraEl) moraBox.innerHTML = renderSample(moraEl.value);
+  };
 
   window.saveCuotasConfig = function(e) {
     e.preventDefault();
@@ -1782,6 +1866,7 @@ document.addEventListener('DOMContentLoaded', () => {
       msg_preventive_template: document.getElementById('cfg-msg-preventive').value.trim(),
       msg_mora_template: document.getElementById('cfg-msg-mora').value.trim()
     });
+    window.updateTemplateLivePreview();
     renderAlertsCenter();
     if (window.SecuritySuite && window.SecuritySuite.toast) {
       window.SecuritySuite.toast('Plantillas de notificación para WhatsApp y correo actualizadas.', 'success', 'Plantillas Guardadas');
@@ -1799,6 +1884,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('cfg-msg-preventive').value = `Estimados *{inquilino}* ({unidad}):\nLe remitimos su aviso de cobro del período *{periodo}* por un total de *{monto_usd}* (Bs. {monto_bs} a tasa BCV {tasa_bcv}).\nFecha límite de pago: *{fecha_limite}*.\nPor favor remitir comprobante a este canal para conciliación.`;
     document.getElementById('cfg-msg-mora').value = `⚠️ *AVISO DE RETRASO — CC MARIO SÁNCHEZ*\nEstimados *{inquilino}* ({unidad}):\nLe informamos que su cuota del período *{periodo}* se encuentra en estado de MORA por un saldo de *{monto_usd}* (Bs. {monto_bs}).\nConforme a la Gaceta Oficial 40.418, agradecemos regularizar el pago a la brevedad para evitar recargos o suspensión de servicios comunes.`;
     window.saveMensajesConfig(new Event('submit'));
+    window.updateTemplateLivePreview();
   };
 
   loadConfigFields();
@@ -2579,7 +2665,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
 
         <!-- TARJETAS DE RESUMEN CONTABLE -->
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;">
+        <div class="report-summary-grid" style="gap: 10px; margin-bottom: 20px;">
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; text-align: center;">
             <div style="font-size: 10.5px; color: #64748b; font-weight: 700; text-transform: uppercase;">Total Facturado</div>
             <div style="font-size: 16px; font-weight: 800; color: #0f172a;">$${totalFacturadoUsd.toFixed(2)}</div>
@@ -2599,24 +2685,26 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         </div>
 
-        <!-- TABLA DETALLADA -->
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-          <thead>
-            <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 11px; text-transform: uppercase; color: #475569;">
-              <th style="padding: 8px 10px; text-align: left;">N°</th>
-              <th style="padding: 8px 10px; text-align: left;">Arrendatario / Razón Social</th>
-              <th style="padding: 8px 10px; text-align: left;">Local</th>
-              <th style="padding: 8px 10px; text-align: right;">Canon Base</th>
-              <th style="padding: 8px 10px; text-align: right;">Condominio</th>
-              <th style="padding: 8px 10px; text-align: right;">Total USD</th>
-              <th style="padding: 8px 10px; text-align: right;">Total Bs. (BCV)</th>
-              <th style="padding: 8px 10px; text-align: center;">Estatus</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows || '<tr><td colspan="8" style="text-align:center;padding:16px;">No hay facturas para este período.</td></tr>'}
-          </tbody>
-        </table>
+        <!-- TABLA DETALLADA CON WRAPPER RESPONSIVE -->
+        <div class="table-responsive" style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 20px;">
+          <table style="width: 100%; min-width: 650px; border-collapse: collapse; margin-bottom: 0;">
+            <thead>
+              <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 11px; text-transform: uppercase; color: #475569;">
+                <th style="padding: 8px 10px; text-align: left;">N°</th>
+                <th style="padding: 8px 10px; text-align: left;">Arrendatario / Razón Social</th>
+                <th style="padding: 8px 10px; text-align: left;">Local</th>
+                <th style="padding: 8px 10px; text-align: right;">Canon Base</th>
+                <th style="padding: 8px 10px; text-align: right;">Condominio</th>
+                <th style="padding: 8px 10px; text-align: right;">Total USD</th>
+                <th style="padding: 8px 10px; text-align: right;">Total Bs. (BCV)</th>
+                <th style="padding: 8px 10px; text-align: center;">Estatus</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows || '<tr><td colspan="8" style="text-align:center;padding:16px;">No hay facturas para este período.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
 
         <!-- PIE Y FIRMAS DE AUDITORÍA -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px; padding-top: 20px; border-top: 1px dashed #cbd5e1;">
@@ -2695,46 +2783,50 @@ document.addEventListener('DOMContentLoaded', () => {
           <h4 style="margin: 0 0 8px 0; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #1e293b;">
             1. Relación de Gastos Comunes Operativos Incurridos en el Mes
           </h4>
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">
-            <thead>
-              <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 10.5px; text-transform: uppercase;">
-                <th style="padding: 7px 10px; text-align: left;">N°</th>
-                <th style="padding: 7px 10px; text-align: left;">Concepto / Proveedor</th>
-                <th style="padding: 7px 10px; text-align: left;">Categoría</th>
-                <th style="padding: 7px 10px; text-align: right;">Total USD</th>
-                <th style="padding: 7px 10px; text-align: right;">Total Bs.</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${expensesRows}
-              <tr style="background: #f8fafc; font-weight: 800; border-top: 2px solid #cbd5e1;">
-                <td colspan="3" style="padding: 8px 10px;">TOTAL GASTOS COMUNES LIQUIDADOS:</td>
-                <td style="padding: 8px 10px; text-align: right; color: #0f172a;">$${totalGastosUsd.toFixed(2)} USD</td>
-                <td style="padding: 8px 10px; text-align: right; color: #0f172a;">Bs. ${totalGastosBs}</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="table-responsive" style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 12px;">
+            <table style="width: 100%; min-width: 550px; border-collapse: collapse; margin-bottom: 0;">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 10.5px; text-transform: uppercase;">
+                  <th style="padding: 7px 10px; text-align: left;">N°</th>
+                  <th style="padding: 7px 10px; text-align: left;">Concepto / Proveedor</th>
+                  <th style="padding: 7px 10px; text-align: left;">Categoría</th>
+                  <th style="padding: 7px 10px; text-align: right;">Total USD</th>
+                  <th style="padding: 7px 10px; text-align: right;">Total Bs.</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${expensesRows}
+                <tr style="background: #f8fafc; font-weight: 800; border-top: 2px solid #cbd5e1;">
+                  <td colspan="3" style="padding: 8px 10px;">TOTAL GASTOS COMUNES LIQUIDADOS:</td>
+                  <td style="padding: 8px 10px; text-align: right; color: #0f172a;">$${totalGastosUsd.toFixed(2)} USD</td>
+                  <td style="padding: 8px 10px; text-align: right; color: #0f172a;">Bs. ${totalGastosBs}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div>
           <h4 style="margin: 0 0 8px 0; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #1e293b;">
             2. Distribución Alícuota y Cobro por Unidad Comercial
           </h4>
-          <table style="width: 100%; border-collapse: collapse;">
-            <thead>
-              <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 10.5px; text-transform: uppercase;">
-                <th style="padding: 7px 10px; text-align: left;">Unidad</th>
-                <th style="padding: 7px 10px; text-align: left;">Arrendatario / Ocupante</th>
-                <th style="padding: 7px 10px; text-align: right;">Área</th>
-                <th style="padding: 7px 10px; text-align: right;">Alícuota %</th>
-                <th style="padding: 7px 10px; text-align: right;">Cuota USD</th>
-                <th style="padding: 7px 10px; text-align: right;">Cuota Bs.</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${distributionRows}
-            </tbody>
-          </table>
+          <div class="table-responsive" style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+            <table style="width: 100%; min-width: 550px; border-collapse: collapse;">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 10.5px; text-transform: uppercase;">
+                  <th style="padding: 7px 10px; text-align: left;">Unidad</th>
+                  <th style="padding: 7px 10px; text-align: left;">Arrendatario / Ocupante</th>
+                  <th style="padding: 7px 10px; text-align: right;">Área</th>
+                  <th style="padding: 7px 10px; text-align: right;">Alícuota %</th>
+                  <th style="padding: 7px 10px; text-align: right;">Cuota USD</th>
+                  <th style="padding: 7px 10px; text-align: right;">Cuota Bs.</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${distributionRows}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     `;
@@ -2809,22 +2901,24 @@ document.addEventListener('DOMContentLoaded', () => {
         <h4 style="margin: 0 0 8px 0; font-size: 12px; font-weight: 800; text-transform: uppercase; color: #1e293b;">
           Historial Cronológico de Facturación
         </h4>
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
-          <thead>
-            <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 10.5px; text-transform: uppercase;">
-              <th style="padding: 6px 8px; text-align: left;">Período</th>
-              <th style="padding: 6px 8px; text-align: left;">Recibo</th>
-              <th style="padding: 6px 8px; text-align: right;">Canon</th>
-              <th style="padding: 6px 8px; text-align: right;">Condominio</th>
-              <th style="padding: 6px 8px; text-align: right;">Total USD</th>
-              <th style="padding: 6px 8px; text-align: center;">Fecha Pago</th>
-              <th style="padding: 6px 8px; text-align: center;">Estatus</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${invoiceRows}
-          </tbody>
-        </table>
+        <div class="table-responsive" style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 25px;">
+          <table style="width: 100%; min-width: 520px; border-collapse: collapse; margin-bottom: 0;">
+            <thead>
+              <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 10.5px; text-transform: uppercase;">
+                <th style="padding: 6px 8px; text-align: left;">Período</th>
+                <th style="padding: 6px 8px; text-align: left;">Recibo</th>
+                <th style="padding: 6px 8px; text-align: right;">Canon</th>
+                <th style="padding: 6px 8px; text-align: right;">Condominio</th>
+                <th style="padding: 6px 8px; text-align: right;">Total USD</th>
+                <th style="padding: 6px 8px; text-align: center;">Fecha Pago</th>
+                <th style="padding: 6px 8px; text-align: center;">Estatus</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${invoiceRows}
+            </tbody>
+          </table>
+        </div>
 
         <div style="text-align: center; margin-top: 50px;">
           <div style="display: inline-block; width: 280px; border-top: 1px solid #475569; padding-top: 8px; font-size: 11.5px;">
@@ -3200,9 +3294,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (exp.invoice_proof) {
           currentExpenseProof = exp.invoice_proof;
           const container = document.getElementById('exp-proof-preview-container');
+          const dropzone = document.getElementById('exp-proof-dropzone');
           const nameEl = document.getElementById('exp-file-name');
+          const sizeEl = document.getElementById('exp-file-size');
+          const iconEl = document.getElementById('exp-preview-icon');
           if (container && nameEl) {
             nameEl.innerText = exp.invoice_proof.name || 'Factura_Fiscal_Adjunta';
+            if (sizeEl && exp.invoice_proof.size) sizeEl.innerText = `${(exp.invoice_proof.size / 1024).toFixed(1)} KB • Archivo adjunto`;
+            if (iconEl && exp.invoice_proof.type && exp.invoice_proof.type.includes('pdf')) iconEl.className = 'fa-solid fa-file-pdf';
+            if (dropzone) dropzone.style.display = 'none';
             container.style.display = 'flex';
           }
         }
@@ -3258,12 +3358,15 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.handleExpenseFileChange = function(e) {
-    const file = e.target.files[0];
+    const file = (e.target && e.target.files && e.target.files[0])
+      ? e.target.files[0]
+      : (e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files[0] : null);
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert("La factura seleccionada excede el límite máximo de 5MB.");
-      e.target.value = '';
+    if (file.size > 10 * 1024 * 1024) {
+      alert("La factura o comprobante fiscal excede el límite de 10MB.");
+      const input = document.getElementById('exp-proof-file');
+      if (input) input.value = '';
       return;
     }
 
@@ -3271,28 +3374,38 @@ document.addEventListener('DOMContentLoaded', () => {
     reader.onload = function(evt) {
       currentExpenseProof = {
         name: file.name,
-        type: file.type,
+        type: file.type || 'application/octet-stream',
         size: file.size,
         data: evt.target.result,
         uploaded_at: new Date().toISOString()
       };
 
       const container = document.getElementById('exp-proof-preview-container');
+      const dropzone = document.getElementById('exp-proof-dropzone');
       const nameEl = document.getElementById('exp-file-name');
-      if (container && nameEl) {
-        nameEl.innerText = file.name;
-        container.style.display = 'flex';
+      const sizeEl = document.getElementById('exp-file-size');
+      const iconEl = document.getElementById('exp-preview-icon');
+
+      if (container) container.style.display = 'flex';
+      if (dropzone) dropzone.style.display = 'none';
+      if (nameEl) nameEl.textContent = file.name;
+      if (sizeEl) sizeEl.textContent = `${(file.size / 1024).toFixed(1)} KB • ${(file.type || 'Documento').split('/')[1] || 'archivo'}`;
+      if (iconEl) {
+        iconEl.className = file.type && file.type.includes('pdf') ? 'fa-solid fa-file-pdf' : 'fa-solid fa-file-image';
       }
     };
     reader.readAsDataURL(file);
   };
 
-  window.removeExpenseFile = function() {
+  window.removeExpenseFile = function(e) {
+    if (e && e.stopPropagation) e.stopPropagation();
     currentExpenseProof = null;
     const input = document.getElementById('exp-proof-file');
     if (input) input.value = '';
     const container = document.getElementById('exp-proof-preview-container');
+    const dropzone = document.getElementById('exp-proof-dropzone');
     if (container) container.style.display = 'none';
+    if (dropzone) dropzone.style.display = 'flex';
   };
 
   window.saveExpense = function(e) {
@@ -3569,6 +3682,39 @@ document.addEventListener('DOMContentLoaded', () => {
       window.SecuritySuite.toast("Libro de Gastos exportado exitosamente a CSV.", "success", "Exportación Exitosa");
     }
   };
+
+  // Configuración de eventos Drag & Drop para los Dropzones personalizados
+  function setupCustomDropzones() {
+    [
+      { zoneId: 'pay-receipt-dropzone', handler: window.handleReceiptFileChange },
+      { zoneId: 'exp-proof-dropzone', handler: window.handleExpenseFileChange }
+    ].forEach(item => {
+      const zone = document.getElementById(item.zoneId);
+      if (!zone) return;
+
+      ['dragenter', 'dragover'].forEach(eventName => {
+        zone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          zone.classList.add('dragover');
+        }, false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        zone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          zone.classList.remove('dragover');
+        }, false);
+      });
+
+      zone.addEventListener('drop', (e) => {
+        item.handler(e);
+      }, false);
+    });
+  }
+
+  setupCustomDropzones();
 
   // Render inicial
   renderAll();

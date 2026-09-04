@@ -869,6 +869,9 @@ button {
   font-family: var(--font-body);
   font-size: 13px;
   outline: none;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
   transition: border 0.15s, background-color 0.15s;
 }
 
@@ -986,8 +989,14 @@ select.form-control optgroup {
     padding: 6px 4px;
     font-size: 11px;
   }
-  .btn-onboarding-cta span {
+  .top-navbar .btn-onboarding-cta span {
     display: none;
+  }
+  .btn-label-desktop {
+    display: none !important;
+  }
+  .btn-label-mobile {
+    display: inline !important;
   }
   .btn-onboarding-cta {
     padding: 8px 12px;
@@ -1322,4 +1331,248 @@ select.form-control optgroup {
   justify-content: flex-end;
   gap: 10px;
 }
+
+/* ==============================================================================
+   NUEVAS OPTIMIZACIONES MOBILE, MODALES, DROPZONE & REPORTES
+   ============================================================================== */
+
+.btn-label-mobile {
+  display: none;
+}
+.btn-label-desktop {
+  display: inline;
+}
+
+/* GRIDS RESPONSIVE DE FORMULARIOS */
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .form-grid-2,
+  .modal-window [style*="grid-template-columns: 1fr 1fr"],
+  .modal-window [style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .modal-overlay {
+    padding: 8px !important;
+    align-items: center !important;
+  }
+  .modal-window {
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: 92vh !important;
+    max-height: 92dvh !important;
+    border-radius: 14px !important;
+    margin: auto !important;
+  }
+  .modal-header {
+    padding: 12px 14px !important;
+  }
+  .modal-title {
+    font-size: 14px !important;
+  }
+  .modal-body {
+    padding: 14px 12px !important;
+    gap: 12px !important;
+  }
+}
+
+/* CUSTOM FILE UPLOAD DROPZONE */
+.custom-file-dropzone {
+  position: relative;
+  border: 2px dashed rgba(168, 85, 247, 0.4);
+  background: rgba(168, 85, 247, 0.04);
+  border-radius: 12px;
+  padding: 20px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  user-select: none;
+}
+.custom-file-dropzone:hover,
+.custom-file-dropzone.drag-over {
+  border-color: var(--purple);
+  background: rgba(168, 85, 247, 0.12);
+  transform: translateY(-1px);
+}
+.custom-file-dropzone.amber-zone {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.04);
+}
+.custom-file-dropzone.amber-zone:hover,
+.custom-file-dropzone.amber-zone.drag-over {
+  border-color: var(--amber);
+  background: rgba(245, 158, 11, 0.12);
+}
+.custom-file-dropzone .dropzone-icon {
+  font-size: 26px;
+  color: var(--purple);
+  transition: transform 0.2s ease;
+}
+.custom-file-dropzone.amber-zone .dropzone-icon {
+  color: var(--amber);
+}
+.custom-file-dropzone:hover .dropzone-icon {
+  transform: scale(1.1);
+}
+.custom-file-dropzone .dropzone-main-text {
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--txt-primary);
+}
+.custom-file-dropzone .dropzone-sub-text {
+  font-size: 11px;
+  color: var(--txt-muted);
+}
+.custom-file-dropzone .dropzone-mobile-btn {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .custom-file-dropzone {
+    padding: 14px 12px;
+  }
+  .custom-file-dropzone .dropzone-main-text {
+    display: none;
+  }
+  .custom-file-dropzone .dropzone-mobile-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-heading);
+    font-size: 12.5px;
+    font-weight: 800;
+    color: var(--txt-primary);
+  }
+}
+
+.file-preview-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-focus);
+  border-radius: 10px;
+  margin-top: 8px;
+  gap: 10px;
+}
+.file-preview-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.file-preview-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--txt-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+.file-preview-size {
+  font-size: 10.5px;
+  color: var(--txt-muted);
+}
+.file-preview-remove {
+  background: transparent;
+  border: none;
+  color: var(--rose);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+.file-preview-remove:hover {
+  background: var(--rose-glow);
+}
+
+/* RESPONSIVE INFORMES Y CONTABILIDAD */
+.report-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+@media (max-width: 860px) {
+  .report-summary-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+}
+@media (max-width: 480px) {
+  .report-summary-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+@media (max-width: 640px) {
+  #report-display-container {
+    padding: 12px !important;
+  }
+  .printable-report {
+    padding: 14px 10px !important;
+  }
+  .printable-report h2 {
+    font-size: 15px !important;
+  }
+  .printable-report h3 {
+    font-size: 13px !important;
+  }
+  .printable-report h4 {
+    font-size: 12px !important;
+  }
+  .printable-report table th,
+  .printable-report table td {
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+  }
+}
+
+/* VARIABLES CLICABLES Y PREVIEW PARA PLANTILLAS DE COBRO */
+.template-var-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-highlight);
+  color: var(--amber);
+  padding: 4px 9px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-family: monospace;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.template-var-pill:hover {
+  background: var(--amber-glow);
+  border-color: var(--amber);
+  transform: translateY(-1px);
+}
+.template-preview-box {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px dashed var(--border-subtle);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 12px;
+  color: var(--txt-secondary);
+  line-height: 1.55;
+  margin-top: 6px;
+  white-space: pre-wrap;
+}
+
 
