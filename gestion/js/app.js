@@ -121,6 +121,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  window.resetDemoData = function() {
+    if (currentRole !== 'admin' || !window.dbService || typeof window.dbService.resetDemoData !== 'function') return;
+    const confirmed = window.confirm('¿Restablecer la demo? Se borrarán los cambios ficticios hechos en este navegador y volverán los datos iniciales.');
+    if (!confirmed) return;
+    window.dbService.resetDemoData();
+    window.location.reload();
+  };
+
   // 5. NAVEGACIÓN Y MENÚ MÓVIL
   const sidebarEl = document.getElementById('app-sidebar');
   const mobileToggleBtn = document.getElementById('mobile-menu-toggle');

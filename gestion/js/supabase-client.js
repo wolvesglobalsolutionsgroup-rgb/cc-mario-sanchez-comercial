@@ -20,6 +20,13 @@ class DatabaseService {
     }
   }
 
+  resetDemoData() {
+    localStorage.removeItem(this.storageKey);
+    localStorage.removeItem('ccms_notif_log_v1');
+    this.seedInitialData();
+    return this.getData();
+  }
+
   seedInitialData() {
     const initialData = {
       units: [
