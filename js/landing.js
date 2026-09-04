@@ -554,8 +554,14 @@ window.setSimType = setSimType;
 window.updateSim = updateSim;
 window.handleLeadSubmit = handleLeadSubmit;
 
-document.addEventListener('DOMContentLoaded', () => {
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    initLandingMap();
+    updateSim();
+    initScrollReveal();
+  });
+} else {
   initLandingMap();
   updateSim();
   initScrollReveal();
-});
+}
