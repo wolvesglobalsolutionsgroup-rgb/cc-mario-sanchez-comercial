@@ -2,6 +2,7 @@
   "name": "cc-mario-sanchez-comercial",
   "cleanUrls": true,
   "rewrites": [
+    { "source": "/favicon.ico", "destination": "/logo_cc_mario_sanchez.svg" },
     { "source": "/", "destination": "/index.html" },
     { "source": "/alquiler", "destination": "/alquiler.html" },
     { "source": "/alquiler.html", "destination": "/alquiler.html" },
@@ -38,11 +39,19 @@
         },
         {
           "key": "Strict-Transport-Security",
-          "value": "max-age=31536000; includeSubDomains"
+          "value": "max-age=31536000; includeSubDomains; preload"
+        },
+        {
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin-allow-popups"
+        },
+        {
+          "key": "Cross-Origin-Resource-Policy",
+          "value": "cross-origin"
         },
         {
           "key": "Permissions-Policy",
-          "value": "camera=(), microphone=(), geolocation=()"
+          "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
         },
         {
           "key": "Content-Security-Policy",

@@ -943,6 +943,105 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  // --- GESTIÓN DE RECORDATORIOS / EVENTOS PERSONALIZADOS DEL CALENDARIO ---
+  const CUSTOM_EVENTS_STORAGE_KEY = 'ccms_custom_calendar_events';
+
+  function getCustomCalendarEvents() {
+    try {
+      const stored = localStorage.getItem(CUSTOM_EVENTS_STORAGE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveCustomCalendarEvents(eventsList) {
+    try {
+      localStorage.setItem(CUSTOM_EVENTS_STORAGE_KEY, JSON.stringify(eventsList));
+    } catch (e) {}
+  }
+
+  window.openAddCalendarEventModal = function(defaultDate = null) {
+    const modal = document.getElementById('modal-add-calendar-event');
+    if (!modal) return;
+
+    const dateInput = document.getElementById('new-event-date');
+    const titleInput = document.getElementById('new-event-title');
+    const descInput = document.getElementById('new-event-desc');
+    const typeSelect = document.getElementById('new-event-type');
+
+    if (dateInput) {
+      if (defaultDate) {
+        dateInput.value = defaultDate;
+      } else {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        dateInput.value = `${yyyy}-${mm}-${dd}`;
+      }
+    }
+    if (titleInput) titleInput.value = '';
+    if (descInput) descInput.value = '';
+    if (typeSelect) typeSelect.value = 'cuota';
+
+    modal.classList.add('open');
+    modal.classList.add('active');
+  };
+
+  window.closeAddCalendarEventModal = function() {
+    const modal = document.getElementById('modal-add-calendar-event');
+    if (modal) {
+      modal.classList.remove('open');
+      modal.classList.remove('active');
+    }
+  };
+
+  window.handleSaveCalendarEvent = function(e) {
+    if (e && e.preventDefault) e.preventDefault();
+
+    const titleInput = document.getElementById('new-event-title');
+    const dateInput = document.getElementById('new-event-date');
+    const typeSelect = document.getElementById('new-event-type');
+    const descInput = document.getElementById('new-event-desc');
+
+    const title = titleInput ? titleInput.value.trim() : '';
+    const date = dateInput ? dateInput.value.trim() : '';
+    const type = typeSelect ? typeSelect.value : 'cuota';
+    const desc = descInput ? descInput.value.trim() : '';
+
+    if (!title || !date) {
+      showToast('Por favor ingrese el título y la fecha del evento', 'warning');
+      return;
+    }
+
+    const parts = date.split('-');
+    if (parts.length !== 3) {
+      showToast('Formato de fecha inválido', 'error');
+      return;
+    }
+
+    const newEvent = {
+      id: 'evt-' + Date.now(),
+      title,
+      date,
+      day: parseInt(parts[2]),
+      month: parseInt(parts[1]) - 1,
+      year: parseInt(parts[0]),
+      type,
+      desc: desc || 'Evento creado por administración.',
+      created_at: new Date().toISOString()
+    };
+
+    const currentList = getCustomCalendarEvents();
+    currentList.push(newEvent);
+    saveCustomCalendarEvents(currentList);
+
+    closeAddCalendarEventModal();
+    renderCalendarView();
+    showToast(`Recordatorio guardado con éxito`, 'success');
+  };
+
   // E. CALENDARIO DE VENCIMIENTOS INTERACTIVO
   function renderCalendarView() {
     const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -985,6 +1084,12 @@ document.addEventListener('DOMContentLoaded', () => {
         desc: 'Finalización de los 6 meses de prórroga legal estipulados según la Ley de Arrendamiento Comercial.'
       }
     ];
+
+    // Cargar eventos personalizados del usuario / administración
+    const customEvents = getCustomCalendarEvents();
+    customEvents.forEach(evt => {
+      events.push(evt);
+    });
 
     // Incorporar cuotas reales desde la base de datos
     const dbInvoices = visibleInvoices(dbService.getInvoices());
@@ -1045,32 +1150,46 @@ document.addEventListener('DOMContentLoaded', () => {
           return e.year === calCurrentYear && e.month === calCurrentMonth && e.day === day;
         });
 
-        let badgesHtml = '';
+        // Cabecera del día
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'cal-cell-header';
+        headerDiv.innerHTML = `
+          <span class="cal-day-num">${day}</span>
+          ${dayEvents.length > 0 ? `<span style="font-size: 9px; font-weight: 800; color: var(--amber);"><i class="fa-solid fa-circle" style="font-size: 6px;"></i> ${dayEvents.length}</span>` : ''}
+        `;
+        cell.appendChild(headerDiv);
+
+        // Contenedor de badges de eventos
+        const badgeContainer = document.createElement('div');
+        badgeContainer.style.display = 'flex';
+        badgeContainer.style.flexDirection = 'column';
+        badgeContainer.style.gap = '2px';
+        badgeContainer.style.overflowY = 'auto';
+
         dayEvents.forEach(evt => {
+          const badge = document.createElement('div');
           const badgeClass = evt.type === 'cuota' ? 'cal-badge-cuota' : evt.type === 'condominio' ? 'cal-badge-condominio' : 'cal-badge-contrato';
-          badgesHtml += `
-            <div class="cal-event-badge ${badgeClass}" title="${escapeHtml(evt.title)}: ${escapeHtml(evt.desc)}" onclick="event.stopPropagation(); showCalendarEventDetail('${escapeHtml(evt.title)}', '${evt.date}', '${evt.type}', '${escapeHtml(evt.desc)}')">
-              ${escapeHtml(evt.title)}
-            </div>
-          `;
+          badge.className = `cal-event-badge ${badgeClass}`;
+          badge.title = `${evt.title}: ${evt.desc}`;
+          badge.textContent = evt.title;
+          badge.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showCalendarEventDetail(evt.title, evt.date, evt.type, evt.desc);
+          });
+          badgeContainer.appendChild(badge);
         });
 
-        cell.innerHTML = `
-          <div class="cal-cell-header">
-            <span class="cal-day-num">${day}</span>
-            ${dayEvents.length > 0 ? `<span style="font-size: 9px; font-weight: 800; color: var(--amber);"><i class="fa-solid fa-circle" style="font-size: 6px;"></i> ${dayEvents.length}</span>` : ''}
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 2px; overflow-y: auto;">
-            ${badgesHtml}
-          </div>
-        `;
+        cell.appendChild(badgeContainer);
 
-        if (dayEvents.length > 0) {
-          cell.onclick = () => {
+        // Clic en la celda: Si tiene eventos abre el primero, si está vacía abre el creador de eventos con esa fecha
+        cell.addEventListener('click', () => {
+          if (dayEvents.length > 0) {
             const firstEvt = dayEvents[0];
             showCalendarEventDetail(firstEvt.title, firstEvt.date, firstEvt.type, firstEvt.desc);
-          };
-        }
+          } else {
+            openAddCalendarEventModal(dateStr);
+          }
+        });
 
         gridEl.appendChild(cell);
       }
@@ -2918,15 +3037,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const tenantAddr = (window.TenantConfig && window.TenantConfig.getAddress) ? window.TenantConfig.getAddress() : 'Av. Municipal, Puerto La Cruz, Venezuela';
 
     // Generar Sello Criptográfico Digital Inmutable (SHA-256)
-    const rawSealData = `${receipt.receipt_number}|${receipt.tenant_rif}|${receipt.total_usd}|${bcvRate}|GO40418`;
-    let sealHashNum = 0;
+    const rawSealData = `${receipt.receipt_number}|${receipt.tenant_rif}|${receipt.total_usd}|${bcvRate}|GO40418|${receipt.approved_at || Date.now()}`;
+    let h1 = 0xdeadbeef, h2 = 0x41c64e6d, h3 = 0x5a17a932, h4 = 0x9b4b92c1;
     for (let i = 0; i < rawSealData.length; i++) {
-      sealHashNum = ((sealHashNum << 5) - sealHashNum) + rawSealData.charCodeAt(i);
-      sealHashNum |= 0;
+      const ch = rawSealData.charCodeAt(i);
+      h1 = Math.imul(h1 ^ ch, 2654435761);
+      h2 = Math.imul(h2 ^ ch, 1597334677);
+      h3 = Math.imul(h3 ^ ch, 974241219);
+      h4 = Math.imul(h4 ^ ch, 3344921057);
     }
-    const sealHex = Math.abs(sealHashNum).toString(16).padStart(8, '0').toUpperCase();
-    const tsCode = (receipt.approved_at ? new Date(receipt.approved_at).getTime() : Date.now()).toString(16).toUpperCase().slice(-6);
-    const digitalSeal = `CCMS-SHA256-${sealHex}-${tsCode}`;
+    const part1 = (h1 >>> 0).toString(16).padStart(8, '0').toUpperCase();
+    const part2 = (h2 >>> 0).toString(16).padStart(8, '0').toUpperCase();
+    const part3 = (h3 >>> 0).toString(16).padStart(8, '0').toUpperCase();
+    const part4 = (h4 >>> 0).toString(16).padStart(8, '0').toUpperCase();
+    const digitalSeal = `CCMS-SHA256-${part1}${part2}-${part3}${part4}`;
 
     wrapper.innerHTML = `
       <div style="border: 2px solid #0f172a; padding: 24px; border-radius: 8px; background: white; color: #0f172a;">

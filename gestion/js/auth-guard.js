@@ -159,11 +159,45 @@
       return { ok: false, error: 'La autenticación demo está deshabilitada en producción. Configure Supabase Auth.' };
     }
 
+    // RATE LIMITING / LOCKOUT: Máximo 5 intentos fallidos en 5 minutos
+    const LOCKOUT_KEY = 'ccms_login_lockout';
+    const MAX_ATTEMPTS = 5;
+    const LOCKOUT_DURATION_MS = 5 * 60 * 1000; // 5 minutos
+    
+    let lockoutState = { count: 0, lockedUntil: 0 };
+    try {
+      const storedLock = localStorage.getItem(LOCKOUT_KEY);
+      if (storedLock) lockoutState = JSON.parse(storedLock);
+    } catch (e) {}
+
+    if (lockoutState.lockedUntil && lockoutState.lockedUntil > now()) {
+      const remainingSec = Math.ceil((lockoutState.lockedUntil - now()) / 1000);
+      return {
+        ok: false,
+        error: `Acceso temporalmente bloqueado por demasiados intentos fallidos. Intente nuevamente en ${remainingSec} segundos.`
+      };
+    }
+
+    const recordFailedAttempt = () => {
+      let currentAttempts = (lockoutState.lockedUntil && lockoutState.lockedUntil <= now()) ? 0 : (lockoutState.count || 0);
+      currentAttempts += 1;
+      let lockedUntil = 0;
+      if (currentAttempts >= MAX_ATTEMPTS) {
+        lockedUntil = now() + LOCKOUT_DURATION_MS;
+      }
+      localStorage.setItem(LOCKOUT_KEY, JSON.stringify({ count: currentAttempts, lockedUntil }));
+    };
+
+    const clearLockout = () => {
+      localStorage.removeItem(LOCKOUT_KEY);
+    };
+
     // Busca coincidencia por identifier (case-insensitive)
     const idLower = String(identifier).trim().toLowerCase();
     const allUsers = getUsers();
     const user = allUsers.find(u => u.identifier.toLowerCase() === idLower);
     if (!user) {
+      recordFailedAttempt();
       return { ok: false, error: 'Usuario o contraseña incorrectos' };
     }
 
@@ -183,11 +217,15 @@
 
     const hash = await sha256(password);
     if (hash !== user.password_sha256 && !hash.startsWith('PLAIN:')) {
+      recordFailedAttempt();
       return { ok: false, error: 'Usuario o contraseña incorrectos' };
     }
     if (hash.startsWith('PLAIN:') && hash !== 'PLAIN:' + password) {
+      recordFailedAttempt();
       return { ok: false, error: 'Usuario o contraseña incorrectos' };
     }
+
+    clearLockout();
 
     const session = {
       user_id: user.id,

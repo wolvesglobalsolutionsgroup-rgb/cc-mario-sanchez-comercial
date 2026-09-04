@@ -260,10 +260,22 @@ class FinancialEngine {
    * Distribuye el total de egresos operativos según la alícuota de cada local
    */
   distributeCondoExpenses(totalExpensesUsd, units) {
-    const totalArea = units.reduce((acc, u) => acc + u.area_m2, 0);
-    return units.map(unit => {
-      const aliquot = unit.area_m2 / totalArea;
-      const shareUsd = Math.round((totalExpensesUsd * aliquot) * 100) / 100;
+    if (!units || !units.length) return [];
+    const totalArea = units.reduce((acc, u) => acc + (u.area_m2 || 0), 0);
+    if (totalArea <= 0) return [];
+    
+    let allocatedUsd = 0;
+    return units.map((unit, index) => {
+      const aliquot = (unit.area_m2 || 0) / totalArea;
+      let shareUsd = Math.round((totalExpensesUsd * aliquot) * 100) / 100;
+      
+      // Ajuste de residuo por redondeo en la última unidad para garantizar balance 100.00%
+      if (index === units.length - 1) {
+        shareUsd = Math.round((totalExpensesUsd - allocatedUsd) * 100) / 100;
+      } else {
+        allocatedUsd += shareUsd;
+      }
+
       return {
         unit_code: unit.code,
         area_m2: unit.area_m2,

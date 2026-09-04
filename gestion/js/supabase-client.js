@@ -496,19 +496,33 @@ class DatabaseService {
     return data ? data.tenants : [];
   }
 
-  getContracts() {
+  getContracts(tenantId = null) {
     const data = this.getData();
-    return data ? data.contracts : [];
+    if (!data) return [];
+    if (tenantId) {
+      return data.contracts.filter(c => c.tenant_id === tenantId);
+    }
+    return data.contracts;
   }
 
-  getInvoices() {
+  getInvoices(tenantId = null) {
     const data = this.getData();
-    return data ? data.invoices : [];
+    if (!data) return [];
+    if (tenantId) {
+      return data.invoices.filter(i => i.tenant_id === tenantId);
+    }
+    return data.invoices;
   }
 
-  getPayments() {
+  getPayments(tenantId = null) {
     const data = this.getData();
-    return data ? data.payments : [];
+    if (!data) return [];
+    if (tenantId) {
+      // Filtrar pagos asociados a las facturas del inquilino o con tenant_id directo
+      const tenantInvoiceIds = new Set(this.getInvoices(tenantId).map(i => i.id));
+      return data.payments.filter(p => p.tenant_id === tenantId || tenantInvoiceIds.has(p.invoice_id));
+    }
+    return data.payments;
   }
 
   addTenant(tenantData, contractData) {

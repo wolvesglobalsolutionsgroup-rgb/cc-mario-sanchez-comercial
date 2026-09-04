@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <base href="/gestion/">
   <style>html[data-auth-pending] body { visibility: hidden; }</style>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CC Mario Sánchez — Gestión Inmobiliaria, Cobranzas & ERP</title>
   
   <!-- Favicon SVG -->
@@ -468,15 +468,20 @@
             <span style="font-size: 12px; color: var(--txt-secondary);">Sincronización con Google Calendar — Fechas Críticas de Cobro y Contratos</span>
           </div>
 
-          <!-- FILTRO CALENDARIO -->
-          <div class="period-filters-bar" style="display: flex; align-items: center; gap: 8px;">
-            <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Tipo de Evento:</label>
+          <!-- FILTRO Y ACCIONES CALENDARIO -->
+          <div class="period-filters-bar" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <button type="button" class="btn btn-primary" onclick="openAddCalendarEventModal()" style="font-size: 12px; padding: 6px 14px; gap: 6px; font-weight: 800;" title="Crear nuevo recordatorio en el calendario">
+              <i class="fa-solid fa-calendar-plus"></i> <span>+ Nuevo Recordatorio</span>
+            </button>
+            <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Tipo:</label>
             <select id="filter-calendar-type" class="form-control" onchange="applyCalendarFilter()" style="padding: 5px 8px; font-size: 12px; width: auto;">
               <option value="all">Todos los Eventos</option>
               <option value="cuota">Vencimiento de Cuotas</option>
               <option value="condominio">Corte de Condominio</option>
               <option value="contrato">Vencimiento de Contratos</option>
               <option value="prorroga">Prórrogas Legales (Art. 25)</option>
+              <option value="asamblea">Asambleas & Reuniones</option>
+              <option value="mantenimiento">Mantenimientos Preventivos</option>
             </select>
           </div>
         </div>
@@ -1466,6 +1471,55 @@
         </a>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- MODAL 10B: AGREGAR NUEVO RECORDATORIO / EVENTO EN CALENDARIO -->
+<div class="modal-overlay" id="modal-add-calendar-event">
+  <div class="modal-window" style="max-width: 520px;">
+    <div class="modal-header">
+      <h3 class="modal-title">
+        <i class="fa-solid fa-calendar-plus" style="color: var(--amber);"></i> Nuevo Recordatorio / Evento
+      </h3>
+      <button class="modal-close" onclick="closeAddCalendarEventModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form id="form-add-calendar-event" onsubmit="handleSaveCalendarEvent(event)">
+      <div class="modal-body" style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Título del Recordatorio *</label>
+          <input type="text" id="new-cal-title" class="form-control" required placeholder="Ej: Asamblea de Propietarios / Mantenimiento Hidroneumático">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Fecha del Evento *</label>
+            <input type="date" id="new-cal-date" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Categoría *</label>
+            <select id="new-cal-type" class="form-control" required>
+              <option value="asamblea">Asamblea / Reunión</option>
+              <option value="mantenimiento">Mantenimiento Preventivo</option>
+              <option value="cuota">Vencimiento de Cobro</option>
+              <option value="condominio">Corte de Condominio</option>
+              <option value="contrato">Gestión Contractual</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Instrucción / Observaciones *</label>
+          <textarea id="new-cal-desc" class="form-control" rows="3" required placeholder="Detalles de la convocatoria, responsables, contratistas o puntos a tratar..."></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 8px;">
+          <button type="button" class="btn-currency-toggle" onclick="closeAddCalendarEventModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" style="font-weight: 800; gap: 6px;">
+            <i class="fa-solid fa-save"></i> Guardar Recordatorio
+          </button>
+        </div>
+      </div>
+    </form>
   </div>
 </div>
 
