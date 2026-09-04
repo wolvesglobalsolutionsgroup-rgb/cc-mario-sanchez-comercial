@@ -2,7 +2,7 @@
   "name": "cc-mario-sanchez-comercial",
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/favicon.ico", "destination": "/logo_cc_mario_sanchez.svg" },
+    { "source": "/favicon.ico", "destination": "/favicon_2k.ico" },
     { "source": "/", "destination": "/index.html" },
     { "source": "/alquiler", "destination": "/alquiler.html" },
     { "source": "/alquiler.html", "destination": "/alquiler.html" },
@@ -64,7 +64,7 @@
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
+          "value": "public, max-age=0, must-revalidate"
         }
       ]
     },

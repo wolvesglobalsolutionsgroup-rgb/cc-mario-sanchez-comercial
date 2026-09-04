@@ -21,8 +21,8 @@
       city: "Puerto La Cruz",
       state: "Anzoátegui",
       country: "Venezuela",
-      logoUrl: "logo_cc_mario_sanchez.svg",
-      faviconUrl: "logo_cc_mario_sanchez.svg"
+      logoUrl: "logo_cc_mario_sanchez_2k.svg",
+      faviconUrl: "favicon_2k.ico"
     },
     theme: {
       primaryColor: "#38bdf8",
@@ -177,10 +177,20 @@
       document.querySelectorAll('[data-tenant-email]').forEach(el => el.textContent = this.getEmail());
 
       // 3. Logos e imágenes
-      const logoUrl = this.get('tenant.logoUrl');
+      const logoUrl = this.get('tenant.logoUrl', 'logo_cc_mario_sanchez_2k.svg');
       if (logoUrl) {
+        const fullLogoUrl = logoUrl.includes('?') ? logoUrl : `${logoUrl}?v=20260904`;
         document.querySelectorAll('[data-tenant-logo]').forEach(el => {
-          if (el.tagName === 'IMG') el.src = logoUrl;
+          if (el.tagName === 'IMG') el.src = fullLogoUrl;
+        });
+      }
+
+      // 4. Favicon dinámico con cache-buster
+      const favUrl = this.get('tenant.faviconUrl', 'favicon_2k.ico');
+      if (favUrl) {
+        const fullFavUrl = favUrl.includes('?') ? favUrl : `${favUrl}?v=20260904`;
+        document.querySelectorAll("link[rel*='icon']").forEach(el => {
+          el.href = fullFavUrl;
         });
       }
     }
