@@ -184,45 +184,84 @@
   // --- 4. UI HELPERS -----------------------------------------------------------
 
   /**
-   * Inyecta en el topbar un chip con el usuario actual y un botón de logout,
-   * si encuentra los anclajes #current-user-chip y/o #logout-btn.
-   * Si no existen, no rompe nada.
+   * Inyecta la tarjeta de usuario y el botón de salida del sistema.
+   * Prioridad 1: #sidebar-user-area (ubicado a la izquierda, al pie del sidebar).
+   * Fallback: #top-actions-user-area o containerEl pasado por parámetro.
    */
   function mountUserChip(containerEl) {
     const sess = getSession();
     if (!sess) return;
 
-    const target = containerEl || document.getElementById('top-actions-user-area');
-    if (!target) return;
+    // Si existe el área dedicada en el sidebar (abajo a la izquierda)
+    const sidebarTarget = document.getElementById('sidebar-user-area');
+    if (sidebarTarget && !document.getElementById('ccms-sidebar-user-card')) {
+      const isAdm = sess.role === 'admin';
+      const roleName = isAdm ? 'Administrador' : 'Inquilino';
+      const icon = isAdm ? 'fa-user-shield' : 'fa-store';
+      const themeColor = isAdm ? 'var(--amber)' : 'var(--emerald)';
+      const themeGlow = isAdm ? 'var(--amber-glow)' : 'var(--emerald-glow)';
 
-    // Si ya existe, no duplicar
-    if (document.getElementById('ccms-user-chip')) return;
+      const card = document.createElement('div');
+      card.id = 'ccms-sidebar-user-card';
+      card.className = 'sidebar-user-card';
+      card.innerHTML = `
+        <div class="sidebar-user-header">
+          <div class="sidebar-user-avatar" style="background:${themeGlow}; border:1px solid ${themeColor}; color:${themeColor};">
+            <i class="fa-solid ${icon}"></i>
+          </div>
+          <div class="sidebar-user-details">
+            <span class="sidebar-user-name" title="${escapeHtml(sess.display_name)}">${escapeHtml(sess.display_name)}</span>
+            <span class="sidebar-user-role">${roleName}</span>
+          </div>
+        </div>
+        <button id="ccms-sidebar-logout-btn" type="button" class="sidebar-logout-btn" title="Cerrar sesión y salir del sistema">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>Cerrar Sesión</span>
+        </button>
+      `;
+      sidebarTarget.innerHTML = '';
+      sidebarTarget.appendChild(card);
 
-    const chip = document.createElement('div');
-    chip.id = 'ccms-user-chip';
-    chip.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 8px 4px 4px;border:1px solid var(--border-subtle);border-radius:24px;background:var(--bg-card);';
-    chip.innerHTML = `
-      <div style="width:30px;height:30px;border-radius:50%;background:${sess.role === 'admin' ? 'var(--amber-glow)' : 'var(--emerald-glow)'};border:1px solid ${sess.role === 'admin' ? 'var(--amber)' : 'var(--emerald)'};display:flex;align-items:center;justify-content:center;color:${sess.role === 'admin' ? 'var(--amber)' : 'var(--emerald)'};font-weight:800;font-size:11px;">
-        <i class="fa-solid ${sess.role === 'admin' ? 'fa-user-shield' : 'fa-store'}"></i>
-      </div>
-      <div style="display:flex;flex-direction:column;line-height:1.1;max-width:160px;">
-        <span style="font-size:11px;font-weight:700;color:var(--txt-primary);font-family:var(--font-heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(sess.display_name)}</span>
-        <span style="font-size:9.5px;color:var(--txt-muted);text-transform:uppercase;letter-spacing:0.5px;">${sess.role === 'admin' ? 'Administrador' : 'Inquilino'}</span>
-      </div>
-      <button id="ccms-logout-btn" type="button" title="Cerrar sesión" style="background:transparent;border:none;color:var(--rose);cursor:pointer;padding:4px 6px;font-size:13px;border-radius:50%;">
-        <i class="fa-solid fa-right-from-bracket"></i>
-      </button>
-    `;
-    target.appendChild(chip);
+      const logoutBtn = document.getElementById('ccms-sidebar-logout-btn');
+      if (logoutBtn) {
+        logoutBtn.onclick = function(e) {
+          e.preventDefault();
+          if (confirm('¿Cerrar sesión y salir del sistema de gestión?')) {
+            logout();
+          }
+        };
+      }
+    }
 
-    const btn = document.getElementById('ccms-logout-btn');
-    if (btn) {
-      btn.onclick = function (e) {
-        e.preventDefault();
-        if (confirm('¿Cerrar sesión y volver al login?')) {
-          logout();
-        }
-      };
+    // Si además existe contenedor alternativo (ej. header en páginas secundarias o si no hay sidebar)
+    const topTarget = containerEl || document.getElementById('top-actions-user-area');
+    if (topTarget && !sidebarTarget && !document.getElementById('ccms-user-chip')) {
+      const chip = document.createElement('div');
+      chip.id = 'ccms-user-chip';
+      chip.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 8px 4px 4px;border:1px solid var(--border-subtle);border-radius:24px;background:var(--bg-card);';
+      chip.innerHTML = `
+        <div style="width:30px;height:30px;border-radius:50%;background:${sess.role === 'admin' ? 'var(--amber-glow)' : 'var(--emerald-glow)'};border:1px solid ${sess.role === 'admin' ? 'var(--amber)' : 'var(--emerald)'};display:flex;align-items:center;justify-content:center;color:${sess.role === 'admin' ? 'var(--amber)' : 'var(--emerald)'};font-weight:800;font-size:11px;">
+          <i class="fa-solid ${sess.role === 'admin' ? 'fa-user-shield' : 'fa-store'}"></i>
+        </div>
+        <div style="display:flex;flex-direction:column;line-height:1.1;max-width:160px;">
+          <span style="font-size:11px;font-weight:700;color:var(--txt-primary);font-family:var(--font-heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(sess.display_name)}</span>
+          <span style="font-size:9.5px;color:var(--txt-muted);text-transform:uppercase;letter-spacing:0.5px;">${sess.role === 'admin' ? 'Administrador' : 'Inquilino'}</span>
+        </div>
+        <button id="ccms-logout-btn" type="button" title="Cerrar sesión" style="background:transparent;border:none;color:var(--rose);cursor:pointer;padding:4px 6px;font-size:13px;border-radius:50%;">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </button>
+      `;
+      topTarget.appendChild(chip);
+
+      const btn = document.getElementById('ccms-logout-btn');
+      if (btn) {
+        btn.onclick = function (e) {
+          e.preventDefault();
+          if (confirm('¿Cerrar sesión y volver al login?')) {
+            logout();
+          }
+        };
+      }
     }
   }
 
