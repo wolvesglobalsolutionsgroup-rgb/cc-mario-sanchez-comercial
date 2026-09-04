@@ -12,6 +12,14 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
   <link rel="stylesheet" href="css/dashboard.css">
 
+  <script>
+    (function() {
+      const savedTheme = localStorage.getItem('ccms_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      document.documentElement.className = savedTheme;
+    })();
+  </script>
+
   <style>
     body {
       min-height: 100vh;
@@ -19,23 +27,24 @@
       align-items: center;
       justify-content: center;
       padding: 20px;
-      background: radial-gradient(circle at top center, #0c1424 0%, #04070d 100%);
+      background-color: var(--bg-main);
+      color: var(--txt-primary);
     }
     .login-card {
       width: 100%;
       max-width: 440px;
-      background: rgba(10, 16, 28, 0.88);
+      background: var(--bg-card);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
       border: 1px solid var(--border-focus);
       border-radius: var(--radius-lg);
       padding: 36px 30px;
-      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
+      box-shadow: var(--shadow-card);
       position: relative;
     }
     .role-toggle {
       display: flex;
-      background: rgba(0, 0, 0, 0.35);
+      background: var(--bg-input);
       border: 1px solid var(--border-subtle);
       border-radius: 10px;
       padding: 4px;
@@ -67,8 +76,8 @@
 <div class="login-card">
   
   <div style="text-align: center; margin-bottom: 24px;">
-    <img src="logo_cc_mario_sanchez.svg" alt="CCMS Logo" style="width: 58px; height: 58px; margin-bottom: 12px;">
-    <h1 style="font-family: var(--font-heading); font-size: 22px; font-weight: 900; color: #ffffff;">CC Mario Sánchez</h1>
+    <img src="logo_cc_mario_sanchez.svg" alt="CCMS Logo" style="width: 58px; height: 58px; max-width: 58px; max-height: 58px; object-fit: contain; margin-bottom: 12px;">
+    <h1 style="font-family: var(--font-heading); font-size: 22px; font-weight: 900; color: var(--txt-primary);">CC Mario Sánchez</h1>
     <p style="font-size: 12px; color: var(--amber-light); font-weight: 600; margin-top: 2px;">
       Plataforma de Gestión Inmobiliaria & Cobranzas
     </p>
@@ -106,6 +115,21 @@
     <button type="submit" class="btn-onboarding-cta" style="width: 100%; justify-content: center; padding: 12px; margin-top: 8px;">
       <i class="fa-solid fa-arrow-right-to-bracket"></i> <span>Ingresar al Portal</span>
     </button>
+
+    <!-- CREDENCIALES DE DEMOSTRACIÓN (1-CLICK DEMO ACCESS) -->
+    <div style="margin-top: 14px; background: var(--amber-glow); border: 1px dashed var(--border-highlight); border-radius: 8px; padding: 12px; font-size: 12px;">
+      <div style="font-weight: 800; color: var(--amber); display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+        <i class="fa-solid fa-key"></i> <span>Credenciales Demo para Pruebas:</span>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button type="button" class="cur-pill active" style="flex: 1; padding: 6px; font-size: 11px; text-align: center;" onclick="fillDemo('admin')">
+          <i class="fa-solid fa-user-shield"></i> Demo Admin
+        </button>
+        <button type="button" class="cur-pill" style="flex: 1; padding: 6px; font-size: 11px; text-align: center;" onclick="fillDemo('tenant')">
+          <i class="fa-solid fa-store"></i> Demo Inquilino
+        </button>
+      </div>
+    </div>
   </form>
 
   <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-subtle); text-align: center; font-size: 11px; color: var(--txt-muted);">
@@ -136,6 +160,11 @@
       lblUser.innerText = 'RIF Jurídico o Correo del Arrendatario';
       inputUser.value = 'J-30987123-4';
     }
+  }
+
+  function fillDemo(role) {
+    switchRole(role);
+    document.getElementById('login-pass').value = 'Demo2026*';
   }
 
   function handleLogin(e) {

@@ -18,6 +18,15 @@
 
   <!-- Dashboard Stylesheet (Light & Dark Dual Mode) -->
   <link rel="stylesheet" href="css/dashboard.css">
+
+  <!-- Script Inmediato Anti-FOUC (Cero parpadeo entre Dark y Light Mode) -->
+  <script>
+    (function() {
+      const savedTheme = localStorage.getItem('ccms_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      document.documentElement.className = savedTheme;
+    })();
+  </script>
 </head>
 <body>
 

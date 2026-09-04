@@ -12,6 +12,14 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
   <link rel="stylesheet" href="css/dashboard.css">
 
+  <script>
+    (function() {
+      const savedTheme = localStorage.getItem('ccms_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      document.documentElement.className = savedTheme;
+    })();
+  </script>
+
   <style>
     .wizard-container {
       max-width: 820px;
@@ -47,7 +55,7 @@
       width: 42px;
       height: 42px;
       border-radius: 50%;
-      background: #080d17;
+      background: var(--bg-surface);
       border: 2px solid var(--border-subtle);
       color: var(--txt-muted);
       display: flex;
@@ -62,7 +70,7 @@
       border-color: var(--amber);
       background: var(--amber);
       color: #000000;
-      box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+      box-shadow: 0 0 15px var(--amber-glow);
     }
     .step-item.completed .step-num {
       border-color: var(--emerald);
@@ -93,15 +101,15 @@
     }
   </style>
 </head>
-<body style="background-color: var(--bg-main);">
+<body style="background-color: var(--bg-main); color: var(--txt-primary);">
 
 <div class="wizard-container">
   
   <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
     <div style="display: flex; align-items: center; gap: 12px;">
-      <img src="logo_cc_mario_sanchez.svg" alt="CCMS Logo" style="width: 40px; height: 40px;">
+      <img src="logo_cc_mario_sanchez.svg" alt="CCMS Logo" style="width: 40px; height: 40px; max-width: 40px; max-height: 40px; object-fit: contain; flex-shrink: 0;">
       <div>
-        <h1 style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: #ffffff;">Alta & Onboarding de Inquilino</h1>
+        <h1 style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: var(--txt-primary);">Alta & Onboarding de Inquilino</h1>
         <p style="font-size: 12px; color: var(--amber-light);">Centro Comercial Mario Sánchez — Puerto La Cruz</p>
       </div>
     </div>
@@ -152,11 +160,11 @@
       <div id="unit-preview-box" style="margin-top: 18px; padding: 16px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-subtle); border-radius: 8px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <div>
-            <h4 id="prev-unit-name" style="font-family: var(--font-heading); font-size: 15px; color: #ffffff;">Macro-Lote A</h4>
+            <h4 id="prev-unit-name" style="font-family: var(--font-heading); font-size: 15px; color: var(--txt-primary);">Macro-Lote A</h4>
             <span id="prev-unit-cat" style="font-size: 11px; color: var(--amber-light); text-transform: uppercase;"></span>
           </div>
           <div style="text-align: right;">
-            <div id="prev-unit-area" style="font-family: var(--font-heading); font-size: 16px; font-weight: 800; color: #ffffff;">1.500 m²</div>
+            <div id="prev-unit-area" style="font-family: var(--font-heading); font-size: 16px; font-weight: 800; color: var(--txt-primary);">1.500 m²</div>
             <div id="prev-unit-rent" style="font-size: 12px; color: var(--emerald-light); font-weight: 700;">$3,500.00 USD/mes</div>
           </div>
         </div>
@@ -171,7 +179,7 @@
 
     <!-- PASO 2: DATOS DEL ARRENDATARIO -->
     <div class="step-pane" id="pane-2">
-      <h3 style="font-family: var(--font-heading); font-size: 17px; margin-bottom: 6px; color: #ffffff;">
+      <h3 style="font-family: var(--font-heading); font-size: 17px; margin-bottom: 6px; color: var(--txt-primary);">
         <i class="fa-solid fa-id-card" style="color: var(--cyan-light);"></i> Paso 2: Información Jurídica de la Empresa
       </h3>
       <p style="font-size: 12.5px; color: var(--txt-secondary); margin-bottom: 20px;">
@@ -239,7 +247,7 @@
 
     <!-- PASO 3: PARÁMETROS CONTRACTUALES Y LEGALES (G.O. 40.418) -->
     <div class="step-pane" id="pane-3">
-      <h3 style="font-family: var(--font-heading); font-size: 17px; margin-bottom: 6px; color: #ffffff;">
+      <h3 style="font-family: var(--font-heading); font-size: 17px; margin-bottom: 6px; color: var(--txt-primary);">
         <i class="fa-solid fa-scale-balanced" style="color: var(--amber);"></i> Paso 3: Condiciones Contractuales & Ley Venezolana
       </h3>
       <p style="font-size: 12.5px; color: var(--txt-secondary); margin-bottom: 20px;">
