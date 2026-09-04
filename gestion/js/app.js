@@ -219,6 +219,10 @@ document.addEventListener('DOMContentLoaded', () => {
     renderInvoicesTable();
     renderCalendarView();
     renderAlertsCenter();
+    if (currentRole === 'admin') {
+      renderAdminBankAccounts();
+      initReportsTab();
+    }
   }
 
   // --- RENDERIZAR CUENTAS RECEPTORAS OFICIALES (PORTAL INQUILINO / CLIENTE) ---
@@ -236,7 +240,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (valDateEl) valDateEl.innerText = formattedDate;
     if (valRateEl) valRateEl.innerText = `${bcvRate.toFixed(2)} Bs/USD`;
 
-    const accounts = dbService.getReceivingAccounts ? dbService.getReceivingAccounts() : [];
+    const tenantFilterId = (currentRole === 'tenant') ? currentTenantId : null;
+    const accounts = dbService.getReceivingAccounts ? dbService.getReceivingAccounts(tenantFilterId) : [];
     grid.innerHTML = '';
 
     accounts.forEach(acc => {
@@ -448,6 +453,9 @@ document.addEventListener('DOMContentLoaded', () => {
             ${tenant ? `
               <button class="btn-action-icon" title="Ver Expediente Jurídico" onclick="window.openTenantDossier('${tenant.id}')">
                 <i class="fa-solid fa-folder-open"></i>
+              </button>
+              <button class="btn-action-icon" title="Ver Contrato de Arrendamiento (G.O. 40.418)" style="color: var(--cyan);" onclick="window.viewTenantContract('${tenant.id}')">
+                <i class="fa-solid fa-file-signature"></i>
               </button>
               <button class="btn-action-icon btn-wa-action" title="Mensaje Instantáneo WhatsApp" onclick="window.openWhatsAppModal('${tenant.id}')">
                 <i class="fa-brands fa-whatsapp"></i>
@@ -1046,10 +1054,11 @@ document.addEventListener('DOMContentLoaded', () => {
           submitted_by: AuthGuard.currentUser()?.identifier
         };
 
+        let approvalResult = null;
         if (currentRole === 'tenant') {
           dbService.submitPayment(invId, paymentPayload);
         } else if (document.getElementById('pay-review-mode').value === '1') {
-          dbService.approvePayment(invId, AuthGuard.currentUser()?.identifier);
+          approvalResult = dbService.approvePayment(invId, AuthGuard.currentUser()?.identifier);
         } else {
           dbService.recordPayment(invId, paymentPayload);
         }
@@ -1071,9 +1080,14 @@ document.addEventListener('DOMContentLoaded', () => {
         paymentForm.reset();
         removeReceiptFile();
         renderAll();
-        alert(currentRole === 'tenant'
-          ? 'Comprobante enviado a Administración. El pago quedará en revisión hasta su validación.'
-          : `¡Pago registrado y conciliado exitosamente!\nSnapshot financiero capturado: Tasa BCV ${snapshot.bcv_rate_applied.toFixed(2)} Bs/USD.\n${currentUploadedProof ? 'Comprobante adjuntado con éxito.' : ''}`);
+
+        if (approvalResult && approvalResult.receipt) {
+          window.openReceiptPreview(approvalResult.receipt);
+        } else {
+          alert(currentRole === 'tenant'
+            ? 'Comprobante enviado a Administración. El pago quedará en revisión hasta su validación.'
+            : `¡Pago registrado y conciliado exitosamente!\nSnapshot financiero capturado: Tasa BCV ${snapshot.bcv_rate_applied.toFixed(2)} Bs/USD.\n${currentUploadedProof ? 'Comprobante adjuntado con éxito.' : ''}`);
+        }
       } catch (err) {
         alert('Error: ' + err.message);
       }
@@ -1317,6 +1331,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    const dossierContractBtn = document.getElementById('btn-dossier-view-contract');
+    if (dossierContractBtn) {
+      dossierContractBtn.onclick = () => {
+        window.viewTenantContract(tenantId);
+      };
+    }
+
     document.getElementById('modal-dossier').classList.add('open');
   };
 
@@ -1393,6 +1414,849 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const printWin = window.open('', '_blank', 'width=750,height=650');
     printWin.document.write(content);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 250);
+  };
+
+  // =========================================================================
+  // MÓDULO 1: GESTIÓN DE CUENTAS BANCARIAS RECEPTORAS (ADMINISTRADOR)
+  // =========================================================================
+  window.renderAdminBankAccounts = function() {
+    const tbody = document.getElementById('admin-accounts-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const accounts = dbService.getReceivingAccounts ? dbService.getReceivingAccounts() : [];
+    const allTenants = dbService.getTenants ? dbService.getTenants() : [];
+
+    if (accounts.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--txt-muted);">No hay cuentas configuradas.</td></tr>`;
+      return;
+    }
+
+    accounts.forEach(acc => {
+      const tr = document.createElement('tr');
+      const isAct = acc.is_active !== false;
+
+      let assignedText = '';
+      if (!acc.assigned_tenants || acc.assigned_tenants.includes('all')) {
+        assignedText = '<span class="status-pill pill-info" style="font-size:10.5px;"><i class="fa-solid fa-users"></i> Todos los inquilinos</span>';
+      } else {
+        const assignedNames = acc.assigned_tenants
+          .map(tId => {
+            const t = allTenants.find(item => item.id === tId);
+            return t ? (t.trade_name || t.business_name.split(' ')[0]) : tId;
+          })
+          .join(', ');
+        assignedText = `<span style="font-size:11px;color:var(--amber);"><i class="fa-solid fa-user-check"></i> ${escapeHtml(assignedNames || 'Ninguno')}</span>`;
+      }
+
+      const accountIdentifier = acc.account_number || acc.wallet_address || acc.phone || acc.email || 'N/A';
+
+      tr.innerHTML = `
+        <td>
+          <strong style="color:var(--txt-primary);display:flex;align-items:center;gap:6px;">
+            <i class="${acc.icon || 'fa-solid fa-building-columns'}" style="color:var(--amber);"></i> ${escapeHtml(acc.bank)}
+          </strong>
+          <div style="font-size:11px;color:var(--txt-muted);">Titular: ${escapeHtml(acc.beneficiary || 'N/A')}</div>
+        </td>
+        <td>
+          <span style="font-weight:600;">${escapeHtml(acc.type || '')}</span>
+          <div style="font-size:10.5px;color:var(--txt-secondary);">${escapeHtml(acc.badge || '')}</div>
+        </td>
+        <td>
+          <span style="font-family:monospace;font-size:11.5px;color:var(--txt-primary);">${escapeHtml(accountIdentifier)}</span>
+          <div style="font-size:10.5px;color:var(--txt-muted);">RIF: ${escapeHtml(acc.rif || '')}</div>
+        </td>
+        <td>${assignedText}</td>
+        <td>
+          <span class="status-pill ${isAct ? 'pill-active' : 'pill-overdue'}" style="font-size:10.5px;cursor:pointer;" onclick="window.toggleAccountStatus('${acc.id}')" title="Click para alternar estado">
+            <i class="fa-solid ${isAct ? 'fa-check' : 'fa-ban'}"></i> ${isAct ? 'Habilitada' : 'Inactiva'}
+          </span>
+        </td>
+        <td>
+          <div style="display:flex;gap:6px;">
+            <button type="button" class="btn-action-icon" title="Editar Cuenta" onclick="window.openBankAccountModal('${acc.id}')">
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+            <button type="button" class="btn-action-icon" style="color:var(--rose);border-color:var(--rose);" title="Eliminar Cuenta" onclick="window.deleteAccount('${acc.id}')">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  };
+
+  window.openBankAccountModal = function(accountId = null) {
+    const modal = document.getElementById('modal-bank-account');
+    const form = document.getElementById('bank-account-form');
+    if (!modal || !form) return;
+
+    form.reset();
+    document.getElementById('bank-acc-id').value = accountId || '';
+    document.getElementById('bank-account-modal-title').innerHTML = accountId
+      ? '<i class="fa-solid fa-pen-to-square" style="color: var(--amber);"></i> Editar Cuenta Receptora'
+      : '<i class="fa-solid fa-building-columns" style="color: var(--amber);"></i> Nueva Cuenta Receptora';
+
+    // Rellenar lista de inquilinos para el checklist
+    const checklist = document.getElementById('acc-tenants-checklist');
+    const allTenants = dbService.getTenants ? dbService.getTenants() : [];
+    if (checklist) {
+      checklist.innerHTML = allTenants.map(t => `
+        <label style="display:flex;align-items:center;gap:8px;font-size:11.5px;padding:3px 0;cursor:pointer;">
+          <input type="checkbox" class="acc-tenant-chk" value="${t.id}">
+          <span><strong>${escapeHtml(t.unit_code)}</strong> — ${escapeHtml(t.business_name)}</span>
+        </label>
+      `).join('');
+    }
+
+    if (accountId) {
+      const accounts = dbService.getReceivingAccounts ? dbService.getReceivingAccounts() : [];
+      const acc = accounts.find(a => a.id === accountId);
+      if (acc) {
+        document.getElementById('bank-acc-bank').value = acc.bank || '';
+        document.getElementById('bank-acc-type').value = acc.type || '';
+        document.getElementById('bank-acc-holder').value = acc.beneficiary || '';
+        document.getElementById('bank-acc-rif').value = acc.rif || '';
+        document.getElementById('bank-acc-phone').value = acc.phone || acc.email || '';
+        document.getElementById('bank-acc-number').value = acc.account_number || acc.wallet_address || acc.binance_pay_id || '';
+        
+        let cur = 'VES';
+        if (acc.badge && acc.badge.includes('USD')) cur = 'USD';
+        else if (acc.badge && acc.badge.includes('USDT')) cur = 'USDT';
+        else if (acc.badge && acc.badge.includes('EUR')) cur = 'EUR';
+        document.getElementById('bank-acc-currency').value = cur;
+
+        const isCustom = acc.assigned_tenants && !acc.assigned_tenants.includes('all');
+        const radios = document.getElementsByName('acc-assign-type');
+        radios.forEach(r => {
+          r.checked = (r.value === 'custom' && isCustom) || (r.value === 'all' && !isCustom);
+        });
+
+        window.onAccountAssignChange();
+        if (isCustom && checklist) {
+          const chks = checklist.querySelectorAll('.acc-tenant-chk');
+          chks.forEach(chk => {
+            chk.checked = acc.assigned_tenants.includes(chk.value);
+          });
+        }
+      }
+    } else {
+      const radios = document.getElementsByName('acc-assign-type');
+      radios.forEach(r => { if (r.value === 'all') r.checked = true; });
+      window.onAccountAssignChange();
+    }
+
+    modal.classList.add('open');
+  };
+
+  window.closeBankAccountModal = function() {
+    const modal = document.getElementById('modal-bank-account');
+    if (modal) modal.classList.remove('open');
+  };
+
+  window.onAccountAssignChange = function() {
+    const radios = document.getElementsByName('acc-assign-type');
+    let selected = 'all';
+    radios.forEach(r => { if (r.checked) selected = r.value; });
+    const checklist = document.getElementById('acc-tenants-checklist');
+    if (checklist) {
+      checklist.style.display = (selected === 'custom') ? 'block' : 'none';
+    }
+  };
+
+  window.saveBankAccount = function(e) {
+    e.preventDefault();
+    const id = document.getElementById('bank-acc-id').value;
+    const bank = document.getElementById('bank-acc-bank').value.trim();
+    const type = document.getElementById('bank-acc-type').value.trim();
+    const holder = document.getElementById('bank-acc-holder').value.trim();
+    const rif = document.getElementById('bank-acc-rif').value.trim();
+    const contact = document.getElementById('bank-acc-phone').value.trim();
+    const number = document.getElementById('bank-acc-number').value.trim();
+    const cur = document.getElementById('bank-acc-currency').value;
+
+    let assignType = 'all';
+    document.getElementsByName('acc-assign-type').forEach(r => { if (r.checked) assignType = r.value; });
+
+    let assignedTenants = ['all'];
+    if (assignType === 'custom') {
+      const checkedBoxes = document.querySelectorAll('.acc-tenant-chk:checked');
+      assignedTenants = Array.from(checkedBoxes).map(cb => cb.value);
+      if (assignedTenants.length === 0) {
+        alert("Seleccione al menos un inquilino autorizado para esta cuenta o seleccione 'Todos los Inquilinos'.");
+        return;
+      }
+    }
+
+    let badge = 'Bs. Tasa BCV';
+    let icon = 'fa-solid fa-building-columns';
+    let accountNumber = '';
+    let phone = '';
+    let email = '';
+    let walletAddress = '';
+    let binancePayId = '';
+
+    if (cur === 'USD') {
+      badge = 'USD Oficial';
+      icon = 'fa-solid fa-vault';
+      if (number.length >= 15) accountNumber = number;
+      else if (contact.includes('@')) email = contact;
+    } else if (cur === 'USDT') {
+      badge = 'USDT 1:1 USD';
+      icon = 'fa-solid fa-coins';
+      if (number.length > 20) walletAddress = number;
+      else binancePayId = number;
+    } else if (cur === 'EUR') {
+      badge = 'EUR Oficial';
+      icon = 'fa-solid fa-euro-sign';
+      accountNumber = number;
+    } else {
+      if (number.length >= 15) accountNumber = number;
+      if (contact) phone = contact;
+    }
+
+    const payload = {
+      bank: bank,
+      type: type,
+      account_number: accountNumber || number,
+      phone: phone,
+      email: email,
+      wallet_address: walletAddress,
+      binance_pay_id: binancePayId,
+      beneficiary: holder,
+      rif: rif,
+      icon: icon,
+      badge: badge,
+      instructions: `Operaciones en ${cur}. Por favor notificar el comprobante en su portal para conciliación automática.`,
+      assigned_tenants: assignedTenants
+    };
+
+    if (id) payload.id = id;
+
+    try {
+      dbService.saveReceivingAccount(payload);
+      closeBankAccountModal();
+      renderAll();
+      alert("¡Cuenta receptora guardada y actualizada con éxito!");
+    } catch (err) {
+      alert("Error al guardar cuenta: " + err.message);
+    }
+  };
+
+  window.toggleAccountStatus = function(accountId) {
+    if (!accountId) return;
+    try {
+      dbService.toggleReceivingAccount(accountId);
+      renderAll();
+    } catch (err) {
+      alert("Error: " + err.message);
+    }
+  };
+
+  window.deleteAccount = function(accountId) {
+    if (!confirm("¿Está seguro de eliminar esta cuenta receptora? Esta acción no se puede deshacer.")) return;
+    try {
+      dbService.deleteReceivingAccount(accountId);
+      renderAll();
+    } catch (err) {
+      alert("Error: " + err.message);
+    }
+  };
+
+  // =========================================================================
+  // MÓDULO 2: GENERADOR DE INFORMES CONTABLES Y DE RECAUDACIÓN
+  // =========================================================================
+  function initReportsTab() {
+    const tenantSelect = document.getElementById('report-param-tenant');
+    if (tenantSelect && tenantSelect.options.length === 0) {
+      const tenants = dbService.getTenants ? dbService.getTenants() : [];
+      tenantSelect.innerHTML = tenants.map(t => `
+        <option value="${t.id}">${escapeHtml(t.business_name)} (${escapeHtml(t.unit_code)})</option>
+      `).join('');
+    }
+    // Generar informe por defecto si está vacío
+    const container = document.getElementById('report-display-container');
+    if (container && (!container.innerHTML || container.innerHTML.trim() === '')) {
+      generateSelectedReport();
+    }
+  }
+
+  window.onReportTypeChange = function() {
+    const type = document.getElementById('report-type-select').value;
+    const periodGroup = document.getElementById('report-param-period');
+    const tenantWrapper = document.getElementById('report-param-tenant-wrapper');
+
+    if (type === 'solvencia') {
+      if (periodGroup) periodGroup.style.display = 'none';
+      if (tenantWrapper) tenantWrapper.style.display = 'block';
+    } else {
+      if (periodGroup) periodGroup.style.display = 'flex';
+      if (tenantWrapper) tenantWrapper.style.display = 'none';
+    }
+    generateSelectedReport();
+  };
+
+  window.generateSelectedReport = function() {
+    const type = document.getElementById('report-type-select') ? document.getElementById('report-type-select').value : 'recaudacion';
+    const month = parseInt(document.getElementById('report-param-month') ? document.getElementById('report-param-month').value : 3);
+    const year = parseInt(document.getElementById('report-param-year') ? document.getElementById('report-param-year').value : 2026);
+    const tenantId = document.getElementById('report-param-tenant') ? document.getElementById('report-param-tenant').value : null;
+    const container = document.getElementById('report-display-container');
+    if (!container) return;
+
+    if (type === 'recaudacion') {
+      container.innerHTML = renderRecaudacionReportHTML(month, year);
+    } else if (type === 'condominio') {
+      container.innerHTML = renderCondominioReportHTML(month, year);
+    } else if (type === 'solvencia') {
+      container.innerHTML = renderSolvenciaReportHTML(tenantId);
+    }
+  };
+
+  function renderRecaudacionReportHTML(month, year) {
+    const monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const invoices = dbService.getInvoices().filter(i => i.period_month === month && i.period_year === year);
+    const tenants = dbService.getTenants();
+    const bcvRate = financialEngine.getRates().VES.toFixed(2);
+
+    let totalFacturadoUsd = 0;
+    let totalCobradoUsd = 0;
+    let totalPendienteUsd = 0;
+
+    const rows = invoices.map((inv, idx) => {
+      const t = tenants.find(item => item.id === inv.tenant_id) || { business_name: 'Inquilino', rif: 'N/A' };
+      totalFacturadoUsd += inv.total_usd;
+      if (inv.status === 'pagado') totalCobradoUsd += inv.total_usd;
+      else totalPendienteUsd += inv.total_usd;
+
+      let stText = 'Pendiente';
+      let stColor = '#d97706';
+      if (inv.status === 'pagado') { stText = 'Cobrado'; stColor = '#059669'; }
+      else if (inv.status === 'en_mora') { stText = 'En Mora'; stColor = '#dc2626'; }
+      else if (inv.status === 'verificando') { stText = 'En Revisión'; stColor = '#2563eb'; }
+
+      const totalBs = financialEngine.convert(inv.total_usd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
+
+      return `
+        <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11.5px;">
+          <td style="padding: 8px 10px; font-weight: 600;">${idx + 1}</td>
+          <td style="padding: 8px 10px;">
+            <strong>${escapeHtml(t.business_name)}</strong>
+            <div style="font-size: 10px; color: #64748b;">RIF: ${escapeHtml(t.rif)}</div>
+          </td>
+          <td style="padding: 8px 10px; font-weight: 700; color: #b45309;">${escapeHtml(inv.unit_code)}</td>
+          <td style="padding: 8px 10px; text-align: right;">$${inv.rent_usd.toFixed(2)}</td>
+          <td style="padding: 8px 10px; text-align: right;">$${inv.condo_usd.toFixed(2)}</td>
+          <td style="padding: 8px 10px; text-align: right; font-weight: 700;">$${inv.total_usd.toFixed(2)}</td>
+          <td style="padding: 8px 10px; text-align: right; color: #475569;">Bs. ${totalBs}</td>
+          <td style="padding: 8px 10px; text-align: center; font-weight: 700; color: ${stColor};">${stText}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const cobradoBs = financialEngine.convert(totalCobradoUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
+    const porcentajeRecaudacion = totalFacturadoUsd > 0 ? ((totalCobradoUsd / totalFacturadoUsd) * 100).toFixed(1) : '0.0';
+
+    return `
+      <div class="printable-report" style="background: white; color: #0f172a; padding: 28px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif;">
+        <!-- MEMBRETE OFICIAL -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 18px;">
+          <div>
+            <h2 style="margin: 0; font-size: 19px; font-weight: 800; color: #0f172a; letter-spacing: 0.5px;">CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</h2>
+            <div style="font-size: 11.5px; color: #475569;">RIF: J-29881234-0 • Av. Municipal, Puerto La Cruz, Estado Anzoátegui, Venezuela</div>
+            <div style="font-size: 11.5px; color: #475569;">Departamento de Administración, Finanzas & Cobranzas</div>
+          </div>
+          <div style="text-align: right; font-size: 11.5px; color: #334155;">
+            <div><strong>INFORME EJECUTIVO</strong></div>
+            <div>Fecha Emisión: ${new Date().toLocaleDateString('es-VE')}</div>
+            <div>Tasa BCV Aplicada: <strong>${bcvRate} Bs/USD</strong></div>
+          </div>
+        </div>
+
+        <div style="text-align: center; margin-bottom: 18px;">
+          <h3 style="margin: 0; font-size: 15px; font-weight: 800; text-transform: uppercase; color: #1e293b;">
+            INFORME MENSUAL DE FACTURACIÓN, COBRANZAS & CARTERA — ${monthNames[month].toUpperCase()} ${year}
+          </h3>
+          <p style="margin: 4px 0; font-size: 11.5px; color: #64748b;">
+            Emisión bajo las regulaciones de la Ley de Arrendamiento Inmobiliario para Uso Comercial (Gaceta Oficial N° 40.418)
+          </p>
+        </div>
+
+        <!-- TARJETAS DE RESUMEN CONTABLE -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;">
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; text-align: center;">
+            <div style="font-size: 10.5px; color: #64748b; font-weight: 700; text-transform: uppercase;">Total Facturado</div>
+            <div style="font-size: 16px; font-weight: 800; color: #0f172a;">$${totalFacturadoUsd.toFixed(2)}</div>
+          </div>
+          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 10px; text-align: center;">
+            <div style="font-size: 10.5px; color: #166534; font-weight: 700; text-transform: uppercase;">Efectivamente Cobrado</div>
+            <div style="font-size: 16px; font-weight: 800; color: #15803d;">$${totalCobradoUsd.toFixed(2)}</div>
+            <div style="font-size: 9.5px; color: #166534;">Bs. ${cobradoBs}</div>
+          </div>
+          <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px; text-align: center;">
+            <div style="font-size: 10.5px; color: #92400e; font-weight: 700; text-transform: uppercase;">Cartera Pendiente / Mora</div>
+            <div style="font-size: 16px; font-weight: 800; color: #b45309;">$${totalPendienteUsd.toFixed(2)}</div>
+          </div>
+          <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 10px; text-align: center;">
+            <div style="font-size: 10.5px; color: #1e40af; font-weight: 700; text-transform: uppercase;">Efectividad de Recaudación</div>
+            <div style="font-size: 16px; font-weight: 800; color: #1d4ed8;">${porcentajeRecaudacion}%</div>
+          </div>
+        </div>
+
+        <!-- TABLA DETALLADA -->
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+          <thead>
+            <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 11px; text-transform: uppercase; color: #475569;">
+              <th style="padding: 8px 10px; text-align: left;">N°</th>
+              <th style="padding: 8px 10px; text-align: left;">Arrendatario / Razón Social</th>
+              <th style="padding: 8px 10px; text-align: left;">Local</th>
+              <th style="padding: 8px 10px; text-align: right;">Canon Base</th>
+              <th style="padding: 8px 10px; text-align: right;">Condominio</th>
+              <th style="padding: 8px 10px; text-align: right;">Total USD</th>
+              <th style="padding: 8px 10px; text-align: right;">Total Bs. (BCV)</th>
+              <th style="padding: 8px 10px; text-align: center;">Estatus</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows || '<tr><td colspan="8" style="text-align:center;padding:16px;">No hay facturas para este período.</td></tr>'}
+          </tbody>
+        </table>
+
+        <!-- PIE Y FIRMAS DE AUDITORÍA -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px; padding-top: 20px; border-top: 1px dashed #cbd5e1;">
+          <div style="text-align: center;">
+            <div style="height: 45px;"></div>
+            <div style="border-top: 1px solid #475569; padding-top: 6px; font-size: 11.5px; font-weight: 700;">LCDO. MARIO SÁNCHEZ</div>
+            <div style="font-size: 10.5px; color: #64748b;">Administrador General — Sociedad Administradora</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="height: 45px;"></div>
+            <div style="border-top: 1px solid #475569; padding-top: 6px; font-size: 11.5px; font-weight: 700;">DPTO. DE CONTABILIDAD & AUDITORÍA</div>
+            <div style="font-size: 10.5px; color: #64748b;">Revisado & Conciliado Conforme</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderCondominioReportHTML(month, year) {
+    const monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const units = dbService.getUnits();
+    const tenants = dbService.getTenants();
+    const bcvRate = financialEngine.getRates().VES.toFixed(2);
+
+    const expensesMarch = [
+      { concept: 'Vigilancia y Seguridad Armada 24/7 (Custodia y Control de Accesos)', cat: 'Seguridad', amount_usd: 1200 },
+      { concept: 'Consumo Eléctrico de Áreas Comunes, Pasillos y Alumbrado Perimetral (Corpoelec)', cat: 'Servicios', amount_usd: 350 },
+      { concept: 'Suministro y Trasvase Cisterna de Agua Potable (40.000 Litros)', cat: 'Servicios', amount_usd: 220 },
+      { concept: 'Mantenimiento Preventivo Red de Drenajes Pluviales y Asfalto', cat: 'Mantenimiento', amount_usd: 180 },
+      { concept: 'Servicios de Aseo y Disposición de Desechos Sólidos', cat: 'Servicios', amount_usd: 150 }
+    ];
+
+    const totalGastosUsd = expensesMarch.reduce((sum, e) => sum + e.amount_usd, 0);
+    const totalGastosBs = financialEngine.convert(totalGastosUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
+
+    const expensesRows = expensesMarch.map((e, idx) => `
+      <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11.5px;">
+        <td style="padding: 7px 10px;">${idx + 1}</td>
+        <td style="padding: 7px 10px;"><strong>${e.concept}</strong></td>
+        <td style="padding: 7px 10px; color: #64748b;">${e.cat}</td>
+        <td style="padding: 7px 10px; text-align: right; font-weight: 700;">$${e.amount_usd.toFixed(2)}</td>
+        <td style="padding: 7px 10px; text-align: right; color: #475569;">Bs. ${financialEngine.convert(e.amount_usd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 })}</td>
+      </tr>
+    `).join('');
+
+    const distributionRows = units.map(u => {
+      const t = tenants.find(item => item.id === u.tenant_id);
+      const cuotaCondoUsd = totalGastosUsd * u.condo_aliquot;
+      const cuotaCondoBs = financialEngine.convert(cuotaCondoUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
+
+      return `
+        <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11.5px;">
+          <td style="padding: 7px 10px; font-weight: 700; color: #b45309;">${u.code}</td>
+          <td style="padding: 7px 10px;">${t ? `<strong>${escapeHtml(t.business_name)}</strong>` : '<span style="color:#94a3b8;font-style:italic;">Disponible (Asume Propietario)</span>'}</td>
+          <td style="padding: 7px 10px; text-align: right;">${u.area_m2} m²</td>
+          <td style="padding: 7px 10px; text-align: right; font-weight: 600;">${(u.condo_aliquot * 100).toFixed(2)}%</td>
+          <td style="padding: 7px 10px; text-align: right; font-weight: 700; color: #0f172a;">$${cuotaCondoUsd.toFixed(2)}</td>
+          <td style="padding: 7px 10px; text-align: right; color: #475569;">Bs. ${cuotaCondoBs}</td>
+        </tr>
+      `;
+    }).join('');
+
+    return `
+      <div class="printable-report" style="background: white; color: #0f172a; padding: 28px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 18px;">
+          <div>
+            <h2 style="margin: 0; font-size: 19px; font-weight: 800; color: #0f172a;">CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</h2>
+            <div style="font-size: 11.5px; color: #475569;">RIF: J-29881234-0 • Junta de Condominio & Sociedad Administradora</div>
+            <div style="font-size: 11.5px; color: #475569;">Liquidación de Gastos Comunes Inmobiliarios (Art. 32-34 G.O. 40.418)</div>
+          </div>
+          <div style="text-align: right; font-size: 11.5px; color: #334155;">
+            <div><strong>ESTADO DE CONDOMINIO</strong></div>
+            <div>Período: <strong>${monthNames[month]} ${year}</strong></div>
+            <div>Tasa BCV: <strong>${bcvRate} Bs/USD</strong></div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 18px;">
+          <h4 style="margin: 0 0 8px 0; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #1e293b;">
+            1. Relación de Gastos Comunes Operativos Incurridos en el Mes
+          </h4>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">
+            <thead>
+              <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 10.5px; text-transform: uppercase;">
+                <th style="padding: 7px 10px; text-align: left;">N°</th>
+                <th style="padding: 7px 10px; text-align: left;">Concepto / Proveedor</th>
+                <th style="padding: 7px 10px; text-align: left;">Categoría</th>
+                <th style="padding: 7px 10px; text-align: right;">Total USD</th>
+                <th style="padding: 7px 10px; text-align: right;">Total Bs.</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${expensesRows}
+              <tr style="background: #f8fafc; font-weight: 800; border-top: 2px solid #cbd5e1;">
+                <td colspan="3" style="padding: 8px 10px;">TOTAL GASTOS COMUNES LIQUIDADOS:</td>
+                <td style="padding: 8px 10px; text-align: right; color: #0f172a;">$${totalGastosUsd.toFixed(2)} USD</td>
+                <td style="padding: 8px 10px; text-align: right; color: #0f172a;">Bs. ${totalGastosBs}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div>
+          <h4 style="margin: 0 0 8px 0; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #1e293b;">
+            2. Distribución Alícuota y Cobro por Unidad Comercial
+          </h4>
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 10.5px; text-transform: uppercase;">
+                <th style="padding: 7px 10px; text-align: left;">Unidad</th>
+                <th style="padding: 7px 10px; text-align: left;">Arrendatario / Ocupante</th>
+                <th style="padding: 7px 10px; text-align: right;">Área</th>
+                <th style="padding: 7px 10px; text-align: right;">Alícuota %</th>
+                <th style="padding: 7px 10px; text-align: right;">Cuota USD</th>
+                <th style="padding: 7px 10px; text-align: right;">Cuota Bs.</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${distributionRows}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderSolvenciaReportHTML(tenantId) {
+    const tenants = dbService.getTenants();
+    const tenant = tenants.find(t => t.id === tenantId) || tenants[0];
+    if (!tenant) return '<div style="padding:20px;text-align:center;">No se encontró información del arrendatario.</div>';
+
+    const unit = dbService.getUnits().find(u => u.code === tenant.unit_code) || { code: tenant.unit_code, area_m2: 0 };
+    const contract = dbService.getContracts().find(c => c.tenant_id === tenant.id);
+    const invoices = dbService.getInvoices().filter(i => i.tenant_id === tenant.id);
+    const bcvRate = financialEngine.getRates().VES.toFixed(2);
+
+    const hasOverdue = invoices.some(i => i.status === 'en_mora');
+    const hasPending = invoices.some(i => i.status === 'pendiente' || i.status === 'verificando');
+    const isSolvente = !hasOverdue && !hasPending;
+
+    const invoiceRows = invoices.map(inv => `
+      <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11px;">
+        <td style="padding: 6px 8px; font-weight: 600;">${inv.period_month}/${inv.period_year}</td>
+        <td style="padding: 6px 8px; font-family: monospace;">${escapeHtml(inv.invoice_number)}</td>
+        <td style="padding: 6px 8px; text-align: right;">$${inv.rent_usd.toFixed(2)}</td>
+        <td style="padding: 6px 8px; text-align: right;">$${inv.condo_usd.toFixed(2)}</td>
+        <td style="padding: 6px 8px; text-align: right; font-weight: 700;">$${inv.total_usd.toFixed(2)}</td>
+        <td style="padding: 6px 8px; text-align: center;">${inv.paid_at || 'Pendiente'}</td>
+        <td style="padding: 6px 8px; text-align: center; font-weight: 700; color: ${inv.status === 'pagado' ? '#059669' : '#d97706'};">
+          ${inv.status === 'pagado' ? 'SOLVENTE' : 'PENDIENTE'}
+        </td>
+      </tr>
+    `).join('');
+
+    return `
+      <div class="printable-report" style="background: white; color: #0f172a; padding: 32px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 0 auto;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 20px;">
+          <div>
+            <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: #0f172a;">CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</h2>
+            <div style="font-size: 11px; color: #475569;">RIF: J-29881234-0 • Av. Municipal, Puerto La Cruz, Venezuela</div>
+            <div style="font-size: 11px; color: #475569;">Oficina de Administración Inmobiliaria</div>
+          </div>
+          <div style="text-align: right; font-size: 11px; color: #334155;">
+            <div>CONSTANCIA N°: <strong>SOLV-${new Date().getFullYear()}-${tenant.unit_code}</strong></div>
+            <div>Fecha: <strong>${new Date().toLocaleDateString('es-VE')}</strong></div>
+          </div>
+        </div>
+
+        <div style="text-align: center; margin-bottom: 24px;">
+          <h3 style="margin: 0; font-size: 16px; font-weight: 900; text-transform: uppercase; color: #0f172a;">
+            CERTIFICADO OFICIAL DE SOLVENCIA CONDOMINIAL & ARRENDATARIA
+          </h3>
+          <span style="font-size: 11px; color: #64748b;">De conformidad con el Artículo 25 y 32 de la Gaceta Oficial N° 40.418</span>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 14px; font-size: 12px; margin-bottom: 20px; line-height: 1.6;">
+          Por medio de la presente, la <strong>SOCIEDAD ADMINISTRADORA DEL CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</strong>, hace constar que el arrendatario:
+          <div style="margin: 10px 0; padding: 10px; background: white; border-left: 4px solid #b45309; border-radius: 4px;">
+            <div>Razón Social: <strong>${escapeHtml(tenant.business_name)}</strong></div>
+            <div>Nombre Comercial: <strong>${escapeHtml(tenant.trade_name || 'N/A')}</strong> | RIF: <strong>${escapeHtml(tenant.rif)}</strong></div>
+            <div>Representante Legal: <strong>${escapeHtml(tenant.legal_rep_name)}</strong> (C.I. ${escapeHtml(tenant.legal_rep_dni)})</div>
+            <div>Local Asignado: <strong>${escapeHtml(tenant.unit_code)}</strong> (${unit.area_m2} m²)</div>
+            <div>Contrato N°: <strong>${contract ? contract.contract_number : 'N/A'}</strong></div>
+          </div>
+          Se encuentra actualmente clasificado en el estado de:
+          <div style="text-align: center; margin: 12px 0;">
+            <span style="display: inline-block; padding: 8px 22px; border-radius: 20px; font-size: 14px; font-weight: 800; background: ${isSolvente ? '#dcfce7' : '#fee2e2'}; color: ${isSolvente ? '#15803d' : '#b91c1c'}; border: 1px solid ${isSolvente ? '#86efac' : '#fca5a5'};">
+              ${isSolvente ? '✓ SOLVENTE Y AL DÍA CON SUS OBLIGACIONES' : '⚠ REGISTRA CUOTAS PENDIENTES O EN MORA'}
+            </span>
+          </div>
+        </div>
+
+        <h4 style="margin: 0 0 8px 0; font-size: 12px; font-weight: 800; text-transform: uppercase; color: #1e293b;">
+          Historial Cronológico de Facturación
+        </h4>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
+          <thead>
+            <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 10.5px; text-transform: uppercase;">
+              <th style="padding: 6px 8px; text-align: left;">Período</th>
+              <th style="padding: 6px 8px; text-align: left;">Recibo</th>
+              <th style="padding: 6px 8px; text-align: right;">Canon</th>
+              <th style="padding: 6px 8px; text-align: right;">Condominio</th>
+              <th style="padding: 6px 8px; text-align: right;">Total USD</th>
+              <th style="padding: 6px 8px; text-align: center;">Fecha Pago</th>
+              <th style="padding: 6px 8px; text-align: center;">Estatus</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${invoiceRows}
+          </tbody>
+        </table>
+
+        <div style="text-align: center; margin-top: 50px;">
+          <div style="display: inline-block; width: 280px; border-top: 1px solid #475569; padding-top: 8px; font-size: 11.5px;">
+            <strong>ADMINISTRACIÓN CC MARIO SÁNCHEZ</strong><br>
+            <span style="font-size: 10.5px; color: #64748b;">Sello Húmedo y Firma de Cobranzas</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  window.printCurrentReport = function() {
+    const container = document.getElementById('report-display-container');
+    if (!container) return;
+    const printWin = window.open('', '_blank', 'width=900,height=750');
+    printWin.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Informe Oficial — CC Mario Sánchez</title>
+        <style>
+          body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 20px; background: white; color: #0f172a; }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { border: 1px solid #cbd5e1; padding: 6px 8px; }
+          @media print { body { padding: 0; } }
+        </style>
+      </head>
+      <body>
+        ${container.innerHTML}
+      </body>
+      </html>
+    `);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 300);
+  };
+
+  // =========================================================================
+  // MÓDULO 3: VISOR & GENERADOR DE CONTRATOS LEGALES (G.O. 40.418)
+  // =========================================================================
+  window.viewTenantContract = function(tenantId) {
+    const modal = document.getElementById('modal-contract-viewer');
+    const docWrapper = document.getElementById('contract-document-wrapper');
+    if (!modal || !docWrapper) return;
+
+    const tenant = dbService.getTenants().find(t => t.id === tenantId);
+    if (!tenant) {
+      alert("No se encontró el inquilino seleccionado.");
+      return;
+    }
+
+    const contract = dbService.getContracts().find(c => c.tenant_id === tenantId) || {
+      contract_number: `CCMS-CTR-2026-${tenant.unit_code}`,
+      tenant_id: tenant.id,
+      unit_code: tenant.unit_code,
+      start_date: '2026-01-01',
+      end_date: '2027-01-01',
+      rent_usd: 1200,
+      rent_method: 'CAF (Canon Fijo Art. 32)',
+      deposit_usd: 3600,
+      deposit_months: 3,
+      status: 'vigente'
+    };
+
+    const unit = dbService.getUnits().find(u => u.code === tenant.unit_code) || {
+      code: tenant.unit_code,
+      name: `Local Comercial ${tenant.unit_code}`,
+      area_m2: 120,
+      condo_aliquot: 0.08,
+      base_rent_usd: contract.rent_usd
+    };
+
+    if (window.VenezuelaLegal && typeof window.VenezuelaLegal.generateContractHTML === 'function') {
+      docWrapper.innerHTML = window.VenezuelaLegal.generateContractHTML(contract, tenant, unit);
+    } else {
+      docWrapper.innerHTML = `<div style="padding:20px;">Generador de contratos no disponible temporalmente.</div>`;
+    }
+
+    modal.classList.add('open');
+  };
+
+  window.closeContractModal = function() {
+    const modal = document.getElementById('modal-contract-viewer');
+    if (modal) modal.classList.remove('open');
+  };
+
+  window.printActiveContract = function() {
+    const docWrapper = document.getElementById('contract-document-wrapper');
+    if (!docWrapper) return;
+    const printWin = window.open('', '_blank', 'width=900,height=800');
+    printWin.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Contrato de Arrendamiento Comercial — G.O. 40.418</title>
+        <style>
+          body { font-family: 'Times New Roman', Times, serif; margin: 0; padding: 25px; background: white; color: black; line-height: 1.5; font-size: 13.5px; }
+          @media print { body { padding: 15px; font-size: 12.5px; } }
+        </style>
+      </head>
+      <body>
+        ${docWrapper.innerHTML}
+      </body>
+      </html>
+    `);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 300);
+  };
+
+  // =========================================================================
+  // MÓDULO 4: VISOR & RECIBO OFICIAL TRAS APROBACIÓN DE PAGO
+  // =========================================================================
+  window.openReceiptPreview = function(receipt) {
+    const modal = document.getElementById('modal-receipt-preview');
+    const wrapper = document.getElementById('receipt-document-wrapper');
+    if (!modal || !wrapper || !receipt) return;
+
+    const bcvRate = (receipt.snapshot && receipt.snapshot.bcv_rate_applied)
+      ? receipt.snapshot.bcv_rate_applied.toFixed(2)
+      : financialEngine.getRates().VES.toFixed(2);
+
+    const totalBs = financialEngine.convert(receipt.total_usd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
+    const totalEur = financialEngine.convert(receipt.total_usd, 'USD', 'EUR').toLocaleString('de-DE', { minimumFractionDigits: 2 });
+
+    wrapper.innerHTML = `
+      <div style="border: 2px solid #0f172a; padding: 24px; border-radius: 8px; background: white; color: #0f172a;">
+        <!-- HEADER MEMBRETE -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 16px;">
+          <div>
+            <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: #0f172a;">CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</h2>
+            <div style="font-size: 11px; color: #475569;">RIF: J-29881234-0 • Av. Municipal, Puerto La Cruz, Venezuela</div>
+            <div style="font-size: 11px; color: #475569;">Sociedad Administradora Inmobiliaria & Junta Condominial</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 15px; font-weight: 900; color: #059669;">RECIBO OFICIAL DE COBRANZA</div>
+            <div style="font-family: monospace; font-size: 13px; font-weight: 700; color: #0f172a;">${escapeHtml(receipt.receipt_number)}</div>
+            <div style="font-size: 11px; color: #64748b;">Fecha Aprobación: ${new Date(receipt.approved_at || Date.now()).toLocaleDateString('es-VE')}</div>
+          </div>
+        </div>
+
+        <!-- DATOS DEL ARRENDATARIO Y UNIDAD -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; margin-bottom: 16px; font-size: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div><strong>Arrendatario:</strong> ${escapeHtml(receipt.tenant_name)}</div>
+          <div><strong>RIF:</strong> ${escapeHtml(receipt.tenant_rif)}</div>
+          <div><strong>Unidad Comercial:</strong> <span style="color: #b45309; font-weight: 700;">${escapeHtml(receipt.unit_code)}</span></div>
+          <div><strong>Período Liquidado:</strong> ${receipt.period_month}/${receipt.period_year}</div>
+          <div><strong>Método de Pago:</strong> ${escapeHtml(receipt.payment_method)}</div>
+          <div><strong>N° Referencia Bancaria:</strong> <span style="font-family: monospace; font-weight: 700;">${escapeHtml(receipt.reference_number)}</span></div>
+          ${receipt.txid ? `<div style="grid-column: 1 / -1;"><strong>Hash Cripto TxID:</strong> <span style="font-family: monospace; font-size: 10.5px; color: #059669; word-break: break-all;">${escapeHtml(receipt.txid)}</span></div>` : ''}
+        </div>
+
+        <!-- DETALLE DE CONCEPTOS -->
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 12px;">
+          <thead>
+            <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
+              <th style="padding: 8px; text-align: left;">Concepto Arrendaticio</th>
+              <th style="padding: 8px; text-align: right;">Monto USD</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+              <td style="padding: 8px;">Canon Fijo Mensual de Arrendamiento (CAF Art. 32)</td>
+              <td style="padding: 8px; text-align: right;">$${receipt.rent_usd.toFixed(2)}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+              <td style="padding: 8px;">Cuota de Gastos Comunes / Condominio</td>
+              <td style="padding: 8px; text-align: right;">$${receipt.condo_usd.toFixed(2)}</td>
+            </tr>
+            <tr style="font-weight: 800; background: #f8fafc; font-size: 13px;">
+              <td style="padding: 10px 8px;">TOTAL PAGADO & CONCILIADO:</td>
+              <td style="padding: 10px 8px; text-align: right; color: #059669;">$${receipt.total_usd.toFixed(2)} USD</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- SNAPSHOT MULTIMONEDA A LA FECHA VALOR -->
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 10px; font-size: 11.5px; margin-bottom: 16px;">
+          <strong>Snapshot Contable Multimoneda a la Fecha Valor:</strong>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 4px;">
+            <div>• Bolívares Oficiales (Tasa BCV ${bcvRate} Bs/USD): <strong>Bs. ${totalBs}</strong></div>
+            <div>• Euros (€): <strong>€ ${totalEur} EUR</strong></div>
+            <div>• Criptoactivos USDT: <strong>USDT ${receipt.total_usd.toFixed(2)}</strong></div>
+            <div>• Verificado por: <strong>${escapeHtml(receipt.approved_by || 'Administración')}</strong></div>
+          </div>
+        </div>
+
+        <div style="font-size: 10px; color: #64748b; text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 10px;">
+          Este recibo constituye finiquito de pago válido y suficiente para el período indicado.<br>
+          Emitido de conformidad con la Gaceta Oficial N° 40.418. Conservar para fines fiscales (SENIAT).
+        </div>
+      </div>
+    `;
+
+    modal.classList.add('open');
+  };
+
+  window.closeReceiptPreviewModal = function() {
+    const modal = document.getElementById('modal-receipt-preview');
+    if (modal) modal.classList.remove('open');
+  };
+
+  window.printActiveReceipt = function() {
+    const wrapper = document.getElementById('receipt-document-wrapper');
+    if (!wrapper) return;
+    const printWin = window.open('', '_blank', 'width=800,height=700');
+    printWin.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Recibo Oficial de Cobranza — CC Mario Sánchez</title>
+        <style>
+          body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 25px; background: white; color: black; }
+          @media print { body { padding: 0; } }
+        </style>
+      </head>
+      <body>
+        ${wrapper.innerHTML}
+      </body>
+      </html>
+    `);
     printWin.document.close();
     printWin.focus();
     setTimeout(() => { printWin.print(); }, 250);

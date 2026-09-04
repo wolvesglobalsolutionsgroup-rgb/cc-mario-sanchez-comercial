@@ -454,8 +454,22 @@ class DatabaseService {
 
   getData() {
     try {
-      const data = localStorage.getItem(this.storageKey);
-      return data ? JSON.parse(data) : null;
+      const raw = localStorage.getItem(this.storageKey);
+      if (!raw) return this.seedInitialData();
+      const data = JSON.parse(raw);
+      let dirty = false;
+      if (!data.receiving_accounts || !Array.isArray(data.receiving_accounts) || data.receiving_accounts.length === 0) {
+        data.receiving_accounts = this.getDefaultReceivingAccounts();
+        dirty = true;
+      }
+      if (!data.receipts || !Array.isArray(data.receipts)) {
+        data.receipts = [];
+        dirty = true;
+      }
+      if (dirty) {
+        this.saveData(data);
+      }
+      return data;
     } catch (e) {
       console.error("Error reading localStorage DB:", e);
       return null;
@@ -636,13 +650,63 @@ class DatabaseService {
     const invoice = data.invoices.find(i => i.id === invoiceId);
     const payment = data.payments && data.payments.find(p => p.invoice_id === invoiceId && p.status === 'pendiente');
     if (!invoice || !payment) throw new Error('No hay un pago pendiente de revisión');
+
     payment.status = 'verificado';
     payment.verified_by = verifier || null;
     payment.verified_at = new Date().toISOString();
     invoice.status = 'pagado';
     invoice.paid_at = payment.payment_date;
+
+    // --- GENERACIÓN AUTOMÁTICA DEL RECIBO OFICIAL DE COBRANZA & REGISTRO CONTABLE ---
+    const tenant = data.tenants.find(t => t.id === invoice.tenant_id) || { business_name: 'Arrendatario', rif: 'N/A' };
+    const receiptNum = `REC-${invoice.period_year}-${String(invoice.period_month).padStart(2, '0')}-${invoice.unit_code}`;
+    
+    const receipt = {
+      id: 'rec-' + Date.now(),
+      receipt_number: receiptNum,
+      invoice_id: invoiceId,
+      invoice_number: invoice.invoice_number,
+      tenant_id: invoice.tenant_id,
+      tenant_name: tenant.business_name,
+      tenant_rif: tenant.rif,
+      unit_code: invoice.unit_code,
+      period_month: invoice.period_month,
+      period_year: invoice.period_year,
+      rent_usd: invoice.rent_usd,
+      condo_usd: invoice.condo_usd,
+      total_usd: invoice.total_usd,
+      payment_method: payment.payment_method,
+      reference_number: payment.reference_number,
+      txid: payment.txid || null,
+      amount_paid: payment.amount_paid,
+      currency: payment.currency,
+      snapshot: payment.snapshot || (window.financialEngine ? window.financialEngine.createPaymentSnapshot(invoice.total_usd, 'USD') : null),
+      receipt_proof: payment.receipt_proof || null,
+      approved_by: verifier || 'Administración CCMS',
+      approved_at: new Date().toISOString(),
+      status: 'emitido'
+    };
+
+    if (!data.receipts) data.receipts = [];
+    const existingRecIdx = data.receipts.findIndex(r => r.invoice_id === invoiceId);
+    if (existingRecIdx >= 0) {
+      data.receipts[existingRecIdx] = receipt;
+    } else {
+      data.receipts.push(receipt);
+    }
+
     this.saveData(data);
-    return payment;
+    return { payment, invoice, receipt };
+  }
+
+  getReceipts() {
+    const data = this.getData();
+    return (data && data.receipts) ? data.receipts : [];
+  }
+
+  getReceiptByInvoiceId(invoiceId) {
+    const receipts = this.getReceipts();
+    return receipts.find(r => r.invoice_id === invoiceId) || null;
   }
 
   rejectPayment(invoiceId, reason, verifier) {
@@ -679,65 +743,164 @@ class DatabaseService {
     return (data && data.app_settings) ? { ...defaults, ...data.app_settings } : defaults;
   }
 
-  // --- CUENTAS RECEPTORAS OFICIALES DE LA SOCIEDAD ADMINISTRADORA ---
-  getReceivingAccounts() {
+  saveSettings(newSettings) {
+    const data = this.getData();
+    data.app_settings = { ...this.getSettings(), ...newSettings };
+    this.saveData(data);
+    return data.app_settings;
+  }
+
+  // --- CUENTAS RECEPTORAS OFICIALES & ASIGNACIÓN POR INQUILINO ---
+  getDefaultReceivingAccounts() {
     return [
       {
         id: 'acc-banesco-divisas',
         bank: 'Banesco Banco Universal',
         type: 'Custodia Moneda Extranjera (USD)',
         account_number: '0134-0982-12-0982341200',
+        phone: '',
+        email: '',
+        wallet_address: '',
+        binance_pay_id: '',
         beneficiary: 'Centro Comercial Mario Sánchez, C.A.',
         rif: 'J-29881234-0',
         icon: 'fa-solid fa-vault',
         badge: 'USD Oficial',
-        instructions: 'Indicar número de contrato y unidad comercial en el memo de depósito en taquilla o transferencia entre cuentas Banesco Verde.'
+        instructions: 'Indicar número de contrato y unidad comercial en el memo de depósito en taquilla o transferencia entre cuentas Banesco Verde.',
+        is_active: true,
+        assigned_tenants: ['all']
       },
       {
         id: 'acc-pagomovil',
         bank: 'Pago Móvil Interbancario (Bs. BCV)',
         type: 'Pago Móvil Jurídico C2P',
+        account_number: '',
         phone: '0414-8123456',
+        email: '',
+        wallet_address: '',
+        binance_pay_id: '',
         rif: 'J-29881234-0',
         bank_code: '0134 (Banesco) / 0102 (BDV)',
         beneficiary: 'Centro Comercial Mario Sánchez, C.A.',
         icon: 'fa-solid fa-mobile-screen-button',
         badge: 'Bs. Tasa BCV',
-        instructions: 'Calcular el monto exacto multiplicando el total USD por la tasa oficial BCV del día valor. Adjuntar referencia de 8 dígitos.'
+        instructions: 'Calcular el monto exacto multiplicando el total USD por la tasa oficial BCV del día valor. Adjuntar referencia de 8 dígitos.',
+        is_active: true,
+        assigned_tenants: ['all']
       },
       {
         id: 'acc-banesco-bs',
         bank: 'Banesco Banco Universal',
         type: 'Cuenta Corriente Nacional (Bs)',
         account_number: '0134-0382-71-3821004921',
+        phone: '',
+        email: '',
+        wallet_address: '',
+        binance_pay_id: '',
         beneficiary: 'Centro Comercial Mario Sánchez, C.A.',
         rif: 'J-29881234-0',
         icon: 'fa-solid fa-building-columns',
         badge: 'Transferencia Bs.',
-        instructions: 'Transferencias desde cualquier banco nacional vía ACH o inmediata. Notificar dentro de las 24 horas del día valor.'
+        instructions: 'Transferencias desde cualquier banco nacional vía ACH o inmediata. Notificar dentro de las 24 horas del día valor.',
+        is_active: true,
+        assigned_tenants: ['all']
       },
       {
         id: 'acc-zelle',
         bank: 'Zelle (Divisas EE.UU.)',
         type: 'Zelle Corporativo',
+        account_number: '',
+        phone: '',
         email: 'pagos@ccmariosanchez.com',
+        wallet_address: '',
+        binance_pay_id: '',
         beneficiary: 'Mario Sanchez Commercial Management LLC',
+        rif: 'EIN-8291044',
         icon: 'fa-solid fa-bolt',
         badge: 'Zelle Directo',
-        instructions: 'Colocar obligatoriamente en la nota o concepto: "Recibo [N° Recibo] - [Unidad Comercial]". Cero comisiones.'
+        instructions: 'Colocar obligatoriamente en la nota o concepto: "Recibo [N° Recibo] - [Unidad Comercial]". Cero comisiones.',
+        is_active: true,
+        assigned_tenants: ['all']
       },
       {
         id: 'acc-usdt',
         bank: 'Criptoactivos (USDT TRC20 / Binance Pay)',
         type: 'Billetera Digital USDT (Red TRON)',
+        account_number: '',
+        phone: '',
+        email: '',
         wallet_address: 'TYp9XvR4KmZn7Qb8Ls2D1Hg5wJ9kL4mPqR',
         binance_pay_id: '891044231',
         beneficiary: 'Tesorería CC Mario Sánchez',
+        rif: 'J-29881234-0',
         icon: 'fa-solid fa-coins',
         badge: 'USDT 1:1 USD',
-        instructions: 'Enviar únicamente por red TRON (TRC20) o Binance Pay ID. El sistema verifica el hash de transacción (TxID de 64 caracteres hex) de manera automatizada.'
+        instructions: 'Enviar únicamente por red TRON (TRC20) o Binance Pay ID. El sistema verifica el hash de transacción (TxID de 64 caracteres hex) de manera automatizada.',
+        is_active: true,
+        assigned_tenants: ['all']
       }
     ];
+  }
+
+  getReceivingAccounts(tenantId = null) {
+    const data = this.getData();
+    const accounts = (data && data.receiving_accounts && Array.isArray(data.receiving_accounts))
+      ? data.receiving_accounts
+      : this.getDefaultReceivingAccounts();
+
+    if (!tenantId) {
+      return accounts;
+    }
+
+    return accounts.filter(acc => {
+      if (acc.is_active === false) return false;
+      if (!acc.assigned_tenants || !Array.isArray(acc.assigned_tenants)) return true;
+      if (acc.assigned_tenants.includes('all')) return true;
+      return acc.assigned_tenants.includes(tenantId);
+    });
+  }
+
+  saveReceivingAccount(accountData) {
+    const data = this.getData();
+    if (!data.receiving_accounts) data.receiving_accounts = this.getDefaultReceivingAccounts();
+
+    if (accountData.id) {
+      const idx = data.receiving_accounts.findIndex(a => a.id === accountData.id);
+      if (idx >= 0) {
+        data.receiving_accounts[idx] = { ...data.receiving_accounts[idx], ...accountData };
+      } else {
+        data.receiving_accounts.push(accountData);
+      }
+    } else {
+      const newAcc = {
+        ...accountData,
+        id: 'acc-' + Date.now(),
+        is_active: accountData.is_active !== undefined ? accountData.is_active : true,
+        assigned_tenants: (accountData.assigned_tenants && accountData.assigned_tenants.length) ? accountData.assigned_tenants : ['all']
+      };
+      data.receiving_accounts.push(newAcc);
+    }
+    this.saveData(data);
+    return data.receiving_accounts;
+  }
+
+  toggleReceivingAccount(accountId, isActive = null) {
+    const data = this.getData();
+    if (!data.receiving_accounts) return;
+    const acc = data.receiving_accounts.find(a => a.id === accountId);
+    if (acc) {
+      acc.is_active = (isActive !== null) ? Boolean(isActive) : !acc.is_active;
+      this.saveData(data);
+    }
+    return acc;
+  }
+
+  deleteReceivingAccount(accountId) {
+    const data = this.getData();
+    if (!data.receiving_accounts) return;
+    data.receiving_accounts = data.receiving_accounts.filter(a => a.id !== accountId);
+    this.saveData(data);
+    return data.receiving_accounts;
   }
 }
 

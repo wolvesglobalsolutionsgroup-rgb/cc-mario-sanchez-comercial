@@ -119,6 +119,108 @@ const VenezuelaLegal = {
       currency: 'VES',
       minimumFractionDigits: 2
     }).format(amount).replace('VES', 'Bs.');
+  },
+
+  /**
+   * 6. Generador Formal del Contrato de Arrendamiento Comercial Inmobiliario
+   * En estricto apego a la Ley de Regulación del Arrendamiento Inmobiliario para Uso Comercial (G.O. 40.418)
+   */
+  generateContractHTML(contract, tenant, unit, options = {}) {
+    if (!contract || !tenant || !unit) {
+      return '<div style="padding:20px;color:red;">Error: Faltan datos contractuales para generar el documento.</div>';
+    }
+
+    const bcvRate = options.bcvRate || 807.38;
+    const canonBs = Math.round(contract.rent_usd * bcvRate * 100) / 100;
+    const durMonths = options.durationMonths || 12;
+    const durYears = durMonths / 12;
+    const prorroga = this.calculateLegalExtension(durYears);
+
+    return `
+      <div class="contract-doc" style="font-family: 'Times New Roman', Times, serif; font-size: 13.5px; line-height: 1.6; color: #111; max-width: 820px; margin: 0 auto; background: #fff; padding: 40px 48px; border: 1px solid #ddd; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: justify;">
+        
+        <!-- MEMBRETE OFICIAL -->
+        <div style="text-align: center; border-bottom: 2px solid #111; padding-bottom: 12px; margin-bottom: 22px;">
+          <h2 style="font-size: 16px; margin: 0; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</h2>
+          <p style="font-size: 11.5px; margin: 3px 0; color: #444;">R.I.F. J-29881234-0 — Domicilio: Av. Municipal, Puerto La Cruz, Estado Anzoátegui, Venezuela</p>
+          <div style="margin-top: 8px; font-weight: 700; font-size: 14px; text-transform: uppercase; color: #854d0e;">
+            CONTRATO DE ARRENDAMIENTO INMOBILIARIO PARA USO COMERCIAL
+          </div>
+          <div style="font-size: 12px; font-weight: 700; margin-top: 2px;">N° DE INSTRUMENTO: ${contract.contract_number}</div>
+        </div>
+
+        <p>
+          Entre la sociedad mercantil <strong>CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</strong>, inscrita por ante el Registro Mercantil Primero de la Circunscripción Judicial del Estado Anzoátegui bajo el N° 45, Tomo 12-A, titular del Registro de Información Fiscal (R.I.F.) N° <strong>J-29881234-0</strong>, domiciliada en la ciudad de Puerto La Cruz, en lo sucesivo denominada a los efectos de este contrato <strong>"LA ARRENDADORA"</strong>, por una parte; y por la otra, la sociedad mercantil <strong>${tenant.business_name}</strong>, titular del R.I.F. N° <strong>${tenant.rif}</strong>, legalmente representada en este acto por el ciudadano(a) <strong>${tenant.legal_rep_name}</strong>, titular de la Cédula de Identidad N° <strong>${tenant.legal_rep_dni}</strong>, en lo sucesivo denominada <strong>"LA ARRENDATARIA"</strong>, se ha convenido en celebrar el presente Contrato de Arrendamiento Inmobiliario para Uso Comercial, el cual se regirá de conformidad con las disposiciones de la <strong>Ley de Regulación del Arrendamiento Inmobiliario para el Uso Comercial (Decreto con Rango, Valor y Fuerza de Ley N° 929, publicado en la Gaceta Oficial de la República Bolivariana de Venezuela N° 40.418 de fecha 23 de mayo de 2014)</strong>, y por las cláusulas siguientes:
+        </p>
+
+        <h4 style="font-size: 13px; text-transform: uppercase; margin: 16px 0 6px; font-weight: bold;">CLÁUSULA PRIMERA: OBJETO DEL CONTRATO</h4>
+        <p>
+          LA ARRENDADORA da en arrendamiento a LA ARRENDATARIA, y ésta acepta en tal concepto, el inmueble constituido por la Unidad Comercial identificada con la nomenclatura <strong>${unit.code}</strong> ("${unit.name}"), con una superficie aproximada de <strong>${unit.area_m2.toFixed(2)} metros cuadrados (m²)</strong>, ubicado en las instalaciones del Centro Comercial Mario Sánchez, el cual forma parte de un área total arrendable de 5.190 m².
+        </p>
+
+        <h4 style="font-size: 13px; text-transform: uppercase; margin: 16px 0 6px; font-weight: bold;">CLÁUSULA SEGUNDA: DESTINO EXCLUSIVO</h4>
+        <p>
+          El inmueble objeto de este contrato será destinado única y exclusivamente para la actividad comercial de: <strong>${tenant.commercial_activity}</strong>. Queda expresamente prohibido cambiar el ramo o destino comercial pactado sin la previa autorización por escrito de LA ARRENDADORA.
+        </p>
+
+        <h4 style="font-size: 13px; text-transform: uppercase; margin: 16px 0 6px; font-weight: bold;">CLÁUSULA TERCERA: DURACIÓN DEL CONTRATO</h4>
+        <p>
+          El término de duración del presente contrato es de <strong>UN (1) AÑO</strong> ininterrumpido (plazo mínimo legal según el Artículo 13 de la Ley especial), con vigencia a partir del <strong>${contract.start_date}</strong> hasta el <strong>${contract.end_date}</strong>.
+        </p>
+
+        <h4 style="font-size: 13px; text-transform: uppercase; margin: 16px 0 6px; font-weight: bold;">CLÁUSULA CUARTA: CANON DE ARRENDAMIENTO & CONDICIONES DE PAGO</h4>
+        <p>
+          El canon mensual de arrendamiento ha sido fijado bajo la metodología del <strong>Canon de Arrendamiento Fijo (CAF)</strong> contemplada en el Artículo 32 de la Ley especial, por la cantidad neta de <strong>USD $${contract.rent_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong> (o su equivalente oficial en Bolívares pagaderos a la Tasa Oficial publicada por el Banco Central de Venezuela a la fecha valor del pago, equivalente hoy referencialmente a Bs. ${canonBs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}). Los pagos deberán efectuarse por mes adelantado dentro de los primeros cinco (5) días continuos de cada mes en los canales oficiales debidamente autorizados por LA ARRENDADORA.
+        </p>
+
+        <h4 style="font-size: 13px; text-transform: uppercase; margin: 16px 0 6px; font-weight: bold;">CLÁUSULA QUINTA: GASTOS COMUNES Y CONDOMINIO</h4>
+        <p>
+          LA ARRENDATARIA se obliga a pagar mensualmente la cuota de participación en los Gastos Comunes del Centro Comercial correspondiente a su alícuota del <strong>${((unit.condo_aliquot || 0.05) * 100).toFixed(2)}%</strong> sobre el total de egresos operativos (vigilancia armada 24/7, suministro hidroneumático, iluminación de áreas comunes, aseo y mantenimiento de drenajes y asfalto).
+        </p>
+
+        <h4 style="font-size: 13px; text-transform: uppercase; margin: 16px 0 6px; font-weight: bold;">CLÁUSULA SEXTA: DEPÓSITO EN GARANTÍA</h4>
+        <p>
+          De conformidad con el Artículo 19 de la Ley (G.O. 40.418), LA ARRENDATARIA ha consignado la cantidad de <strong>USD $${(contract.deposit_usd || contract.rent_usd * 3).toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong>, equivalente a <strong>${contract.deposit_months || 3} meses de canon</strong> (límite máximo legal), para garantizar el fiel cumplimiento de todas las obligaciones contraídas.
+        </p>
+
+        <h4 style="font-size: 13px; text-transform: uppercase; margin: 16px 0 6px; font-weight: bold;">CLÁUSULA SÉPTIMA: PRÓRROGA LEGAL OBLIGATORIA</h4>
+        <p>
+          Al vencimiento del presente contrato, si LA ARRENDATARIA se encontrare solvente en el cumplimiento de sus obligaciones patrimoniales, tendrá derecho a la Prórroga Legal obligatoria estipulada en el <strong>Artículo 25 de la Ley especial</strong>, correspondiéndole a la fecha un lapso máximo de: <strong>${prorroga.months} MESES (${prorroga.description})</strong>.
+        </p>
+
+        <h4 style="font-size: 13px; text-transform: uppercase; margin: 16px 0 6px; font-weight: bold;">CLÁUSULA OCTAVA: PROHIBICIÓN DE CESIÓN Y SUBARRENDAMIENTO</h4>
+        <p>
+          Queda terminantemente prohibido el subarrendamiento total o parcial del inmueble, así como la cesión o traspaso del presente contrato, sin la autorización previa, expresa y por escrito de LA ARRENDADORA.
+        </p>
+
+        <h4 style="font-size: 13px; text-transform: uppercase; margin: 16px 0 6px; font-weight: bold;">CLÁUSULA NOVENA: DOMICILIO ESPECIAL Y JURISDICCIÓN</h4>
+        <p>
+          Para todos los efectos derivados y consecuencias del presente contrato, las partes eligen como domicilio especial y excluyente la ciudad de Puerto La Cruz, a la jurisdicción de cuyos Tribunales declaran someterse expresamente.
+        </p>
+
+        <p style="margin-top: 18px;">
+          Se hacen dos (2) ejemplares de un mismo tenor y a un solo efecto en la ciudad de Puerto La Cruz, a los ${new Date().toLocaleDateString('es-VE', { day: 'numeric', month: 'long', year: 'numeric' })}.
+        </p>
+
+        <!-- ÁREA DE FIRMAS -->
+        <div style="display: flex; justify-content: space-between; margin-top: 50px; padding-top: 20px;">
+          <div style="text-align: center; width: 44%; border-top: 1px solid #222; padding-top: 8px;">
+            <strong>POR "LA ARRENDADORA"</strong><br>
+            <span>Centro Comercial Mario Sánchez, C.A.</span><br>
+            <span style="font-size: 11px; color: #555;">R.I.F. J-29881234-0</span><br>
+            <div style="margin-top: 6px; font-size: 10.5px; color: #047857; font-weight: bold;">[Firma y Sello Autorizado]</div>
+          </div>
+
+          <div style="text-align: center; width: 44%; border-top: 1px solid #222; padding-top: 8px;">
+            <strong>POR "LA ARRENDATARIA"</strong><br>
+            <span>${tenant.business_name}</span><br>
+            <span style="font-size: 11px; color: #555;">${tenant.legal_rep_name} — C.I. ${tenant.legal_rep_dni}</span><br>
+            <div style="margin-top: 6px; font-size: 10.5px; color: #b45309; font-weight: bold;">[Firma y Sello del Representante]</div>
+          </div>
+        </div>
+
+      </div>
+    `;
   }
 };
 
