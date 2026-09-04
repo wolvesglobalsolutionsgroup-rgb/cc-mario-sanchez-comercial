@@ -52,6 +52,24 @@ class FinancialEngine {
     return this.rates.EUR;
   }
 
+  async fetchOfficialBcvRate() {
+    try {
+      const resp = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      if (data && data.promedio && !isNaN(data.promedio)) {
+        this.rates.VES = parseFloat(data.promedio);
+        this.rates.lastUpdated = data.fechaActualizacion || new Date().toISOString();
+        this.saveRates();
+        return { success: true, rate: this.rates.VES, date: this.rates.lastUpdated, source: 'DolarApi / BCV Oficial' };
+      }
+      throw new Error('Formato de datos no reconocido');
+    } catch (err) {
+      console.warn('Fallo en sincronización automática con DolarApi, intentando fallback...', err);
+      return { success: false, rate: this.rates.VES, error: err.message };
+    }
+  }
+
   getRates() {
     return { ...this.rates };
   }
@@ -93,15 +111,15 @@ class FinancialEngine {
     const val = parseFloat(amount) || 0;
     switch (currency) {
       case 'USD':
-        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+        return `$ ${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       case 'EUR':
-        return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(val);
+        return `€ ${val.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       case 'VES':
-        return new Intl.NumberFormat('es-VE', { style: 'currency', currency: 'VES', minimumFractionDigits: 2 }).format(val).replace('VES', 'Bs.');
+        return `Bs. ${val.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       case 'USDT':
-        return `₮ ${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT`;
+        return `USDT ${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       default:
-        return `${val.toFixed(2)} ${currency}`;
+        return `${currency} ${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
   }
 

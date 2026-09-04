@@ -9,12 +9,13 @@
 
 /* MODO OSCURO (PREDETERMINADO - DARK LUXURY) */
 :root, [data-theme="dark"] {
+  color-scheme: dark;
   --bg-main: #04070d;
   --bg-surface: #080d17;
-  --bg-surface-glass: rgba(10, 16, 28, 0.88);
-  --bg-card: rgba(14, 22, 38, 0.75);
-  --bg-card-hover: rgba(20, 32, 54, 0.9);
-  --bg-input: rgba(255, 255, 255, 0.04);
+  --bg-surface-glass: rgba(8, 13, 23, 0.85);
+  --bg-card: rgba(14, 22, 38, 0.7);
+  --bg-card-hover: rgba(20, 32, 54, 0.85);
+  --bg-input: #0b1120;
   
   --border-subtle: rgba(255, 255, 255, 0.08);
   --border-focus: rgba(245, 158, 11, 0.45);
@@ -22,26 +23,26 @@
   
   --amber: #f59e0b;
   --amber-light: #fbbf24;
-  --amber-glow: rgba(245, 158, 11, 0.18);
+  --amber-glow: rgba(245, 158, 11, 0.15);
   
   --emerald: #10b981;
   --emerald-light: #34d399;
-  --emerald-glow: rgba(16, 185, 129, 0.18);
+  --emerald-glow: rgba(16, 185, 129, 0.15);
   
   --cyan: #0ea5e9;
   --cyan-light: #38bdf8;
   
   --rose: #f43f5e;
   --rose-light: #fb7185;
-  --rose-glow: rgba(244, 63, 94, 0.18);
+  --rose-glow: rgba(244, 63, 94, 0.15);
   
   --purple: #a855f7;
   
   --txt-primary: #f8fafc;
   --txt-secondary: #94a3b8;
   --txt-muted: #64748b;
-  --table-th-bg: rgba(0, 0, 0, 0.35);
-  --table-border: rgba(255, 255, 255, 0.04);
+  --table-th-bg: rgba(0, 0, 0, 0.4);
+  --table-border: rgba(255, 255, 255, 0.05);
   --table-hover: rgba(255, 255, 255, 0.02);
   --modal-bg: #090f1d;
   
@@ -53,17 +54,18 @@
   --radius-lg: 16px;
   --radius-md: 10px;
   --radius-sm: 6px;
-  --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 /* MODO CLARO (LIGHT EXECUTIVE CLEAN) */
 [data-theme="light"] {
-  --bg-main: #f1f5f9;
+  color-scheme: light;
+  --bg-main: #f8fafc;
   --bg-surface: #ffffff;
   --bg-surface-glass: rgba(255, 255, 255, 0.92);
   --bg-card: #ffffff;
-  --bg-card-hover: #f8fafc;
-  --bg-input: #f8fafc;
+  --bg-card-hover: #f1f5f9;
+  --bg-input: #ffffff;
   
   --border-subtle: #e2e8f0;
   --border-focus: rgba(217, 119, 6, 0.5);
@@ -670,11 +672,41 @@ body {
   font-family: var(--font-body);
   font-size: 13px;
   outline: none;
-  transition: border 0.15s;
+  transition: border 0.15s, background-color 0.15s;
 }
 
 .form-control:focus {
   border-color: var(--amber);
+  box-shadow: 0 0 0 2px var(--amber-glow);
+}
+
+/* ESTILOS EXPLÍCITOS PARA SELECT Y OPTION (SOLUCIÓN CONTRASTE CERO TEXTO INVISIBLE) */
+select.form-control {
+  cursor: pointer;
+  appearance: auto;
+  -webkit-appearance: menulist;
+}
+
+select.form-control option {
+  background-color: #0b1120 !important;
+  color: #f8fafc !important;
+  padding: 10px;
+}
+
+[data-theme="light"] select.form-control option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+select.form-control optgroup {
+  background-color: #04070d !important;
+  color: #f59e0b !important;
+  font-weight: 700;
+}
+
+[data-theme="light"] select.form-control optgroup {
+  background-color: #f1f5f9 !important;
+  color: #d97706 !important;
 }
 
 /* RESPONSIVE DESIGN */

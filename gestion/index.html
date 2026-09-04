@@ -63,6 +63,10 @@
         <i class="fa-solid fa-bell" style="color: var(--rose);"></i>
         <span>Alertas WhatsApp & Gmail</span>
       </a>
+      <a href="#" class="nav-item" data-tab="configuracion" id="nav-tab-configuracion">
+        <i class="fa-solid fa-gear" style="color: var(--amber);"></i>
+        <span>Configuración del Sistema</span>
+      </a>
       <a href="onboarding.html" class="nav-item">
         <i class="fa-solid fa-user-plus" style="color: var(--amber);"></i>
         <span>Nuevo Onboarding</span>
@@ -98,23 +102,33 @@
           <i class="fa-solid fa-bars"></i>
         </button>
 
-        <!-- DUAL CURRENCY TICKER (BCV) CON MODAL EDITABLE -->
-        <div class="bcv-ticker" onclick="editBcvRate()" title="Click para actualizar tasa oficial BCV" style="cursor: pointer;">
+        <!-- DUAL CURRENCY TICKER (BCV) CON SINCRONIZACIÓN AUTOMÁTICA EN VIVO -->
+        <div class="bcv-ticker" title="Tasa Oficial del Banco Central de Venezuela" style="display: flex; align-items: center; gap: 8px;">
           <span class="bcv-label"><i class="fa-solid fa-landmark"></i> BCV Oficial:</span>
-          <span class="bcv-value" id="bcv-rate-val">72.50 Bs/USD</span>
-          <i class="fa-solid fa-pen-to-square" style="font-size: 10px; color: var(--txt-muted);"></i>
+          <span class="bcv-value" id="bcv-rate-val">Cargando...</span>
+          <button type="button" class="btn-sync-bcv" onclick="syncBcvRate()" title="Actualizar Tasa BCV automáticamente desde DolarApi" style="background: none; border: none; color: var(--amber); cursor: pointer; padding: 2px 4px; font-size: 11px;">
+            <i class="fa-solid fa-arrows-rotate" id="bcv-sync-icon"></i>
+          </button>
+          <button type="button" class="btn-edit-bcv" onclick="editBcvRate()" title="Editar tasa manualmente" style="background: none; border: none; color: var(--txt-muted); cursor: pointer; padding: 2px 4px; font-size: 11px;">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
         </div>
       </div>
 
       <div class="top-actions">
         
-        <!-- SELECTOR CUATRIMONEDA GLOBAL -->
+        <!-- SELECTOR CUATRIMONEDA GLOBAL (FORMATO EJECUTIVO INTERNACIONAL) -->
         <div class="currency-selector-bar">
           <button class="cur-pill active" data-cur="USD">$ USD</button>
           <button class="cur-pill" data-cur="EUR">€ EUR</button>
           <button class="cur-pill" data-cur="VES">Bs. BCV</button>
-          <button class="cur-pill" data-cur="USDT">₮ USDT</button>
+          <button class="cur-pill" data-cur="USDT"><i class="fa-solid fa-coins" style="font-size: 10px; color: var(--emerald);"></i> USDT</button>
         </div>
+
+        <!-- BOTÓN DE ACCESO DIRECTO A CONFIGURACIÓN -->
+        <button class="btn-theme-toggle" onclick="openConfigTab()" title="Configuración de la App (Cuotas, Alertas y Mensajes)">
+          <i class="fa-solid fa-gear" style="color: var(--amber);"></i>
+        </button>
 
         <!-- TOGGLE MODO CLARO / OSCURO -->
         <button class="btn-theme-toggle" id="theme-toggle-btn" title="Cambiar Tema">
@@ -308,6 +322,126 @@
         </div>
       </section>
 
+      <!-- TAB 6: CONFIGURACIÓN DEL SISTEMA (CUOTAS, ALERTAS Y PLANTILLAS DE MENSAJES) -->
+      <section class="tab-view" id="tab-configuracion" style="display: none;">
+        <div class="section-head">
+          <h3 class="section-title">
+            <i class="fa-solid fa-gear" style="color: var(--amber);"></i> Configuración de la App & Parámetros Operativos
+          </h3>
+          <span style="font-size: 12px; color: var(--txt-secondary);">Personalización de cánones, días de corte, alertas y mensajes</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+          
+          <!-- TARJETA 1: PARÁMETROS DE CUOTAS Y CÁNONES -->
+          <div class="data-card" style="padding: 22px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">
+              <div class="kpi-icon-badge badge-amber"><i class="fa-solid fa-calculator"></i></div>
+              <div>
+                <h4 style="font-family: var(--font-heading); font-size: 15px; color: var(--txt-primary);">Cánones Base & Gastos Comunes</h4>
+                <p style="font-size: 11px; color: var(--txt-secondary);">Tarifas referenciales de alquiler y condominio</p>
+              </div>
+            </div>
+
+            <form id="form-config-cuotas" onsubmit="saveCuotasConfig(event)" style="display: flex; flex-direction: column; gap: 14px;">
+              <div class="form-group">
+                <label>Canon Base Locales Comerciales ($/m²/mes)</label>
+                <input type="number" step="0.1" class="form-control" id="cfg-rate-locales" value="4.5" required>
+              </div>
+
+              <div class="form-group">
+                <label>Canon Base Macro-Lotes ($/m²/mes)</label>
+                <input type="number" step="0.1" class="form-control" id="cfg-rate-macrolotes" value="2.3" required>
+              </div>
+
+              <div class="form-group">
+                <label>Canon Base Galpones & Almacenes ($/m²/mes)</label>
+                <input type="number" step="0.1" class="form-control" id="cfg-rate-galpones" value="2.5" required>
+              </div>
+
+              <div class="form-group">
+                <label>Alícuota Base de Gastos Comunes (% s/ canon)</label>
+                <input type="number" step="0.5" class="form-control" id="cfg-condo-aliquot" value="8.0" required>
+              </div>
+
+              <button type="submit" class="btn-onboarding-cta" style="justify-content: center; margin-top: 6px;">
+                <i class="fa-solid fa-floppy-disk"></i> <span>Guardar Parámetros de Cuotas</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- TARJETA 2: CONFIGURACIÓN DE ALERTAS & TIEMPOS DE VENCIMIENTO -->
+          <div class="data-card" style="padding: 22px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">
+              <div class="kpi-icon-badge badge-rose"><i class="fa-solid fa-bell"></i></div>
+              <div>
+                <h4 style="font-family: var(--font-heading); font-size: 15px; color: var(--txt-primary);">Alertas & Calendario de Cobro</h4>
+                <p style="font-size: 11px; color: var(--txt-secondary);">Días de corte, plazos preventivos y tolerancia de mora</p>
+              </div>
+            </div>
+
+            <form id="form-config-alertas" onsubmit="saveAlertasConfig(event)" style="display: flex; flex-direction: column; gap: 14px;">
+              <div class="form-group">
+                <label>Día de Corte Mensual (Fecha límite de pago)</label>
+                <input type="number" min="1" max="31" class="form-control" id="cfg-cutoff-day" value="5" required>
+                <span style="font-size: 10.5px; color: var(--txt-muted);">Día del mes en que vencen los cánones ordinarios.</span>
+              </div>
+
+              <div class="form-group">
+                <label>Anticipación de Aviso Preventivo (Días antes)</label>
+                <input type="number" min="1" max="15" class="form-control" id="cfg-alert-before" value="3" required>
+                <span style="font-size: 10.5px; color: var(--txt-muted);">Días previos al vencimiento para despachar aviso preventivo.</span>
+              </div>
+
+              <div class="form-group">
+                <label>Días de Gracia antes de declarar Mora</label>
+                <input type="number" min="0" max="30" class="form-control" id="cfg-grace-days" value="5" required>
+                <span style="font-size: 10.5px; color: var(--txt-muted);">Días transcurridos después de la fecha límite para emitir alerta de mora.</span>
+              </div>
+
+              <button type="submit" class="btn-onboarding-cta" style="justify-content: center; margin-top: 6px;">
+                <i class="fa-solid fa-clock"></i> <span>Guardar Tiempos de Alerta</span>
+              </button>
+            </form>
+          </div>
+
+        </div>
+
+        <!-- TARJETA 3: EDITOR DE PLANTILLAS DE MENSAJES (WHATSAPP & GMAIL) -->
+        <div class="data-card" style="padding: 22px; margin-top: 20px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div class="kpi-icon-badge badge-emerald"><i class="fa-brands fa-whatsapp"></i></div>
+              <div>
+                <h4 style="font-family: var(--font-heading); font-size: 15px; color: var(--txt-primary);">Editor de Mensajes & Plantillas de Cobro</h4>
+                <p style="font-size: 11px; color: var(--txt-secondary);">Variables dinámicas disponibles: <code>{inquilino}</code>, <code>{unidad}</code>, <code>{periodo}</code>, <code>{monto_usd}</code>, <code>{monto_bs}</code>, <code>{tasa_bcv}</code>, <code>{fecha_limite}</code></p>
+              </div>
+            </div>
+            <button type="button" class="btn-action-icon" onclick="resetDefaultTemplates()" title="Restablecer plantilla original" style="width: auto; padding: 6px 12px; font-size: 11px; gap: 6px;">
+              <i class="fa-solid fa-rotate-left"></i> <span>Restablecer Plantilla</span>
+            </button>
+          </div>
+
+          <form id="form-config-mensajes" onsubmit="saveMensajesConfig(event)" style="display: flex; flex-direction: column; gap: 16px;">
+            <div class="form-group">
+              <label><i class="fa-solid fa-comment-dots" style="color: var(--amber);"></i> Plantilla: Aviso Preventivo de Cobro (WhatsApp / Correo)</label>
+              <textarea class="form-control" id="cfg-msg-preventive" rows="4" style="font-family: monospace; font-size: 12px; resize: vertical;" required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label><i class="fa-solid fa-triangle-exclamation" style="color: var(--rose);"></i> Plantilla: Alerta de Retraso o Mora Legal (G.O. 40.418)</label>
+              <textarea class="form-control" id="cfg-msg-mora" rows="4" style="font-family: monospace; font-size: 12px; resize: vertical;" required></textarea>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end;">
+              <button type="submit" class="btn-onboarding-cta" style="padding: 10px 24px;">
+                <i class="fa-solid fa-check"></i> <span>Guardar Todas las Plantillas</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
     </div>
   </main>
 </div>
@@ -368,8 +502,23 @@
         <input type="text" class="form-control" id="pay-txid" placeholder="Ej: e4b2...8f9c (64 caracteres hex)">
       </div>
 
-      <button type="submit" class="btn-onboarding-cta" style="width: 100%; justify-content: center; margin-top: 8px;">
-        <i class="fa-solid fa-check-double"></i> Confirmar Pago & Capturar Snapshot
+      <!-- CARGA DE COMPROBANTE DE PAGO (IMAGEN O PDF) -->
+      <div class="form-group" style="margin-top: 4px;">
+        <label><i class="fa-solid fa-paperclip" style="color: var(--amber);"></i> Adjuntar Comprobante de Pago (Voucher / Captura / PDF)</label>
+        <input type="file" class="form-control" id="pay-receipt-file" accept="image/*,.pdf" onchange="handleReceiptFileChange(event)" style="padding: 7px;">
+        <div id="receipt-preview-container" style="display: none; margin-top: 8px; padding: 10px; background: rgba(255,255,255,0.03); border: 1px dashed var(--border-focus); border-radius: 8px; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-file-circle-check" style="color: var(--emerald); font-size: 16px;"></i>
+            <span id="receipt-file-name" style="font-size: 11.5px; color: var(--txt-primary); max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+          </div>
+          <button type="button" onclick="removeReceiptFile()" style="background: none; border: none; color: var(--rose); cursor: pointer; font-size: 12px;">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-onboarding-cta" style="width: 100%; justify-content: center; margin-top: 10px;">
+        <i class="fa-solid fa-check-double"></i> <span>Confirmar Pago & Guardar Comprobante</span>
       </button>
     </form>
   </div>

@@ -383,7 +383,7 @@
     document.getElementById('prev-unit-name').innerText = `${u.code}: ${u.name}`;
     document.getElementById('prev-unit-cat').innerText = u.category;
     document.getElementById('prev-unit-area').innerText = `${u.area_m2.toLocaleString()} m²`;
-    document.getElementById('prev-unit-rent').innerText = `$${u.base_rent_usd.toLocaleString()} USD/mes`;
+    document.getElementById('prev-unit-rent').innerText = `$ ${u.base_rent_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD/mes`;
 
     document.getElementById('ob-rent-usd').value = u.base_rent_usd;
     updateDepositCalc();

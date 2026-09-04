@@ -495,12 +495,15 @@ class DatabaseService {
       amount_paid: parseFloat(paymentData.amount_paid),
       currency: paymentData.currency,
       snapshot: paymentData.snapshot || null,
+      receipt_proof: paymentData.receipt_proof || null, // Comprobante de pago (base64/archivo)
       status: 'verificado'
     };
 
+    if (!data.payments) data.payments = [];
     data.payments.push(newPayment);
     invoice.status = 'pagado';
     invoice.paid_at = newPayment.payment_date;
+    invoice.receipt_proof = newPayment.receipt_proof;
 
     // Verificar si el inquilino estaba moroso y ya no tiene deudas pendientes
     const tenant = data.tenants.find(t => t.id === invoice.tenant_id);
@@ -513,6 +516,33 @@ class DatabaseService {
 
     this.saveData(data);
     return newPayment;
+  }
+
+  // --- MÓDULO DE CONFIGURACIÓN DE LA APP ---
+  getSettings() {
+    const data = this.getData();
+    const defaults = {
+      // Configuración de Cuotas & Cánones
+      rate_locales_m2: 4.5,
+      rate_macrolotes_m2: 2.3,
+      rate_galpones_m2: 2.5,
+      condo_fee_aliquot_base: 8.0, // 8% sobre canon base
+      // Configuración de Alertas & Vencimientos
+      cutoff_day: 5,               // Día 5 de cada mes
+      alert_days_before: 3,        // Aviso preventivo 3 días antes
+      grace_days: 5,               // 5 días de gracia antes de marcar en mora
+      // Plantillas de Mensajes
+      msg_preventive_template: `Estimados *{inquilino}* ({unidad}):\nLe remitimos su aviso de cobro del período *{periodo}* por un total de *{monto_usd}* (Bs. {monto_bs} a tasa BCV {tasa_bcv}).\nFecha límite de pago: *{fecha_limite}*.\nPor favor remitir comprobante a este canal para conciliación.`,
+      msg_mora_template: `⚠️ *AVISO DE RETRASO — CC MARIO SÁNCHEZ*\nEstimados *{inquilino}* ({unidad}):\nLe informamos que su cuota del período *{periodo}* se encuentra en estado de MORA por un saldo de *{monto_usd}* (Bs. {monto_bs}).\nConforme a la Gaceta Oficial 40.418, agradecemos regularizar el pago a la brevedad para evitar recargos o suspensión de servicios comunes.`
+    };
+    return (data && data.app_settings) ? { ...defaults, ...data.app_settings } : defaults;
+  }
+
+  saveSettings(newSettings) {
+    const data = this.getData();
+    data.app_settings = { ...this.getSettings(), ...newSettings };
+    this.saveData(data);
+    return data.app_settings;
   }
 }
 

@@ -50,19 +50,50 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.onclick = () => setActiveCurrency(btn.getAttribute('data-cur'));
   });
 
-  // 4. TICKER BCV EDITABLE
+  // 4. TICKER BCV DINÁMICO & AUTO-SINCRONIZACIÓN CON API GRATUITA (DOLARAPI)
   const bcvTickerVal = document.getElementById('bcv-rate-val');
+  const bcvSyncIcon = document.getElementById('bcv-sync-icon');
+
   function updateBcvDisplay() {
     if (bcvTickerVal) {
-      bcvTickerVal.innerText = `${financialEngine.getRates().VES.toFixed(2)} Bs/USD`;
+      const currentRate = financialEngine.getRates().VES;
+      bcvTickerVal.innerText = `${currentRate.toFixed(2)} Bs/USD`;
     }
   }
   updateBcvDisplay();
 
-  // Modal para editar tasa BCV
+  // Función asíncrona para sincronizar en vivo con la API oficial gratuita
+  window.syncBcvRate = async function() {
+    if (bcvSyncIcon) bcvSyncIcon.classList.add('fa-spin');
+    try {
+      const res = await financialEngine.fetchOfficialBcvRate();
+      if (res.success) {
+        updateBcvDisplay();
+        renderAll();
+        // Feedback visual
+        if (bcvTickerVal) {
+          bcvTickerVal.style.color = 'var(--emerald)';
+          setTimeout(() => { bcvTickerVal.style.color = ''; }, 2000);
+        }
+      } else {
+        console.warn("No se pudo obtener la tasa en vivo, manteniendo tasa en memoria:", res.error);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      if (bcvSyncIcon) bcvSyncIcon.classList.remove('fa-spin');
+    }
+  };
+
+  // Sincronización automática de fondo al iniciar
+  setTimeout(() => {
+    window.syncBcvRate();
+  }, 1000);
+
+  // Modal para editar tasa BCV manualmente si el usuario lo requiere
   window.editBcvRate = function() {
     const current = financialEngine.getRates().VES;
-    const input = prompt("Ingrese la nueva Tasa Oficial del Banco Central de Venezuela (Bs/USD):", current);
+    const input = prompt("Ingrese la nueva Tasa Oficial del Banco Central de Venezuela (Bs/USD):", current.toFixed(2));
     if (input !== null) {
       try {
         financialEngine.setBcvRate(input);
@@ -279,6 +310,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <i class="fa-solid fa-receipt"></i>
               </button>
             ` : ''}
+            ${inv.receipt_proof ? `
+              <button class="btn-action-icon" title="Ver Comprobante de Pago Adjunto" style="color: var(--cyan); border-color: var(--cyan);" onclick="window.viewReceiptProof('${inv.id}')">
+                <i class="fa-solid fa-paperclip"></i>
+              </button>
+            ` : ''}
             <button class="btn-action-icon" title="Imprimir Recibo Oficial" onclick="window.printReceipt('${inv.id}')">
               <i class="fa-solid fa-print"></i>
             </button>
@@ -415,7 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <strong style="font-size: 14px; color: var(--txt-primary);">${tenant.business_name} (${inv.unit_code})</strong>
             </div>
             <p style="font-size: 12px; color: var(--txt-secondary); margin-top: 4px;">
-              Cuota: $${inv.total_usd.toFixed(2)} USD • Bs. ${financialEngine.convert(inv.total_usd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 })} • ₮${inv.total_usd.toFixed(2)} USDT
+              Cuota: $ ${inv.total_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })} • Bs. ${financialEngine.convert(inv.total_usd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 })} • USDT ${inv.total_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </p>
           </div>
           <div style="display: flex; gap: 10px;">
@@ -437,26 +473,39 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalUsd = invoice.total_usd;
     const totalBs = financialEngine.convert(totalUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
     const totalEur = financialEngine.convert(totalUsd, 'USD', 'EUR').toLocaleString('de-DE', { minimumFractionDigits: 2 });
-    const totalUsdt = totalUsd.toFixed(2);
+    const totalUsdt = totalUsd.toLocaleString('en-US', { minimumFractionDigits: 2 });
     const bcvRate = financialEngine.getRates().VES.toFixed(2);
+    const settings = dbService.getSettings();
+
+    // Seleccionar plantilla según el estado
+    let template = (invoice.status === 'en_mora') ? settings.msg_mora_template : settings.msg_preventive_template;
+
+    // Remplazo de variables
+    let body = template
+      .replace(/{inquilino}/g, tenant.business_name)
+      .replace(/{unidad}/g, invoice.unit_code)
+      .replace(/{periodo}/g, `${invoice.period_month}/${invoice.period_year}`)
+      .replace(/{monto_usd}/g, `$ ${totalUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD`)
+      .replace(/{monto_bs}/g, `${totalBs}`)
+      .replace(/{tasa_bcv}/g, `${bcvRate} Bs/USD`)
+      .replace(/{fecha_limite}/g, invoice.due_date);
 
     return `🏛️ *CENTRO COMERCIAL MARIO SÁNCHEZ*\n` +
       `*Departamento de Administración & Cobranzas*\n` +
       `Av. Municipal, Puerto La Cruz, Venezuela\n\n` +
-      `Estimados *${tenant.business_name}* (${invoice.unit_code}):\n\n` +
-      `Le remitimos el aviso de cobro correspondiente al período *${invoice.period_month}/${invoice.period_year}*:\n\n` +
-      `💰 *DESGLOSE CUATRIMONEDA:*\n` +
-      `• *Dólares:* $${totalUsd.toFixed(2)} USD\n` +
+      `${body}\n\n` +
+      `💰 *RESUMEN DE EQUIVALENCIAS:*\n` +
+      `• *Dólares:* $ ${totalUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD\n` +
       `• *Bolívares (Tasa Oficial BCV ${bcvRate}):* Bs. ${totalBs}\n` +
-      `• *Euros:* €${totalEur} EUR\n` +
-      `• *Cripto USDT (TRC20/Binance):* ₮${totalUsdt} USDT\n\n` +
+      `• *Euros:* € ${totalEur} EUR\n` +
+      `• *Cripto USDT (TRC20):* USDT ${totalUsdt}\n\n` +
       `🏦 *CUENTAS BANCARIAS AUTORIZADAS:*\n` +
       `• *Banesco Corriente:* 0134-0982-12-0987654321\n` +
       `• *Pago Móvil:* Banesco (0134) | RIF: J-40899123-1 | Telf: 0424-7380002\n` +
       `• *Zelle / Custodia USD:* administracion@ccmariosanchez.com\n` +
       `• *Billetera USDT (TRC20):* TXz9y8W7v6U5t4S3r2Q1p0OnMlKjIhGfEd\n\n` +
-      `⚖️ *Base Legal:* Ley de Arrendamiento Inmobiliario para Uso Comercial (Gaceta Oficial N° 40.418). Fecha límite de pago: *${invoice.due_date}*.\n\n` +
-      `Agradecemos remitir el comprobante o referencia bancaria/TxID a este canal para su conciliación inmediata.`;
+      `⚖️ *Base Legal:* Ley de Arrendamiento Inmobiliario para Uso Comercial (Gaceta Oficial N° 40.418).\n` +
+      `Agradecemos remitir el comprobante adjunto a este canal para su conciliación inmediata.`;
   }
 
   // --- MODAL CONTROLLERS ---
@@ -569,18 +618,152 @@ document.addEventListener('DOMContentLoaded', () => {
           txid: txid,
           amount_paid: amount,
           currency: currency,
-          snapshot: snapshot
+          snapshot: snapshot,
+          receipt_proof: currentUploadedProof
         });
 
         document.getElementById('modal-payment').classList.remove('open');
         paymentForm.reset();
+        removeReceiptFile();
         renderAll();
-        alert(`¡Pago registrado y conciliado exitosamente!\nSnapshot financiero capturado: Tasa BCV ${snapshot.bcv_rate_applied} Bs/USD.`);
+        alert(`¡Pago registrado y conciliado exitosamente!\nSnapshot financiero capturado: Tasa BCV ${snapshot.bcv_rate_applied.toFixed(2)} Bs/USD.\n${currentUploadedProof ? 'Comprobante adjuntado con éxito.' : ''}`);
       } catch (err) {
         alert('Error: ' + err.message);
       }
     };
   }
+
+  // Manejador de archivo comprobante de pago (base64)
+  let currentUploadedProof = null;
+  window.handleReceiptFileChange = function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validación de tamaño (Máx 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("El archivo seleccionado excede el límite máximo de 5MB.");
+      e.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      currentUploadedProof = {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        data: evt.target.result // Base64 Data URL
+      };
+      const previewCont = document.getElementById('receipt-preview-container');
+      const nameEl = document.getElementById('receipt-file-name');
+      if (previewCont && nameEl) {
+        nameEl.innerText = `${file.name} (${Math.round(file.size / 1024)} KB)`;
+        previewCont.style.display = 'flex';
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.removeReceiptFile = function() {
+    currentUploadedProof = null;
+    const fileInput = document.getElementById('pay-receipt-file');
+    if (fileInput) fileInput.value = '';
+    const previewCont = document.getElementById('receipt-preview-container');
+    if (previewCont) previewCont.style.display = 'none';
+  };
+
+  // Visor de Comprobante de Pago
+  window.viewReceiptProof = function(invoiceId) {
+    const inv = dbService.getInvoices().find(i => i.id === invoiceId);
+    if (!inv || !inv.receipt_proof) {
+      alert("Esta cuota no posee un comprobante adjunto.");
+      return;
+    }
+    const proof = inv.receipt_proof;
+    const win = window.open('', '_blank');
+    if (proof.type && proof.type.includes('pdf')) {
+      win.document.write(`<iframe src="${proof.data}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
+    } else {
+      win.document.write(`
+        <div style="background:#04070d; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; font-family:sans-serif; color:#f8fafc;">
+          <h3 style="margin-bottom:12px; color:#f59e0b;">Comprobante de Pago — Recibo ${inv.invoice_number}</h3>
+          <img src="${proof.data}" alt="Comprobante" style="max-width:90%; max-height:85vh; border-radius:8px; box-shadow:0 8px 30px rgba(0,0,0,0.8); border:1px solid rgba(255,255,255,0.1);">
+          <p style="margin-top:10px; font-size:12px; color:#94a3b8;">${proof.name}</p>
+        </div>
+      `);
+    }
+  };
+
+  // --- MÓDULO DE CONFIGURACIÓN DE LA APP ---
+  window.openConfigTab = function() {
+    const configNavBtn = document.getElementById('nav-tab-configuracion');
+    if (configNavBtn) {
+      configNavBtn.click();
+    } else {
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.querySelectorAll('.tab-view').forEach(v => v.style.display = 'none');
+      const target = document.getElementById('tab-configuracion');
+      if (target) target.style.display = 'block';
+    }
+  };
+
+  // Cargar configuración guardada en los inputs
+  function loadConfigFields() {
+    const cfg = dbService.getSettings();
+    if (document.getElementById('cfg-rate-locales')) document.getElementById('cfg-rate-locales').value = cfg.rate_locales_m2 || 4.5;
+    if (document.getElementById('cfg-rate-macrolotes')) document.getElementById('cfg-rate-macrolotes').value = cfg.rate_macrolotes_m2 || 2.3;
+    if (document.getElementById('cfg-rate-galpones')) document.getElementById('cfg-rate-galpones').value = cfg.rate_galpones_m2 || 2.5;
+    if (document.getElementById('cfg-condo-aliquot')) document.getElementById('cfg-condo-aliquot').value = cfg.condo_fee_aliquot_base || 8.0;
+
+    if (document.getElementById('cfg-cutoff-day')) document.getElementById('cfg-cutoff-day').value = cfg.cutoff_day || 5;
+    if (document.getElementById('cfg-alert-before')) document.getElementById('cfg-alert-before').value = cfg.alert_days_before || 3;
+    if (document.getElementById('cfg-grace-days')) document.getElementById('cfg-grace-days').value = cfg.grace_days || 5;
+
+    if (document.getElementById('cfg-msg-preventive')) document.getElementById('cfg-msg-preventive').value = cfg.msg_preventive_template;
+    if (document.getElementById('cfg-msg-mora')) document.getElementById('cfg-msg-mora').value = cfg.msg_mora_template;
+  }
+
+  window.saveCuotasConfig = function(e) {
+    e.preventDefault();
+    dbService.saveSettings({
+      rate_locales_m2: parseFloat(document.getElementById('cfg-rate-locales').value) || 4.5,
+      rate_macrolotes_m2: parseFloat(document.getElementById('cfg-rate-macrolotes').value) || 2.3,
+      rate_galpones_m2: parseFloat(document.getElementById('cfg-rate-galpones').value) || 2.5,
+      condo_fee_aliquot_base: parseFloat(document.getElementById('cfg-condo-aliquot').value) || 8.0
+    });
+    alert("¡Parámetros de Cuotas y Cánones guardados con éxito!");
+  };
+
+  window.saveAlertasConfig = function(e) {
+    e.preventDefault();
+    dbService.saveSettings({
+      cutoff_day: parseInt(document.getElementById('cfg-cutoff-day').value) || 5,
+      alert_days_before: parseInt(document.getElementById('cfg-alert-before').value) || 3,
+      grace_days: parseInt(document.getElementById('cfg-grace-days').value) || 5
+    });
+    alert("¡Configuración de Alertas & Vencimientos guardada!");
+  };
+
+  window.saveMensajesConfig = function(e) {
+    e.preventDefault();
+    dbService.saveSettings({
+      msg_preventive_template: document.getElementById('cfg-msg-preventive').value.trim(),
+      msg_mora_template: document.getElementById('cfg-msg-mora').value.trim()
+    });
+    renderAlertsCenter();
+    alert("¡Plantillas de Mensajes WhatsApp/Gmail actualizadas!");
+  };
+
+  window.resetDefaultTemplates = function() {
+    if (confirm("¿Desea restablecer las plantillas a los textos legales predeterminados?")) {
+      const defaults = dbService.getSettings();
+      document.getElementById('cfg-msg-preventive').value = `Estimados *{inquilino}* ({unidad}):\nLe remitimos su aviso de cobro del período *{periodo}* por un total de *{monto_usd}* (Bs. {monto_bs} a tasa BCV {tasa_bcv}).\nFecha límite de pago: *{fecha_limite}*.\nPor favor remitir comprobante a este canal para conciliación.`;
+      document.getElementById('cfg-msg-mora').value = `⚠️ *AVISO DE RETRASO — CC MARIO SÁNCHEZ*\nEstimados *{inquilino}* ({unidad}):\nLe informamos que su cuota del período *{periodo}* se encuentra en estado de MORA por un saldo de *{monto_usd}* (Bs. {monto_bs}).\nConforme a la Gaceta Oficial 40.418, agradecemos regularizar el pago a la brevedad para evitar recargos o suspensión de servicios comunes.`;
+      window.saveMensajesConfig(new Event('submit'));
+    }
+  };
+
+  loadConfigFields();
 
   // 4. Expediente de Inquilino
   window.openTenantDossier = function(tenantId) {
@@ -666,9 +849,9 @@ document.addEventListener('DOMContentLoaded', () => {
           <strong>Equivalencias Cuatrimoneda a la Fecha Valor:</strong>
           <div style="margin-top: 4px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
             <div>• Bolívares (Tasa Oficial BCV ${bcvRate}): <strong>Bs. ${totalBs}</strong></div>
-            <div>• Euros (€): <strong>€${totalEur} EUR</strong></div>
-            <div>• Criptoactivos (USDT TRC20): <strong>₮${inv.total_usd.toFixed(2)} USDT</strong></div>
-            <div>• Dólares ($): <strong>$${inv.total_usd.toFixed(2)} USD</strong></div>
+            <div>• Euros (€): <strong>€ ${totalEur} EUR</strong></div>
+            <div>• Criptoactivos (USDT TRC20): <strong>USDT ${inv.total_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong></div>
+            <div>• Dólares ($): <strong>$ ${inv.total_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD</strong></div>
           </div>
         </div>
 
