@@ -119,14 +119,23 @@
       bottom: -1px;
       left: 0;
       right: 0;
-      height: 220px;
-      background: linear-gradient(to bottom, 
-                    transparent 0%, 
-                    rgba(4, 7, 13, 0.3) 30%, 
-                    rgba(4, 7, 13, 0.8) 70%, 
+      height: 120px;
+      background: linear-gradient(to bottom,
+                    transparent 0%,
+                    rgba(4, 7, 13, 0.5) 50%,
                     #04070d 100%);
       z-index: 3;
       pointer-events: none;
+    }
+
+    /* Reducir el padding-top de la primera sección que sigue al hero para que
+       no se vea un gap visual entre el fade del hero y el contenido. */
+    .hero-canvas + section {
+      padding-top: 2rem;
+    }
+    .hero-canvas + section h2,
+    .hero-canvas + section .section-headline {
+      margin-top: 0;
     }
 
     @media (max-width: 768px) {
@@ -149,7 +158,7 @@
         );
       }
       .hero-canvas::after {
-        height: 180px;
+        height: 100px;
       }
     }
 
