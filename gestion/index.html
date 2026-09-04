@@ -47,9 +47,9 @@
   <!-- APP SIDEBAR -->
   <aside class="app-sidebar" id="app-sidebar">
     <div class="sidebar-header">
-      <img src="logo_cc_mario_sanchez.svg" alt="CCMS Logo" class="sidebar-brand-img" style="width: 38px; height: 38px; max-width: 38px; max-height: 38px; object-fit: contain; flex-shrink: 0;">
+      <img src="logo_cc_mario_sanchez.svg" alt="Logo" class="sidebar-brand-img" data-tenant-logo style="width: 38px; height: 38px; max-width: 38px; max-height: 38px; object-fit: contain; flex-shrink: 0;">
       <div>
-        <h2 class="sidebar-brand-title">CC Mario Sánchez</h2>
+        <h2 class="sidebar-brand-title" data-tenant-short>CC Mario Sánchez</h2>
         <span class="sidebar-brand-sub">ERP Inmobiliario</span>
       </div>
     </div>
@@ -319,6 +319,11 @@
                 <option value="pagado">Pagados</option>
               </select>
             </div>
+
+            <button type="button" class="btn-currency-toggle" onclick="exportPaymentsCSV()" title="Descargar Libro de Cobranzas en formato CSV / Excel" style="padding: 5px 10px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-file-csv" style="color: var(--emerald);"></i>
+              <span>Exportar CSV</span>
+            </button>
           </div>
         </div>
 
@@ -397,9 +402,16 @@
               </div>
             </div>
 
-            <button type="button" class="btn-onboarding-cta" onclick="openExpenseModal()" style="padding: 6px 14px; font-size: 12px; background: var(--purple); border-color: var(--purple);" data-roles="admin">
-              <i class="fa-solid fa-plus"></i> <span>Registrar Gasto / Factura</span>
-            </button>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button type="button" class="btn-currency-toggle" onclick="exportExpensesCSV()" title="Descargar Libro de Gastos en formato CSV / Excel" style="padding: 6px 12px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-file-csv" style="color: var(--purple);"></i>
+                <span>Exportar CSV</span>
+              </button>
+
+              <button type="button" class="btn-onboarding-cta" onclick="openExpenseModal()" style="padding: 6px 14px; font-size: 12px; background: var(--purple); border-color: var(--purple);" data-roles="admin">
+                <i class="fa-solid fa-plus"></i> <span>Registrar Gasto / Factura</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1496,6 +1508,7 @@
 <!-- SCRIPTS DE ARQUITECTURA (100% GRATUITOS) -->
 <script src="js/security.js"></script>
 <script src="js/auth-guard.js"></script>
+<script src="js/tenant-loader.js"></script>
 <script>
   // Guard de acceso: si no hay sesión válida, redirige a login.html
   (function() {

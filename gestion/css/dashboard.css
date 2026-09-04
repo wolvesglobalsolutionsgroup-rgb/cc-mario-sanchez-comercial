@@ -734,7 +734,7 @@ button {
 
 .modal-overlay.open,
 .modal-overlay.active {
-  display: flex;
+  display: flex !important;
 }
 
 .modal-window {
@@ -745,9 +745,23 @@ button {
   max-width: 580px;
   max-height: 90vh;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
   display: flex;
   flex-direction: column;
+  position: relative;
+  animation: ccmsModalPop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ccmsModalPop {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .modal-header {
@@ -756,6 +770,10 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: sticky;
+  top: 0;
+  background: var(--modal-bg);
+  z-index: 10;
 }
 
 .modal-title {
@@ -763,16 +781,64 @@ button {
   font-size: 15px;
   font-weight: 800;
   color: var(--txt-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .modal-close {
-  background: transparent;
-  border: none;
-  color: var(--txt-muted);
-  font-size: 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  color: var(--txt-secondary);
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
   cursor: pointer;
+  transition: all 0.18s ease;
+  flex-shrink: 0;
+  padding: 0;
 }
-.modal-close:hover { color: var(--txt-primary); }
+
+.modal-close:hover {
+  color: #fff;
+  background: rgba(244, 63, 94, 0.2);
+  border-color: rgba(244, 63, 94, 0.4);
+  transform: scale(1.05);
+}
+
+.modal-close:active {
+  transform: scale(0.95);
+}
+
+@media (max-width: 640px) {
+  .modal-overlay {
+    padding: 8px;
+    align-items: flex-end;
+  }
+  .modal-window {
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: 92vh !important;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+  }
+  .modal-header {
+    padding: 14px 16px;
+  }
+  .modal-body {
+    padding: 16px !important;
+    gap: 12px !important;
+  }
+  .modal-window .form-control,
+  .modal-window select.form-control,
+  .modal-window input.form-control {
+    font-size: 16px !important; /* Evita zoom molesto en iOS */
+  }
+}
 
 .modal-body {
   padding: 20px;

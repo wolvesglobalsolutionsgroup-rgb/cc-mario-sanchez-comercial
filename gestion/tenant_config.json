@@ -1,0 +1,97 @@
+{
+  "tenant": {
+    "id": "cc-mario-sanchez",
+    "brandName": "Centro Comercial Mario Sánchez",
+    "shortName": "C.C. Mario Sánchez",
+    "legalName": "Inversiones y Servicios C.C. Mario Sánchez, C.A.",
+    "rif": "J-50123456-7",
+    "phone": "+58 281-2674400",
+    "email": "administracion@ccmariosanchez.com",
+    "address": "Av. Municipal cruce con Calle Sucre, Puerto La Cruz, Edo. Anzoátegui, Venezuela",
+    "city": "Puerto La Cruz",
+    "state": "Anzoátegui",
+    "country": "Venezuela",
+    "logoUrl": "logo_cc_mario_sanchez.svg",
+    "faviconUrl": "logo_cc_mario_sanchez.svg"
+  },
+  "theme": {
+    "primaryColor": "#38bdf8",
+    "accentColor": "#f59e0b",
+    "mode": "dark"
+  },
+  "finance": {
+    "baseCurrency": "USD",
+    "supportedCurrencies": ["USD", "VES", "EUR", "USDT"],
+    "graceDays": 5,
+    "lateFeePercent": 2.0,
+    "bcvFallbackRate": 82.50,
+    "eurFallbackRate": 89.20,
+    "usdtFallbackRate": 85.00
+  },
+  "banking": [
+    {
+      "id": "acc-default-1",
+      "bank": "Banesco Banco Universal",
+      "type": "Pago Móvil / Transferencia en Bolívares",
+      "account_number": "0134-0982-12-0987654321",
+      "ci_rif": "J-50123456-7",
+      "phone": "0424-7380002",
+      "holder": "C.C. Mario Sánchez, C.A.",
+      "currency": "VES",
+      "is_active": true,
+      "assigned_tenants": ["all"]
+    },
+    {
+      "id": "acc-default-2",
+      "bank": "Mercantil Banco",
+      "type": "Cuenta Corriente en Bolívares",
+      "account_number": "0105-0022-88-1009876543",
+      "ci_rif": "J-50123456-7",
+      "phone": "0414-8123456",
+      "holder": "C.C. Mario Sánchez, C.A.",
+      "currency": "VES",
+      "is_active": true,
+      "assigned_tenants": ["all"]
+    },
+    {
+      "id": "acc-default-3",
+      "bank": "Zelle Corporativo",
+      "type": "Custodia Internacional USD",
+      "account_number": "pagos@ccmariosanchez.com",
+      "ci_rif": "pagos@ccmariosanchez.com",
+      "phone": "",
+      "holder": "Mario Sanchez Management LLC",
+      "currency": "USD",
+      "is_active": true,
+      "assigned_tenants": ["all"]
+    },
+    {
+      "id": "acc-default-4",
+      "bank": "Binance Pay / Red TRON",
+      "type": "USDT Billetera Digital (TRC20)",
+      "account_number": "TXz9y8W7v6U5t4S3r2Q1p0OnMlKjIhGfEd",
+      "ci_rif": "USDT Vault",
+      "phone": "",
+      "holder": "Tesoreria C.C. Mario Sanchez",
+      "currency": "USDT",
+      "is_active": true,
+      "assigned_tenants": ["all"]
+    }
+  ],
+  "legal": {
+    "framework": "Gaceta Oficial N° 40.418 (Decreto Ley N° 929)",
+    "depositMonthsMax": 3,
+    "fixedRentMethod": "CAF (Canon Fijo Art. 32)",
+    "variableRentMethod": "CAP (Canon Porcentual Art. 32)",
+    "arbitrationCity": "Puerto La Cruz, Estado Anzoátegui"
+  },
+  "supabase": {
+    "url": "",
+    "anonKey": ""
+  },
+  "notifications": {
+    "resendEndpoint": "/api/send-email",
+    "sendReceiptsOnValidation": true,
+    "notifyWhatsAppDirect": true
+  }
+}
