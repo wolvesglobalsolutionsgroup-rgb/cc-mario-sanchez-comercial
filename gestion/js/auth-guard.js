@@ -19,7 +19,8 @@
   // --- 1. CONFIGURACIÓN DE USUARIOS DEMO --------------------------------------
   // En producción real estos vienen de Supabase con bcrypt. Para demo se
   // almacenan hasheados y se comparan en cliente. NO usar en producción real.
-  const USERS_DEMO = [
+  // Lista base inicial de usuarios autorizados
+  const DEFAULT_USERS = [
     {
       id: 'u-admin-1',
       role: 'admin',
@@ -27,8 +28,10 @@
       identifier: 'administracion@ccmariosanchez.com',
       // SHA-256 de "Admin2026*"
       password_sha256: '8d90ed647b948fa80c3c9bbf5316c78f151723f52fb9d6101f818af8afff69ec',
-      // tenant_id opcional: solo se asigna cuando el rol es 'tenant'
-      tenant_id: null
+      tenant_id: null,
+      status: 'active',
+      created_at: '2026-01-01T00:00:00.000Z',
+      unit: 'Oficina Administrativa 01'
     },
     {
       id: 'u-tenant-1',
@@ -37,9 +40,42 @@
       identifier: 'J-30987123-4',
       // SHA-256 de "Demo2026*"
       password_sha256: 'c244e6aa94ea784ec36662388c4af538cad09ecc88da5b1e7a8cc066990d07b6',
-      tenant_id: 't-1'
+      tenant_id: 't-1',
+      status: 'active',
+      created_at: '2026-02-15T10:30:00.000Z',
+      unit: 'Local PB-01'
+    },
+    {
+      id: 'u-tenant-2',
+      role: 'tenant',
+      display_name: 'Farmacia & Suministros Caribe',
+      identifier: 'J-40129845-0',
+      password_sha256: 'c244e6aa94ea784ec36662388c4af538cad09ecc88da5b1e7a8cc066990d07b6',
+      tenant_id: 't-2',
+      status: 'pending_approval',
+      created_at: '2026-09-02T14:20:00.000Z',
+      unit: 'Local PB-02'
     }
   ];
+
+  const USERS_STORAGE_KEY = 'ccms_registered_users';
+
+  function getUsers() {
+    try {
+      const stored = localStorage.getItem(USERS_STORAGE_KEY);
+      if (!stored) {
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(DEFAULT_USERS));
+        return DEFAULT_USERS;
+      }
+      return JSON.parse(stored);
+    } catch (e) {
+      return DEFAULT_USERS;
+    }
+  }
+
+  function saveUsers(users) {
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+  }
 
   const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 horas
   const SESSION_KEY = 'ccms_session';
@@ -125,9 +161,24 @@
 
     // Busca coincidencia por identifier (case-insensitive)
     const idLower = String(identifier).trim().toLowerCase();
-    const user = USERS_DEMO.find(u => u.identifier.toLowerCase() === idLower);
+    const allUsers = getUsers();
+    const user = allUsers.find(u => u.identifier.toLowerCase() === idLower);
     if (!user) {
       return { ok: false, error: 'Usuario o contraseña incorrectos' };
+    }
+
+    // CONTROL DE ACCESO POR COMITÉ: Verificar estado de autorización
+    if (user.status === 'pending_approval') {
+      return { 
+        ok: false, 
+        error: 'Su cuenta está registrada pero aún PENDIENTE DE APROBACIÓN por el Comité / Administrador Principal. Comuníquese con la gerencia para activar su acceso.' 
+      };
+    }
+    if (user.status === 'rejected') {
+      return { 
+        ok: false, 
+        error: 'El acceso para este usuario ha sido denegado o revocado por el Comité de Administración.' 
+      };
     }
 
     const hash = await sha256(password);
@@ -144,6 +195,7 @@
       display_name: user.display_name,
       identifier: user.identifier,
       tenant_id: user.tenant_id || null,
+      status: user.status || 'active',
       created_at: now(),
       expires_at: now() + SESSION_TTL_MS
     };
@@ -296,6 +348,62 @@
     }[c]));
   }
 
+  // --- FUNCIONES DE COMITÉ & APROBACIÓN DE USUARIOS ---
+  function listUsers() {
+    return getUsers();
+  }
+
+  function approveUser(userId) {
+    const users = getUsers();
+    const target = users.find(u => u.id === userId);
+    if (!target) return { ok: false, error: 'Usuario no encontrado' };
+    target.status = 'active';
+    target.approved_at = new Date().toISOString();
+    saveUsers(users);
+    audit('user_approved', { user_id: userId, identifier: target.identifier });
+    return { ok: true, user: target };
+  }
+
+  function rejectUser(userId) {
+    const users = getUsers();
+    const target = users.find(u => u.id === userId);
+    if (!target) return { ok: false, error: 'Usuario no encontrado' };
+    target.status = 'rejected';
+    target.rejected_at = new Date().toISOString();
+    saveUsers(users);
+    audit('user_rejected', { user_id: userId, identifier: target.identifier });
+    return { ok: true, user: target };
+  }
+
+  async function registerOrInviteUser(userData) {
+    const users = getUsers();
+    const idLower = String(userData.identifier || '').trim().toLowerCase();
+    const exists = users.find(u => u.identifier.toLowerCase() === idLower);
+    if (exists) {
+      return { ok: false, error: 'Ya existe un usuario con este identificador o correo.' };
+    }
+
+    const defaultPass = userData.role === 'admin' ? 'Admin2026*' : 'Demo2026*';
+    const hash = await sha256(defaultPass);
+
+    const newUser = {
+      id: 'u-' + Date.now(),
+      role: userData.role || 'tenant',
+      display_name: userData.display_name || 'Nuevo Usuario',
+      identifier: userData.identifier,
+      password_sha256: hash,
+      tenant_id: userData.role === 'tenant' ? ('t-' + Date.now()) : null,
+      unit: userData.unit || 'Por asignar',
+      status: userData.status || 'pending_approval',
+      created_at: new Date().toISOString()
+    };
+
+    users.push(newUser);
+    saveUsers(users);
+    audit('user_created', { user_id: newUser.id, identifier: newUser.identifier, status: newUser.status });
+    return { ok: true, user: newUser };
+  }
+
   // --- 5. EXPORT ---------------------------------------------------------------
 
   global.AuthGuard = {
@@ -305,6 +413,11 @@
     currentUser,
     mountUserChip,
     applyRoleVisibility,
+    // Gestión por Comité de Acceso
+    listUsers,
+    approveUser,
+    rejectUser,
+    registerOrInviteUser,
     // utilidades expuestas para casos puntuales
     sha256,
     demoEnabled: DEMO_ENABLED

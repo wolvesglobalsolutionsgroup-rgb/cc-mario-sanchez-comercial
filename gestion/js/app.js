@@ -76,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const bcvTickerVal = document.getElementById('bcv-rate-val');
   const usdtTickerVal = document.getElementById('usdt-rate-val');
   const bcvSyncIcon = document.getElementById('bcv-sync-icon');
+  const bcvSyncTimeStr = document.getElementById('bcv-sync-time-str');
 
   function updateBcvDisplay() {
     const rates = financialEngine.getRates();
@@ -85,6 +86,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (usdtTickerVal) {
       const usdtVes = rates.USDT_VES || rates.VES;
       usdtTickerVal.innerText = `${usdtVes.toFixed(2)} Bs/USDT`;
+    }
+    if (bcvSyncTimeStr) {
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      const dStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}`;
+      let hours = now.getHours();
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
+      const tStr = `${hours}:${pad(now.getMinutes())}:${pad(now.getSeconds())} ${ampm}`;
+      bcvSyncTimeStr.innerText = `${dStr} ${tStr}`;
     }
   }
   updateBcvDisplay();
@@ -235,6 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAlertsCenter();
     if (currentRole === 'admin') {
       renderAdminBankAccounts();
+      renderUserApprovalsTable();
       initReportsTab();
     }
   }
@@ -1991,6 +2003,149 @@ document.addEventListener('DOMContentLoaded', () => {
       renderAll();
     } catch (err) {
       alert("Error: " + err.message);
+    }
+  };
+
+  // =========================================================================
+  // MÓDULO 1.5: COMITÉ DE APROBACIÓN DE USUARIOS & DELEGACIÓN DE ACCESO
+  // =========================================================================
+  window.renderUserApprovalsTable = function() {
+    const tbody = document.getElementById('admin-user-approvals-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (!window.AuthGuard || typeof window.AuthGuard.listUsers !== 'function') return;
+
+    const users = window.AuthGuard.listUsers();
+    if (users.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--txt-muted);">No hay usuarios registrados.</td></tr>`;
+      return;
+    }
+
+    users.forEach(u => {
+      const tr = document.createElement('tr');
+      const isAct = u.status === 'active';
+      const isPending = u.status === 'pending_approval';
+      const isRej = u.status === 'rejected';
+
+      let statusBadge = '';
+      if (isAct) {
+        statusBadge = '<span class="status-pill pill-active" style="font-size:10.5px;"><i class="fa-solid fa-check"></i> Activo / Autorizado</span>';
+      } else if (isPending) {
+        statusBadge = '<span class="status-pill pill-pending" style="font-size:10.5px; background: rgba(245,158,11,0.15); color: var(--amber); border-color: rgba(245,158,11,0.3);"><i class="fa-solid fa-hourglass-half fa-spin"></i> Pendiente Comité</span>';
+      } else {
+        statusBadge = '<span class="status-pill pill-overdue" style="font-size:10.5px;"><i class="fa-solid fa-ban"></i> Acceso Revocado</span>';
+      }
+
+      const roleBadge = u.role === 'admin' 
+        ? '<span style="color:var(--amber);font-weight:700;"><i class="fa-solid fa-user-shield"></i> Administrador</span>'
+        : '<span style="color:var(--emerald);font-weight:700;"><i class="fa-solid fa-store"></i> Inquilino (' + escapeHtml(u.unit || 'Local') + ')</span>';
+
+      const dateStr = u.created_at ? new Date(u.created_at).toLocaleDateString() : 'N/A';
+
+      tr.innerHTML = `
+        <td>
+          <strong style="color:var(--txt-primary);font-family:monospace;font-size:12px;">${escapeHtml(u.identifier)}</strong>
+          <div style="font-size:10.5px;color:var(--txt-muted);">ID: ${escapeHtml(u.id)}</div>
+        </td>
+        <td>
+          <span style="font-weight:600;color:var(--txt-primary);">${escapeHtml(u.display_name)}</span>
+        </td>
+        <td>${roleBadge}</td>
+        <td><span style="font-size:11.5px;color:var(--txt-secondary);">${dateStr}</span></td>
+        <td>${statusBadge}</td>
+        <td>
+          <div style="display:flex;gap:6px;">
+            ${!isAct ? `
+              <button type="button" class="btn-action-icon" title="Aprobar y Autorizar Acceso" onclick="window.approveUserAccess('${u.id}')" style="background: rgba(16,185,129,0.15); color: var(--emerald); border-color: rgba(16,185,129,0.3);">
+                <i class="fa-solid fa-check"></i>
+              </button>
+            ` : ''}
+            ${!isRej && u.id !== 'u-admin-1' ? `
+              <button type="button" class="btn-action-icon" title="Revocar Acceso" onclick="window.rejectUserAccess('${u.id}')" style="background: rgba(244,63,94,0.15); color: var(--rose); border-color: rgba(244,63,94,0.3);">
+                <i class="fa-solid fa-ban"></i>
+              </button>
+            ` : ''}
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  };
+
+  window.approveUserAccess = function(userId) {
+    if (!confirm("¿Desea aprobar y activar inmediatamente el acceso para este usuario?")) return;
+    const res = window.AuthGuard.approveUser(userId);
+    if (res.ok) {
+      window.renderUserApprovalsTable();
+      alert(`Acceso aprobado con éxito para ${res.user.display_name}.`);
+    } else {
+      alert("Error: " + res.error);
+    }
+  };
+
+  window.rejectUserAccess = function(userId) {
+    if (!confirm("¿Desea revocar o rechazar el acceso de este usuario?")) return;
+    const res = window.AuthGuard.rejectUser(userId);
+    if (res.ok) {
+      window.renderUserApprovalsTable();
+      alert(`Acceso revocado para ${res.user.display_name}.`);
+    } else {
+      alert("Error: " + res.error);
+    }
+  };
+
+  window.openInviteUserModal = function() {
+    const modal = document.getElementById('modal-invite-user');
+    if (modal) {
+      document.getElementById('invite-user-form').reset();
+      modal.classList.add('active');
+    }
+  };
+
+  window.closeInviteUserModal = function() {
+    const modal = document.getElementById('modal-invite-user');
+    if (modal) modal.classList.remove('active');
+  };
+
+  window.onInviteRoleChange = function(role) {
+    const unitGroup = document.getElementById('inv-tenant-unit-group');
+    const idLabel = document.getElementById('inv-identifier-label');
+    if (unitGroup) {
+      unitGroup.style.display = (role === 'tenant') ? 'block' : 'none';
+    }
+    if (idLabel) {
+      idLabel.innerText = (role === 'admin') ? 'Correo Electrónico Administrador' : 'RIF Jurídico / Identificador Fiscal';
+    }
+  };
+
+  window.handleSaveUserApproval = async function(e) {
+    e.preventDefault();
+    const role = document.getElementById('inv-role').value;
+    const name = document.getElementById('inv-name').value.trim();
+    const identifier = document.getElementById('inv-identifier').value.trim();
+    const unit = document.getElementById('inv-unit').value.trim();
+    const status = document.getElementById('inv-status').value;
+
+    if (!name || !identifier) {
+      alert("Por favor complete los campos obligatorios.");
+      return;
+    }
+
+    const res = await window.AuthGuard.registerOrInviteUser({
+      role,
+      display_name: name,
+      identifier,
+      unit,
+      status
+    });
+
+    if (res.ok) {
+      window.closeInviteUserModal();
+      window.renderUserApprovalsTable();
+      alert(`Usuario ${name} registrado satisfactoriamente con estado: ${status === 'active' ? 'Activo' : 'Pendiente de Comité'}.`);
+    } else {
+      alert("Error: " + res.error);
     }
   };
 

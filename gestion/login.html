@@ -134,12 +134,15 @@
       <div style="font-weight: 800; color: var(--amber); display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
         <i class="fa-solid fa-key"></i> <span>Credenciales Demo para Pruebas:</span>
       </div>
-      <div style="display: flex; gap: 8px;">
-        <button type="button" class="cur-pill active" id="btn-demo-admin" data-demo-login style="flex: 1; padding: 6px; font-size: 11px; text-align: center;" onclick="fillDemo('admin')">
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button type="button" class="cur-pill active" id="btn-demo-admin" data-demo-login style="flex: 1; min-width: 90px; padding: 6px; font-size: 11px; text-align: center;" onclick="fillDemo('admin')">
           <i class="fa-solid fa-user-shield"></i> Demo Admin
         </button>
-        <button type="button" class="cur-pill" id="btn-demo-tenant" data-demo-login style="flex: 1; padding: 6px; font-size: 11px; text-align: center;" onclick="fillDemo('tenant')">
+        <button type="button" class="cur-pill" id="btn-demo-tenant" data-demo-login style="flex: 1; min-width: 90px; padding: 6px; font-size: 11px; text-align: center;" onclick="fillDemo('tenant')">
           <i class="fa-solid fa-store"></i> Demo Inquilino
+        </button>
+        <button type="button" class="cur-pill" id="btn-demo-pending" data-demo-login style="flex: 1; min-width: 90px; padding: 6px; font-size: 11px; text-align: center; border-color: rgba(245, 158, 11, 0.4);" onclick="fillDemo('pending')" title="Probar bloqueo de cuenta pendiente de autorización por Comité">
+          <i class="fa-solid fa-hourglass-half"></i> Demo Pendiente
         </button>
       </div>
     </div>
@@ -201,11 +204,17 @@
       showError('El acceso demo está deshabilitado en producción. Configure Supabase Auth para ingresar.');
       return;
     }
-    switchRole(role);
-    document.getElementById('login-user').value = role === 'admin'
-      ? 'administracion@ccmariosanchez.com'
-      : 'J-30987123-4';
-    document.getElementById('login-pass').value = role === 'admin' ? 'Admin2026*' : 'Demo2026*';
+    if (role === 'pending') {
+      switchRole('tenant');
+      document.getElementById('login-user').value = 'J-40129845-0';
+      document.getElementById('login-pass').value = 'Demo2026*';
+    } else {
+      switchRole(role);
+      document.getElementById('login-user').value = role === 'admin'
+        ? 'administracion@ccmariosanchez.com'
+        : 'J-30987123-4';
+      document.getElementById('login-pass').value = role === 'admin' ? 'Admin2026*' : 'Demo2026*';
+    }
     document.getElementById('login-pass').focus();
   }
 

@@ -84,6 +84,10 @@
         <i class="fa-solid fa-gear" style="color: var(--amber);"></i>
         <span>Configuración del Sistema</span>
       </a>
+      <a href="#" class="nav-item" data-tab="ayuda" data-roles="any" id="nav-tab-ayuda">
+        <i class="fa-solid fa-circle-question" style="color: var(--cyan);"></i>
+        <span>Ayuda & Marco Legal</span>
+      </a>
       <a href="onboarding.html" class="nav-item" data-roles="admin">
         <i class="fa-solid fa-user-plus" style="color: var(--amber);"></i>
         <span>Nuevo Onboarding</span>
@@ -93,10 +97,6 @@
     <div class="sidebar-footer" style="display: flex; flex-direction: column; gap: 10px;">
       <div id="sidebar-user-area">
         <!-- AuthGuard monta aquí el perfil de usuario con botón de cerrar sesión -->
-      </div>
-      <div class="legal-badge">
-        <strong><i class="fa-solid fa-scale-balanced"></i> Gaceta Oficial 40.418</strong>
-        Ley de Arrendamiento Inmobiliario para Uso Comercial (Venezuela).
       </div>
     </div>
   </aside>
@@ -123,6 +123,11 @@
           <div style="display: flex; align-items: center; gap: 5px; border-left: 1px solid var(--border-subtle); padding-left: 8px;">
             <span class="bcv-label" style="color: var(--emerald);"><i class="fa-solid fa-coins"></i> USDT Binance:</span>
             <span class="bcv-value" id="usdt-rate-val" style="color: var(--txt-primary);">Cargando...</span>
+          </div>
+          <!-- FECHA Y HORA DE ÚLTIMA SINCRONIZACIÓN EN VIVO -->
+          <div id="bcv-sync-timestamp" style="display: flex; align-items: center; gap: 5px; border-left: 1px solid var(--border-subtle); padding-left: 8px; font-size: 11px; color: var(--txt-secondary);" title="Fecha y hora de la última verificación en vivo">
+            <i class="fa-regular fa-clock" style="color: var(--amber);"></i>
+            <span id="bcv-sync-time-str">Sincronizando...</span>
           </div>
           <button type="button" class="btn-sync-bcv" onclick="syncBcvRate()" title="Actualizar tasas en vivo (BCV DolarApi y Binance P2P Yadio)" style="background: none; border: none; color: var(--amber); cursor: pointer; padding: 2px 4px; font-size: 11px;">
             <i class="fa-solid fa-arrows-rotate" id="bcv-sync-icon"></i>
@@ -671,6 +676,46 @@
             </table>
           </div>
         </div>
+
+        <!-- TARJETA 5: COMITÉ DE APROBACIÓN DE USUARIOS & DELEGACIÓN DE ACCESO -->
+        <div class="data-card" style="padding: 22px; margin-top: 20px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div class="kpi-icon-badge badge-rose"><i class="fa-solid fa-user-check"></i></div>
+              <div>
+                <h4 style="font-family: var(--font-heading); font-size: 15px; color: var(--txt-primary);">Comité de Aprobación & Delegación de Acceso</h4>
+                <p style="font-size: 11.5px; color: var(--txt-secondary);">Control estricto de acceso corporativo. Toda solicitud o registro de inquilinos o personal administrativo requiere validación del comité para ser activada.</p>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" class="btn-currency-toggle" onclick="renderUserApprovalsTable()" style="padding: 6px 12px; font-size: 11.5px; gap: 6px;">
+                <i class="fa-solid fa-rotate"></i> <span>Refrescar Lista</span>
+              </button>
+              <button type="button" class="btn-onboarding-cta" onclick="openInviteUserModal()" style="padding: 6px 14px; font-size: 12px; background: var(--amber); border-color: var(--amber); color: #000;">
+                <i class="fa-solid fa-user-shield"></i> <span>Invitar / Autorizar Usuario</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="modern-table" style="font-size: 12px;">
+              <thead>
+                <tr>
+                  <th>Usuario / Identificador</th>
+                  <th>Nombre o Razón Social</th>
+                  <th>Rol Solicitado</th>
+                  <th>Fecha Solicitud</th>
+                  <th>Estado de Aprobación</th>
+                  <th>Acciones de Comité</th>
+                </tr>
+              </thead>
+              <tbody id="admin-user-approvals-table-body">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </section>
 
       <!-- TAB 7: INFORMES & CONTABILIDAD EJECUTIVA -->
@@ -724,19 +769,24 @@
                   <option value="4">Abril</option>
                   <option value="5">Mayo</option>
                   <option value="6">Junio</option>
+                  <option value="7">Julio</option>
+                  <option value="8">Agosto</option>
+                  <option value="9">Septiembre</option>
+                  <option value="10">Octubre</option>
+                  <option value="11">Noviembre</option>
+                  <option value="12">Diciembre</option>
                 </select>
               </div>
               <div style="flex: 1;">
                 <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">Año:</label>
                 <select id="report-param-year" class="form-control" onchange="generateSelectedReport()" style="padding: 7px 10px; font-size: 13px;">
-                  <option value="2025">2025</option>
                   <option value="2026" selected>2026</option>
-                  <option value="2027">2027</option>
+                  <option value="2025">2025</option>
                 </select>
               </div>
             </div>
 
-            <div id="report-param-tenant-wrapper" style="display: none; flex: 2; min-width: 240px;">
+            <div id="report-param-tenant-wrapper" style="display: none; flex: 2; min-width: 220px;">
               <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">
                 <i class="fa-solid fa-store"></i> Inquilino / Arrendatario:
               </label>
@@ -750,6 +800,90 @@
         <!-- ÁREA DE VISUALIZACIÓN FORMAL DEL INFORME (IMPRIMIBLE) -->
         <div class="data-card" id="report-display-container" style="padding: 24px; min-height: 400px; background: var(--bg-card);">
           <!-- Injected via JS -->
+        </div>
+      </section>
+
+      <!-- TAB 8: AYUDA, MARCO LEGAL & ESPECIFICACIONES DE LA APLICACIÓN -->
+      <section class="tab-view" id="tab-ayuda" style="display: none;">
+        <div class="section-head">
+          <div>
+            <h3 class="section-title">
+              <i class="fa-solid fa-circle-question" style="color: var(--cyan);"></i> Centro de Ayuda, Instrucciones & Marco Legal
+            </h3>
+            <span style="font-size: 12px; color: var(--txt-secondary);">Guía operativa de la plataforma, fundamentación jurídica y arquitectura de seguridad</span>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+          
+          <!-- TARJETA A: MARCO LEGAL VENEZOLANO (GACETA OFICIAL N° 40.418) -->
+          <div class="data-card" style="padding: 24px; border-top: 4px solid var(--amber);">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+              <div class="kpi-icon-badge badge-amber"><i class="fa-solid fa-scale-balanced"></i></div>
+              <div>
+                <h4 style="font-family: var(--font-heading); font-size: 16px; color: var(--txt-primary);">Marco Jurídico de Arrendamiento Comercial</h4>
+                <span style="font-size: 11px; color: var(--amber); font-weight: 700;">Gaceta Oficial N° 40.418 (Decreto con Rango, Valor y Fuerza de Ley)</span>
+              </div>
+            </div>
+            <p style="font-size: 12.5px; color: var(--txt-secondary); line-height: 1.6; margin-bottom: 12px;">
+              Esta plataforma inmobiliaria y contable está estructurada estrictamente bajo el ordenamiento legal venezolano que rige los inmuebles destinados al uso comercial:
+            </p>
+            <ul style="font-size: 12px; color: var(--txt-secondary); display: flex; flex-direction: column; gap: 8px; padding-left: 18px; line-height: 1.5;">
+              <li><strong>Artículo 25 (Prórroga Legal):</strong> Duración obligatoria en beneficio del arrendatario solvente (de 6 meses a 3 años según antigüedad).</li>
+              <li><strong>Artículo 32 (Moneda y Pagos):</strong> Cánones fijados en divisa o referencia extranjera liquidables al tipo de cambio oficial publicado por el BCV a la fecha de pago efectiva.</li>
+              <li><strong>Artículo 38 (Gastos Comunes):</strong> Distribución transparente de condominio mediante alícuota porcentual fundamentada en facturas reales de servicios.</li>
+              <li><strong>Facturación y SENIAT:</strong> Emisión de recibos oficiales con numeración correlativa inmutable, datos fiscales y soporte digital adjunto.</li>
+            </ul>
+          </div>
+
+          <!-- TARJETA B: INSTRUCCIONES DE USO & ARQUITECTURA MULTIMONEDA -->
+          <div class="data-card" style="padding: 24px; border-top: 4px solid var(--cyan);">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+              <div class="kpi-icon-badge badge-cyan"><i class="fa-solid fa-coins"></i></div>
+              <div>
+                <h4 style="font-family: var(--font-heading); font-size: 16px; color: var(--txt-primary);">Operativa Cuatrimoneda en Tiempo Real</h4>
+                <span style="font-size: 11px; color: var(--cyan); font-weight: 700;">Sincronización Dual BCV & Binance P2P</span>
+              </div>
+            </div>
+            <p style="font-size: 12.5px; color: var(--txt-secondary); line-height: 1.6; margin-bottom: 12px;">
+              El sistema permite la conversión y visualización instantánea entre 4 denominaciones cambiarias sin alterar los registros base:
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12px;">
+              <div style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                <strong style="color: var(--txt-primary);"><i class="fa-solid fa-dollar-sign" style="color: var(--amber);"></i> USD ($):</strong> Moneda base de fijación de contratos y cánones mensuales.
+              </div>
+              <div style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                <strong style="color: var(--txt-primary);"><i class="fa-solid fa-landmark" style="color: var(--cyan);"></i> VES (Bs.):</strong> Calculado automáticamente al tipo de cambio oficial BCV del día con fecha y hora auditada.
+              </div>
+              <div style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                <strong style="color: var(--txt-primary);"><i class="fa-solid fa-coins" style="color: var(--emerald);"></i> USDT (₮):</strong> Sincronización con libro de órdenes P2P de Binance para liquidaciones cripto verificables.
+              </div>
+              <div style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                <strong style="color: var(--txt-primary);"><i class="fa-solid fa-euro-sign" style="color: var(--purple);"></i> EUR (€):</strong> Tasa de paridad oficial BCV para cuentas en moneda europea.
+              </div>
+            </div>
+          </div>
+
+          <!-- TARJETA C: SEGURIDAD ZERO-TRUST, PERMISOS & COMITÉ DE APROBACIÓN -->
+          <div class="data-card" style="padding: 24px; border-top: 4px solid var(--emerald);">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+              <div class="kpi-icon-badge badge-emerald"><i class="fa-solid fa-shield-halved"></i></div>
+              <div>
+                <h4 style="font-family: var(--font-heading); font-size: 16px; color: var(--txt-primary);">Seguridad Integral & White-Label SaaS</h4>
+                <span style="font-size: 11px; color: var(--emerald); font-weight: 700;">Zero-Trust, RBAC y Aprobación Delegada</span>
+              </div>
+            </div>
+            <p style="font-size: 12.5px; color: var(--txt-secondary); line-height: 1.6; margin-bottom: 12px;">
+              Mecanismos de defensa activos integrados en el código de la aplicación:
+            </p>
+            <ul style="font-size: 12px; color: var(--txt-secondary); display: flex; flex-direction: column; gap: 8px; padding-left: 18px; line-height: 1.5;">
+              <li><strong>Aprobación por Comité:</strong> Los nuevos usuarios permanecen inactivos hasta que el Administrador Principal valida su identidad y local comercial.</li>
+              <li><strong>Protección IDOR:</strong> Aislamiento estricto de comprobantes y recibos; los inquilinos solo pueden consultar transacciones vinculadas a su unidad.</li>
+              <li><strong>Sanitización OWASP:</strong> Detección y bloqueo en tiempo real contra inyecciones SQL, comandos de sistema y Prompt Injection.</li>
+              <li><strong>Portabilidad Multi-Cliente:</strong> Arquitectura desacoplada lista para desplegarse para cualquier centro comercial o condominio reemplazando únicamente la identidad corporativa.</li>
+            </ul>
+          </div>
+
         </div>
       </section>
 
@@ -1226,6 +1360,61 @@
         <!-- Renderizado de la imagen o embed de PDF -->
       </div>
     </div>
+  </div>
+</div>
+
+<!-- MODAL 9: INVITACIÓN & AUTORIZACIÓN DE USUARIOS POR COMITÉ -->
+<div class="modal-overlay" id="modal-invite-user">
+  <div class="modal-window" style="max-width: 540px;">
+    <div class="modal-header">
+      <h3 class="modal-title">
+        <i class="fa-solid fa-user-shield" style="color: var(--amber);"></i> Autorizar / Invitar Usuario al Portal
+      </h3>
+      <button class="modal-close" onclick="closeInviteUserModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form id="invite-user-form" onsubmit="handleSaveUserApproval(event)" class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+      <p style="font-size: 12px; color: var(--txt-secondary);">
+        Como miembro autorizado del comité o administrador principal, registre y autorice el acceso de un inquilino o nuevo administrador de la sociedad.
+      </p>
+
+      <div class="form-group">
+        <label>Rol Corporativo a Asignar</label>
+        <select class="form-control" id="inv-role" onchange="onInviteRoleChange(this.value)" required>
+          <option value="tenant" selected>Inquilino / Arrendatario Comercial</option>
+          <option value="admin">Administrador / Personal de Cobranzas</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Nombre o Razón Social</label>
+        <input type="text" class="form-control" id="inv-name" placeholder="Ej: Inversiones Los Andes C.A." required>
+      </div>
+
+      <div class="form-group">
+        <label id="inv-identifier-label">RIF Jurídico / Identificador Fiscal</label>
+        <input type="text" class="form-control" id="inv-identifier" placeholder="Ej: J-12345678-9 o correo@empresa.com" required>
+      </div>
+
+      <div class="form-group" id="inv-tenant-unit-group">
+        <label>Unidad / Local Comercial Asignado</label>
+        <input type="text" class="form-control" id="inv-unit" placeholder="Ej: Local PB-08">
+      </div>
+
+      <div class="form-group">
+        <label>Estado de Autorización</label>
+        <select class="form-control" id="inv-status" required>
+          <option value="active" selected>Autorizado & Activo Inmediatamente</option>
+          <option value="pending_approval">Pendiente de Aprobación por Comité</option>
+        </select>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
+        <button type="button" class="btn-currency-toggle" onclick="closeInviteUserModal()">Cancelar</button>
+        <button type="submit" class="btn-onboarding-cta" style="background: var(--amber); border-color: var(--amber); color: #000;">
+          <i class="fa-solid fa-check"></i> Autorizar Acceso
+        </button>
+      </div>
+    </form>
   </div>
 </div>
 
