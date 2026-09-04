@@ -11,6 +11,8 @@
     { "source": "/login", "destination": "/gestion/login.html" }
   ],
   "redirects": [
+    { "source": "/login", "destination": "/gestion/login.html", "permanent": false },
+    { "source": "/onboarding", "destination": "/gestion/onboarding.html", "permanent": false },
     { "source": "/login.html", "destination": "/login", "permanent": false },
     { "source": "/onboarding.html", "destination": "/onboarding", "permanent": false }
   ],
