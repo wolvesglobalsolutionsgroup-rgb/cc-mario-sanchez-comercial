@@ -5,7 +5,7 @@
  *
  * - Centraliza login, logout, timeout y visibilidad de UI por rol.
  * - Hash de credenciales en SHA-256 vía Web Crypto API (nativo, sin libs).
- * - Compatible con modo demo (Demo2026*) y Supabase cuando esté configurado.
+  * - El modo demo solo se permite en localhost; producción requiere proveedor real.
  *
  * USO:
  *   <script src="js/auth-guard.js"></script>
@@ -19,9 +19,6 @@
   // --- 1. CONFIGURACIÓN DE USUARIOS DEMO --------------------------------------
   // En producción real estos vienen de Supabase con bcrypt. Para demo se
   // almacenan hasheados y se comparan en cliente. NO usar en producción real.
-  // Contraseñas demo:
-  //   admin  : Admin2026*
-  //   tenant : Demo2026*
   const USERS_DEMO = [
     {
       id: 'u-admin-1',
@@ -48,6 +45,9 @@
   const SESSION_KEY = 'ccms_session';
   const THEME_KEY = 'ccms_theme';
   const CURRENCY_KEY = 'ccms_active_currency';
+  const DEMO_ENABLED = global.CCMS_DEMO_MODE === true ||
+    global.location.protocol === 'file:' ||
+    ['localhost', '127.0.0.1'].includes(global.location.hostname);
 
   // --- 2. UTILIDADES -----------------------------------------------------------
 
@@ -117,6 +117,10 @@
   async function login(identifier, password) {
     if (!identifier || !password) {
       return { ok: false, error: 'Credenciales incompletas' };
+    }
+
+    if (!DEMO_ENABLED) {
+      return { ok: false, error: 'La autenticación demo está deshabilitada en producción. Configure Supabase Auth.' };
     }
 
     // Busca coincidencia por identifier (case-insensitive)
@@ -263,8 +267,12 @@
     mountUserChip,
     applyRoleVisibility,
     // utilidades expuestas para casos puntuales
-    sha256
+    sha256,
+    demoEnabled: DEMO_ENABLED
   };
+
+  // Reutilizable por los renderizadores del dashboard para escapar datos de usuario.
+  global.escapeHtml = escapeHtml;
 
   // Log de auditoría mínimo (en consola por ahora; cuando se conecte Supabase
   // se persistirá en la tabla audit_logs)

@@ -29,7 +29,7 @@
   // Configuración por defecto. El admin puede cambiarla en runtime.
   const DEFAULT_CONFIG = {
     transport: 'mailto',       // 'mailto' | 'webhook'
-    webhook_url: '',           // ej: 'https://formspree.io/f/xxxxxxx'
+    webhook_url: '/api/send-email',
     webhook_method: 'POST',    // 'POST' | 'PUT'
     from_name: 'Administración CC Mario Sánchez',
     from_email: 'no-reply@ccmariosanchez.com',

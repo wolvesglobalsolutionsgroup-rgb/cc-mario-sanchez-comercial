@@ -2,6 +2,7 @@
 <html lang="es" class="dark">
 <head>
   <meta charset="UTF-8">
+  <base href="/gestion/">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Acceso Administrativo — CC Mario Sánchez</title>
   
@@ -162,11 +163,6 @@
 
   let currentRole = 'admin';
 
-  const DEMO_CREDS = {
-    admin:  { identifier: 'administracion@ccmariosanchez.com', password: 'Admin2026*' },
-    tenant: { identifier: 'J-30987123-4',                       password: 'Demo2026*'  }
-  };
-
   function switchRole(role) {
     currentRole = role;
     const btnAdmin = document.getElementById('btn-role-admin');
@@ -193,10 +189,22 @@
   }
 
   function fillDemo(role) {
+    if (!AuthGuard.demoEnabled) {
+      showError('El acceso demo está deshabilitado en producción. Configure Supabase Auth para ingresar.');
+      return;
+    }
     switchRole(role);
-    document.getElementById('login-user').value = DEMO_CREDS[role].identifier;
-    document.getElementById('login-pass').value = DEMO_CREDS[role].password;
+    document.getElementById('login-user').value = role === 'admin'
+      ? 'administracion@ccmariosanchez.com'
+      : 'J-30987123-4';
+    document.getElementById('login-pass').focus();
   }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!AuthGuard.demoEnabled) {
+      document.querySelectorAll('[data-demo-login]').forEach((el) => { el.style.display = 'none'; });
+    }
+  });
 
   function showError(msg) {
     const box = document.getElementById('login-error');

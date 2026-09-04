@@ -301,15 +301,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
       tr.innerHTML = `
         <td>
-          <strong style="color: var(--amber); font-family: var(--font-heading); font-size: 13.5px;">${unit.code}</strong>
-          <div style="font-size: 11px; color: var(--txt-muted);">${unit.name}</div>
+          <strong style="color: var(--amber); font-family: var(--font-heading); font-size: 13.5px;">${escapeHtml(unit.code)}</strong>
+          <div style="font-size: 11px; color: var(--txt-muted);">${escapeHtml(unit.name)}</div>
         </td>
         <td>
-          ${tenant ? `<strong>${tenant.business_name}</strong><div style="font-size: 11px; color: var(--txt-secondary);">RIF: ${tenant.rif} • ${tenant.trade_name || ''}</div>` : '<span style="color: var(--txt-muted); font-style: italic;">Sin Arrendatario</span>'}
+          ${tenant ? `<strong>${escapeHtml(tenant.business_name)}</strong><div style="font-size: 11px; color: var(--txt-secondary);">RIF: ${escapeHtml(tenant.rif)} • ${escapeHtml(tenant.trade_name || '')}</div>` : '<span style="color: var(--txt-muted); font-style: italic;">Sin Arrendatario</span>'}
         </td>
         <td>
           <strong>${unit.area_m2.toLocaleString()} m²</strong>
-          <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase;">${unit.category}</div>
+          <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase;">${escapeHtml(unit.category)}</div>
         </td>
         <td>
           <strong>${formatMoney(unit.base_rent_usd)}</strong>
@@ -381,18 +381,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
       tr.innerHTML = `
         <td>
-          <strong style="font-family: var(--font-heading);">${inv.invoice_number}</strong>
+          <strong style="font-family: var(--font-heading);">${escapeHtml(inv.invoice_number)}</strong>
           <div style="font-size: 11px; color: var(--txt-muted);">Período ${inv.period_month}/${inv.period_year}</div>
         </td>
         <td>
-          <strong style="color: var(--amber);">${inv.unit_code}</strong> — ${tenant.business_name}
+          <strong style="color: var(--amber);">${escapeHtml(inv.unit_code)}</strong> — ${escapeHtml(tenant.business_name)}
         </td>
         <td>
           <strong>${formatMoney(inv.total_usd)}</strong>
           <div style="font-size: 10.5px; color: var(--txt-muted);">Canon: $${inv.rent_usd} | Cond: $${inv.condo_usd}</div>
         </td>
         <td>
-          <span>${inv.due_date}</span>
+          <span>${escapeHtml(inv.due_date)}</span>
         </td>
         <td>${statusBadge}</td>
         <td>
@@ -498,11 +498,11 @@ document.addEventListener('DOMContentLoaded', () => {
           <div>
             <div style="display: flex; align-items: center; gap: 8px;">
               <span class="status-pill ${evt.type === 'contrato' ? 'pill-warning' : evt.type === 'prorroga' ? 'pill-overdue' : 'pill-info'}">
-                <i class="fa-solid fa-calendar-day"></i> ${evt.date}
+                <i class="fa-solid fa-calendar-day"></i> ${escapeHtml(evt.date)}
               </span>
-              <h4 style="font-family: var(--font-heading); font-size: 14.5px; color: var(--txt-primary);">${evt.title}</h4>
+              <h4 style="font-family: var(--font-heading); font-size: 14.5px; color: var(--txt-primary);">${escapeHtml(evt.title)}</h4>
             </div>
-            <p style="font-size: 12px; color: var(--txt-secondary); margin-top: 4px;">${evt.desc}</p>
+            <p style="font-size: 12px; color: var(--txt-secondary); margin-top: 4px;">${escapeHtml(evt.desc)}</p>
           </div>
           <a href="${calUrl}" target="_blank" rel="noopener noreferrer" class="btn-action-icon" style="width: auto; padding: 6px 14px; gap: 6px; font-size: 12px; font-weight: 700; text-decoration: none;" title="Agregar a Google Calendar">
             <i class="fa-brands fa-google"></i> <span>Google Calendar</span>
@@ -558,7 +558,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <span class="status-pill ${inv.status === 'en_mora' ? 'pill-overdue' : 'pill-warning'}">
                 ${inv.status === 'en_mora' ? 'Alerta de Retraso' : 'Aviso Preventivo'}
               </span>
-              <strong style="font-size: 14px; color: var(--txt-primary);">${tenant.business_name} (${inv.unit_code})</strong>
+              <strong style="font-size: 14px; color: var(--txt-primary);">${escapeHtml(tenant.business_name)} (${escapeHtml(inv.unit_code)})</strong>
             </div>
             <p style="font-size: 12px; color: var(--txt-secondary); margin-top: 4px;">
               Cuota: $ ${inv.total_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })} • Bs. ${financialEngine.convert(inv.total_usd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 })} • USDT ${inv.total_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
@@ -732,6 +732,16 @@ document.addEventListener('DOMContentLoaded', () => {
           receipt_proof: currentUploadedProof
         });
 
+        const paidInvoice = dbService.getInvoices().find(i => i.id === invId);
+        const paidTenant = paidInvoice && dbService.getTenants().find(t => t.id === paidInvoice.tenant_id);
+        if (paidTenant && paidTenant.email && window.Notifications) {
+          void Notifications.email({
+            to: paidTenant.email,
+            subject: `Pago recibido — ${paidInvoice.invoice_number} — CC Mario Sánchez`,
+            body: `Hemos registrado el pago de la cuota ${paidInvoice.invoice_number} correspondiente al período ${paidInvoice.period_month}/${paidInvoice.period_year}. Referencia: ${ref || txid || 'no indicada'}.`
+          });
+        }
+
         document.getElementById('modal-payment').classList.remove('open');
         paymentForm.reset();
         removeReceiptFile();
@@ -790,15 +800,19 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     const proof = inv.receipt_proof;
+    if (!proof || !isSafeReceiptDataUrl(proof.data)) {
+      alert('El comprobante no tiene un formato seguro o válido.');
+      return;
+    }
     const win = window.open('', '_blank');
     if (proof.type && proof.type.includes('pdf')) {
       win.document.write(`<iframe src="${proof.data}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
     } else {
       win.document.write(`
         <div style="background:#04070d; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; font-family:sans-serif; color:#f8fafc;">
-          <h3 style="margin-bottom:12px; color:#f59e0b;">Comprobante de Pago — Recibo ${inv.invoice_number}</h3>
+          <h3 style="margin-bottom:12px; color:#f59e0b;">Comprobante de Pago — Recibo ${escapeHtml(inv.invoice_number)}</h3>
           <img src="${proof.data}" alt="Comprobante" style="max-width:90%; max-height:85vh; border-radius:8px; box-shadow:0 8px 30px rgba(0,0,0,0.8); border:1px solid rgba(255,255,255,0.1);">
-          <p style="margin-top:10px; font-size:12px; color:#94a3b8;">${proof.name}</p>
+          <p style="margin-top:10px; font-size:12px; color:#94a3b8;">${escapeHtml(proof.name)}</p>
         </div>
       `);
     }

@@ -277,3 +277,66 @@ A partir de aquí, lo único pendiente es cargar datos reales de unidades, imág
 - Este documento de especificación creado en la raíz del proyecto.
 
 Pendiente de verificación por tu parte: recarga `https://cc-mario-sanchez-comercial.vercel.app` con caché forzado (Ctrl+Shift+R) una vez Vercel termine el redeploy (usualmente 1-2 minutos tras el push) y confírmame si el gap desapareció del todo o si el problema resulta estar en la imagen fuente en sí (ver nota al final del Bloque 1 de la respuesta anterior).
+
+
+---
+
+## 8. Addendum — Cómo resolver el correo SIN tener dominio propio todavía (2026-09-03)
+
+Confirmaste que aún no hay dominio ni servicio de correo, pero se puede usar algo gratuito. Aquí está el análisis honesto de las opciones gratuitas reales y cuál conviene usar **ahora mismo** vs. cuál dejar para cuando exista el dominio.
+
+### 8.1 Por qué Resend (la opción de la especificación anterior) no sirve todavía
+
+Resend gratis (100 correos/día, 3.000/mes) **requiere verificar un dominio propio para poder enviar a destinatarios arbitrarios**. Sin dominio verificado, Resend solo deja enviar en "modo sandbox" a la propia cuenta de correo del dueño de la cuenta Resend — es decir, hoy no podría mandarle una invitación real a un arrendatario nuevo. Esta opción queda **pausada hasta que exista el dominio**, no descartada.
+
+### 8.2 Opción recomendada para USAR AHORA: EmailJS + una cuenta Gmail gratuita
+
+**EmailJS** permite enviar correos reales, a cualquier destinatario, sin backend, sin dominio propio, gratis hasta 200 correos/mes — usando como remitente una cuenta de Gmail (u Outlook) gratuita que crees para CCEMS (ej. `ccems.puertolacruz@gmail.com`). Encaja además con el principio ya declarado en el README del proyecto de "cero dependencias de pago".
+
+**Cómo se integra sin romper la arquitectura ya diseñada:**
+
+`gestion/js/notifications.js` ya tiene una capa de transporte abstracta (`mailto` / `webhook`). Se agrega un tercer transporte `emailjs` con el mismo contrato de entrada/salida que ya usan `buildCollectionEmail()` y el resto del sistema — **cero cambios en el resto de la app**, solo en este archivo:
+
+```js
+// Dentro de notifications.js, junto a sendWebhook()
+async function sendEmailJs({ to, subject, body, cfg }) {
+  // Requiere el SDK de EmailJS cargado por CDN en el <head> (gratis, sin key secreta expuesta
+  // más allá de la "public key", que EmailJS está diseñado para exponer en cliente)
+  const res = await emailjs.send(
+    cfg.emailjs_service_id,
+    cfg.emailjs_template_id,
+    { to_email: to, subject, message: body, from_name: cfg.from_name },
+    cfg.emailjs_public_key
+  );
+  if (res.status !== 200) throw new Error(`EmailJS status ${res.status}`);
+  return { ok: true, transport: 'emailjs', status: res.status };
+}
+```
+
+Y en `email()`, agregar la rama `cfg.transport === 'emailjs'` junto a la de `webhook` ya existente.
+
+**Pasos manuales que te tocan a ti (no son de código, son de cuenta):**
+1. Crear una cuenta de Gmail gratuita para CCEMS (si no quieres usar una personal).
+2. Crear cuenta gratuita en emailjs.com, conectar ese Gmail como "Email Service".
+3. Crear una plantilla en el panel de EmailJS (puede ser genérica: asunto + cuerpo + destinatario, ya que el contenido real lo arma `notifications.js`/`google-workspace.js`).
+4. Copiar `service_id`, `template_id` y `public_key` — esos tres valores van en la Configuración del ERP (`Notifications.configure({...})`), no hay que tocar código para operarlo día a día.
+
+**Limitación a aceptar conscientemente:** el "public key" de EmailJS queda visible en el navegador (es intencional, así funciona el producto), lo que en teoría permite que alguien más lo use para mandar correos desde tu cuenta si lo copia. Mitigación gratuita que ofrece EmailJS: restringir el dominio permitido desde su panel (para que el `public_key` solo funcione si la petición viene de `cc-mario-sanchez-comercial.vercel.app`). Para el volumen y la etapa de este proyecto, es un riesgo aceptable — no es el vector de ataque más urgente comparado con los P0 de autenticación ya identificados.
+
+### 8.3 Dominio propio: no hace falta "gratis" — hace falta barato y confiable
+
+Sobre dominios gratuitos: las opciones que existían (ej. Freenom con `.tk`/`.ml`/`.ga`) **ya no son confiables** (el proveedor dejó de operar de forma estable y muchos de esos dominios fueron revocados masivamente en 2023). No lo recomiendo ni como solución temporal.
+
+Alternativa real de costo mínimo cuando decidan dar el paso: un dominio `.com` o `.com.ve` ronda entre $8 y $15/año en registradores como Namecheap o Porkbun — es la única pieza de este proyecto que realmente cuesta dinero, y es opcional hasta que quieran una imagen 100% profesional (`@ccems.com` en vez de una cuenta Gmail).
+
+**Mientras tanto, para todo lo que no sea correo:**
+- La URL web de trabajo sigue siendo la gratuita `cc-mario-sanchez-comercial.vercel.app` (ya la tienen, no cuesta nada, y Vercel no exige dominio propio para operar).
+- No hace falta renombrar nada de infraestructura para avanzar con el resto de la especificación (backend Supabase, flujo de invitación, RLS, módulo fiscal, etc.) — todo eso es independiente del dominio.
+
+### 8.4 Plan de migración cuando exista el dominio (para no rehacer trabajo)
+
+Gracias a que `notifications.js` ya está diseñado como capa de transporte intercambiable, migrar de EmailJS a Resend cuando haya dominio es **cambiar un valor de configuración, no reescribir código**: se agrega el transporte `webhook` apuntando a la función serverless de Resend (ya especificada en la respuesta anterior) y se cambia `Notifications.configure({ transport: 'webhook', webhook_url: '/api/send-email' })` desde el panel de administración. El código de EmailJS puede quedar en el archivo como transporte alternativo sin causar conflicto, o eliminarse en ese momento — decisión de limpieza, no de arquitectura.
+
+### 8.5 Orden de implementación actualizado (reemplaza el paso 5 de §6)
+
+5. Flujo de invitación por correo (§2.2, §2.5) usando **EmailJS + Gmail gratuito** como transporte inicial (§8.2) — sin esperar al dominio. Cuando exista el dominio, migrar el transporte a Resend (§8.4) sin tocar el resto del flujo de invitación.
