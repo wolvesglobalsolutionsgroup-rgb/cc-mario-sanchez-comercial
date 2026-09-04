@@ -989,3 +989,87 @@ select.form-control optgroup {
     padding: 14px 12px !important;
   }
 }
+
+/* ==========================================================================
+   CALENDARIO INTERACTIVO MENSUAL & SEMÁFORO DE SOLVENCIA
+   ========================================================================== */
+.cal-cell {
+  min-height: 75px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.15s ease;
+  position: relative;
+  cursor: pointer;
+}
+.cal-cell:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--amber);
+  transform: translateY(-1px);
+}
+.cal-cell.empty {
+  background: transparent;
+  border-color: transparent;
+  cursor: default;
+}
+.cal-cell.today {
+  border: 2px solid var(--cyan);
+  background: rgba(14, 165, 233, 0.08);
+}
+.cal-cell-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.cal-day-num {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 12px;
+  color: var(--txt-primary);
+}
+.cal-event-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 4px;
+  border-radius: 4px;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+.cal-badge-cuota {
+  background: var(--amber-glow);
+  color: var(--amber);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.cal-badge-condominio {
+  background: rgba(168, 85, 247, 0.15);
+  color: var(--purple);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+.cal-badge-contrato {
+  background: rgba(14, 165, 233, 0.15);
+  color: var(--cyan);
+  border: 1px solid rgba(14, 165, 233, 0.3);
+}
+
+/* SEMÁFORO DE SOLVENCIA KPI */
+.semaforo-bar-container {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 8px 0 4px 0;
+  display: flex;
+}
+.semaforo-indicator {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}

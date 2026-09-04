@@ -17,14 +17,16 @@ document.addEventListener('DOMContentLoaded', () => {
   // Para inquilinos arrancamos en la pestaña de cobranzas (lo único que les concierne)
   let currentTab = (currentRole === 'tenant') ? 'cobranzas' : 'inquilinos';
 
-  // Si el usuario es inquilino, el sidebar no debe mostrar "inquilinos" como activo;
-  // ajustamos la visibilidad de la pestaña activa de arranque.
+  // Si el usuario es inquilino, activar de inmediato tab-cobranzas y ocultar tab-inquilinos
   if (currentRole === 'tenant') {
     const targetTab = document.querySelector('.nav-item[data-tab="cobranzas"]');
     if (targetTab) {
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
       targetTab.classList.add('active');
     }
+    document.querySelectorAll('.tab-view').forEach(v => v.style.display = 'none');
+    const cobView = document.getElementById('tab-cobranzas');
+    if (cobView) cobView.style.display = 'block';
   }
 
   // 2. INICIALIZAR TEMA (MODO CLARO / OSCURO)
@@ -52,6 +54,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 3. SELECTOR CUATRIMONEDA (USD / EUR / VES / USDT)
   const curPills = document.querySelectorAll('.cur-pill');
+  // Sincronizar pills de inicio inmediatamente según localStorage o valor por defecto
+  curPills.forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-cur') === currentCurrency);
+  });
+
   function setActiveCurrency(cur) {
     currentCurrency = cur;
     localStorage.setItem('ccms_active_currency', cur);
@@ -112,6 +119,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Sincronización automática de fondo al iniciar
   setTimeout(() => {
     window.syncBcvRate();
+    if (window.Notifications && typeof window.Notifications.checkDailyPaymentReminders === 'function') {
+      window.Notifications.checkDailyPaymentReminders(dbService, financialEngine).then(res => {
+        if (res.sent > 0) {
+          console.log(`[Cashea-Reminders] Se verificaron ${res.processed} cuotas y se generaron ${res.sent} recordatorios automáticos.`);
+        }
+      }).catch(err => console.error(err));
+    }
   }, 1000);
 
   // Modal para editar tasas manualmente si el usuario lo requiere
@@ -351,14 +365,115 @@ document.addEventListener('DOMContentLoaded', () => {
       if (billedTitle) billedTitle.textContent = currentRole === 'admin' ? 'Facturación Mensual' : 'Mi Facturación del Período';
     }
 
-    // 3. Recaudado
+    // 3. Recaudado (para Admin) / Mi Estado de Solvencia y Semáforo (para Inquilino)
     const paidInvoices = invoices.filter(i => i.status === 'pagado');
     const totalPaidUsd = paidInvoices.reduce((acc, i) => acc + i.total_usd, 0);
     const collectionPct = totalBilledUsd > 0 ? Math.round((totalPaidUsd / totalBilledUsd) * 100) : 0;
     const collEl = document.getElementById('kpi-collected');
-    if (collEl) {
-      collEl.innerText = formatMoney(totalPaidUsd);
-      document.getElementById('kpi-collected-sub').innerText = `${collectionPct}% ${currentRole === 'admin' ? 'de recaudación efectiva' : 'pagado'}`;
+    const collCard = collEl ? collEl.closest('.kpi-card') : null;
+    const collTitle = collCard?.querySelector('.kpi-title');
+    const collBadge = collCard?.querySelector('.kpi-icon-badge');
+    const collSub = document.getElementById('kpi-collected-sub');
+
+    if (currentRole === 'admin') {
+      if (collTitle) collTitle.textContent = 'Total Recaudado';
+      if (collBadge) collBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+      if (collEl) collEl.innerText = formatMoney(totalPaidUsd);
+      if (collSub) collSub.innerText = `${collectionPct}% de recaudación efectiva`;
+    } else {
+      // INQUILINO: Semáforo interactivo y contador de días
+      if (collTitle) collTitle.textContent = 'Mi Semáforo de Solvencia';
+      const pendingOrOverdue = invoices.filter(i => i.status !== 'pagado');
+      
+      if (pendingOrOverdue.length === 0) {
+        // Al día
+        if (collBadge) {
+          collBadge.className = 'kpi-icon-badge badge-emerald';
+          collBadge.innerHTML = '<i class="fa-solid fa-shield-check"></i>';
+        }
+        if (collEl) {
+          collEl.innerHTML = '<span style="color: var(--emerald); font-size: 20px;">Solvente y al Día</span>';
+        }
+        if (collSub) {
+          collSub.innerHTML = `
+            <div style="width: 100%;">
+              <div class="semaforo-bar-container"><div class="semaforo-indicator" style="width: 100%; background: var(--emerald);"></div></div>
+              <span style="color: var(--emerald); font-weight: 700;">Sin deudas pendientes registradas</span>
+            </div>
+          `;
+        }
+      } else {
+        // Tiene cuotas pendientes o en mora. Calcular días del vencimiento más próximo o vencido
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        let minDiffDays = Infinity;
+        let isAnyMora = false;
+
+        pendingOrOverdue.forEach(inv => {
+          if (inv.status === 'en_mora') isAnyMora = true;
+          if (inv.due_date) {
+            const dueDate = new Date(inv.due_date);
+            dueDate.setHours(0, 0, 0, 0);
+            const diffTime = dueDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            if (diffDays < minDiffDays) {
+              minDiffDays = diffDays;
+            }
+          }
+        });
+
+        if (isAnyMora || minDiffDays < 0) {
+          const daysLate = Math.abs(minDiffDays === Infinity ? 1 : minDiffDays);
+          if (collBadge) {
+            collBadge.className = 'kpi-icon-badge badge-rose';
+            collBadge.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+          }
+          if (collEl) {
+            collEl.innerHTML = `<span style="color: var(--rose); font-size: 20px;">En Mora (${daysLate} d retraso)</span>`;
+          }
+          if (collSub) {
+            collSub.innerHTML = `
+              <div style="width: 100%;">
+                <div class="semaforo-bar-container"><div class="semaforo-indicator" style="width: 100%; background: var(--rose);"></div></div>
+                <span style="color: var(--rose); font-weight: 700;">Regularice su pago para evitar recargos</span>
+              </div>
+            `;
+          }
+        } else if (minDiffDays <= 5) {
+          if (collBadge) {
+            collBadge.className = 'kpi-icon-badge badge-amber';
+            collBadge.innerHTML = '<i class="fa-solid fa-clock"></i>';
+          }
+          if (collEl) {
+            collEl.innerHTML = `<span style="color: var(--amber); font-size: 20px;">Vence en ${minDiffDays} días</span>`;
+          }
+          if (collSub) {
+            collSub.innerHTML = `
+              <div style="width: 100%;">
+                <div class="semaforo-bar-container"><div class="semaforo-indicator" style="width: ${(minDiffDays / 5) * 100}%; background: var(--amber);"></div></div>
+                <span style="color: var(--amber); font-weight: 700;">Próximo corte cercano a vencer</span>
+              </div>
+            `;
+          }
+        } else {
+          if (collBadge) {
+            collBadge.className = 'kpi-icon-badge badge-emerald';
+            collBadge.innerHTML = '<i class="fa-solid fa-calendar-check"></i>';
+          }
+          if (collEl) {
+            collEl.innerHTML = `<span style="color: var(--emerald); font-size: 20px;">${minDiffDays} días restantes</span>`;
+          }
+          if (collSub) {
+            collSub.innerHTML = `
+              <div style="width: 100%;">
+                <div class="semaforo-bar-container"><div class="semaforo-indicator" style="width: 75%; background: var(--emerald);"></div></div>
+                <span style="color: var(--txt-secondary);">Cuota en plazo voluntario de pago</span>
+              </div>
+            `;
+          }
+        }
+      }
     }
 
     // 4. Mora
@@ -729,79 +844,205 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // E. CALENDARIO DE VENCIMIENTOS
-  function renderCalendarView() {
-    const listEl = document.getElementById('calendar-events-list');
-    if (!listEl) return;
-    listEl.innerHTML = '';
+  // Variables para la cuadrícula mensual interactiva
+  let calCurrentYear = 2026;
+  let calCurrentMonth = 2; // 0-indexed: 2 = Marzo
 
+  window.changeCalendarMonth = function(delta) {
+    calCurrentMonth += delta;
+    if (calCurrentMonth < 0) {
+      calCurrentMonth = 11;
+      calCurrentYear -= 1;
+    } else if (calCurrentMonth > 11) {
+      calCurrentMonth = 0;
+      calCurrentYear += 1;
+    }
+    renderCalendarView();
+  };
+
+  window.showCalendarEventDetail = function(title, date, type, desc) {
+    const calUrl = GoogleWorkspace.createCalendarUrl(title, desc, 'CC Mario Sánchez, Puerto La Cruz', date);
+    alert(`📅 DETALLE DEL EVENTO:\n\n• Título: ${title}\n• Fecha: ${date}\n• Tipo: ${type.toUpperCase()}\n• Descripción: ${desc}\n\nSe abrirá Google Calendar para programar recordatorio.`);
+    window.open(calUrl, '_blank');
+  };
+
+  // E. CALENDARIO DE VENCIMIENTOS INTERACTIVO
+  function renderCalendarView() {
+    const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const titleEl = document.getElementById('calendar-month-title');
+    if (titleEl) {
+      titleEl.innerText = `${monthNames[calCurrentMonth]} ${calCurrentYear}`;
+    }
+
+    const gridEl = document.getElementById('calendar-month-grid');
+    const listEl = document.getElementById('calendar-events-list');
+
+    // Base de eventos dinámicos
     const events = [
       {
         title: 'Vencimiento Cuotas de Alquiler (Día 5 Hábiles)',
         date: '2026-03-05',
+        day: 5, month: 2, year: 2026,
         type: 'cuota',
         desc: 'Fecha límite de pago sin recargos según costumbre comercial del CC Mario Sánchez.'
       },
       {
         title: 'Corte de Gastos Comunes y Condominio',
         date: '2026-03-10',
+        day: 10, month: 2, year: 2026,
         type: 'condominio',
         desc: 'Cierre de alícuotas ordinarias de electricidad de áreas comunes, aseo y vigilancia.'
       },
       {
         title: 'Vencimiento Contrato FerroCruz Pro (Local 01)',
         date: '2026-03-31',
+        day: 31, month: 2, year: 2026,
         type: 'contrato',
         desc: 'Cumple 1 año de contrato. Arrendatario con opción a Prórroga Legal obligatoria (Art. 25 G.O. 40.418).'
       },
       {
         title: 'Término de Prórroga Legal El Faro Market (Local 04)',
         date: '2026-04-10',
+        day: 10, month: 3, year: 2026,
         type: 'prorroga',
         desc: 'Finalización de los 6 meses de prórroga legal estipulados según la Ley de Arrendamiento Comercial.'
       }
     ];
 
-    const filteredEvents = filterCalendarType === 'all'
-      ? events
-      : events.filter(e => e.type === filterCalendarType);
+    // Incorporar cuotas reales desde la base de datos
+    const dbInvoices = visibleInvoices(dbService.getInvoices());
+    dbInvoices.forEach(inv => {
+      if (inv.due_date) {
+        const parts = inv.due_date.split('-');
+        if (parts.length === 3) {
+          const y = parseInt(parts[0]);
+          const m = parseInt(parts[1]) - 1;
+          const d = parseInt(parts[2]);
+          const exists = events.some(e => e.date === inv.due_date && e.invoice_id === inv.id);
+          if (!exists) {
+            events.push({
+              title: `Vencimiento ${inv.invoice_number} (${inv.unit_code})`,
+              date: inv.due_date,
+              day: d, month: m, year: y,
+              type: 'cuota',
+              invoice_id: inv.id,
+              desc: `Cuota ${inv.period_month}/${inv.period_year} por $${inv.total_usd.toFixed(2)} USD. Estatus: ${inv.status}.`
+            });
+          }
+        }
+      }
+    });
 
-    if (filteredEvents.length === 0) {
-      listEl.innerHTML = `<div class="data-card" style="padding:24px;text-align:center;color:var(--txt-muted);font-style:italic;">No hay eventos para el filtro seleccionado.</div>`;
-      return;
+    // 1. RENDERIZAR CUADRÍCULA MENSUAL INTERACTIVA
+    if (gridEl) {
+      gridEl.innerHTML = '';
+      const firstDayOfMonth = new Date(calCurrentYear, calCurrentMonth, 1);
+      const daysInMonth = new Date(calCurrentYear, calCurrentMonth + 1, 0).getDate();
+      
+      // Ajustar día de la semana (0 = Domingo, cambiar a Lunes = 0)
+      let startingDay = firstDayOfMonth.getDay() - 1;
+      if (startingDay === -1) startingDay = 6;
+
+      // Celdas vacías previas
+      for (let i = 0; i < startingDay; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'cal-cell empty';
+        gridEl.appendChild(emptyCell);
+      }
+
+      const today = new Date();
+      const isCurrentMonthAndYear = today.getFullYear() === calCurrentYear && today.getMonth() === calCurrentMonth;
+      const todayDate = today.getDate();
+
+      // Celdas de cada día del mes
+      for (let day = 1; day <= daysInMonth; day++) {
+        const cell = document.createElement('div');
+        cell.className = 'cal-cell';
+        if (isCurrentMonthAndYear && day === todayDate) {
+          cell.classList.add('today');
+        }
+
+        const dateStr = `${calCurrentYear}-${String(calCurrentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const dayEvents = events.filter(e => {
+          if (filterCalendarType !== 'all' && e.type !== filterCalendarType) return false;
+          return e.year === calCurrentYear && e.month === calCurrentMonth && e.day === day;
+        });
+
+        let badgesHtml = '';
+        dayEvents.forEach(evt => {
+          const badgeClass = evt.type === 'cuota' ? 'cal-badge-cuota' : evt.type === 'condominio' ? 'cal-badge-condominio' : 'cal-badge-contrato';
+          badgesHtml += `
+            <div class="cal-event-badge ${badgeClass}" title="${escapeHtml(evt.title)}: ${escapeHtml(evt.desc)}" onclick="event.stopPropagation(); showCalendarEventDetail('${escapeHtml(evt.title)}', '${evt.date}', '${evt.type}', '${escapeHtml(evt.desc)}')">
+              ${escapeHtml(evt.title)}
+            </div>
+          `;
+        });
+
+        cell.innerHTML = `
+          <div class="cal-cell-header">
+            <span class="cal-day-num">${day}</span>
+            ${dayEvents.length > 0 ? `<span style="font-size: 9px; font-weight: 800; color: var(--amber);"><i class="fa-solid fa-circle" style="font-size: 6px;"></i> ${dayEvents.length}</span>` : ''}
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 2px; overflow-y: auto;">
+            ${badgesHtml}
+          </div>
+        `;
+
+        if (dayEvents.length > 0) {
+          cell.onclick = () => {
+            const firstEvt = dayEvents[0];
+            showCalendarEventDetail(firstEvt.title, firstEvt.date, firstEvt.type, firstEvt.desc);
+          };
+        }
+
+        gridEl.appendChild(cell);
+      }
     }
 
-    filteredEvents.forEach(evt => {
-      const card = document.createElement('div');
-      card.className = 'data-card';
-      card.style.padding = '16px 20px';
-      card.style.marginBottom = '12px';
+    // 2. RENDERIZAR LISTA DE HITOS
+    if (listEl) {
+      listEl.innerHTML = '';
+      const filteredEvents = filterCalendarType === 'all'
+        ? events
+        : events.filter(e => e.type === filterCalendarType);
 
-      const calUrl = GoogleWorkspace.createCalendarUrl(
-        evt.title,
-        evt.desc,
-        'CC Mario Sánchez, Puerto La Cruz',
-        evt.date
-      );
+      if (filteredEvents.length === 0) {
+        listEl.innerHTML = `<div class="data-card" style="padding:24px;text-align:center;color:var(--txt-muted);font-style:italic;">No hay eventos para el filtro seleccionado.</div>`;
+        return;
+      }
 
-      card.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-          <div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="status-pill ${evt.type === 'contrato' ? 'pill-warning' : evt.type === 'prorroga' ? 'pill-overdue' : 'pill-info'}">
-                <i class="fa-solid fa-calendar-day"></i> ${escapeHtml(evt.date)}
-              </span>
-              <h4 style="font-family: var(--font-heading); font-size: 14.5px; color: var(--txt-primary);">${escapeHtml(evt.title)}</h4>
+      filteredEvents.forEach(evt => {
+        const card = document.createElement('div');
+        card.className = 'data-card';
+        card.style.padding = '16px 20px';
+        card.style.marginBottom = '12px';
+
+        const calUrl = GoogleWorkspace.createCalendarUrl(
+          evt.title,
+          evt.desc,
+          'CC Mario Sánchez, Puerto La Cruz',
+          evt.date
+        );
+
+        card.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="status-pill ${evt.type === 'contrato' ? 'pill-warning' : evt.type === 'prorroga' ? 'pill-overdue' : 'pill-info'}">
+                  <i class="fa-solid fa-calendar-day"></i> ${escapeHtml(evt.date)}
+                </span>
+                <h4 style="font-family: var(--font-heading); font-size: 14.5px; color: var(--txt-primary);">${escapeHtml(evt.title)}</h4>
+              </div>
+              <p style="font-size: 12px; color: var(--txt-secondary); margin-top: 4px;">${escapeHtml(evt.desc)}</p>
             </div>
-            <p style="font-size: 12px; color: var(--txt-secondary); margin-top: 4px;">${escapeHtml(evt.desc)}</p>
+            <a href="${calUrl}" target="_blank" rel="noopener noreferrer" class="btn-action-icon" style="width: auto; padding: 6px 14px; gap: 6px; font-size: 12px; font-weight: 700; text-decoration: none;" title="Agregar a Google Calendar">
+              <i class="fa-brands fa-google"></i> <span>Google Calendar</span>
+            </a>
           </div>
-          <a href="${calUrl}" target="_blank" rel="noopener noreferrer" class="btn-action-icon" style="width: auto; padding: 6px 14px; gap: 6px; font-size: 12px; font-weight: 700; text-decoration: none;" title="Agregar a Google Calendar">
-            <i class="fa-brands fa-google"></i> <span>Google Calendar</span>
-          </a>
-        </div>
-      `;
-      listEl.appendChild(card);
-    });
+        `;
+        listEl.appendChild(card);
+      });
+    }
   }
 
   // F. CENTRO DE ALERTAS
@@ -1896,10 +2137,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     const units = dbService.getUnits();
     const tenants = dbService.getTenants();
+    const bcvRate = financialEngine.getRates().VES.toFixed(2);
     const allDbExpenses = dbService.getCondoExpenses ? dbService.getCondoExpenses() : [];
     const expensesPeriod = allDbExpenses.filter(e => e.period_month === month && e.period_year === year);
 
-    const totalGastosUsd = expensesPeriod.reduce((sum, e) => sum + e.amount_usd, 0);
+    const totalGastosUsd = expensesPeriod.reduce((sum, e) => sum + (parseFloat(e.amount_usd) || 0), 0);
     const totalGastosBs = financialEngine.convert(totalGastosUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
 
     const expensesRows = expensesPeriod.map((e, idx) => `
@@ -2116,6 +2358,88 @@ document.addEventListener('DOMContentLoaded', () => {
     printWin.document.close();
     printWin.focus();
     setTimeout(() => { printWin.print(); }, 300);
+  };
+
+  /**
+   * Exporta la tabla de datos del informe actual a formato CSV compatible con Microsoft Excel (con BOM UTF-8)
+   */
+  window.exportReportToCSV = function() {
+    const container = document.getElementById('report-display-container');
+    if (!container) return;
+    const tables = container.querySelectorAll('table');
+    if (tables.length === 0) {
+      alert("No hay tablas de datos para exportar en el informe actual.");
+      return;
+    }
+
+    let csvContent = '\uFEFF'; // BOM UTF-8 para Excel
+    tables.forEach((table, tIdx) => {
+      if (tIdx > 0) csvContent += '\r\n\r\n';
+      const rows = table.querySelectorAll('tr');
+      rows.forEach(row => {
+        const cols = row.querySelectorAll('th, td');
+        const rowData = [];
+        cols.forEach(col => {
+          let text = col.innerText.replace(/(\r\n|\n|\r)/gm, ' ').trim();
+          text = text.replace(/"/g, '""');
+          rowData.push(`"${text}"`);
+        });
+        csvContent += rowData.join(';') + '\r\n';
+      });
+    });
+
+    const reportType = document.getElementById('report-type-select') ? document.getElementById('report-type-select').value : 'informe';
+    const filename = `CCMS_${reportType}_${new Date().toISOString().slice(0, 10)}.csv`;
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  /**
+   * Copia la tabla de datos del informe en formato TSV (Tab-Separated Values)
+   * listo para pegar directamente en celdas de Google Sheets con Ctrl+V
+   */
+  window.copyReportForGoogleSheets = function() {
+    const container = document.getElementById('report-display-container');
+    if (!container) return;
+    const tables = container.querySelectorAll('table');
+    if (tables.length === 0) {
+      alert("No hay tablas de datos en el informe actual.");
+      return;
+    }
+
+    let tsvContent = '';
+    tables.forEach((table, tIdx) => {
+      if (tIdx > 0) tsvContent += '\n\n';
+      const rows = table.querySelectorAll('tr');
+      rows.forEach(row => {
+        const cols = row.querySelectorAll('th, td');
+        const rowData = [];
+        cols.forEach(col => {
+          let text = col.innerText.replace(/(\r\n|\n|\r)/gm, ' ').trim();
+          rowData.push(text);
+        });
+        tsvContent += rowData.join('\t') + '\n';
+      });
+    });
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(tsvContent).then(() => {
+        alert("✓ Datos copiados al portapapeles en formato tabular.\n\nAbra su hoja en Google Sheets y presione Ctrl + V para pegar las celdas automáticamente alineadas.");
+      }).catch(err => {
+        console.error(err);
+        prompt("Copie el contenido para Google Sheets manualmente (Ctrl+C):", tsvContent);
+      });
+    } else {
+      prompt("Copie el contenido para Google Sheets manualmente (Ctrl+C):", tsvContent);
+    }
   };
 
   // =========================================================================

@@ -188,6 +188,95 @@
     return { to: tenant.email || '', subject, body };
   }
 
+  /**
+   * SISTEMA DE RECORDATORIO RECURRENTE (ESTILO CASHEA)
+   * Verifica facturas pendientes o en mora. Si no se ha enviado recordatorio hoy,
+   * dispara o registra la notificación automática y persiste el historial en localStorage.
+   */
+  const REMINDER_STORAGE_KEY = 'ccms_daily_reminders_log_v1';
+
+  function getDailyRemindersLog() {
+    try {
+      const raw = localStorage.getItem(REMINDER_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function saveDailyRemindersLog(log) {
+    localStorage.setItem(REMINDER_STORAGE_KEY, JSON.stringify(log));
+  }
+
+  async function checkDailyPaymentReminders(dbService, financialEngine) {
+    if (!dbService || typeof dbService.getInvoices !== 'function') return { processed: 0, sent: 0 };
+    const invoices = dbService.getInvoices();
+    const tenants = dbService.getTenants ? dbService.getTenants() : [];
+    const bcvRate = financialEngine ? financialEngine.getRates().VES : 800;
+    const remindersLog = getDailyRemindersLog();
+    const todayStr = new Date().toISOString().slice(0, 10);
+
+    let processed = 0;
+    let sent = 0;
+
+    const pendingInvoices = invoices.filter(i => i.status === 'pendiente' || i.status === 'en_mora' || i.status === 'por_vencer');
+    
+    for (const inv of pendingInvoices) {
+      processed++;
+      const tenant = tenants.find(t => t.id === inv.tenant_id);
+      if (!tenant) continue;
+
+      const logKey = `${inv.id}_${todayStr}`;
+      // Si ya se despachó o registró recordatorio hoy para esta cuota, saltar
+      if (remindersLog[logKey]) continue;
+
+      // Determinar si aplica recordatorio:
+      // - Si está en mora: diario persistente
+      // - Si faltan 3 días o menos para el vencimiento: preventivo diario
+      let shouldAlert = false;
+      let isMora = inv.status === 'en_mora';
+
+      if (isMora) {
+        shouldAlert = true;
+      } else if (inv.due_date) {
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        const due = new Date(inv.due_date);
+        due.setHours(0,0,0,0);
+        const diffDays = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
+        if (diffDays <= 3) {
+          shouldAlert = true;
+        }
+      }
+
+      if (shouldAlert) {
+        // Registrar en log de recordatorios diarios
+        remindersLog[logKey] = {
+          invoice_id: inv.id,
+          invoice_number: inv.invoice_number,
+          tenant_id: tenant.id,
+          tenant_name: tenant.business_name,
+          date: todayStr,
+          status: inv.status,
+          amount_usd: inv.total_usd
+        };
+        sent++;
+
+        pushLog({
+          event: 'automated_daily_reminder',
+          invoice_number: inv.invoice_number,
+          tenant: tenant.business_name,
+          email: tenant.email,
+          status: inv.status,
+          date: todayStr
+        });
+      }
+    }
+
+    saveDailyRemindersLog(remindersLog);
+    return { processed, sent };
+  }
+
   // --- 6. EXPORT --------------------------------------------------------------
 
   global.Notifications = {
@@ -196,7 +285,9 @@
     email,
     buildCollectionEmail,
     renderTemplate,
-    getLog
+    getLog,
+    checkDailyPaymentReminders,
+    getDailyRemindersLog
   };
 
 })(window);
