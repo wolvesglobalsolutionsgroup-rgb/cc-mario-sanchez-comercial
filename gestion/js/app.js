@@ -383,6 +383,8 @@ document.addEventListener('DOMContentLoaded', () => {
         statusBadge = '<span class="status-pill pill-active"><i class="fa-solid fa-circle-check"></i> Pagado</span>';
       } else if (inv.status === 'en_mora') {
         statusBadge = '<span class="status-pill pill-overdue"><i class="fa-solid fa-triangle-exclamation"></i> En Mora</span>';
+      } else if (inv.status === 'verificando') {
+        statusBadge = '<span class="status-pill pill-warning"><i class="fa-solid fa-magnifying-glass"></i> En revisión</span>';
       } else {
         statusBadge = '<span class="status-pill pill-warning"><i class="fa-solid fa-hourglass-half"></i> Pendiente</span>';
       }
@@ -405,8 +407,8 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>${statusBadge}</td>
         <td>
           <div style="display: flex; gap: 6px;">
-            ${inv.status !== 'pagado' && currentRole === 'admin' ? `
-              <button class="btn-action-icon" title="Registrar Pago Multimoneda" style="background: var(--emerald-glow); color: var(--emerald);" onclick="window.openPaymentModal('${inv.id}')">
+            ${inv.status !== 'pagado' && (currentRole === 'admin' || currentRole === 'tenant') ? `
+              <button class="btn-action-icon" title="${currentRole === 'tenant' ? 'Reportar pago y adjuntar comprobante' : (inv.status === 'verificando' ? 'Revisar comprobante' : 'Registrar Pago Multimoneda')}" style="background: var(--emerald-glow); color: var(--emerald);" onclick="window.openPaymentModal('${inv.id}')">
                 <i class="fa-solid fa-receipt"></i>
               </button>
             ` : ''}
@@ -680,6 +682,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('pay-unit').innerText = inv.unit_code;
     document.getElementById('pay-amount').value = inv.total_usd;
     document.getElementById('pay-currency-select').value = 'USD';
+    const pending = currentRole === 'admin' ? dbService.getPendingPayment(invoiceId) : null;
+    const isTenantSubmission = currentRole === 'tenant';
+    const isAdminReview = currentRole === 'admin' && Boolean(pending);
+    document.getElementById('payment-modal-title').innerText = isTenantSubmission ? 'Reportar Pago' : (isAdminReview ? 'Revisar Comprobante' : 'Registrar y Conciliar Pago');
+    document.getElementById('payment-submit-label').innerText = isTenantSubmission ? 'Enviar comprobante a Administración' : (isAdminReview ? 'Aprobar y conciliar pago' : 'Confirmar Pago & Guardar Comprobante');
+    document.getElementById('pay-reject-btn').style.display = isAdminReview ? 'flex' : 'none';
+    document.getElementById('pay-review-mode').value = isAdminReview ? '1' : '0';
+    if (pending) {
+      document.getElementById('pay-amount').value = pending.amount_paid;
+      document.getElementById('pay-currency-select').value = pending.currency;
+      document.getElementById('pay-method').value = pending.payment_method;
+      document.getElementById('pay-ref').value = pending.reference_number || '';
+    }
     
     updatePaymentEquivalents();
     document.getElementById('modal-payment').classList.add('open');
@@ -730,23 +745,35 @@ document.addEventListener('DOMContentLoaded', () => {
         // Crear snapshot financiero
         const snapshot = financialEngine.createPaymentSnapshot(amount, currency);
 
-        dbService.recordPayment(invId, {
+        const paymentPayload = {
           payment_method: method,
           reference_number: ref || txid,
           txid: txid,
           amount_paid: amount,
           currency: currency,
           snapshot: snapshot,
-          receipt_proof: currentUploadedProof
-        });
+          receipt_proof: currentUploadedProof,
+          submitted_by: AuthGuard.currentUser()?.identifier
+        };
+
+        if (currentRole === 'tenant') {
+          dbService.submitPayment(invId, paymentPayload);
+        } else if (document.getElementById('pay-review-mode').value === '1') {
+          dbService.approvePayment(invId, AuthGuard.currentUser()?.identifier);
+        } else {
+          dbService.recordPayment(invId, paymentPayload);
+        }
 
         const paidInvoice = dbService.getInvoices().find(i => i.id === invId);
         const paidTenant = paidInvoice && dbService.getTenants().find(t => t.id === paidInvoice.tenant_id);
-        if (paidTenant && paidTenant.email && window.Notifications) {
+        const notificationRecipient = currentRole === 'tenant'
+          ? 'administracion@ccmariosanchez.com'
+          : (paidTenant && paidTenant.email);
+        if (notificationRecipient && window.Notifications) {
           void Notifications.email({
-            to: paidTenant.email,
-            subject: `Pago recibido — ${paidInvoice.invoice_number} — CC Mario Sánchez`,
-            body: `Hemos registrado el pago de la cuota ${paidInvoice.invoice_number} correspondiente al período ${paidInvoice.period_month}/${paidInvoice.period_year}. Referencia: ${ref || txid || 'no indicada'}.`
+            to: notificationRecipient,
+            subject: `${currentRole === 'tenant' ? 'Comprobante enviado para revisión' : 'Pago aprobado'} — ${paidInvoice.invoice_number} — CC Mario Sánchez`,
+            body: `${currentRole === 'tenant' ? 'Se recibió un comprobante de pago para revisión administrativa' : 'Hemos aprobado el pago de la cuota'} ${paidInvoice.invoice_number} correspondiente al período ${paidInvoice.period_month}/${paidInvoice.period_year}. Referencia: ${ref || txid || 'no indicada'}.`
           });
         }
 
@@ -754,12 +781,28 @@ document.addEventListener('DOMContentLoaded', () => {
         paymentForm.reset();
         removeReceiptFile();
         renderAll();
-        alert(`¡Pago registrado y conciliado exitosamente!\nSnapshot financiero capturado: Tasa BCV ${snapshot.bcv_rate_applied.toFixed(2)} Bs/USD.\n${currentUploadedProof ? 'Comprobante adjuntado con éxito.' : ''}`);
+        alert(currentRole === 'tenant'
+          ? 'Comprobante enviado a Administración. El pago quedará en revisión hasta su validación.'
+          : `¡Pago registrado y conciliado exitosamente!\nSnapshot financiero capturado: Tasa BCV ${snapshot.bcv_rate_applied.toFixed(2)} Bs/USD.\n${currentUploadedProof ? 'Comprobante adjuntado con éxito.' : ''}`);
       } catch (err) {
         alert('Error: ' + err.message);
       }
     };
   }
+
+  window.rejectPendingPayment = function() {
+    const invoiceId = document.getElementById('pay-invoice-id').value;
+    const reason = window.prompt('Indique el motivo del rechazo:');
+    if (!reason || !reason.trim()) return;
+    try {
+      dbService.rejectPayment(invoiceId, reason.trim(), AuthGuard.currentUser()?.identifier);
+      document.getElementById('modal-payment').classList.remove('open');
+      renderAll();
+      alert('Comprobante rechazado y motivo registrado en la trazabilidad.');
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  };
 
   // Manejador de archivo comprobante de pago (base64)
   let currentUploadedProof = null;

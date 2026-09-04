@@ -332,6 +332,20 @@ class DatabaseService {
           due_date: '2026-03-05',
           status: 'pagado',
           paid_at: '2026-03-01'
+        },
+        {
+          id: 'inv-8',
+          invoice_number: 'REC-2026-04-008',
+          tenant_id: 't-1',
+          unit_code: 'LOT-A1',
+          period_month: 4,
+          period_year: 2026,
+          rent_usd: 3500,
+          condo_usd: 250,
+          total_usd: 3750,
+          due_date: '2026-04-05',
+          status: 'pendiente',
+          paid_at: null
         }
       ],
       payments: [
@@ -523,6 +537,69 @@ class DatabaseService {
 
     this.saveData(data);
     return newPayment;
+  }
+
+  submitPayment(invoiceId, paymentData) {
+    const data = this.getData();
+    const invoice = data.invoices.find(i => i.id === invoiceId);
+    if (!invoice) throw new Error('Cuota no encontrada');
+    if (invoice.status === 'pagado') throw new Error('Esta cuota ya figura como pagada');
+
+    const payment = {
+      id: 'p-' + Date.now(),
+      invoice_id: invoiceId,
+      payment_date: paymentData.payment_date || new Date().toISOString().split('T')[0],
+      payment_method: paymentData.payment_method,
+      reference_number: paymentData.reference_number,
+      txid: paymentData.txid || null,
+      amount_paid: parseFloat(paymentData.amount_paid),
+      currency: paymentData.currency,
+      snapshot: paymentData.snapshot || null,
+      receipt_proof: paymentData.receipt_proof || null,
+      status: 'pendiente',
+      submitted_by: paymentData.submitted_by || null
+    };
+    if (!data.payments) data.payments = [];
+    data.payments.push(payment);
+    invoice.status = 'verificando';
+    invoice.receipt_proof = payment.receipt_proof;
+    this.saveData(data);
+    return payment;
+  }
+
+  getPendingPayment(invoiceId) {
+    const data = this.getData();
+    return data && data.payments
+      ? data.payments.find(p => p.invoice_id === invoiceId && p.status === 'pendiente') || null
+      : null;
+  }
+
+  approvePayment(invoiceId, verifier) {
+    const data = this.getData();
+    const invoice = data.invoices.find(i => i.id === invoiceId);
+    const payment = data.payments && data.payments.find(p => p.invoice_id === invoiceId && p.status === 'pendiente');
+    if (!invoice || !payment) throw new Error('No hay un pago pendiente de revisión');
+    payment.status = 'verificado';
+    payment.verified_by = verifier || null;
+    payment.verified_at = new Date().toISOString();
+    invoice.status = 'pagado';
+    invoice.paid_at = payment.payment_date;
+    this.saveData(data);
+    return payment;
+  }
+
+  rejectPayment(invoiceId, reason, verifier) {
+    const data = this.getData();
+    const invoice = data.invoices.find(i => i.id === invoiceId);
+    const payment = data.payments && data.payments.find(p => p.invoice_id === invoiceId && p.status === 'pendiente');
+    if (!invoice || !payment) throw new Error('No hay un pago pendiente de revisión');
+    payment.status = 'rechazado';
+    payment.rejection_reason = reason || 'No especificado';
+    payment.verified_by = verifier || null;
+    payment.verified_at = new Date().toISOString();
+    invoice.status = 'pendiente';
+    this.saveData(data);
+    return payment;
   }
 
   // --- MÓDULO DE CONFIGURACIÓN DE LA APP ---

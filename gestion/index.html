@@ -454,11 +454,12 @@
 <div class="modal-overlay" id="modal-payment">
   <div class="modal-window">
     <div class="modal-header">
-      <h3 class="modal-title"><i class="fa-solid fa-receipt" style="color: var(--emerald);"></i> Registrar y Conciliar Pago</h3>
+      <h3 class="modal-title"><i class="fa-solid fa-receipt" style="color: var(--emerald);"></i> <span id="payment-modal-title">Registrar y Conciliar Pago</span></h3>
       <button class="modal-close"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <form id="payment-form" class="modal-body">
       <input type="hidden" id="pay-invoice-id">
+      <input type="hidden" id="pay-review-mode" value="0">
       
       <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px; font-size: 12.5px;">
         <div>Recibo: <strong id="pay-invoice-num" style="color: var(--amber);"></strong> | Unidad: <strong id="pay-unit"></strong></div>
@@ -521,8 +522,11 @@
         </div>
       </div>
 
+      <button type="button" id="pay-reject-btn" onclick="rejectPendingPayment()" class="btn-currency-toggle" style="display:none;width:100%;justify-content:center;margin-top:10px;color:var(--rose);border-color:var(--rose);">
+        <i class="fa-solid fa-xmark"></i> Rechazar comprobante
+      </button>
       <button type="submit" class="btn-onboarding-cta" style="width: 100%; justify-content: center; margin-top: 10px;">
-        <i class="fa-solid fa-check-double"></i> <span>Confirmar Pago & Guardar Comprobante</span>
+        <i class="fa-solid fa-check-double"></i> <span id="payment-submit-label">Confirmar Pago & Guardar Comprobante</span>
       </button>
     </form>
   </div>
