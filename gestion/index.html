@@ -43,44 +43,34 @@
     </div>
 
     <nav class="sidebar-nav">
-      <a href="#" class="nav-item active" data-tab="inquilinos">
+      <a href="#" class="nav-item active" data-tab="inquilinos" data-roles="admin">
         <i class="fa-solid fa-store" style="color: var(--cyan);"></i>
         <span>Locales & Inquilinos</span>
       </a>
-      <a href="#" class="nav-item" data-tab="cobranzas">
+      <a href="#" class="nav-item" data-tab="cobranzas" data-roles="any">
         <i class="fa-solid fa-receipt" style="color: var(--emerald);"></i>
-        <span>Cobranzas & Recibos</span>
+        <span data-roles="admin">Cobranzas & Recibos</span>
+        <span data-roles="tenant" style="display:none;">Mis Cuotas & Recibos</span>
       </a>
-      <a href="#" class="nav-item" data-tab="condominio">
+      <a href="#" class="nav-item" data-tab="condominio" data-roles="admin">
         <i class="fa-solid fa-calculator" style="color: var(--purple);"></i>
         <span>Gastos Comunes</span>
       </a>
-      <a href="#" class="nav-item" data-tab="calendario">
+      <a href="#" class="nav-item" data-tab="calendario" data-roles="any">
         <i class="fa-solid fa-calendar-days" style="color: var(--amber);"></i>
         <span>Calendario & Vencimientos</span>
       </a>
-      <a href="#" class="nav-item" data-tab="alertas">
+      <a href="#" class="nav-item" data-tab="alertas" data-roles="any">
         <i class="fa-solid fa-bell" style="color: var(--rose);"></i>
-        <span>Alertas WhatsApp & Gmail</span>
+        <span>Alertas & Avisos</span>
       </a>
-      <a href="#" class="nav-item" data-tab="configuracion" id="nav-tab-configuracion">
+      <a href="#" class="nav-item" data-tab="configuracion" data-roles="admin" id="nav-tab-configuracion">
         <i class="fa-solid fa-gear" style="color: var(--amber);"></i>
         <span>Configuración del Sistema</span>
       </a>
-      <a href="onboarding.html" class="nav-item">
+      <a href="onboarding.html" class="nav-item" data-roles="admin">
         <i class="fa-solid fa-user-plus" style="color: var(--amber);"></i>
         <span>Nuevo Onboarding</span>
-      </a>
-
-      <div style="height: 1px; background: var(--border-subtle); margin: 8px 0;"></div>
-
-      <a href="../02_Portal_Comercial_Web/index.html" class="nav-item" target="_blank">
-        <i class="fa-solid fa-globe"></i>
-        <span>Portal Comercial Web</span>
-      </a>
-      <a href="../01_Levantamiento_Tecnico_GIS/index.html" class="nav-item" target="_blank">
-        <i class="fa-solid fa-map-location-dot"></i>
-        <span>Visor Técnico GIS</span>
       </a>
     </nav>
 
@@ -135,14 +125,12 @@
           <i class="fa-solid fa-sun" style="color: var(--amber);"></i>
         </button>
 
-        <a href="onboarding.html" class="btn-onboarding-cta">
+        <a href="onboarding.html" class="btn-onboarding-cta" data-roles="admin">
           <i class="fa-solid fa-plus"></i> <span>Registrar Inquilino</span>
         </a>
 
-        <div style="display: flex; align-items: center; gap: 8px; border-left: 1px solid var(--border-subtle); padding-left: 10px;">
-          <div style="width: 34px; height: 34px; border-radius: 50%; background: var(--amber-glow); border: 1px solid var(--amber); display: flex; align-items: center; justify-content: center; color: var(--amber); font-weight: 800;">
-            MS
-          </div>
+        <div id="top-actions-user-area" style="display: flex; align-items: center; gap: 8px; border-left: 1px solid var(--border-subtle); padding-left: 10px; margin-left: 4px;">
+          <!-- AuthGuard monta aquí el chip con logout -->
         </div>
       </div>
     </header>
@@ -592,9 +580,23 @@
 </div>
 
 <!-- SCRIPTS DE ARQUITECTURA (100% GRATUITOS) -->
+<script src="js/auth-guard.js"></script>
+<script>
+  // Guard de acceso: si no hay sesión válida, redirige a login.html
+  (function() {
+    const sess = AuthGuard.require('any');
+    if (!sess) return; // ya redirigió
+    // Pintar chip de usuario + aplicar visibilidad por rol
+    document.addEventListener('DOMContentLoaded', function() {
+      AuthGuard.mountUserChip();
+      AuthGuard.applyRoleVisibility();
+    });
+  })();
+</script>
 <script src="js/venezuela-legal.js"></script>
 <script src="js/financial-engine.js"></script>
 <script src="js/google-workspace.js"></script>
+<script src="js/notifications.js"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/app.js"></script>
 

@@ -8,9 +8,24 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   // 1. ESTADO GLOBAL
+  const session = (window.AuthGuard && window.AuthGuard.currentUser) ? window.AuthGuard.currentUser() : null;
+  const currentRole = session ? session.role : 'admin'; // fallback si guard no está cargado
+  const currentTenantId = session ? session.tenant_id : null;
   let currentCurrency = localStorage.getItem('ccms_active_currency') || 'USD'; // 'USD', 'EUR', 'VES', 'USDT'
   let currentTheme = localStorage.getItem('ccms_theme') || 'dark'; // 'dark' o 'light'
-  let currentTab = 'inquilinos';
+
+  // Para inquilinos arrancamos en la pestaña de cobranzas (lo único que les concierne)
+  let currentTab = (currentRole === 'tenant') ? 'cobranzas' : 'inquilinos';
+
+  // Si el usuario es inquilino, el sidebar no debe mostrar "inquilinos" como activo;
+  // ajustamos la visibilidad de la pestaña activa de arranque.
+  if (currentRole === 'tenant') {
+    const targetTab = document.querySelector('.nav-item[data-tab="cobranzas"]');
+    if (targetTab) {
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      targetTab.classList.add('active');
+    }
+  }
 
   // 2. INICIALIZAR TEMA (MODO CLARO / OSCURO)
   const themeToggleBtn = document.getElementById('theme-toggle-btn');
@@ -140,61 +155,121 @@ document.addEventListener('DOMContentLoaded', () => {
   // 6. RENDERIZACIÓN GLOBAL
   function renderAll() {
     renderKPIsAndBalances();
-    renderTenantsTable();
+    if (currentRole === 'admin') {
+      renderTenantsTable();
+      renderCondoExpenses();
+    }
     renderInvoicesTable();
-    renderCondoExpenses();
     renderCalendarView();
     renderAlertsCenter();
+  }
+
+  /**
+   * Devuelve las facturas visibles para el usuario actual.
+   * - admin: todas
+   * - tenant: solo las suyas
+   */
+  function visibleInvoices(allInvoices) {
+    if (currentRole === 'tenant' && currentTenantId) {
+      return allInvoices.filter(i => i.tenant_id === currentTenantId);
+    }
+    return allInvoices;
+  }
+
+  /**
+   * Devuelve los inquilinos visibles para el usuario actual.
+   * - admin: todos
+   * - tenant: solo el suyo
+   */
+  function visibleTenants(allTenants) {
+    if (currentRole === 'tenant' && currentTenantId) {
+      return allTenants.filter(t => t.id === currentTenantId);
+    }
+    return allTenants;
   }
 
   // A. BALANCES Y KPIS FINANCIEROS
   function renderKPIsAndBalances() {
     const units = dbService.getUnits();
-    const invoices = dbService.getInvoices();
+    const allInvoices = dbService.getInvoices();
+    const invoices = visibleInvoices(allInvoices);
 
-    // 1. Ocupación
-    const occupiedUnits = units.filter(u => u.status === 'arrendado');
-    const totalArea = units.reduce((acc, u) => acc + u.area_m2, 0);
-    const occupiedArea = occupiedUnits.reduce((acc, u) => acc + u.area_m2, 0);
-    const occupancyRate = Math.round((occupiedArea / totalArea) * 100);
+    // 1. Ocupación (solo visible para admin)
+    const kpiOcc = document.getElementById('kpi-occupancy');
+    const kpiOccSub = document.getElementById('kpi-occupancy-sub');
+    const occCard = kpiOcc ? kpiOcc.closest('.kpi-card') : null;
+    if (currentRole === 'admin') {
+      const occupiedUnits = units.filter(u => u.status === 'arrendado');
+      const totalArea = units.reduce((acc, u) => acc + u.area_m2, 0);
+      const occupiedArea = occupiedUnits.reduce((acc, u) => acc + u.area_m2, 0);
+      const occupancyRate = Math.round((occupiedArea / totalArea) * 100);
+      kpiOcc.innerText = `${occupancyRate}%`;
+      kpiOccSub.innerText = `${occupiedArea.toLocaleString()} m² de 5.190 m²`;
+      if (occCard) occCard.style.display = '';
+    } else if (occCard) {
+      occCard.style.display = 'none';
+    }
 
-    document.getElementById('kpi-occupancy').innerText = `${occupancyRate}%`;
-    document.getElementById('kpi-occupancy-sub').innerText = `${occupiedArea.toLocaleString()} m² de 5.190 m²`;
-
-    // 2. Facturación Mes (Ingresos Proyectados)
+    // 2. Facturación
     const totalBilledUsd = invoices.reduce((acc, i) => acc + i.total_usd, 0);
-    document.getElementById('kpi-billed').innerText = formatMoney(totalBilledUsd);
+    const billedEl = document.getElementById('kpi-billed');
+    if (billedEl) {
+      billedEl.innerText = formatMoney(totalBilledUsd);
+      const billedTitle = billedEl.closest('.kpi-card')?.querySelector('.kpi-title');
+      if (billedTitle) billedTitle.textContent = currentRole === 'admin' ? 'Facturación Mensual' : 'Mi Facturación del Período';
+    }
 
-    // 3. Recaudado Efectivo (Cobranzas)
+    // 3. Recaudado
     const paidInvoices = invoices.filter(i => i.status === 'pagado');
     const totalPaidUsd = paidInvoices.reduce((acc, i) => acc + i.total_usd, 0);
     const collectionPct = totalBilledUsd > 0 ? Math.round((totalPaidUsd / totalBilledUsd) * 100) : 0;
-    document.getElementById('kpi-collected').innerText = formatMoney(totalPaidUsd);
-    document.getElementById('kpi-collected-sub').innerText = `${collectionPct}% de recaudación efectiva`;
+    const collEl = document.getElementById('kpi-collected');
+    if (collEl) {
+      collEl.innerText = formatMoney(totalPaidUsd);
+      document.getElementById('kpi-collected-sub').innerText = `${collectionPct}% ${currentRole === 'admin' ? 'de recaudación efectiva' : 'pagado'}`;
+    }
 
-    // 4. Cartera en Mora (Cuentas por Cobrar)
+    // 4. Mora
     const overdueInvoices = invoices.filter(i => i.status === 'en_mora');
     const totalOverdueUsd = overdueInvoices.reduce((acc, i) => acc + i.total_usd, 0);
-    document.getElementById('kpi-overdue').innerText = formatMoney(totalOverdueUsd);
-    document.getElementById('kpi-overdue-sub').innerText = `${overdueInvoices.length} cuentas con retraso`;
+    const overEl = document.getElementById('kpi-overdue');
+    if (overEl) {
+      overEl.innerText = formatMoney(totalOverdueUsd);
+      document.getElementById('kpi-overdue-sub').innerText = `${overdueInvoices.length} ${currentRole === 'admin' ? 'cuentas con retraso' : 'facturas vencidas'}`;
+    }
 
-    // 5. Egresos Operativos del Mes (Vigilancia, Luz, Cisterna, Mantenimiento)
-    const condoExpenses = [
-      { concept: 'Vigilancia 24/7', amount_usd: 1200 },
-      { concept: 'Energía Eléctrica Común (Corpoelec)', amount_usd: 350 },
-      { concept: 'Cisterna de Agua (40.000 L)', amount_usd: 220 },
-      { concept: 'Mantenimiento Preventivo Drenajes', amount_usd: 180 }
-    ];
-    const totalExpensesUsd = condoExpenses.reduce((acc, e) => acc + e.amount_usd, 0); // $1.950 USD
-    document.getElementById('kpi-expenses').innerText = formatMoney(totalExpensesUsd);
-    document.getElementById('kpi-expenses-sub').innerText = `4 conceptos de gastos comunes`;
+    // 5. Egresos: solo admin
+    const expEl = document.getElementById('kpi-expenses');
+    const expCard = expEl ? expEl.closest('.kpi-card') : null;
+    if (expEl) {
+      if (currentRole === 'admin') {
+        const condoExpenses = [
+          { concept: 'Vigilancia 24/7', amount_usd: 1200 },
+          { concept: 'Energía Eléctrica Común (Corpoelec)', amount_usd: 350 },
+          { concept: 'Cisterna de Agua (40.000 L)', amount_usd: 220 },
+          { concept: 'Mantenimiento Preventivo Drenajes', amount_usd: 180 }
+        ];
+        const totalExpensesUsd = condoExpenses.reduce((acc, e) => acc + e.amount_usd, 0);
+        expEl.innerText = formatMoney(totalExpensesUsd);
+        document.getElementById('kpi-expenses-sub').innerText = `4 conceptos de gastos comunes`;
+        if (expCard) expCard.style.display = '';
+      } else if (expCard) {
+        expCard.style.display = 'none';
+      }
+    }
 
-    // 6. Utilidad Neta Operativa (Recaudado - Egresos)
-    const netProfitUsd = totalPaidUsd - totalExpensesUsd;
+    // 6. Utilidad: solo admin
     const netEl = document.getElementById('kpi-netprofit');
+    const netCard = netEl ? netEl.closest('.kpi-card') : null;
     if (netEl) {
-      netEl.innerText = formatMoney(netProfitUsd);
-      netEl.style.color = netProfitUsd >= 0 ? 'var(--emerald)' : 'var(--rose)';
+      if (currentRole === 'admin') {
+        const netProfitUsd = totalPaidUsd - 1950;
+        netEl.innerText = formatMoney(netProfitUsd);
+        netEl.style.color = netProfitUsd >= 0 ? 'var(--emerald)' : 'var(--rose)';
+        if (netCard) netCard.style.display = '';
+      } else if (netCard) {
+        netCard.style.display = 'none';
+      }
     }
   }
 
@@ -271,8 +346,25 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!tbody) return;
     tbody.innerHTML = '';
 
-    const invoices = dbService.getInvoices();
-    const tenants = dbService.getTenants();
+    const invoices = visibleInvoices(dbService.getInvoices());
+    const tenants = visibleTenants(dbService.getTenants());
+
+    // Ajustar el título de la sección según el rol
+    const sectionTitle = document.querySelector('#tab-cobranzas .section-title');
+    if (sectionTitle) {
+      if (currentRole === 'tenant') {
+        sectionTitle.innerHTML = '<i class="fa-solid fa-receipt" style="color: var(--emerald);"></i> Mis Cuotas, Pagos y Recibos';
+      } else {
+        sectionTitle.innerHTML = '<i class="fa-solid fa-receipt" style="color: var(--emerald);"></i> Cobranzas y Conciliación Multimoneda';
+      }
+    }
+
+    if (invoices.length === 0) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td colspan="6" style="text-align:center;padding:32px;color:var(--txt-muted);font-style:italic;">${currentRole === 'tenant' ? 'No tiene cuotas registradas todavía. Contacte a la administración.' : 'Sin cuotas para mostrar.'}</td>`;
+      tbody.appendChild(tr);
+      return;
+    }
 
     invoices.forEach(inv => {
       const tr = document.createElement('tr');
@@ -305,7 +397,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>${statusBadge}</td>
         <td>
           <div style="display: flex; gap: 6px;">
-            ${inv.status !== 'pagado' ? `
+            ${inv.status !== 'pagado' && currentRole === 'admin' ? `
               <button class="btn-action-icon" title="Registrar Pago Multimoneda" style="background: var(--emerald-glow); color: var(--emerald);" onclick="window.openPaymentModal('${inv.id}')">
                 <i class="fa-solid fa-receipt"></i>
               </button>
@@ -318,9 +410,11 @@ document.addEventListener('DOMContentLoaded', () => {
             <button class="btn-action-icon" title="Imprimir Recibo Oficial" onclick="window.printReceipt('${inv.id}')">
               <i class="fa-solid fa-print"></i>
             </button>
-            <button class="btn-action-icon btn-wa-action" title="Aviso de Cobranza WhatsApp" onclick="window.openWhatsAppModal('${tenant.id}', '${inv.id}')">
-              <i class="fa-brands fa-whatsapp"></i>
-            </button>
+            ${currentRole === 'admin' ? `
+              <button class="btn-action-icon btn-wa-action" title="Aviso de Cobranza WhatsApp" onclick="window.openWhatsAppModal('${tenant.id}', '${inv.id}')">
+                <i class="fa-brands fa-whatsapp"></i>
+              </button>
+            ` : ''}
           </div>
         </td>
       `;
@@ -425,10 +519,26 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!alertsContainer) return;
     alertsContainer.innerHTML = '';
 
-    const tenants = dbService.getTenants();
-    const invoices = dbService.getInvoices();
+    const tenants = visibleTenants(dbService.getTenants());
+    const invoices = visibleInvoices(dbService.getInvoices());
 
-    invoices.filter(i => i.status !== 'pagado').forEach(inv => {
+    // Ajustar título de la sección
+    const sectionTitle = document.querySelector('#tab-alertas .section-title');
+    if (sectionTitle) {
+      if (currentRole === 'tenant') {
+        sectionTitle.innerHTML = '<i class="fa-solid fa-bell" style="color: var(--rose);"></i> Mis Avisos de Cobro y Alertas de Mora';
+      } else {
+        sectionTitle.innerHTML = '<i class="fa-solid fa-bell" style="color: var(--rose);"></i> Centro de Avisos de Cobro y Alertas de Mora';
+      }
+    }
+
+    const pending = invoices.filter(i => i.status !== 'pagado');
+    if (pending.length === 0) {
+      alertsContainer.innerHTML = `<div class="data-card" style="padding:32px;text-align:center;color:var(--txt-muted);font-style:italic;">${currentRole === 'tenant' ? 'No tiene cuotas pendientes. ¡Está al día!' : 'No hay alertas pendientes.'}</div>`;
+      return;
+    }
+
+    pending.forEach(inv => {
       const tenant = tenants.find(t => t.id === inv.tenant_id);
       if (!tenant) return;
 

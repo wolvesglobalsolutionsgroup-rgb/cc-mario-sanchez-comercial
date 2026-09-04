@@ -3,8 +3,6 @@
   "cleanUrls": true,
   "rewrites": [
     { "source": "/", "destination": "/index.html" },
-    { "source": "/landing", "destination": "/index.html" },
-    { "source": "/landing.html", "destination": "/index.html" },
     { "source": "/alquiler", "destination": "/alquiler.html" },
     { "source": "/alquiler.html", "destination": "/alquiler.html" },
     { "source": "/gestion", "destination": "/gestion/index.html" },
