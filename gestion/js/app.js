@@ -680,7 +680,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (invoices.length === 0) {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td colspan="6" style="text-align:center;padding:32px;color:var(--txt-muted);font-style:italic;">No se encontraron cuotas para el período seleccionado (${filterCobranzasMonth !== 'all' ? 'Mes ' + filterCobranzasMonth : 'Todos los meses'} / ${filterCobranzasYear}).</td>`;
+      const emptyHtml = window.SecuritySuite && window.SecuritySuite.renderEmptyState
+        ? window.SecuritySuite.renderEmptyState(
+            'No hay cuotas registradas',
+            `No se encontraron cuotas para el filtro seleccionado (${filterCobranzasMonth !== 'all' ? 'Mes ' + filterCobranzasMonth : 'Todos los meses'} / ${filterCobranzasYear}).`,
+            'fa-receipt'
+          )
+        : '<div style="padding:24px;text-align:center;color:var(--txt-muted);">No se encontraron cuotas.</div>';
+      tr.innerHTML = `<td colspan="6" style="padding: 20px 0;">${emptyHtml}</td>`;
       tbody.appendChild(tr);
       return;
     }
@@ -1319,6 +1326,36 @@ document.addEventListener('DOMContentLoaded', () => {
       const amount = parseFloat(document.getElementById('pay-amount').value);
       const currency = document.getElementById('pay-currency-select').value;
       const txid = document.getElementById('pay-txid') ? document.getElementById('pay-txid').value.trim() : '';
+
+      // Mitigación de Abuso / Rate Limiting (Máx 6 intentos por minuto)
+      if (window.SecuritySuite && window.SecuritySuite.checkRateLimit) {
+        const rateCheck = SecuritySuite.checkRateLimit('payment_submission', 6, 60000);
+        if (!rateCheck.allowed) {
+          alert('🛡️ Seguridad Activa: ' + rateCheck.message);
+          return;
+        }
+      }
+
+      // Verificación de amenazas (Anti-SQL Injection / Command / Prompt Injection)
+      if (window.SecuritySuite && window.SecuritySuite.detectThreats) {
+        const threatRef = SecuritySuite.detectThreats(ref);
+        const threatTx = SecuritySuite.detectThreats(txid);
+        if (!threatRef.safe || !threatTx.safe) {
+          alert('🛡️ Entrada rechazada: Se detectaron caracteres o patrones no permitidos en la referencia o comprobante.');
+          console.warn('[SECURITY] Bloqueo de inyección en formulario de pago:', threatRef.threats.concat(threatTx.threats));
+          return;
+        }
+      }
+
+      // Verificación de Autorización Zero-Trust / Anti-IDOR
+      const targetInvoice = dbService.getInvoices().find(i => i.id === invId);
+      if (window.SecuritySuite && window.SecuritySuite.verifyResourceAccess) {
+        const access = SecuritySuite.verifyResourceAccess(targetInvoice, AuthGuard.currentUser());
+        if (!access.allowed) {
+          alert('🛡️ Error de Seguridad (IDOR): No tiene autorización para procesar o modificar este recibo.');
+          return;
+        }
+      }
 
       // Validación cripto si aplica
       if (currency === 'USDT' && txid) {
@@ -1998,13 +2035,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('report-display-container');
     if (!container) return;
 
-    if (type === 'recaudacion') {
-      container.innerHTML = renderRecaudacionReportHTML(month, year);
-    } else if (type === 'condominio') {
-      container.innerHTML = renderCondominioReportHTML(month, year);
-    } else if (type === 'solvencia') {
-      container.innerHTML = renderSolvenciaReportHTML(tenantId);
+    // Estado de Carga elegante
+    if (window.SecuritySuite && window.SecuritySuite.renderLoadingState) {
+      container.innerHTML = window.SecuritySuite.renderLoadingState('Generando y auditando informe contable...');
     }
+
+    // Renderizado reactivo protegido con manejo de error
+    setTimeout(() => {
+      try {
+        if (type === 'recaudacion') {
+          container.innerHTML = renderRecaudacionReportHTML(month, year);
+        } else if (type === 'condominio') {
+          container.innerHTML = renderCondominioReportHTML(month, year);
+        } else if (type === 'solvencia') {
+          container.innerHTML = renderSolvenciaReportHTML(tenantId);
+        }
+      } catch (err) {
+        console.error('[REPORT ERROR]', err);
+        if (window.SecuritySuite && window.SecuritySuite.renderErrorState) {
+          container.innerHTML = window.SecuritySuite.renderErrorState(
+            'Error al liquidar el informe',
+            `No se pudo consolidar la información del reporte seleccionado. Causa: ${err.message}`,
+            'window.generateSelectedReport'
+          );
+        } else {
+          container.innerHTML = `<div style="color:var(--rose);padding:24px;text-align:center;">Error: ${err.message}</div>`;
+        }
+      }
+    }, 120);
   };
 
   function renderRecaudacionReportHTML(month, year) {

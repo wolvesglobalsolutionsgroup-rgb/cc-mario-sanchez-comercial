@@ -1073,3 +1073,27 @@ select.form-control optgroup {
   border-radius: 4px;
   transition: width 0.3s ease;
 }
+
+/* ==========================================================================
+   ESTADOS DE UI: CARGANDO, ERROR Y CONTENIDO VACÍO
+   ========================================================================== */
+@keyframes ccms-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.ui-state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 180px;
+  box-sizing: border-box;
+  animation: fadeIn 0.25s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
