@@ -65,23 +65,28 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.onclick = () => setActiveCurrency(btn.getAttribute('data-cur'));
   });
 
-  // 4. TICKER BCV DINÁMICO & AUTO-SINCRONIZACIÓN CON API GRATUITA (DOLARAPI)
+  // 4. TICKER DINÁMICO: BCV OFICIAL + BINANCE P2P USDT/VES
   const bcvTickerVal = document.getElementById('bcv-rate-val');
+  const usdtTickerVal = document.getElementById('usdt-rate-val');
   const bcvSyncIcon = document.getElementById('bcv-sync-icon');
 
   function updateBcvDisplay() {
+    const rates = financialEngine.getRates();
     if (bcvTickerVal) {
-      const currentRate = financialEngine.getRates().VES;
-      bcvTickerVal.innerText = `${currentRate.toFixed(2)} Bs/USD`;
+      bcvTickerVal.innerText = `${rates.VES.toFixed(2)} Bs/USD`;
+    }
+    if (usdtTickerVal) {
+      const usdtVes = rates.USDT_VES || rates.VES;
+      usdtTickerVal.innerText = `${usdtVes.toFixed(2)} Bs/USDT`;
     }
   }
   updateBcvDisplay();
 
-  // Función asíncrona para sincronizar en vivo con la API oficial gratuita
+  // Función asíncrona para sincronizar en vivo con las APIs gratuitas (DolarApi y Binance P2P vía Yadio)
   window.syncBcvRate = async function() {
     if (bcvSyncIcon) bcvSyncIcon.classList.add('fa-spin');
     try {
-      const res = await financialEngine.fetchOfficialBcvRate();
+      const res = await financialEngine.fetchLiveRates();
       if (res.success) {
         updateBcvDisplay();
         renderAll();
@@ -90,8 +95,12 @@ document.addEventListener('DOMContentLoaded', () => {
           bcvTickerVal.style.color = 'var(--emerald)';
           setTimeout(() => { bcvTickerVal.style.color = ''; }, 2000);
         }
+        if (usdtTickerVal) {
+          usdtTickerVal.style.color = 'var(--emerald)';
+          setTimeout(() => { usdtTickerVal.style.color = ''; }, 2000);
+        }
       } else {
-        console.warn("No se pudo obtener la tasa en vivo, manteniendo tasa en memoria:", res.error);
+        console.warn("No se pudo obtener la tasa en vivo, manteniendo tasa en memoria:", res.errors);
       }
     } catch (e) {
       console.error(e);
@@ -105,18 +114,36 @@ document.addEventListener('DOMContentLoaded', () => {
     window.syncBcvRate();
   }, 1000);
 
-  // Modal para editar tasa BCV manualmente si el usuario lo requiere
+  // Modal para editar tasas manualmente si el usuario lo requiere
   window.editBcvRate = function() {
-    const current = financialEngine.getRates().VES;
-    const input = prompt("Ingrese la nueva Tasa Oficial del Banco Central de Venezuela (Bs/USD):", current.toFixed(2));
-    if (input !== null) {
-      try {
-        financialEngine.setBcvRate(input);
-        updateBcvDisplay();
-        renderAll();
-        alert(`Tasa BCV actualizada a: ${financialEngine.getRates().VES.toFixed(2)} Bs/USD`);
-      } catch (e) {
-        alert(e.message);
+    const rates = financialEngine.getRates();
+    const opcion = prompt("¿Qué tasa desea ajustar manualmente?\n1. Tasa Oficial BCV (Bs/USD)\n2. Tasa Binance P2P USDT/VES\n\nEscriba 1 o 2:", "1");
+    if (!opcion) return;
+
+    if (opcion === "1") {
+      const input = prompt("Ingrese la nueva Tasa Oficial del Banco Central de Venezuela (Bs/USD):", rates.VES.toFixed(2));
+      if (input !== null) {
+        try {
+          financialEngine.setBcvRate(input);
+          updateBcvDisplay();
+          renderAll();
+          alert(`Tasa BCV actualizada a: ${financialEngine.getRates().VES.toFixed(2)} Bs/USD`);
+        } catch (e) {
+          alert(e.message);
+        }
+      }
+    } else if (opcion === "2") {
+      const currentUsdt = rates.USDT_VES || rates.VES;
+      const input = prompt("Ingrese la nueva Tasa Binance P2P USDT/VES (Bs/USDT):", currentUsdt.toFixed(2));
+      if (input !== null) {
+        try {
+          financialEngine.setUsdtRate(input);
+          updateBcvDisplay();
+          renderAll();
+          alert(`Tasa Binance P2P USDT actualizada a: ${financialEngine.getRates().USDT_VES.toFixed(2)} Bs/USDT`);
+        } catch (e) {
+          alert(e.message);
+        }
       }
     }
   };
@@ -480,8 +507,30 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!tbody) return;
     tbody.innerHTML = '';
 
-    let invoices = visibleInvoices(dbService.getInvoices());
+    let allInvoices = dbService.getInvoices();
+    let invoices = visibleInvoices(allInvoices);
     const tenants = visibleTenants(dbService.getTenants());
+
+    // Actualizar badge administrativo de comprobantes pendientes de revisión
+    const pendingReviews = allInvoices.filter(i => i.status === 'verificando').length;
+    const adminBadge = document.getElementById('admin-pending-review-badge');
+    const adminCount = document.getElementById('admin-pending-count');
+    if (adminBadge && adminCount) {
+      if (currentRole === 'admin' && pendingReviews > 0) {
+        adminBadge.style.display = 'inline-flex';
+        adminCount.innerText = `${pendingReviews} ${pendingReviews === 1 ? 'comprobante por revisar' : 'comprobantes por revisar'}`;
+        adminBadge.style.cursor = 'pointer';
+        adminBadge.onclick = () => {
+          const statusFilter = document.getElementById('filter-cobranzas-status');
+          if (statusFilter) {
+            statusFilter.value = 'verificando';
+            window.applyCobranzasFilters();
+          }
+        };
+      } else {
+        adminBadge.style.display = 'none';
+      }
+    }
 
     // Aplicar filtros de período y estado
     if (filterCobranzasMonth !== 'all') {
@@ -848,6 +897,40 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // 3. Modal Registro de Pago Multimoneda con Snapshot y TxID
+  window.openTenantQuickPay = function() {
+    const currentTenant = AuthGuard.currentTenant();
+    if (!currentTenant) {
+      alert("No se encontró el inquilino activo o la sesión ha expirado.");
+      return;
+    }
+    const myInvoices = dbService.getInvoices().filter(i => i.tenant_id === currentTenant.id);
+    const pendingInvoices = myInvoices.filter(i => i.status !== 'pagado');
+
+    if (pendingInvoices.length === 0) {
+      alert("¡Felicitaciones! Su cuenta se encuentra totalmente solvente y al día sin cuotas pendientes por pagar.");
+      return;
+    }
+
+    const selectGroup = document.getElementById('pay-select-invoice-group');
+    const select = document.getElementById('pay-invoice-select');
+    if (selectGroup && select) {
+      selectGroup.style.display = 'block';
+      select.innerHTML = pendingInvoices.map(inv => `
+        <option value="${inv.id}">
+          ${inv.invoice_number} — Unidad ${inv.unit_code} — ${inv.period_month}/${inv.period_year} — $${inv.total_usd.toFixed(2)} USD (${inv.status === 'verificando' ? 'En Revisión' : (inv.status === 'en_mora' ? 'En Mora' : 'Pendiente')})
+        </option>
+      `).join('');
+      select.value = pendingInvoices[0].id;
+    }
+
+    window.openPaymentModal(pendingInvoices[0].id);
+  };
+
+  window.onSelectInvoiceToPay = function(invoiceId) {
+    if (!invoiceId) return;
+    window.openPaymentModal(invoiceId);
+  };
+
   window.openPaymentModal = function(invoiceId) {
     const inv = dbService.getInvoices().find(i => i.id === invoiceId);
     if (!inv) return;
@@ -857,6 +940,30 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('pay-unit').innerText = inv.unit_code;
     document.getElementById('pay-amount').value = inv.total_usd;
     document.getElementById('pay-currency-select').value = 'USD';
+
+    // Sincronizar select si existe
+    const select = document.getElementById('pay-invoice-select');
+    if (select && select.value !== invoiceId) {
+      select.value = invoiceId;
+    }
+
+    const selectGroup = document.getElementById('pay-select-invoice-group');
+    if (selectGroup) {
+      selectGroup.style.display = (currentRole === 'tenant') ? 'block' : 'none';
+      if (currentRole === 'tenant' && select && select.options.length === 0) {
+        const currentTenant = AuthGuard.currentTenant();
+        const myPendings = currentTenant ? dbService.getInvoices().filter(i => i.tenant_id === currentTenant.id && i.status !== 'pagado') : [];
+        if (myPendings.length > 0) {
+          select.innerHTML = myPendings.map(i => `
+            <option value="${i.id}">
+              ${i.invoice_number} — Unidad ${i.unit_code} — ${i.period_month}/${i.period_year} — $${i.total_usd.toFixed(2)} USD
+            </option>
+          `).join('');
+          select.value = invoiceId;
+        }
+      }
+    }
+
     const pending = currentRole === 'admin' ? dbService.getPendingPayment(invoiceId) : null;
     const isTenantSubmission = currentRole === 'tenant';
     const isAdminReview = currentRole === 'admin' && Boolean(pending);
@@ -881,12 +988,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const cur = document.getElementById('pay-currency-select').value;
     const method = document.getElementById('pay-method').value;
 
-    const bcvRate = financialEngine.getRates().VES;
+    const rates = financialEngine.getRates();
+    const bcvRate = rates.VES;
+    const usdtVesRate = rates.USDT_VES || bcvRate;
     const usdEq = financialEngine.convert(amount, cur, 'USD');
     const vesEq = financialEngine.convert(amount, cur, 'VES');
 
     document.getElementById('pay-eq-usd').innerText = `$${usdEq.toFixed(2)} USD`;
-    document.getElementById('pay-eq-ves').innerText = `Bs. ${vesEq.toLocaleString('es-VE', { minimumFractionDigits: 2 })}`;
+
+    if (cur === 'USDT' || method.includes('Cripto')) {
+      const p2pTotal = Math.round((usdEq * usdtVesRate) * 100) / 100;
+      document.getElementById('pay-eq-ves').innerText = `Bs. ${vesEq.toLocaleString('es-VE', { minimumFractionDigits: 2 })} (BCV) | Ref. Binance: Bs. ${p2pTotal.toLocaleString('es-VE', { minimumFractionDigits: 2 })}`;
+    } else {
+      document.getElementById('pay-eq-ves').innerText = `Bs. ${vesEq.toLocaleString('es-VE', { minimumFractionDigits: 2 })}`;
+    }
 
     // Mostrar campo TxID si es Cripto USDT
     const txidGroup = document.getElementById('pay-txid-group');

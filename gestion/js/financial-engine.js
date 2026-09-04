@@ -24,11 +24,13 @@ class FinancialEngine {
     // Tasas oficiales y de paridad por defecto
     return {
       USD: 1.00,
-      EUR: 0.92,       // 1 USD = 0.92 EUR
-      VES: 72.50,      // Tasa Oficial BCV de referencia (Bs. por USD)
-      USDT: 1.00,      // Paridad cripto 1:1 con USD
+      EUR: 0.92,          // 1 USD = 0.92 EUR
+      VES: 807.38,        // Tasa Oficial BCV de referencia (Bs. por USD)
+      USDT: 1.00,         // Paridad cripto 1:1 con USD
+      USDT_VES: 955.98,   // Tasa de mercado USDT frente a Bolívares (Binance P2P)
       lastUpdated: new Date().toISOString(),
-      source: 'BCV Oficial (Referencial)'
+      source: 'BCV Oficial (Referencial)',
+      usdtSource: 'Binance P2P (vía Yadio)'
     };
   }
 
@@ -56,16 +58,31 @@ class FinancialEngine {
     return this.rates.EUR;
   }
 
+  setUsdtRate(newRate, source = 'Ajuste Manual Binance P2P') {
+    const r = parseFloat(newRate);
+    if (isNaN(r) || r <= 0) throw new Error("Tasa USDT/VES inválida");
+    this.rates.USDT_VES = r;
+    this.rates.lastUpdated = new Date().toISOString();
+    this.rates.usdtSource = source;
+    this.saveRates();
+    return this.rates.USDT_VES;
+  }
+
   /**
    * Sincroniza en tiempo real las tasas oficiales (USD BCV y EUR BCV)
-   * utilizando la API pública DolarApi con fallback automático
+   * y la tasa Binance P2P USDT/VES mediante APIs abiertas y CORS-friendly
    */
   async fetchOfficialBcvRate() {
+    return this.fetchLiveRates();
+  }
+
+  async fetchLiveRates() {
     let vesUpdated = false;
     let eurUpdated = false;
+    let usdtUpdated = false;
     let errors = [];
 
-    // 1. Obtener Dólar Oficial BCV
+    // 1. Obtener Dólar Oficial BCV (DolarApi)
     try {
       const resp = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
       if (resp.ok) {
@@ -81,30 +98,59 @@ class FinancialEngine {
       errors.push(`VES: ${err.message}`);
     }
 
-    // 2. Obtener Euro Oficial BCV
+    // 2. Obtener Euro Oficial BCV (DolarApi)
     try {
       const respEur = await fetch('https://ve.dolarapi.com/v1/euros/oficial');
       if (respEur.ok) {
         const dataEur = await respEur.json();
         if (dataEur && dataEur.promedio && !isNaN(dataEur.promedio) && this.rates.VES > 0) {
-          // Relación EUR/USD calculada a partir de los Bs oficiales
           const eurBs = parseFloat(dataEur.promedio);
           this.rates.EUR = Math.round((this.rates.VES / eurBs) * 10000) / 10000;
           eurUpdated = true;
         }
       }
     } catch (err) {
-      // Fallback a paridad estándar si falla la API de euros
       errors.push(`EUR: ${err.message}`);
+    }
+
+    // 3. Obtener Tasa USDT/VES (Binance P2P en tiempo real)
+    // Intento primario: Yadio API (Order book real de Binance P2P para VES)
+    try {
+      const respYadio = await fetch('https://api.yadio.io/json');
+      if (respYadio.ok) {
+        const dataYadio = await respYadio.json();
+        const p2pRate = dataYadio?.USD?.other?.p2p_usdt?.rate || dataYadio?.USD?.rate;
+        if (p2pRate && !isNaN(p2pRate)) {
+          this.rates.USDT_VES = parseFloat(p2pRate);
+          this.rates.usdtSource = 'Binance P2P (vía Yadio)';
+          usdtUpdated = true;
+        }
+      }
+    } catch (errYadio) {
+      // Fallback secundario: DolarApi mercado paralelo/cripto
+      try {
+        const respParalelo = await fetch('https://ve.dolarapi.com/v1/dolares/paralelo');
+        if (respParalelo.ok) {
+          const dataParalelo = await respParalelo.json();
+          if (dataParalelo && dataParalelo.promedio && !isNaN(dataParalelo.promedio)) {
+            this.rates.USDT_VES = parseFloat(dataParalelo.promedio);
+            this.rates.usdtSource = 'Binance P2P / Cripto (vía DolarApi)';
+            usdtUpdated = true;
+          }
+        }
+      } catch (errFallback) {
+        errors.push(`USDT_VES: ${errFallback.message}`);
+      }
     }
 
     this.saveRates();
 
     return {
-      success: vesUpdated,
+      success: vesUpdated || usdtUpdated,
       rates: { ...this.rates },
       date: this.rates.lastUpdated,
       source: this.rates.source || 'BCV Oficial',
+      usdtSource: this.rates.usdtSource || 'Binance P2P',
       errors: errors.length ? errors.join('; ') : null
     };
   }
@@ -197,12 +243,15 @@ class FinancialEngine {
       value_date: date,
       bcv_rate_applied: this.rates.VES,
       eur_rate_applied: this.rates.EUR,
+      usdt_rate_applied: this.rates.USDT || 1.00,
+      usdt_ves_rate_applied: this.rates.USDT_VES || this.rates.VES,
       usd_equivalent: Math.round(usdEq * 100) / 100,
       ves_equivalent: Math.round(this.convert(amount, currency, 'VES') * 100) / 100,
       eur_equivalent: Math.round(this.convert(amount, currency, 'EUR') * 100) / 100,
       usdt_equivalent: Math.round(usdEq * 100) / 100,
       snapshot_timestamp: new Date().toISOString(),
-      rate_source: this.rates.source || 'BCV Oficial (DolarApi)'
+      rate_source: this.rates.source || 'BCV Oficial (DolarApi)',
+      usdt_rate_source: this.rates.usdtSource || 'Binance P2P (vía Yadio)'
     };
   }
 
