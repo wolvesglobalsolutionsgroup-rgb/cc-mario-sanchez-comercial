@@ -346,6 +346,63 @@ class DatabaseService {
           due_date: '2026-04-05',
           status: 'pendiente',
           paid_at: null
+        },
+        // --- HISTORIAL PREVIO (ENERO Y FEBRERO 2026) PARA AUDITORÍA SOCIETARIA ---
+        {
+          id: 'inv-hist-1',
+          invoice_number: 'REC-2026-02-001',
+          tenant_id: 't-1',
+          unit_code: 'LOT-A1',
+          period_month: 2,
+          period_year: 2026,
+          rent_usd: 3500,
+          condo_usd: 240,
+          total_usd: 3740,
+          due_date: '2026-02-05',
+          status: 'pagado',
+          paid_at: '2026-02-04'
+        },
+        {
+          id: 'inv-hist-2',
+          invoice_number: 'REC-2026-01-001',
+          tenant_id: 't-1',
+          unit_code: 'LOT-A1',
+          period_month: 1,
+          period_year: 2026,
+          rent_usd: 3500,
+          condo_usd: 230,
+          total_usd: 3730,
+          due_date: '2026-01-05',
+          status: 'pagado',
+          paid_at: '2026-01-03'
+        },
+        {
+          id: 'inv-hist-3',
+          invoice_number: 'REC-2026-02-003',
+          tenant_id: 't-3',
+          unit_code: 'LOC-01',
+          period_month: 2,
+          period_year: 2026,
+          rent_usd: 1100,
+          condo_usd: 80,
+          total_usd: 1180,
+          due_date: '2026-02-05',
+          status: 'pagado',
+          paid_at: '2026-02-03'
+        },
+        {
+          id: 'inv-hist-4',
+          invoice_number: 'REC-2026-02-005',
+          tenant_id: 't-5',
+          unit_code: 'LOC-04',
+          period_month: 2,
+          period_year: 2026,
+          rent_usd: 850,
+          condo_usd: 60,
+          total_usd: 910,
+          due_date: '2026-02-05',
+          status: 'pagado',
+          paid_at: '2026-02-08'
         }
       ],
       payments: [
@@ -622,11 +679,65 @@ class DatabaseService {
     return (data && data.app_settings) ? { ...defaults, ...data.app_settings } : defaults;
   }
 
-  saveSettings(newSettings) {
-    const data = this.getData();
-    data.app_settings = { ...this.getSettings(), ...newSettings };
-    this.saveData(data);
-    return data.app_settings;
+  // --- CUENTAS RECEPTORAS OFICIALES DE LA SOCIEDAD ADMINISTRADORA ---
+  getReceivingAccounts() {
+    return [
+      {
+        id: 'acc-banesco-divisas',
+        bank: 'Banesco Banco Universal',
+        type: 'Custodia Moneda Extranjera (USD)',
+        account_number: '0134-0982-12-0982341200',
+        beneficiary: 'Centro Comercial Mario Sánchez, C.A.',
+        rif: 'J-29881234-0',
+        icon: 'fa-solid fa-vault',
+        badge: 'USD Oficial',
+        instructions: 'Indicar número de contrato y unidad comercial en el memo de depósito en taquilla o transferencia entre cuentas Banesco Verde.'
+      },
+      {
+        id: 'acc-pagomovil',
+        bank: 'Pago Móvil Interbancario (Bs. BCV)',
+        type: 'Pago Móvil Jurídico C2P',
+        phone: '0414-8123456',
+        rif: 'J-29881234-0',
+        bank_code: '0134 (Banesco) / 0102 (BDV)',
+        beneficiary: 'Centro Comercial Mario Sánchez, C.A.',
+        icon: 'fa-solid fa-mobile-screen-button',
+        badge: 'Bs. Tasa BCV',
+        instructions: 'Calcular el monto exacto multiplicando el total USD por la tasa oficial BCV del día valor. Adjuntar referencia de 8 dígitos.'
+      },
+      {
+        id: 'acc-banesco-bs',
+        bank: 'Banesco Banco Universal',
+        type: 'Cuenta Corriente Nacional (Bs)',
+        account_number: '0134-0382-71-3821004921',
+        beneficiary: 'Centro Comercial Mario Sánchez, C.A.',
+        rif: 'J-29881234-0',
+        icon: 'fa-solid fa-building-columns',
+        badge: 'Transferencia Bs.',
+        instructions: 'Transferencias desde cualquier banco nacional vía ACH o inmediata. Notificar dentro de las 24 horas del día valor.'
+      },
+      {
+        id: 'acc-zelle',
+        bank: 'Zelle (Divisas EE.UU.)',
+        type: 'Zelle Corporativo',
+        email: 'pagos@ccmariosanchez.com',
+        beneficiary: 'Mario Sanchez Commercial Management LLC',
+        icon: 'fa-solid fa-bolt',
+        badge: 'Zelle Directo',
+        instructions: 'Colocar obligatoriamente en la nota o concepto: "Recibo [N° Recibo] - [Unidad Comercial]". Cero comisiones.'
+      },
+      {
+        id: 'acc-usdt',
+        bank: 'Criptoactivos (USDT TRC20 / Binance Pay)',
+        type: 'Billetera Digital USDT (Red TRON)',
+        wallet_address: 'TYp9XvR4KmZn7Qb8Ls2D1Hg5wJ9kL4mPqR',
+        binance_pay_id: '891044231',
+        beneficiary: 'Tesorería CC Mario Sánchez',
+        icon: 'fa-solid fa-coins',
+        badge: 'USDT 1:1 USD',
+        instructions: 'Enviar únicamente por red TRON (TRC20) o Binance Pay ID. El sistema verifica el hash de transacción (TxID de 64 caracteres hex) de manera automatizada.'
+      }
+    ];
   }
 }
 

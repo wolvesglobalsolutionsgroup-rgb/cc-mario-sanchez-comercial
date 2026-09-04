@@ -24,10 +24,11 @@ class FinancialEngine {
     // Tasas oficiales y de paridad por defecto
     return {
       USD: 1.00,
-      EUR: 0.92,       // 1 USD = 0.92 EUR (o 1 EUR = ~1.087 USD)
+      EUR: 0.92,       // 1 USD = 0.92 EUR
       VES: 72.50,      // Tasa Oficial BCV de referencia (Bs. por USD)
-      USDT: 1.00,      // Paridad cripto estricta 1:1 con USD
-      lastUpdated: new Date().toISOString().split('T')[0]
+      USDT: 1.00,      // Paridad cripto 1:1 con USD
+      lastUpdated: new Date().toISOString(),
+      source: 'BCV Oficial (Referencial)'
     };
   }
 
@@ -35,39 +36,77 @@ class FinancialEngine {
     localStorage.setItem(this.storageKey, JSON.stringify(this.rates));
   }
 
-  setBcvRate(newRate) {
+  setBcvRate(newRate, source = 'Ajuste Manual Administrativo') {
     const r = parseFloat(newRate);
     if (isNaN(r) || r <= 0) throw new Error("Tasa BCV inválida");
     this.rates.VES = r;
-    this.rates.lastUpdated = new Date().toISOString().split('T')[0];
+    this.rates.lastUpdated = new Date().toISOString();
+    this.rates.source = source;
     this.saveRates();
     return this.rates.VES;
   }
 
-  setEurRate(newRate) {
+  setEurRate(newRate, source = 'Ajuste Manual Administrativo') {
     const r = parseFloat(newRate);
     if (isNaN(r) || r <= 0) throw new Error("Tasa EUR inválida");
     this.rates.EUR = r;
+    this.rates.lastUpdated = new Date().toISOString();
+    this.rates.source = source;
     this.saveRates();
     return this.rates.EUR;
   }
 
+  /**
+   * Sincroniza en tiempo real las tasas oficiales (USD BCV y EUR BCV)
+   * utilizando la API pública DolarApi con fallback automático
+   */
   async fetchOfficialBcvRate() {
+    let vesUpdated = false;
+    let eurUpdated = false;
+    let errors = [];
+
+    // 1. Obtener Dólar Oficial BCV
     try {
       const resp = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const data = await resp.json();
-      if (data && data.promedio && !isNaN(data.promedio)) {
-        this.rates.VES = parseFloat(data.promedio);
-        this.rates.lastUpdated = data.fechaActualizacion || new Date().toISOString();
-        this.saveRates();
-        return { success: true, rate: this.rates.VES, date: this.rates.lastUpdated, source: 'DolarApi / BCV Oficial' };
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data && data.promedio && !isNaN(data.promedio)) {
+          this.rates.VES = parseFloat(data.promedio);
+          this.rates.lastUpdated = data.fechaActualizacion || new Date().toISOString();
+          this.rates.source = 'Banco Central de Venezuela (vía DolarApi)';
+          vesUpdated = true;
+        }
       }
-      throw new Error('Formato de datos no reconocido');
     } catch (err) {
-      console.warn('Fallo en sincronización automática con DolarApi, intentando fallback...', err);
-      return { success: false, rate: this.rates.VES, error: err.message };
+      errors.push(`VES: ${err.message}`);
     }
+
+    // 2. Obtener Euro Oficial BCV
+    try {
+      const respEur = await fetch('https://ve.dolarapi.com/v1/euros/oficial');
+      if (respEur.ok) {
+        const dataEur = await respEur.json();
+        if (dataEur && dataEur.promedio && !isNaN(dataEur.promedio) && this.rates.VES > 0) {
+          // Relación EUR/USD calculada a partir de los Bs oficiales
+          const eurBs = parseFloat(dataEur.promedio);
+          this.rates.EUR = Math.round((this.rates.VES / eurBs) * 10000) / 10000;
+          eurUpdated = true;
+        }
+      }
+    } catch (err) {
+      // Fallback a paridad estándar si falla la API de euros
+      errors.push(`EUR: ${err.message}`);
+    }
+
+    this.saveRates();
+
+    return {
+      success: vesUpdated,
+      rates: { ...this.rates },
+      date: this.rates.lastUpdated,
+      source: this.rates.source || 'BCV Oficial',
+      errors: errors.length ? errors.join('; ') : null
+    };
   }
 
   getRates() {
@@ -162,7 +201,8 @@ class FinancialEngine {
       ves_equivalent: Math.round(this.convert(amount, currency, 'VES') * 100) / 100,
       eur_equivalent: Math.round(this.convert(amount, currency, 'EUR') * 100) / 100,
       usdt_equivalent: Math.round(usdEq * 100) / 100,
-      snapshot_timestamp: new Date().toISOString()
+      snapshot_timestamp: new Date().toISOString(),
+      rate_source: this.rates.source || 'BCV Oficial (DolarApi)'
     };
   }
 

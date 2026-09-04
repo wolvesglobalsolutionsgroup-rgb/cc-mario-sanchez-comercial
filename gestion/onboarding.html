@@ -96,6 +96,21 @@
       gap: 16px;
     }
     @media (max-width: 640px) {
+      .wizard-container {
+        margin: 16px auto;
+        padding: 0 10px;
+      }
+      .wizard-steps::before {
+        display: none;
+      }
+      .step-num {
+        width: 32px;
+        height: 32px;
+        font-size: 13px;
+      }
+      .step-label {
+        font-size: 9.5px;
+      }
       .form-grid-2 {
         grid-template-columns: 1fr;
       }

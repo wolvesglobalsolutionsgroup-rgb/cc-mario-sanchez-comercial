@@ -94,6 +94,9 @@
     </div>
   </aside>
 
+  <!-- BACKDROP PARA DISPOSITIVOS MÓVILES (CIERRE TÁCTIL) -->
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
   <!-- MAIN VIEWPORT -->
   <main class="app-main">
     
@@ -243,10 +246,78 @@
 
       <!-- TAB 2: COBRANZAS & RECIBOS -->
       <section class="tab-view" id="tab-cobranzas" style="display: none;">
-        <div class="section-head">
-          <h3 class="section-title">
-            <i class="fa-solid fa-receipt" style="color: var(--emerald);"></i> Cobranzas y Conciliación Multimoneda
-          </h3>
+        <div class="section-head" style="flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h3 class="section-title">
+              <i class="fa-solid fa-receipt" style="color: var(--emerald);"></i> Cobranzas y Conciliación Multimoneda
+            </h3>
+            <span style="font-size: 12px; color: var(--txt-secondary);" id="cobranzas-subtitle">Control de cuotas de arrendamiento y alícuotas comunes</span>
+          </div>
+
+          <!-- BARRA DE FILTROS POR PERÍODO (MES / AÑO / ESTADO) -->
+          <div class="period-filters-bar" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;"><i class="fa-regular fa-calendar"></i> Mes:</label>
+              <select id="filter-cobranzas-month" class="form-control" onchange="applyCobranzasFilters()" style="padding: 5px 8px; font-size: 12px; width: auto;">
+                <option value="all">Todos los Meses</option>
+                <option value="1">Enero</option>
+                <option value="2">Febrero</option>
+                <option value="3" selected>Marzo</option>
+                <option value="4">Abril</option>
+                <option value="5">Mayo</option>
+                <option value="6">Junio</option>
+                <option value="7">Julio</option>
+                <option value="8">Agosto</option>
+                <option value="9">Septiembre</option>
+                <option value="10">Octubre</option>
+                <option value="11">Noviembre</option>
+                <option value="12">Diciembre</option>
+              </select>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Año:</label>
+              <select id="filter-cobranzas-year" class="form-control" onchange="applyCobranzasFilters()" style="padding: 5px 8px; font-size: 12px; width: auto;">
+                <option value="all">Todos</option>
+                <option value="2025">2025</option>
+                <option value="2026" selected>2026</option>
+                <option value="2027">2027</option>
+              </select>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Estado:</label>
+              <select id="filter-cobranzas-status" class="form-control" onchange="applyCobranzasFilters()" style="padding: 5px 8px; font-size: 12px; width: auto;">
+                <option value="all">Cualquiera</option>
+                <option value="pendiente">Pendientes</option>
+                <option value="verificando">En Revisión</option>
+                <option value="en_mora">En Mora</option>
+                <option value="pagado">Pagados</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- TARJETA INFORMATIVA: CUENTAS RECEPTORAS Y TASA BCV DEL DÍA (PORTAL DEL CLIENTE / INQUILINO) -->
+        <div id="tenant-receiving-accounts-card" class="data-card" style="padding: 18px 20px; margin-bottom: 18px; border: 1px solid var(--border-focus); background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(16, 185, 129, 0.03) 100%);">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div class="kpi-icon-badge badge-emerald"><i class="fa-solid fa-building-columns"></i></div>
+              <div>
+                <h4 style="font-family: var(--font-heading); font-size: 15px; font-weight: 800; color: var(--txt-primary);">Cuentas Receptoras Oficiales — CC Mario Sánchez</h4>
+                <p style="font-size: 11.5px; color: var(--txt-secondary);">Canales autorizados para la transferencia de cánones y condominio</p>
+              </div>
+            </div>
+            <div style="background: var(--bg-card); border: 1px solid var(--border-highlight); border-radius: 8px; padding: 6px 12px; font-size: 12px; display: flex; align-items: center; gap: 10px;">
+              <div><i class="fa-solid fa-calendar-day" style="color: var(--amber);"></i> Fecha Valor: <strong id="value-date-display">04/09/2026</strong></div>
+              <div style="border-left: 1px solid var(--border-subtle); padding-left: 10px;"><i class="fa-solid fa-landmark" style="color: var(--emerald);"></i> Tasa Oficial BCV: <strong id="value-rate-display" style="color: var(--emerald);">72.50 Bs/USD</strong></div>
+            </div>
+          </div>
+
+          <!-- GRID DE CUENTAS BANCARIAS Y CRIPTO -->
+          <div id="receiving-accounts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px;">
+            <!-- Injected via JS -->
+          </div>
         </div>
 
         <div class="data-card">
@@ -272,11 +343,50 @@
 
       <!-- TAB 3: GASTOS COMUNES Y CONDOMINIO -->
       <section class="tab-view" id="tab-condominio" style="display: none;">
-        <div class="section-head">
-          <h3 class="section-title">
-            <i class="fa-solid fa-calculator" style="color: var(--purple);"></i> Distribución de Gastos Comunes (Condominio)
-          </h3>
-          <span style="font-size: 12px; color: var(--txt-secondary);">Art. 10 y 11 Ley Arrendamiento Comercial</span>
+        <div class="section-head" style="flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h3 class="section-title">
+              <i class="fa-solid fa-calculator" style="color: var(--purple);"></i> Distribución de Gastos Comunes (Condominio)
+            </h3>
+            <span style="font-size: 12px; color: var(--txt-secondary);">Art. 10 y 11 Ley Arrendamiento Comercial — Transparencia para Socios</span>
+          </div>
+
+          <!-- FILTROS DE PERÍODO PARA GASTOS -->
+          <div class="period-filters-bar" style="display: flex; align-items: center; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Mes:</label>
+              <select id="filter-condo-month" class="form-control" onchange="applyCondoFilters()" style="padding: 5px 8px; font-size: 12px; width: auto;">
+                <option value="all">Todos</option>
+                <option value="1">Enero</option>
+                <option value="2">Febrero</option>
+                <option value="3" selected>Marzo</option>
+                <option value="4">Abril</option>
+              </select>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Año:</label>
+              <select id="filter-condo-year" class="form-control" onchange="applyCondoFilters()" style="padding: 5px 8px; font-size: 12px; width: auto;">
+                <option value="2025">2025</option>
+                <option value="2026" selected>2026</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- RESUMEN FINANCIERO DEL PERÍODO PARA LA SOCIEDAD -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 16px;">
+          <div class="data-card" style="padding: 14px 16px; border-left: 4px solid var(--purple);">
+            <div style="font-size: 11px; color: var(--txt-secondary); text-transform: uppercase; font-weight: 700;">Total Egresos del Período</div>
+            <div id="condo-total-period" style="font-family: var(--font-heading); font-size: 20px; font-weight: 900; color: var(--txt-primary); margin-top: 4px;">$0.00</div>
+          </div>
+          <div class="data-card" style="padding: 14px 16px; border-left: 4px solid var(--emerald);">
+            <div style="font-size: 11px; color: var(--txt-secondary); text-transform: uppercase; font-weight: 700;">Fondo de Reserva Requerido (10%)</div>
+            <div id="condo-reserve-period" style="font-family: var(--font-heading); font-size: 20px; font-weight: 900; color: var(--emerald); margin-top: 4px;">$0.00</div>
+          </div>
+          <div class="data-card" style="padding: 14px 16px; border-left: 4px solid var(--cyan);">
+            <div style="font-size: 11px; color: var(--txt-secondary); text-transform: uppercase; font-weight: 700;">Cobertura por Alícuotas m²</div>
+            <div id="condo-coverage-period" style="font-family: var(--font-heading); font-size: 20px; font-weight: 900; color: var(--cyan); margin-top: 4px;">100% Cubierto</div>
+          </div>
         </div>
 
         <div class="data-card">
@@ -286,6 +396,7 @@
                 <tr>
                   <th>Concepto Operativo</th>
                   <th>Categoría</th>
+                  <th>Período</th>
                   <th>Monto Presupuestado</th>
                   <th>Criterio de Distribución</th>
                 </tr>
@@ -300,11 +411,25 @@
 
       <!-- TAB 4: CALENDARIO & VENCIMIENTOS -->
       <section class="tab-view" id="tab-calendario" style="display: none;">
-        <div class="section-head">
-          <h3 class="section-title">
-            <i class="fa-solid fa-calendar-days" style="color: var(--amber);"></i> Cronograma de Vencimientos & Prórrogas Legales
-          </h3>
-          <span style="font-size: 12px; color: var(--txt-secondary);">Sincronización con Google Calendar</span>
+        <div class="section-head" style="flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h3 class="section-title">
+              <i class="fa-solid fa-calendar-days" style="color: var(--amber);"></i> Cronograma de Vencimientos & Prórrogas Legales
+            </h3>
+            <span style="font-size: 12px; color: var(--txt-secondary);">Sincronización con Google Calendar — Fechas Críticas de Cobro y Contratos</span>
+          </div>
+
+          <!-- FILTRO CALENDARIO -->
+          <div class="period-filters-bar" style="display: flex; align-items: center; gap: 8px;">
+            <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Tipo de Evento:</label>
+            <select id="filter-calendar-type" class="form-control" onchange="applyCalendarFilter()" style="padding: 5px 8px; font-size: 12px; width: auto;">
+              <option value="all">Todos los Eventos</option>
+              <option value="cuota">Vencimiento de Cuotas</option>
+              <option value="condominio">Corte de Condominio</option>
+              <option value="contrato">Vencimiento de Contratos</option>
+              <option value="prorroga">Prórrogas Legales (Art. 25)</option>
+            </select>
+          </div>
         </div>
 
         <div id="calendar-events-list">
@@ -560,6 +685,33 @@
         <div>Depósito en Garantía: <span id="dossier-contract-deposit"></span></div>
         <div style="margin-top: 6px; font-size: 11.5px; color: var(--txt-secondary); border-top: 1px dashed var(--border-subtle); padding-top: 6px;">
           Prórroga Legal: <span id="dossier-legal-extension" style="color: var(--amber); font-weight: 600;"></span>
+        </div>
+      </div>
+
+      <!-- HISTORIAL MENSUAL COMPLETO DE CUOTAS Y PAGOS (SOCIEDAD ADMINISTRADORA) -->
+      <div style="margin-top: 10px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <h5 style="font-family: var(--font-heading); font-size: 12.5px; font-weight: 800; color: var(--txt-primary); text-transform: uppercase;">
+            <i class="fa-solid fa-clock-rotate-left" style="color: var(--cyan);"></i> Historial Mensual de Facturación & Cobranzas
+          </h5>
+          <span id="dossier-solvency-badge" class="status-pill pill-active"><i class="fa-solid fa-check"></i> Solvente</span>
+        </div>
+        <div class="table-responsive" style="max-height: 220px; overflow-y: auto; border: 1px solid var(--border-subtle); border-radius: 8px;">
+          <table class="modern-table" style="font-size: 11.5px;">
+            <thead>
+              <tr>
+                <th>Período</th>
+                <th>N° Recibo</th>
+                <th>Monto USD</th>
+                <th>Vencimiento / Pago</th>
+                <th>Estado</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="dossier-history-table-body">
+              <!-- Injected via JS -->
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
