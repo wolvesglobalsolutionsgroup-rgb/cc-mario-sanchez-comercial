@@ -5,7 +5,7 @@
  *
  * - Centraliza login, logout, timeout y visibilidad de UI por rol.
  * - Hash de credenciales en SHA-256 vía Web Crypto API (nativo, sin libs).
-  * - El modo demo solo se permite en localhost; producción requiere proveedor real.
+ * - El modo demo está habilitado para esta demo pública; los datos son ficticios.
  *
  * USO:
  *   <script src="js/auth-guard.js"></script>
@@ -45,9 +45,9 @@
   const SESSION_KEY = 'ccms_session';
   const THEME_KEY = 'ccms_theme';
   const CURRENCY_KEY = 'ccms_active_currency';
-  const DEMO_ENABLED = global.CCMS_DEMO_MODE === true ||
-    global.location.protocol === 'file:' ||
-    ['localhost', '127.0.0.1'].includes(global.location.hostname);
+  // Esta versión pública es una demo. Al conectar Supabase, se cambiará a
+  // CCMS_DEMO_MODE=false mediante configuración de producción.
+  const DEMO_ENABLED = global.CCMS_DEMO_MODE !== false;
 
   // --- 2. UTILIDADES -----------------------------------------------------------
 

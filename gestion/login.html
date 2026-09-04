@@ -127,10 +127,10 @@
         <i class="fa-solid fa-key"></i> <span>Credenciales Demo para Pruebas:</span>
       </div>
       <div style="display: flex; gap: 8px;">
-        <button type="button" class="cur-pill active" id="btn-demo-admin" style="flex: 1; padding: 6px; font-size: 11px; text-align: center;" onclick="fillDemo('admin')">
+        <button type="button" class="cur-pill active" id="btn-demo-admin" data-demo-login style="flex: 1; padding: 6px; font-size: 11px; text-align: center;" onclick="fillDemo('admin')">
           <i class="fa-solid fa-user-shield"></i> Demo Admin
         </button>
-        <button type="button" class="cur-pill" id="btn-demo-tenant" style="flex: 1; padding: 6px; font-size: 11px; text-align: center;" onclick="fillDemo('tenant')">
+        <button type="button" class="cur-pill" id="btn-demo-tenant" data-demo-login style="flex: 1; padding: 6px; font-size: 11px; text-align: center;" onclick="fillDemo('tenant')">
           <i class="fa-solid fa-store"></i> Demo Inquilino
         </button>
       </div>
@@ -197,6 +197,7 @@
     document.getElementById('login-user').value = role === 'admin'
       ? 'administracion@ccmariosanchez.com'
       : 'J-30987123-4';
+    document.getElementById('login-pass').value = role === 'admin' ? 'Admin2026*' : 'Demo2026*';
     document.getElementById('login-pass').focus();
   }
 

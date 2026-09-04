@@ -85,6 +85,14 @@
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
+      overflow: hidden;
+    }
+
+    .hero-canvas > picture {
+      position: absolute;
+      inset: 0;
+      display: block;
+      z-index: 1;
     }
 
     .hero-bg-media {
@@ -388,7 +396,7 @@
   <!-- =========================================================================
        2. BENEFICIOS Y SERVICIOS
        ========================================================================= -->
-  <section id="servicios" class="pt-4 pb-24 bg-gradient-to-b from-[#04070d] via-[#080d17] to-[#04070d] relative">
+  <section id="servicios" class="pt-4 pb-24 bg-gradient-to-b from-[#04070d] via-[#080d17] to-[#04070d] relative" style="margin-top:-1px;">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       
       <div class="text-center max-w-3xl mx-auto mb-16 reveal">

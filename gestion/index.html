@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="es" class="dark" data-theme="dark">
+<html lang="es" class="dark" data-theme="dark" data-auth-pending="true">
 <head>
   <meta charset="UTF-8">
   <base href="/gestion/">
+  <style>html[data-auth-pending] body { visibility: hidden; }</style>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>CC Mario Sánchez — Gestión Inmobiliaria, Cobranzas & ERP</title>
   
@@ -598,6 +599,7 @@
   (function() {
     const sess = AuthGuard.require('any');
     if (!sess) return; // ya redirigió
+    document.documentElement.removeAttribute('data-auth-pending');
     // Pintar chip de usuario + aplicar visibilidad por rol
     document.addEventListener('DOMContentLoaded', function() {
       AuthGuard.mountUserChip();
