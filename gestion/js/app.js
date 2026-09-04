@@ -634,15 +634,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!tbody) return;
     tbody.innerHTML = '';
 
-    const allExpenses = [
-      { id: 'exp-1', period_month: 3, period_year: 2026, concept: 'Vigilancia y Seguridad Armada 24/7', cat: 'Seguridad', amount_usd: 1200 },
-      { id: 'exp-2', period_month: 3, period_year: 2026, concept: 'Energía Eléctrica Común y Postes (Corpoelec)', cat: 'Servicios', amount_usd: 350 },
-      { id: 'exp-3', period_month: 3, period_year: 2026, concept: 'Suministro Cisterna de Agua (40.000 L)', cat: 'Servicios', amount_usd: 220 },
-      { id: 'exp-4', period_month: 3, period_year: 2026, concept: 'Mantenimiento Preventivo Drenajes y Asfalto', cat: 'Mantenimiento', amount_usd: 180 },
-      { id: 'exp-5', period_month: 2, period_year: 2026, concept: 'Vigilancia y Seguridad Armada Febrero', cat: 'Seguridad', amount_usd: 1200 },
-      { id: 'exp-6', period_month: 2, period_year: 2026, concept: 'Reparación de Bomba Hidroneumática Principal', cat: 'Mantenimiento', amount_usd: 480 },
-      { id: 'exp-7', period_month: 1, period_year: 2026, concept: 'Vigilancia y Seguridad Enero 2026', cat: 'Seguridad', amount_usd: 1150 }
-    ];
+    const allExpenses = dbService.getCondoExpenses ? dbService.getCondoExpenses() : [];
 
     let filtered = allExpenses;
     if (filterCondoMonth !== 'all') {
@@ -652,29 +644,86 @@ document.addEventListener('DOMContentLoaded', () => {
       filtered = filtered.filter(e => e.period_year === parseInt(filterCondoYear));
     }
 
-    const totalPeriodUsd = filtered.reduce((acc, e) => acc + e.amount_usd, 0);
+    const totalPeriodUsd = filtered.reduce((acc, e) => acc + (parseFloat(e.amount_usd) || 0), 0);
     const reserveUsd = Math.round(totalPeriodUsd * 0.10 * 100) / 100;
+
+    // Estimación de Retenciones SENIAT (IVA 16% * 75% + ISLR 2%)
+    let totalWithholdingsUsd = 0;
+    filtered.forEach(e => {
+      const base = parseFloat(e.amount_usd) || 0;
+      let w = 0;
+      if (e.withhold_iva) w += (base * 0.16 * 0.75);
+      if (e.withhold_islr) w += (base * 0.02);
+      totalWithholdingsUsd += w;
+    });
 
     const totalPeriodEl = document.getElementById('condo-total-period');
     const reservePeriodEl = document.getElementById('condo-reserve-period');
+    const withholdingsEl = document.getElementById('condo-withholdings-period');
     if (totalPeriodEl) totalPeriodEl.innerText = formatMoney(totalPeriodUsd);
     if (reservePeriodEl) reservePeriodEl.innerText = formatMoney(reserveUsd);
+    if (withholdingsEl) withholdingsEl.innerText = formatMoney(totalWithholdingsUsd);
 
     if (filtered.length === 0) {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td colspan="5" style="text-align:center;padding:32px;color:var(--txt-muted);font-style:italic;">No hay egresos registrados para este período (${filterCondoMonth}/${filterCondoYear}).</td>`;
+      tr.innerHTML = `<td colspan="8" style="text-align:center;padding:32px;color:var(--txt-muted);font-style:italic;">No hay egresos registrados para este período (${filterCondoMonth !== 'all' ? 'Mes ' + filterCondoMonth : 'Todos los meses'} / ${filterCondoYear}).</td>`;
       tbody.appendChild(tr);
       return;
     }
 
     filtered.forEach(exp => {
       const tr = document.createElement('tr');
+      const baseUsd = parseFloat(exp.amount_usd) || 0;
+      const baseBs = financialEngine.convert(baseUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
+      const cat = exp.category || exp.cat || 'General';
+
+      let withholdBadges = [];
+      if (exp.withhold_iva) withholdBadges.push('<span class="status-pill pill-info" style="font-size:9.5px;padding:2px 5px;">IVA 75%</span>');
+      if (exp.withhold_islr) withholdBadges.push('<span class="status-pill pill-warning" style="font-size:9.5px;padding:2px 5px;">ISLR 2%</span>');
+      if (withholdBadges.length === 0) withholdBadges.push('<span style="font-size:10px;color:var(--txt-muted);font-style:italic;">Exento / No aplica</span>');
+
+      const proofBtn = exp.invoice_proof ? `
+        <button type="button" class="btn-action-icon" style="color:var(--purple);border-color:var(--purple);" title="Ver Factura de Proveedor" onclick="window.viewExpenseProof('${exp.id}')">
+          <i class="fa-solid fa-file-pdf"></i>
+        </button>
+      ` : `<span style="font-size:10.5px;color:var(--txt-muted);font-style:italic;">Sin archivo</span>`;
+
       tr.innerHTML = `
-        <td><strong>${escapeHtml(exp.concept)}</strong></td>
-        <td><span class="status-pill pill-info">${escapeHtml(exp.cat)}</span></td>
+        <td>
+          <strong style="color:var(--txt-primary);">${escapeHtml(exp.concept)}</strong>
+          <div style="font-size:11px;color:var(--txt-muted);margin-top:2px;">
+            <i class="fa-solid fa-truck-field" style="color:var(--amber);"></i> ${escapeHtml(exp.provider_name || 'Proveedor General')}
+            ${exp.provider_rif ? `<span style="margin-left:4px;">(RIF: ${escapeHtml(exp.provider_rif)})</span>` : ''}
+          </div>
+        </td>
+        <td>
+          <span style="font-family:monospace;font-size:11.5px;font-weight:700;color:var(--txt-primary);">${escapeHtml(exp.invoice_number || 'S/N')}</span>
+          <div style="font-size:10.5px;color:var(--txt-secondary);">Control: ${escapeHtml(exp.control_number || 'N/A')}</div>
+        </td>
+        <td><span class="status-pill pill-info">${escapeHtml(cat)}</span></td>
         <td><span style="font-family: var(--font-heading); font-size: 11.5px; color: var(--amber);">${exp.period_month}/${exp.period_year}</span></td>
-        <td><strong>${formatMoney(exp.amount_usd)}</strong></td>
-        <td><span style="font-size: 11.5px; color: var(--txt-muted);">Distribuido por alícuota m²</span></td>
+        <td>
+          <strong>${formatMoney(baseUsd)}</strong>
+          <div style="font-size:10.5px;color:var(--txt-muted);">Bs. ${baseBs}</div>
+        </td>
+        <td>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;">
+            ${withholdBadges.join('')}
+          </div>
+        </td>
+        <td>${proofBtn}</td>
+        <td>
+          ${currentRole === 'admin' ? `
+            <div style="display:flex;gap:4px;">
+              <button type="button" class="btn-action-icon" title="Editar Gasto" onclick="window.openExpenseModal('${exp.id}')">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+              <button type="button" class="btn-action-icon" style="color:var(--rose);border-color:var(--rose);" title="Eliminar Gasto" onclick="window.deleteExpense('${exp.id}')">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          ` : '<span style="font-size:10.5px;color:var(--txt-muted);">Auditoría</span>'}
+        </td>
       `;
       tbody.appendChild(tr);
     });
@@ -1847,24 +1896,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     const units = dbService.getUnits();
     const tenants = dbService.getTenants();
-    const bcvRate = financialEngine.getRates().VES.toFixed(2);
+    const allDbExpenses = dbService.getCondoExpenses ? dbService.getCondoExpenses() : [];
+    const expensesPeriod = allDbExpenses.filter(e => e.period_month === month && e.period_year === year);
 
-    const expensesMarch = [
-      { concept: 'Vigilancia y Seguridad Armada 24/7 (Custodia y Control de Accesos)', cat: 'Seguridad', amount_usd: 1200 },
-      { concept: 'Consumo Eléctrico de Áreas Comunes, Pasillos y Alumbrado Perimetral (Corpoelec)', cat: 'Servicios', amount_usd: 350 },
-      { concept: 'Suministro y Trasvase Cisterna de Agua Potable (40.000 Litros)', cat: 'Servicios', amount_usd: 220 },
-      { concept: 'Mantenimiento Preventivo Red de Drenajes Pluviales y Asfalto', cat: 'Mantenimiento', amount_usd: 180 },
-      { concept: 'Servicios de Aseo y Disposición de Desechos Sólidos', cat: 'Servicios', amount_usd: 150 }
-    ];
-
-    const totalGastosUsd = expensesMarch.reduce((sum, e) => sum + e.amount_usd, 0);
+    const totalGastosUsd = expensesPeriod.reduce((sum, e) => sum + e.amount_usd, 0);
     const totalGastosBs = financialEngine.convert(totalGastosUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
 
-    const expensesRows = expensesMarch.map((e, idx) => `
+    const expensesRows = expensesPeriod.map((e, idx) => `
       <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11.5px;">
         <td style="padding: 7px 10px;">${idx + 1}</td>
-        <td style="padding: 7px 10px;"><strong>${e.concept}</strong></td>
-        <td style="padding: 7px 10px; color: #64748b;">${e.cat}</td>
+        <td style="padding: 7px 10px;">
+          <strong>${escapeHtml(e.concept)}</strong>
+          <div style="font-size: 10px; color: #64748b;">${escapeHtml(e.provider_name || 'Proveedor')} • Factura: ${escapeHtml(e.invoice_number || 'S/N')}</div>
+        </td>
+        <td style="padding: 7px 10px; color: #64748b;">${escapeHtml(e.category || e.cat || '')}</td>
         <td style="padding: 7px 10px; text-align: right; font-weight: 700;">$${e.amount_usd.toFixed(2)}</td>
         <td style="padding: 7px 10px; text-align: right; color: #475569;">Bs. ${financialEngine.convert(e.amount_usd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 })}</td>
       </tr>
@@ -2260,6 +2305,246 @@ document.addEventListener('DOMContentLoaded', () => {
     printWin.document.close();
     printWin.focus();
     setTimeout(() => { printWin.print(); }, 250);
+  };
+
+  // =========================================================================
+  // MÓDULO 5: GESTIÓN DE GASTOS COMUNES, FACTURAS & RETENCIONES SENIAT
+  // =========================================================================
+  let currentExpenseProof = null;
+
+  window.openExpenseModal = function(expenseId = null) {
+    const modal = document.getElementById('modal-expense');
+    const form = document.getElementById('expense-form');
+    if (!modal || !form) return;
+
+    form.reset();
+    currentExpenseProof = null;
+    document.getElementById('exp-id').value = expenseId || '';
+    document.getElementById('expense-modal-title').innerHTML = expenseId
+      ? '<i class="fa-solid fa-pen-to-square" style="color: var(--purple);"></i> Editar Gasto / Factura'
+      : '<i class="fa-solid fa-file-invoice-dollar" style="color: var(--purple);"></i> Registrar Gasto / Factura de Proveedor';
+
+    removeExpenseFile();
+
+    if (expenseId) {
+      const expenses = dbService.getCondoExpenses ? dbService.getCondoExpenses() : [];
+      const exp = expenses.find(e => e.id === expenseId);
+      if (exp) {
+        document.getElementById('exp-concept').value = exp.concept || '';
+        document.getElementById('exp-category').value = exp.category || exp.cat || 'Seguridad';
+        document.getElementById('exp-month').value = String(exp.period_month);
+        document.getElementById('exp-year').value = String(exp.period_year);
+        document.getElementById('exp-provider').value = exp.provider_name || '';
+        document.getElementById('exp-rif').value = exp.provider_rif || '';
+        document.getElementById('exp-invoice-num').value = exp.invoice_number || '';
+        document.getElementById('exp-control-num').value = exp.control_number || '';
+        document.getElementById('exp-amount-usd').value = exp.amount_usd || '';
+        document.getElementById('exp-withhold-iva').checked = Boolean(exp.withhold_iva);
+        document.getElementById('exp-withhold-islr').checked = Boolean(exp.withhold_islr);
+
+        if (exp.invoice_proof) {
+          currentExpenseProof = exp.invoice_proof;
+          const container = document.getElementById('exp-proof-preview-container');
+          const nameEl = document.getElementById('exp-file-name');
+          if (container && nameEl) {
+            nameEl.innerText = exp.invoice_proof.name || 'Factura_Fiscal_Adjunta';
+            container.style.display = 'flex';
+          }
+        }
+      }
+    } else {
+      // Valores por defecto para nuevo gasto
+      if (filterCondoMonth !== 'all') {
+        document.getElementById('exp-month').value = filterCondoMonth;
+      }
+      if (filterCondoYear !== 'all') {
+        document.getElementById('exp-year').value = filterCondoYear;
+      }
+    }
+
+    updateExpenseEquivalents();
+    modal.classList.add('open');
+  };
+
+  window.closeExpenseModal = function() {
+    const modal = document.getElementById('modal-expense');
+    if (modal) modal.classList.remove('open');
+  };
+
+  window.updateExpenseEquivalents = function() {
+    const amount = parseFloat(document.getElementById('exp-amount-usd').value) || 0;
+    const bcvRate = financialEngine.getRates().VES;
+    const vesEq = financialEngine.convert(amount, 'USD', 'VES');
+
+    const previewEl = document.getElementById('exp-amount-bs-preview');
+    if (previewEl) {
+      previewEl.innerText = `Bs. ${vesEq.toLocaleString('es-VE', { minimumFractionDigits: 2 })} (Tasa: ${bcvRate.toFixed(2)})`;
+    }
+
+    // Calcular retenciones SENIAT
+    const wIva = document.getElementById('exp-withhold-iva') ? document.getElementById('exp-withhold-iva').checked : false;
+    const wIslr = document.getElementById('exp-withhold-islr') ? document.getElementById('exp-withhold-islr').checked : false;
+
+    let retIvaUsd = 0;
+    let retIslrUsd = 0;
+    if (wIva) retIvaUsd = amount * 0.16 * 0.75; // 75% del IVA al 16%
+    if (wIslr) retIslrUsd = amount * 0.02;      // 2% de retención ISLR a personas jurídicas servicios
+
+    const totalRetUsd = retIvaUsd + retIslrUsd;
+    const totalRetBs = financialEngine.convert(totalRetUsd, 'USD', 'VES');
+
+    const summaryEl = document.getElementById('exp-withholding-summary');
+    if (summaryEl) {
+      summaryEl.innerHTML = `
+        Retenciones estimadas: <strong>$${totalRetUsd.toFixed(2)} USD</strong> (Bs. ${totalRetBs.toLocaleString('es-VE', { minimumFractionDigits: 2 })})
+        • IVA 75%: $${retIvaUsd.toFixed(2)} | ISLR 2%: $${retIslrUsd.toFixed(2)}
+      `;
+    }
+  };
+
+  window.handleExpenseFileChange = function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("La factura seleccionada excede el límite máximo de 5MB.");
+      e.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      currentExpenseProof = {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        data: evt.target.result,
+        uploaded_at: new Date().toISOString()
+      };
+
+      const container = document.getElementById('exp-proof-preview-container');
+      const nameEl = document.getElementById('exp-file-name');
+      if (container && nameEl) {
+        nameEl.innerText = file.name;
+        container.style.display = 'flex';
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.removeExpenseFile = function() {
+    currentExpenseProof = null;
+    const input = document.getElementById('exp-proof-file');
+    if (input) input.value = '';
+    const container = document.getElementById('exp-proof-preview-container');
+    if (container) container.style.display = 'none';
+  };
+
+  window.saveExpense = function(e) {
+    e.preventDefault();
+    const id = document.getElementById('exp-id').value;
+    const concept = document.getElementById('exp-concept').value.trim();
+    const category = document.getElementById('exp-category').value;
+    const month = parseInt(document.getElementById('exp-month').value);
+    const year = parseInt(document.getElementById('exp-year').value);
+    const provider = document.getElementById('exp-provider').value.trim();
+    const rif = document.getElementById('exp-rif').value.trim();
+    const invoiceNum = document.getElementById('exp-invoice-num').value.trim();
+    const controlNum = document.getElementById('exp-control-num').value.trim();
+    const amountUsd = parseFloat(document.getElementById('exp-amount-usd').value);
+    const withholdIva = document.getElementById('exp-withhold-iva').checked;
+    const withholdIslr = document.getElementById('exp-withhold-islr').checked;
+
+    if (isNaN(amountUsd) || amountUsd <= 0) {
+      alert("Por favor ingrese un monto facturado válido mayor a cero.");
+      return;
+    }
+
+    const payload = {
+      concept: concept,
+      category: category,
+      period_month: month,
+      period_year: year,
+      provider_name: provider,
+      provider_rif: rif,
+      invoice_number: invoiceNum,
+      control_number: controlNum,
+      amount_usd: amountUsd,
+      currency: 'USD',
+      withhold_iva: withholdIva,
+      withhold_islr: withholdIslr,
+      invoice_proof: currentExpenseProof
+    };
+
+    if (id) payload.id = id;
+
+    try {
+      dbService.saveCondoExpense(payload);
+      closeExpenseModal();
+      renderAll();
+      alert("¡Gasto operativo y factura fiscal registrados y liquidados exitosamente!");
+    } catch (err) {
+      alert("Error al guardar gasto: " + err.message);
+    }
+  };
+
+  window.deleteExpense = function(expenseId) {
+    if (!confirm("¿Está seguro de eliminar este gasto operativo? Esto recalculará la liquidación condominal del período.")) return;
+    try {
+      dbService.deleteCondoExpense(expenseId);
+      renderAll();
+    } catch (err) {
+      alert("Error: " + err.message);
+    }
+  };
+
+  window.viewExpenseProof = function(expenseId) {
+    const expenses = dbService.getCondoExpenses ? dbService.getCondoExpenses() : [];
+    const exp = expenses.find(e => e.id === expenseId);
+    if (!exp || !exp.invoice_proof) {
+      alert("Este gasto no tiene factura digital adjunta.");
+      return;
+    }
+
+    const modal = document.getElementById('modal-expense-proof');
+    const content = document.getElementById('expense-proof-viewer-content');
+    if (!modal || !content) return;
+
+    const proof = exp.invoice_proof;
+    const isDataUrl = typeof proof.data === 'string' && proof.data.startsWith('data:');
+    const isPdf = (proof.type && proof.type.includes('pdf')) || (proof.name && proof.name.toLowerCase().endsWith('.pdf'));
+
+    if (isDataUrl && isPdf) {
+      content.innerHTML = `
+        <div style="margin-bottom:12px;font-size:12.5px;color:var(--txt-secondary);">
+          <strong>${escapeHtml(proof.name)}</strong> • Proveedor: <strong>${escapeHtml(exp.provider_name || 'N/A')}</strong>
+        </div>
+        <embed src="${proof.data}" type="application/pdf" width="100%" height="520px" style="border:1px solid var(--border-subtle);border-radius:8px;" />
+      `;
+    } else if (isDataUrl) {
+      content.innerHTML = `
+        <div style="margin-bottom:12px;font-size:12.5px;color:var(--txt-secondary);">
+          <strong>${escapeHtml(proof.name)}</strong> • Proveedor: <strong>${escapeHtml(exp.provider_name || 'N/A')}</strong>
+        </div>
+        <img src="${proof.data}" alt="Factura de Proveedor" style="max-width:100%;max-height:550px;border-radius:8px;border:1px solid var(--border-subtle);" />
+      `;
+    } else {
+      content.innerHTML = `
+        <div style="padding:24px;text-align:center;">
+          <p>Archivo adjunto: <strong>${escapeHtml(proof.name || 'Factura')}</strong></p>
+          <a href="${proof.data || '#'}" target="_blank" class="btn-onboarding-cta" style="display:inline-flex;">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir soporte fiscal en nueva pestaña
+          </a>
+        </div>
+      `;
+    }
+
+    modal.classList.add('open');
+  };
+
+  window.closeExpenseProofModal = function() {
+    const modal = document.getElementById('modal-expense-proof');
+    if (modal) modal.classList.remove('open');
   };
 
   // Cerrar Modales

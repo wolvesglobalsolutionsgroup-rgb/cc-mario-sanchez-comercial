@@ -466,6 +466,10 @@ class DatabaseService {
         data.receipts = [];
         dirty = true;
       }
+      if (!data.condo_expenses || !Array.isArray(data.condo_expenses) || data.condo_expenses.length === 0) {
+        data.condo_expenses = this.getDefaultCondoExpenses();
+        dirty = true;
+      }
       if (dirty) {
         this.saveData(data);
       }
@@ -562,14 +566,166 @@ class DatabaseService {
     return { tenant: newTenant, contract: newContract, invoice: firstInvoice };
   }
 
+  getDefaultCondoExpenses() {
+    return [
+      {
+        id: 'exp-1',
+        period_month: 3,
+        period_year: 2026,
+        concept: 'Vigilancia y Seguridad Armada 24/7',
+        category: 'Seguridad',
+        provider_name: 'Seguridad Blindada de Oriente, C.A.',
+        provider_rif: 'J-30491823-1',
+        invoice_number: 'FAC-2026-0891',
+        control_number: '00-001428',
+        amount_usd: 1200,
+        currency: 'USD',
+        withhold_iva: true,
+        withhold_islr: true,
+        invoice_proof: null,
+        created_at: '2026-03-01T08:00:00.000Z'
+      },
+      {
+        id: 'exp-2',
+        period_month: 3,
+        period_year: 2026,
+        concept: 'Energía Eléctrica Común y Postes (Corpoelec)',
+        category: 'Servicios',
+        provider_name: 'Corporación Eléctrica Nacional (CORPOELEC)',
+        provider_rif: 'G-20010014-1',
+        invoice_number: 'REC-ELEC-44091',
+        control_number: '00-098231',
+        amount_usd: 350,
+        currency: 'VES',
+        withhold_iva: false,
+        withhold_islr: false,
+        invoice_proof: null,
+        created_at: '2026-03-02T10:30:00.000Z'
+      },
+      {
+        id: 'exp-3',
+        period_month: 3,
+        period_year: 2026,
+        concept: 'Suministro Cisterna de Agua (40.000 L)',
+        category: 'Servicios',
+        provider_name: 'Inversiones Hídricas El Morro C.A.',
+        provider_rif: 'J-40192834-5',
+        invoice_number: 'FAC-003882',
+        control_number: '00-000452',
+        amount_usd: 220,
+        currency: 'USD',
+        withhold_iva: true,
+        withhold_islr: false,
+        invoice_proof: null,
+        created_at: '2026-03-03T14:15:00.000Z'
+      },
+      {
+        id: 'exp-4',
+        period_month: 3,
+        period_year: 2026,
+        concept: 'Mantenimiento Preventivo Drenajes y Asfalto',
+        category: 'Mantenimiento',
+        provider_name: 'Constructora y Vialidad Puerto La Cruz, C.A.',
+        provider_rif: 'J-29801944-8',
+        invoice_number: 'FAC-2026-0112',
+        control_number: '00-000198',
+        amount_usd: 180,
+        currency: 'USD',
+        withhold_iva: true,
+        withhold_islr: true,
+        invoice_proof: null,
+        created_at: '2026-03-04T09:00:00.000Z'
+      },
+      {
+        id: 'exp-5',
+        period_month: 2,
+        period_year: 2026,
+        concept: 'Vigilancia y Seguridad Armada Febrero',
+        category: 'Seguridad',
+        provider_name: 'Seguridad Blindada de Oriente, C.A.',
+        provider_rif: 'J-30491823-1',
+        invoice_number: 'FAC-2026-0740',
+        control_number: '00-001290',
+        amount_usd: 1200,
+        currency: 'USD',
+        withhold_iva: true,
+        withhold_islr: true,
+        invoice_proof: null,
+        created_at: '2026-02-01T08:00:00.000Z'
+      },
+      {
+        id: 'exp-6',
+        period_month: 2,
+        period_year: 2026,
+        concept: 'Reparación de Bomba Hidroneumática Principal',
+        category: 'Mantenimiento',
+        provider_name: 'Técnicos Bombas & Motores Anzoátegui C.A.',
+        provider_rif: 'J-31982736-2',
+        invoice_number: 'FAC-2026-0045',
+        control_number: '00-000088',
+        amount_usd: 480,
+        currency: 'USD',
+        withhold_iva: true,
+        withhold_islr: true,
+        invoice_proof: null,
+        created_at: '2026-02-15T11:00:00.000Z'
+      },
+      {
+        id: 'exp-7',
+        period_month: 1,
+        period_year: 2026,
+        concept: 'Vigilancia y Seguridad Enero 2026',
+        category: 'Seguridad',
+        provider_name: 'Seguridad Blindada de Oriente, C.A.',
+        provider_rif: 'J-30491823-1',
+        invoice_number: 'FAC-2026-0610',
+        control_number: '00-001150',
+        amount_usd: 1150,
+        currency: 'USD',
+        withhold_iva: true,
+        withhold_islr: true,
+        invoice_proof: null,
+        created_at: '2026-01-01T08:00:00.000Z'
+      }
+    ];
+  }
+
   getCondoExpenses() {
     const data = this.getData();
-    return (data && data.condo_expenses) ? data.condo_expenses : [
-      { id: 'exp-1', period_month: 3, period_year: 2026, concept: 'Vigilancia y Seguridad Armada 24/7', category: 'Seguridad', amount_usd: 1200 },
-      { id: 'exp-2', period_month: 3, period_year: 2026, concept: 'Energía Eléctrica Común y Postes (Corpoelec)', category: 'Servicios', amount_usd: 350 },
-      { id: 'exp-3', period_month: 3, period_year: 2026, concept: 'Suministro Cisterna de Agua (40.000 L)', category: 'Servicios', amount_usd: 220 },
-      { id: 'exp-4', period_month: 3, period_year: 2026, concept: 'Mantenimiento Preventivo Drenajes y Asfalto', category: 'Mantenimiento', amount_usd: 180 }
-    ];
+    return (data && data.condo_expenses && Array.isArray(data.condo_expenses))
+      ? data.condo_expenses
+      : this.getDefaultCondoExpenses();
+  }
+
+  saveCondoExpense(expenseData) {
+    const data = this.getData();
+    if (!data.condo_expenses) data.condo_expenses = this.getDefaultCondoExpenses();
+
+    if (expenseData.id) {
+      const idx = data.condo_expenses.findIndex(e => e.id === expenseData.id);
+      if (idx >= 0) {
+        data.condo_expenses[idx] = { ...data.condo_expenses[idx], ...expenseData };
+      } else {
+        data.condo_expenses.push(expenseData);
+      }
+    } else {
+      const newExp = {
+        ...expenseData,
+        id: 'exp-' + Date.now(),
+        created_at: new Date().toISOString()
+      };
+      data.condo_expenses.unshift(newExp);
+    }
+    this.saveData(data);
+    return data.condo_expenses;
+  }
+
+  deleteCondoExpense(expenseId) {
+    const data = this.getData();
+    if (!data.condo_expenses) return;
+    data.condo_expenses = data.condo_expenses.filter(e => e.id !== expenseId);
+    this.saveData(data);
+    return data.condo_expenses;
   }
 
   recordPayment(invoiceId, paymentData) {
