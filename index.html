@@ -119,23 +119,29 @@
       bottom: -1px;
       left: 0;
       right: 0;
-      height: 120px;
+      height: 220px;
       background: linear-gradient(to bottom,
                     transparent 0%,
-                    rgba(4, 7, 13, 0.5) 50%,
+                    rgba(4, 7, 13, 0.55) 35%,
+                    rgba(4, 7, 13, 0.92) 70%,
                     #04070d 100%);
       z-index: 3;
       pointer-events: none;
     }
 
-    /* Reducir el padding-top de la primera sección que sigue al hero para que
-       no se vea un gap visual entre el fade del hero y el contenido. */
-    .hero-canvas + section {
-      padding-top: 2rem;
-    }
-    .hero-canvas + section h2,
-    .hero-canvas + section .section-headline {
-      margin-top: 0;
+    /* SELLO SOLIDO: garantiza cero filtracion de brillo de la foto contra la
+       seccion siguiente, sin depender del degradado ni de la especificidad
+       de Tailwind CDN. */
+    .hero-canvas::before {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 24px;
+      background: #04070d;
+      z-index: 4;
+      pointer-events: none;
     }
 
     @media (max-width: 768px) {
@@ -370,7 +376,7 @@
   <!-- =========================================================================
        2. BENEFICIOS Y SERVICIOS
        ========================================================================= -->
-  <section id="servicios" class="py-24 bg-gradient-to-b from-[#04070d] via-[#080d17] to-[#04070d] relative">
+  <section id="servicios" class="pt-4 pb-24 bg-gradient-to-b from-[#04070d] via-[#080d17] to-[#04070d] relative">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       
       <div class="text-center max-w-3xl mx-auto mb-16 reveal">
