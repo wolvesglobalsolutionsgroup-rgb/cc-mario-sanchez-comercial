@@ -276,9 +276,12 @@
 
       const logoutBtn = document.getElementById('ccms-sidebar-logout-btn');
       if (logoutBtn) {
-        logoutBtn.onclick = function(e) {
+        logoutBtn.onclick = async function(e) {
           e.preventDefault();
-          if (confirm('¿Cerrar sesión y salir del sistema de gestión?')) {
+          const proceed = window.SecuritySuite && window.SecuritySuite.confirm 
+            ? await window.SecuritySuite.confirm('¿Desea cerrar su sesión segura y salir del sistema de gestión inmobiliaria?', 'Cerrar Sesión', 'Salir del Sistema', 'Permanecer')
+            : confirm('¿Cerrar sesión y salir del sistema de gestión?');
+          if (proceed) {
             logout();
           }
         };
@@ -307,9 +310,12 @@
 
       const btn = document.getElementById('ccms-logout-btn');
       if (btn) {
-        btn.onclick = function (e) {
+        btn.onclick = async function (e) {
           e.preventDefault();
-          if (confirm('¿Cerrar sesión y volver al login?')) {
+          const proceed = window.SecuritySuite && window.SecuritySuite.confirm 
+            ? await window.SecuritySuite.confirm('¿Desea cerrar su sesión segura y salir del sistema?', 'Cerrar Sesión', 'Salir', 'Cancelar')
+            : confirm('¿Cerrar sesión y volver al login?');
+          if (proceed) {
             logout();
           }
         };

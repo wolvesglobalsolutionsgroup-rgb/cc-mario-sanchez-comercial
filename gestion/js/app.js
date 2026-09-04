@@ -139,43 +139,58 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, 1000);
 
-  // Modal para editar tasas manualmente si el usuario lo requiere
+  // Modal para editar tasas manualmente de forma ejecutiva
   window.editBcvRate = function() {
+    const modal = document.getElementById('modal-rates-editor');
+    if (!modal) return;
     const rates = financialEngine.getRates();
-    const opcion = prompt("¿Qué tasa desea ajustar manualmente?\n1. Tasa Oficial BCV (Bs/USD)\n2. Tasa Binance P2P USDT/VES\n\nEscriba 1 o 2:", "1");
-    if (!opcion) return;
+    const bcvInput = document.getElementById('rate-edit-bcv');
+    const usdtInput = document.getElementById('rate-edit-usdt');
+    if (bcvInput) bcvInput.value = rates.VES.toFixed(2);
+    if (usdtInput) usdtInput.value = (rates.USDT_VES || rates.VES).toFixed(2);
+    modal.classList.add('open');
+    modal.classList.add('active');
+  };
 
-    if (opcion === "1") {
-      const input = prompt("Ingrese la nueva Tasa Oficial del Banco Central de Venezuela (Bs/USD):", rates.VES.toFixed(2));
-      if (input !== null) {
-        try {
-          financialEngine.setBcvRate(input);
-          updateBcvDisplay();
-          renderAll();
-          alert(`Tasa BCV actualizada a: ${financialEngine.getRates().VES.toFixed(2)} Bs/USD`);
-        } catch (e) {
-          alert(e.message);
-        }
+  window.closeRatesEditorModal = function() {
+    const modal = document.getElementById('modal-rates-editor');
+    if (modal) {
+      modal.classList.remove('open');
+      modal.classList.remove('active');
+    }
+  };
+
+  window.handleSaveManualRates = function(e) {
+    e.preventDefault();
+    const bcvVal = document.getElementById('rate-edit-bcv').value;
+    const usdtVal = document.getElementById('rate-edit-usdt').value;
+
+    try {
+      if (bcvVal) financialEngine.setBcvRate(bcvVal);
+      if (usdtVal) financialEngine.setUsdtRate(usdtVal);
+      updateBcvDisplay();
+      renderAll();
+      closeRatesEditorModal();
+
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast('Tasas actualizadas y recalculadas en todo el sistema.', 'success', 'Tasas Guardadas');
+      } else {
+        alert("Tasas actualizadas con éxito.");
       }
-    } else if (opcion === "2") {
-      const currentUsdt = rates.USDT_VES || rates.VES;
-      const input = prompt("Ingrese la nueva Tasa Binance P2P USDT/VES (Bs/USDT):", currentUsdt.toFixed(2));
-      if (input !== null) {
-        try {
-          financialEngine.setUsdtRate(input);
-          updateBcvDisplay();
-          renderAll();
-          alert(`Tasa Binance P2P USDT actualizada a: ${financialEngine.getRates().USDT_VES.toFixed(2)} Bs/USDT`);
-        } catch (e) {
-          alert(e.message);
-        }
+    } catch (err) {
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast(err.message, 'error', 'Error en Tasas');
+      } else {
+        alert(err.message);
       }
     }
   };
 
-  window.resetDemoData = function() {
+  window.resetDemoData = async function() {
     if (currentRole !== 'admin' || !window.dbService || typeof window.dbService.resetDemoData !== 'function') return;
-    const confirmed = window.confirm('¿Restablecer la demo? Se borrarán los cambios ficticios hechos en este navegador y volverán los datos iniciales.');
+    const confirmed = window.SecuritySuite && window.SecuritySuite.confirm
+      ? await window.SecuritySuite.confirm('¿Restablecer los datos demo iniciales? Se borrarán las modificaciones temporales de prueba en este navegador.', 'Restablecer Datos Demo', 'Restablecer', 'Cancelar')
+      : window.confirm('¿Restablecer la demo? Se borrarán los cambios ficticios hechos en este navegador y volverán los datos iniciales.');
     if (!confirmed) return;
     window.dbService.resetDemoData();
     window.location.reload();
@@ -880,9 +895,52 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.showCalendarEventDetail = function(title, date, type, desc) {
-    const calUrl = GoogleWorkspace.createCalendarUrl(title, desc, 'CC Mario Sánchez, Puerto La Cruz', date);
-    alert(`📅 DETALLE DEL EVENTO:\n\n• Título: ${title}\n• Fecha: ${date}\n• Tipo: ${type.toUpperCase()}\n• Descripción: ${desc}\n\nSe abrirá Google Calendar para programar recordatorio.`);
-    window.open(calUrl, '_blank');
+    const modal = document.getElementById('modal-calendar-detail');
+    if (!modal) return;
+
+    const titleEl = document.getElementById('cal-detail-title');
+    const dateEl = document.getElementById('cal-detail-date');
+    const descEl = document.getElementById('cal-detail-desc');
+    const typeBadge = document.getElementById('cal-detail-type-badge');
+    const iconBadge = document.getElementById('cal-detail-icon-badge');
+    const gcalBtn = document.getElementById('cal-detail-gcal-btn');
+
+    if (titleEl) titleEl.innerText = title;
+    if (dateEl) dateEl.innerText = `Fecha de vencimiento: ${date}`;
+    if (descEl) descEl.innerText = desc || 'Sin detalles adicionales.';
+
+    const typeConfig = {
+      cuota: { label: 'CUOTA DE ARRENDAMIENTO', badgeClass: 'pill-warning', iconClass: 'badge-amber', icon: 'fa-solid fa-coins' },
+      condominio: { label: 'CORTE DE GASTOS COMUNES', badgeClass: 'pill-info', iconClass: 'badge-purple', icon: 'fa-solid fa-building-user' },
+      contrato: { label: 'VENCIMIENTO DE CONTRATO', badgeClass: 'pill-active', iconClass: 'badge-cyan', icon: 'fa-solid fa-file-contract' },
+      prorroga: { label: 'PRÓRROGA LEGAL (ART. 25 G.O. 40.418)', badgeClass: 'pill-overdue', iconClass: 'badge-rose', icon: 'fa-solid fa-scale-balanced' }
+    };
+
+    const cfg = typeConfig[type] || typeConfig.cuota;
+    if (typeBadge) {
+      typeBadge.className = `status-pill ${cfg.badgeClass}`;
+      typeBadge.innerText = cfg.label;
+    }
+    if (iconBadge) {
+      iconBadge.className = `kpi-icon-badge ${cfg.iconClass}`;
+      iconBadge.innerHTML = `<i class="${cfg.icon}"></i>`;
+    }
+
+    if (gcalBtn) {
+      const calUrl = GoogleWorkspace.createCalendarUrl(title, desc, 'CC Mario Sánchez, Puerto La Cruz', date);
+      gcalBtn.href = calUrl;
+    }
+
+    modal.classList.add('open');
+    modal.classList.add('active');
+  };
+
+  window.closeCalendarDetailModal = function() {
+    const modal = document.getElementById('modal-calendar-detail');
+    if (modal) {
+      modal.classList.remove('open');
+      modal.classList.remove('active');
+    }
   };
 
   // E. CALENDARIO DE VENCIMIENTOS INTERACTIVO
@@ -1343,7 +1401,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (window.SecuritySuite && window.SecuritySuite.checkRateLimit) {
         const rateCheck = SecuritySuite.checkRateLimit('payment_submission', 6, 60000);
         if (!rateCheck.allowed) {
-          alert('🛡️ Seguridad Activa: ' + rateCheck.message);
+          if (window.SecuritySuite.toast) {
+            window.SecuritySuite.toast(rateCheck.message, 'warning', 'Límite de Solicitudes');
+          } else {
+            alert('🛡️ Seguridad Activa: ' + rateCheck.message);
+          }
           return;
         }
       }
@@ -1353,7 +1415,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const threatRef = SecuritySuite.detectThreats(ref);
         const threatTx = SecuritySuite.detectThreats(txid);
         if (!threatRef.safe || !threatTx.safe) {
-          alert('🛡️ Entrada rechazada: Se detectaron caracteres o patrones no permitidos en la referencia o comprobante.');
+          if (window.SecuritySuite.toast) {
+            window.SecuritySuite.toast('Se detectaron caracteres o patrones no permitidos en la referencia o comprobante.', 'error', 'Entrada Rechazada');
+          } else {
+            alert('🛡️ Entrada rechazada: Se detectaron caracteres o patrones no permitidos en la referencia o comprobante.');
+          }
           console.warn('[SECURITY] Bloqueo de inyección en formulario de pago:', threatRef.threats.concat(threatTx.threats));
           return;
         }
@@ -1364,7 +1430,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (window.SecuritySuite && window.SecuritySuite.verifyResourceAccess) {
         const access = SecuritySuite.verifyResourceAccess(targetInvoice, AuthGuard.currentUser());
         if (!access.allowed) {
-          alert('🛡️ Error de Seguridad (IDOR): No tiene autorización para procesar o modificar este recibo.');
+          if (window.SecuritySuite.toast) {
+            window.SecuritySuite.toast('No tiene autorización para procesar o modificar este recibo.', 'error', 'Acceso Denegado (IDOR)');
+          } else {
+            alert('🛡️ Error de Seguridad (IDOR): No tiene autorización para procesar o modificar este recibo.');
+          }
           return;
         }
       }
@@ -1373,7 +1443,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (currency === 'USDT' && txid) {
         const val = financialEngine.validateTxID(txid, 'TRC20');
         if (!val.isValid) {
-          alert('Advertencia: ' + val.message);
+          if (window.SecuritySuite && window.SecuritySuite.toast) {
+            window.SecuritySuite.toast(val.message, 'warning', 'Validación Cripto');
+          } else {
+            alert('Advertencia: ' + val.message);
+          }
           return;
         }
       }
@@ -1416,19 +1490,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         document.getElementById('modal-payment').classList.remove('open');
+        document.getElementById('modal-payment').classList.remove('active');
         paymentForm.reset();
         removeReceiptFile();
         renderAll();
 
         if (approvalResult && approvalResult.receipt) {
           window.openReceiptPreview(approvalResult.receipt);
+          if (window.SecuritySuite && window.SecuritySuite.toast) {
+            window.SecuritySuite.toast('Pago aprobado. Se ha emitido y archivado el recibo oficial correlativo.', 'success', 'Cobranza Conciliada');
+          }
         } else {
-          alert(currentRole === 'tenant'
+          const successMsg = currentRole === 'tenant'
             ? 'Comprobante enviado a Administración. El pago quedará en revisión hasta su validación.'
-            : `¡Pago registrado y conciliado exitosamente!\nSnapshot financiero capturado: Tasa BCV ${snapshot.bcv_rate_applied.toFixed(2)} Bs/USD.\n${currentUploadedProof ? 'Comprobante adjuntado con éxito.' : ''}`);
+            : `Pago registrado y conciliado exitosamente (Tasa BCV: ${snapshot.bcv_rate_applied.toFixed(2)} Bs/USD).`;
+          if (window.SecuritySuite && window.SecuritySuite.toast) {
+            window.SecuritySuite.toast(successMsg, 'success', currentRole === 'tenant' ? 'Comprobante Enviado' : 'Pago Conciliado');
+          } else {
+            alert(successMsg);
+          }
         }
       } catch (err) {
-        alert('Error: ' + err.message);
+        if (window.SecuritySuite && window.SecuritySuite.toast) {
+          window.SecuritySuite.toast(err.message, 'error', 'Fallo al Procesar Pago');
+        } else {
+          alert('Error: ' + err.message);
+        }
       }
     };
   }
@@ -1549,7 +1636,11 @@ document.addEventListener('DOMContentLoaded', () => {
       rate_galpones_m2: parseFloat(document.getElementById('cfg-rate-galpones').value) || 2.5,
       condo_fee_aliquot_base: parseFloat(document.getElementById('cfg-condo-aliquot').value) || 8.0
     });
-    alert("¡Parámetros de Cuotas y Cánones guardados con éxito!");
+    if (window.SecuritySuite && window.SecuritySuite.toast) {
+      window.SecuritySuite.toast('Parámetros base de cánones y gastos comunes actualizados.', 'success', 'Cánones Guardados');
+    } else {
+      alert("¡Parámetros de Cuotas y Cánones guardados con éxito!");
+    }
   };
 
   window.saveAlertasConfig = function(e) {
@@ -1559,7 +1650,11 @@ document.addEventListener('DOMContentLoaded', () => {
       alert_days_before: parseInt(document.getElementById('cfg-alert-before').value) || 3,
       grace_days: parseInt(document.getElementById('cfg-grace-days').value) || 5
     });
-    alert("¡Configuración de Alertas & Vencimientos guardada!");
+    if (window.SecuritySuite && window.SecuritySuite.toast) {
+      window.SecuritySuite.toast('Días de corte, plazos de gracia y avisos preventivos guardados.', 'success', 'Alertas Actualizadas');
+    } else {
+      alert("¡Configuración de Alertas & Vencimientos guardada!");
+    }
   };
 
   window.saveMensajesConfig = function(e) {
@@ -1569,16 +1664,22 @@ document.addEventListener('DOMContentLoaded', () => {
       msg_mora_template: document.getElementById('cfg-msg-mora').value.trim()
     });
     renderAlertsCenter();
-    alert("¡Plantillas de Mensajes WhatsApp/Gmail actualizadas!");
+    if (window.SecuritySuite && window.SecuritySuite.toast) {
+      window.SecuritySuite.toast('Plantillas de notificación para WhatsApp y correo actualizadas.', 'success', 'Plantillas Guardadas');
+    } else {
+      alert("¡Plantillas de Mensajes WhatsApp/Gmail actualizadas!");
+    }
   };
 
-  window.resetDefaultTemplates = function() {
-    if (confirm("¿Desea restablecer las plantillas a los textos legales predeterminados?")) {
-      const defaults = dbService.getSettings();
-      document.getElementById('cfg-msg-preventive').value = `Estimados *{inquilino}* ({unidad}):\nLe remitimos su aviso de cobro del período *{periodo}* por un total de *{monto_usd}* (Bs. {monto_bs} a tasa BCV {tasa_bcv}).\nFecha límite de pago: *{fecha_limite}*.\nPor favor remitir comprobante a este canal para conciliación.`;
-      document.getElementById('cfg-msg-mora').value = `⚠️ *AVISO DE RETRASO — CC MARIO SÁNCHEZ*\nEstimados *{inquilino}* ({unidad}):\nLe informamos que su cuota del período *{periodo}* se encuentra en estado de MORA por un saldo de *{monto_usd}* (Bs. {monto_bs}).\nConforme a la Gaceta Oficial 40.418, agradecemos regularizar el pago a la brevedad para evitar recargos o suspensión de servicios comunes.`;
-      window.saveMensajesConfig(new Event('submit'));
-    }
+  window.resetDefaultTemplates = async function() {
+    const proceed = window.SecuritySuite && window.SecuritySuite.confirm
+      ? await window.SecuritySuite.confirm('¿Desea restablecer los textos de notificación a las plantillas legales predeterminadas de Gaceta Oficial 40.418?', 'Restablecer Plantillas', 'Restablecer', 'Cancelar')
+      : confirm("¿Desea restablecer las plantillas a los textos legales predeterminados?");
+    if (!proceed) return;
+
+    document.getElementById('cfg-msg-preventive').value = `Estimados *{inquilino}* ({unidad}):\nLe remitimos su aviso de cobro del período *{periodo}* por un total de *{monto_usd}* (Bs. {monto_bs} a tasa BCV {tasa_bcv}).\nFecha límite de pago: *{fecha_limite}*.\nPor favor remitir comprobante a este canal para conciliación.`;
+    document.getElementById('cfg-msg-mora').value = `⚠️ *AVISO DE RETRASO — CC MARIO SÁNCHEZ*\nEstimados *{inquilino}* ({unidad}):\nLe informamos que su cuota del período *{periodo}* se encuentra en estado de MORA por un saldo de *{monto_usd}* (Bs. {monto_bs}).\nConforme a la Gaceta Oficial 40.418, agradecemos regularizar el pago a la brevedad para evitar recargos o suspensión de servicios comunes.`;
+    window.saveMensajesConfig(new Event('submit'));
   };
 
   loadConfigFields();
@@ -1980,9 +2081,17 @@ document.addEventListener('DOMContentLoaded', () => {
       dbService.saveReceivingAccount(payload);
       closeBankAccountModal();
       renderAll();
-      alert("¡Cuenta receptora guardada y actualizada con éxito!");
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast('Cuenta receptora oficial guardada y actualizada con éxito.', 'success', 'Cuenta Configurada');
+      } else {
+        alert("¡Cuenta receptora guardada y actualizada con éxito!");
+      }
     } catch (err) {
-      alert("Error al guardar cuenta: " + err.message);
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast('Error al guardar cuenta: ' + err.message, 'error');
+      } else {
+        alert("Error al guardar cuenta: " + err.message);
+      }
     }
   };
 
@@ -1991,18 +2100,36 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       dbService.toggleReceivingAccount(accountId);
       renderAll();
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast('Estado de disponibilidad de la cuenta actualizado.', 'info', 'Cuenta Modificada');
+      }
     } catch (err) {
-      alert("Error: " + err.message);
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast(err.message, 'error');
+      } else {
+        alert("Error: " + err.message);
+      }
     }
   };
 
-  window.deleteAccount = function(accountId) {
-    if (!confirm("¿Está seguro de eliminar esta cuenta receptora? Esta acción no se puede deshacer.")) return;
+  window.deleteAccount = async function(accountId) {
+    const proceed = window.SecuritySuite && window.SecuritySuite.confirm
+      ? await window.SecuritySuite.confirm('¿Está seguro de eliminar esta cuenta receptora? Los inquilinos dejarán de verla inmediatamente.', 'Eliminar Cuenta Receptora', 'Eliminar Cuenta', 'Cancelar')
+      : confirm("¿Está seguro de eliminar esta cuenta receptora? Esta acción no se puede deshacer.");
+    if (!proceed) return;
+
     try {
       dbService.deleteReceivingAccount(accountId);
       renderAll();
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast('Cuenta receptora eliminada satisfactoriamente.', 'warning', 'Cuenta Eliminada');
+      }
     } catch (err) {
-      alert("Error: " + err.message);
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast(err.message, 'error');
+      } else {
+        alert("Error: " + err.message);
+      }
     }
   };
 
@@ -2073,39 +2200,69 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  window.approveUserAccess = function(userId) {
-    if (!confirm("¿Desea aprobar y activar inmediatamente el acceso para este usuario?")) return;
+  window.approveUserAccess = async function(userId) {
+    const proceed = window.SecuritySuite && window.SecuritySuite.confirm
+      ? await window.SecuritySuite.confirm('¿Desea aprobar y activar inmediatamente el acceso para este usuario?', 'Aprobar Acceso de Usuario', 'Aprobar & Activar', 'Cancelar')
+      : confirm('¿Desea aprobar y activar inmediatamente el acceso para este usuario?');
+    if (!proceed) return;
+
     const res = window.AuthGuard.approveUser(userId);
     if (res.ok) {
       window.renderUserApprovalsTable();
-      alert(`Acceso aprobado con éxito para ${res.user.display_name}.`);
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast(`Acceso aprobado con éxito para ${res.user.display_name}.`, 'success', 'Usuario Activado');
+      } else {
+        alert(`Acceso aprobado con éxito para ${res.user.display_name}.`);
+      }
     } else {
-      alert("Error: " + res.error);
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast('Error: ' + res.error, 'error', 'Fallo de Activación');
+      } else {
+        alert("Error: " + res.error);
+      }
     }
   };
 
-  window.rejectUserAccess = function(userId) {
-    if (!confirm("¿Desea revocar o rechazar el acceso de este usuario?")) return;
+  window.rejectUserAccess = async function(userId) {
+    const proceed = window.SecuritySuite && window.SecuritySuite.confirm
+      ? await window.SecuritySuite.confirm('¿Desea revocar o suspender el acceso de este usuario al portal inmobiliario?', 'Revocar Acceso de Usuario', 'Revocar Acceso', 'Cancelar')
+      : confirm('¿Desea revocar o rechazar el acceso de este usuario?');
+    if (!proceed) return;
+
     const res = window.AuthGuard.rejectUser(userId);
     if (res.ok) {
       window.renderUserApprovalsTable();
-      alert(`Acceso revocado para ${res.user.display_name}.`);
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast(`Acceso revocado para ${res.user.display_name}.`, 'warning', 'Acceso Revocado');
+      } else {
+        alert(`Acceso revocado para ${res.user.display_name}.`);
+      }
     } else {
-      alert("Error: " + res.error);
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast('Error: ' + res.error, 'error');
+      } else {
+        alert("Error: " + res.error);
+      }
     }
   };
 
   window.openInviteUserModal = function() {
     const modal = document.getElementById('modal-invite-user');
     if (modal) {
-      document.getElementById('invite-user-form').reset();
+      const form = document.getElementById('invite-user-form');
+      if (form) form.reset();
+      window.onInviteRoleChange('tenant');
+      modal.classList.add('open');
       modal.classList.add('active');
     }
   };
 
   window.closeInviteUserModal = function() {
     const modal = document.getElementById('modal-invite-user');
-    if (modal) modal.classList.remove('active');
+    if (modal) {
+      modal.classList.remove('open');
+      modal.classList.remove('active');
+    }
   };
 
   window.onInviteRoleChange = function(role) {
@@ -2128,7 +2285,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const status = document.getElementById('inv-status').value;
 
     if (!name || !identifier) {
-      alert("Por favor complete los campos obligatorios.");
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast('Por favor complete todos los campos obligatorios del formulario.', 'warning', 'Campos Incompletos');
+      } else {
+        alert("Por favor complete los campos obligatorios.");
+      }
       return;
     }
 
@@ -2143,9 +2304,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (res.ok) {
       window.closeInviteUserModal();
       window.renderUserApprovalsTable();
-      alert(`Usuario ${name} registrado satisfactoriamente con estado: ${status === 'active' ? 'Activo' : 'Pendiente de Comité'}.`);
+      const statusLabel = status === 'active' ? 'Activo & Autorizado' : 'Pendiente de Comité';
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast(`Usuario ${name} registrado satisfactoriamente (${statusLabel}).`, 'success', 'Usuario Registrado');
+      } else {
+        alert(`Usuario ${name} registrado satisfactoriamente con estado: ${status === 'active' ? 'Activo' : 'Pendiente de Comité'}.`);
+      }
     } else {
-      alert("Error: " + res.error);
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast(res.error, 'error', 'Error al Registrar');
+      } else {
+        alert("Error: " + res.error);
+      }
     }
   };
 
@@ -2993,7 +3163,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const withholdIslr = document.getElementById('exp-withhold-islr').checked;
 
     if (isNaN(amountUsd) || amountUsd <= 0) {
-      alert("Por favor ingrese un monto facturado válido mayor a cero.");
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast('Por favor ingrese un monto facturado válido mayor a cero.', 'warning', 'Monto Requerido');
+      } else {
+        alert("Por favor ingrese un monto facturado válido mayor a cero.");
+      }
       return;
     }
 
@@ -3019,19 +3193,38 @@ document.addEventListener('DOMContentLoaded', () => {
       dbService.saveCondoExpense(payload);
       closeExpenseModal();
       renderAll();
-      alert("¡Gasto operativo y factura fiscal registrados y liquidados exitosamente!");
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast('Gasto operativo y factura fiscal registrados y liquidados exitosamente.', 'success', 'Gasto Liquidado');
+      } else {
+        alert("¡Gasto operativo y factura fiscal registrados y liquidados exitosamente!");
+      }
     } catch (err) {
-      alert("Error al guardar gasto: " + err.message);
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast('Error al guardar gasto: ' + err.message, 'error');
+      } else {
+        alert("Error al guardar gasto: " + err.message);
+      }
     }
   };
 
-  window.deleteExpense = function(expenseId) {
-    if (!confirm("¿Está seguro de eliminar este gasto operativo? Esto recalculará la liquidación condominal del período.")) return;
+  window.deleteExpense = async function(expenseId) {
+    const proceed = window.SecuritySuite && window.SecuritySuite.confirm
+      ? await window.SecuritySuite.confirm('¿Está seguro de eliminar este gasto operativo? Esto recalculará la liquidación condominal del período.', 'Eliminar Gasto Operativo', 'Eliminar Gasto', 'Cancelar')
+      : confirm("¿Está seguro de eliminar este gasto operativo? Esto recalculará la liquidación condominal del período.");
+    if (!proceed) return;
+
     try {
       dbService.deleteCondoExpense(expenseId);
       renderAll();
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast('Gasto operativo eliminado y cuotas condominales recalculadas.', 'warning', 'Gasto Eliminado');
+      }
     } catch (err) {
-      alert("Error: " + err.message);
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast('Error: ' + err.message, 'error');
+      } else {
+        alert("Error: " + err.message);
+      }
     }
   };
 

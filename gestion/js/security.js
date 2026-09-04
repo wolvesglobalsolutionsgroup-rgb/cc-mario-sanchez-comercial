@@ -240,7 +240,114 @@
     `;
   }
 
-  // --- 7. EXPORTACIÓN GLOBAL ---
+  // --- 7. SISTEMA DE NOTIFICACIONES TOAST & DIÁLOGOS MODERNOS ---
+  function getToastContainer() {
+    let container = document.getElementById('ccms-toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'ccms-toast-container';
+      document.body.appendChild(container);
+    }
+    return container;
+  }
+
+  function showToast(message, type = 'info', title = null, duration = 4000) {
+    const container = getToastContainer();
+    const toast = document.createElement('div');
+    toast.className = `ccms-toast toast-${type}`;
+
+    const icons = {
+      success: 'fa-solid fa-circle-check',
+      error: 'fa-solid fa-circle-xmark',
+      warning: 'fa-solid fa-triangle-exclamation',
+      info: 'fa-solid fa-circle-info'
+    };
+
+    const defaultTitles = {
+      success: 'Operación Exitosa',
+      error: 'Atención Requerida',
+      warning: 'Advertencia del Sistema',
+      info: 'Notificación'
+    };
+
+    const displayTitle = title || defaultTitles[type] || 'Aviso';
+    const iconClass = icons[type] || icons.info;
+
+    toast.innerHTML = `
+      <i class="${iconClass} ccms-toast-icon"></i>
+      <div class="ccms-toast-content">
+        <div class="ccms-toast-title">${escapeHtml(displayTitle)}</div>
+        <div class="ccms-toast-message">${escapeHtml(message)}</div>
+      </div>
+      <button type="button" class="ccms-toast-close" title="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+    `;
+
+    const closeBtn = toast.querySelector('.ccms-toast-close');
+    closeBtn.onclick = () => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(50px)';
+      setTimeout(() => toast.remove(), 250);
+    };
+
+    container.appendChild(toast);
+
+    if (duration > 0) {
+      setTimeout(() => {
+        if (toast.parentElement) {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateX(50px)';
+          setTimeout(() => toast.remove(), 250);
+        }
+      }, duration);
+    }
+  }
+
+  function showModernConfirm(message, title = 'Confirmar Acción', confirmText = 'Confirmar', cancelText = 'Cancelar') {
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.className = 'ccms-dialog-overlay';
+
+      overlay.innerHTML = `
+        <div class="ccms-dialog-card">
+          <div class="ccms-dialog-header">
+            <div class="ccms-dialog-icon" style="background: var(--amber-glow); color: var(--amber); border: 1px solid var(--border-highlight);">
+              <i class="fa-solid fa-circle-question"></i>
+            </div>
+            <div>
+              <h4 class="ccms-dialog-title">${escapeHtml(title)}</h4>
+              <span style="font-size: 11px; color: var(--txt-muted);">CC Mario Sánchez — Gestión Segura</span>
+            </div>
+          </div>
+          <div class="ccms-dialog-body">${escapeHtml(message)}</div>
+          <div class="ccms-dialog-actions">
+            <button type="button" class="btn-currency-toggle" id="ccms-dialog-cancel-btn">${escapeHtml(cancelText)}</button>
+            <button type="button" class="btn-onboarding-cta" id="ccms-dialog-confirm-btn" style="background: var(--amber); border-color: var(--amber); color: #000; font-weight: 800;">
+              ${escapeHtml(confirmText)}
+            </button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(overlay);
+
+      const confirmBtn = overlay.querySelector('#ccms-dialog-confirm-btn');
+      const cancelBtn = overlay.querySelector('#ccms-dialog-cancel-btn');
+
+      const cleanup = (val) => {
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.remove(), 200);
+        resolve(val);
+      };
+
+      confirmBtn.onclick = () => cleanup(true);
+      cancelBtn.onclick = () => cleanup(false);
+      overlay.onclick = (e) => {
+        if (e.target === overlay) cleanup(false);
+      };
+    });
+  }
+
+  // --- 8. EXPORTACIÓN GLOBAL ---
   global.SecuritySuite = {
     escapeHtml,
     sanitizeInput,
@@ -252,7 +359,9 @@
     checkRateLimit,
     renderLoadingState,
     renderErrorState,
-    renderEmptyState
+    renderEmptyState,
+    toast: showToast,
+    confirm: showModernConfirm
   };
 
   global.escapeHtml = escapeHtml;

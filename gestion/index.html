@@ -1418,6 +1418,81 @@
   </div>
 </div>
 
+<!-- MODAL 10: DETALLE ELEGANTE DE EVENTO DE CALENDARIO -->
+<div class="modal-overlay" id="modal-calendar-detail">
+  <div class="modal-window" style="max-width: 520px;">
+    <div class="modal-header">
+      <h3 class="modal-title">
+        <i class="fa-solid fa-calendar-check" style="color: var(--amber);"></i> Detalle de Hito & Vencimiento
+      </h3>
+      <button class="modal-close" onclick="closeCalendarDetailModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body" style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: flex-start; gap: 12px; background: rgba(255,255,255,0.02); padding: 14px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+        <div id="cal-detail-icon-badge" class="kpi-icon-badge badge-amber" style="width: 44px; height: 44px; font-size: 18px;">
+          <i class="fa-solid fa-bell"></i>
+        </div>
+        <div style="flex: 1;">
+          <div id="cal-detail-type-badge" class="status-pill pill-info" style="font-size: 10px; margin-bottom: 6px;">CUOTA ORDINARIA</div>
+          <h4 id="cal-detail-title" style="font-family: var(--font-heading); font-size: 15px; color: var(--txt-primary); margin-bottom: 4px;"></h4>
+          <div style="font-size: 12px; color: var(--txt-muted); display: flex; align-items: center; gap: 6px;">
+            <i class="fa-regular fa-clock" style="color: var(--amber);"></i>
+            <span id="cal-detail-date"></span>
+          </div>
+        </div>
+      </div>
+
+      <div style="font-size: 12.5px; color: var(--txt-secondary); line-height: 1.6; background: var(--bg-card); padding: 14px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+        <strong style="color: var(--txt-primary); display: block; margin-bottom: 4px;">Alcance / Instrucción Operativa:</strong>
+        <p id="cal-detail-desc" style="margin: 0;"></p>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; flex-wrap: wrap; gap: 10px;">
+        <button type="button" class="btn-currency-toggle" onclick="closeCalendarDetailModal()">Cerrar</button>
+        <a id="cal-detail-gcal-btn" href="#" target="_blank" rel="noopener noreferrer" class="btn-onboarding-cta" style="text-decoration: none; background: rgba(14, 165, 233, 0.15); border-color: rgba(14, 165, 233, 0.3); color: var(--cyan); font-weight: 700;">
+          <i class="fa-brands fa-google"></i> Programar en Google Calendar
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 11: EDICIÓN PROFESIONAL DE TASAS CAMBIARIAS (BCV & BINANCE P2P) -->
+<div class="modal-overlay" id="modal-rates-editor">
+  <div class="modal-window" style="max-width: 460px;">
+    <div class="modal-header">
+      <h3 class="modal-title">
+        <i class="fa-solid fa-coins" style="color: var(--amber);"></i> Ajuste Manual de Tasas Cambiarias
+      </h3>
+      <button class="modal-close" onclick="closeRatesEditorModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form id="form-rates-editor" onsubmit="handleSaveManualRates(event)" class="modal-body" style="display: flex; flex-direction: column; gap: 14px; padding: 20px;">
+      <p style="font-size: 12px; color: var(--txt-secondary);">
+        Configure manualmente los tipos de cambio aplicables en caso de contingencia o desfase de los servicios externos.
+      </p>
+
+      <div class="form-group">
+        <label><i class="fa-solid fa-landmark" style="color: var(--cyan);"></i> Tasa Oficial Banco Central de Venezuela (Bs/USD)</label>
+        <input type="number" step="0.01" class="form-control" id="rate-edit-bcv" placeholder="Ej: 807.39" required>
+        <span style="font-size: 10.5px; color: var(--txt-muted);">Referencia legal conforme al Artículo 32 de la G.O. 40.418.</span>
+      </div>
+
+      <div class="form-group">
+        <label><i class="fa-solid fa-coins" style="color: var(--emerald);"></i> Tasa Binance P2P USDT/VES (Bs/USDT)</label>
+        <input type="number" step="0.01" class="form-control" id="rate-edit-usdt" placeholder="Ej: 943.18" required>
+        <span style="font-size: 10.5px; color: var(--txt-muted);">Referencia de mercado para liquidaciones cripto USDT.</span>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px;">
+        <button type="button" class="btn-currency-toggle" onclick="closeRatesEditorModal()">Cancelar</button>
+        <button type="submit" class="btn-onboarding-cta" style="background: var(--amber); border-color: var(--amber); color: #000; font-weight: 800;">
+          <i class="fa-solid fa-floppy-disk"></i> Guardar Tasas
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- SCRIPTS DE ARQUITECTURA (100% GRATUITOS) -->
 <script src="js/security.js"></script>
 <script src="js/auth-guard.js"></script>
