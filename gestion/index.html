@@ -27,6 +27,16 @@
       document.documentElement.className = savedTheme;
     })();
   </script>
+
+  <!-- Vercel Speed Insights (paquete @vercel/speed-insights, build: ../assets/speed-insights.js) -->
+  <script defer src="/assets/speed-insights.js"></script>
+  <script>
+    window.addEventListener('load', function() {
+      if (window.injectSpeedInsights) {
+        try { window.injectSpeedInsights(); } catch (e) { /* noop en dev */ }
+      }
+    });
+  </script>
 </head>
 <body>
 

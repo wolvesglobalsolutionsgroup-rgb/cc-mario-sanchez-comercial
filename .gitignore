@@ -1,3 +1,4 @@
 .vercel
 
 _backup_duplicates/
+node_modules/

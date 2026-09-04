@@ -28,6 +28,9 @@
   <!-- FontAwesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
 
+  <!-- Vercel Speed Insights (paquete @vercel/speed-insights, build: assets/speed-insights.js) -->
+  <script defer src="/assets/speed-insights.js"></script>
+
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -260,6 +263,15 @@
       transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     }
   </style>
+
+  <!-- Activar Speed Insights después del load -->
+  <script>
+    window.addEventListener('load', function() {
+      if (window.injectSpeedInsights) {
+        try { window.injectSpeedInsights(); } catch (e) { /* noop en dev */ }
+      }
+    });
+  </script>
 </head>
 <body class="bg-[#04070d] text-slate-100 min-h-screen flex flex-col">
 
