@@ -420,7 +420,90 @@
     });
   }
 
-  // --- 8. EXPORTACIÓN GLOBAL ---
+  // --- 9. UNIVERSAL CSP-SAFE DOM EVENT DELEGATOR ---
+  function safeInvoke(code, elem, event) {
+    if (!code) return;
+    try {
+      const callMatch = code.match(/^([a-zA-Z0-9_$.]+)\s*\((.*)\)$/);
+      if (callMatch) {
+        const fnPath = callMatch[1];
+        const rawArgs = callMatch[2];
+        
+        let targetFn = global;
+        const parts = fnPath.split('.');
+        for (const p of parts) {
+          if (targetFn) targetFn = targetFn[p];
+        }
+        
+        if (typeof targetFn === 'function') {
+          const args = rawArgs.length ? rawArgs.split(',').map(s => {
+            s = s.trim();
+            if ((s.startsWith("'") && s.endsWith("'")) || (s.startsWith('"') && s.endsWith('"'))) return s.slice(1, -1);
+            if (!isNaN(s) && s !== '') return Number(s);
+            if (s === 'true') return true;
+            if (s === 'false') return false;
+            if (s === 'this') return elem;
+            if (s === 'this.value') return elem.value;
+            if (s === 'event') return event;
+            return s;
+          }) : [];
+          targetFn.apply(elem, args);
+          return;
+        }
+      }
+      if (code.includes('window.activeTemplateTextarea = this')) {
+        global.activeTemplateTextarea = elem;
+        return;
+      }
+      const clickMatch = code.match(/document\.getElementById\(['"]([^'"]+)['"]\)\.click\(\)/);
+      if (clickMatch) {
+        const el = document.getElementById(clickMatch[1]);
+        if (el) el.click();
+        return;
+      }
+    } catch (err) {
+      console.warn('SafeInvoke warn:', err);
+    }
+  }
+
+  document.addEventListener('click', function(e) {
+    const target = e.target.closest('[data-click]');
+    if (target) {
+      safeInvoke(target.getAttribute('data-click'), target, e);
+    }
+  }, true);
+
+  document.addEventListener('change', function(e) {
+    const target = e.target.closest('[data-change]');
+    if (target) {
+      safeInvoke(target.getAttribute('data-change'), target, e);
+    }
+  }, true);
+
+  document.addEventListener('input', function(e) {
+    const target = e.target.closest('[data-input]');
+    if (target) {
+      safeInvoke(target.getAttribute('data-input'), target, e);
+    }
+  }, true);
+
+  document.addEventListener('submit', function(e) {
+    const target = e.target.closest('[data-submit]');
+    if (target) {
+      e.preventDefault();
+      safeInvoke(target.getAttribute('data-submit'), target, e);
+    }
+  }, true);
+
+  document.addEventListener('focusin', function(e) {
+    const target = e.target.closest('[data-focus]');
+    if (target) {
+      safeInvoke(target.getAttribute('data-focus'), target, e);
+    }
+  }, true);
+
+  // Export to global
+  global.safeInvoke = safeInvoke;
   global.SecuritySuite = {
     escapeHtml,
     sanitizeInput,
@@ -437,7 +520,6 @@
     confirm: showModernConfirm,
     prompt: showModernPrompt
   };
-
   global.escapeHtml = escapeHtml;
   global.isSafeReceiptDataUrl = isSafeReceiptDataUrl;
 

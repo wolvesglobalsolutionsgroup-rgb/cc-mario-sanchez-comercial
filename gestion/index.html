@@ -16,11 +16,11 @@
   <meta name="theme-color" content="#091024">
 
   <!-- Google Fonts: Outfit & Manrope no-bloqueante -->
-  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" >
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap"></noscript>
 
   <!-- FontAwesome 6 (100% Free CDN) no-bloqueante -->
-  <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" >
   <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"></noscript>
 
   <!-- Dashboard Stylesheet (Light & Dark Dual Mode) -->
@@ -121,10 +121,10 @@
             <i class="fa-regular fa-clock" style="color: var(--amber);"></i>
             <span id="bcv-sync-time-str">Sincronizando...</span>
           </div>
-          <button type="button" class="btn-sync-bcv" onclick="syncBcvRate()" title="Actualizar tasas en vivo (BCV DolarApi y Binance P2P Yadio)" style="background: none; border: none; color: var(--amber); cursor: pointer; padding: 2px 4px; font-size: 11px;">
+          <button type="button" class="btn-sync-bcv" data-click="syncBcvRate()" title="Actualizar tasas en vivo (BCV DolarApi y Binance P2P Yadio)" style="background: none; border: none; color: var(--amber); cursor: pointer; padding: 2px 4px; font-size: 11px;">
             <i class="fa-solid fa-arrows-rotate" id="bcv-sync-icon"></i>
           </button>
-          <button type="button" class="btn-edit-bcv" data-roles="admin" onclick="editBcvRate()" title="Editar tasa manualmente" style="background: none; border: none; color: var(--txt-muted); cursor: pointer; padding: 2px 4px; font-size: 11px;">
+          <button type="button" class="btn-edit-bcv" data-roles="admin" data-click="editBcvRate()" title="Editar tasa manualmente" style="background: none; border: none; color: var(--txt-muted); cursor: pointer; padding: 2px 4px; font-size: 11px;">
             <i class="fa-solid fa-pen-to-square"></i>
           </button>
         </div>
@@ -141,7 +141,7 @@
         </div>
 
         <!-- BOTÓN DE ACCESO DIRECTO A CONFIGURACIÓN (SOLO ADMIN) -->
-        <button class="btn-theme-toggle" data-roles="admin" onclick="openConfigTab()" title="Configuración de la App (Cuotas, Alertas y Mensajes)">
+        <button class="btn-theme-toggle" data-roles="admin" data-click="openConfigTab()" title="Configuración de la App (Cuotas, Alertas y Mensajes)">
           <i class="fa-solid fa-gear" style="color: var(--amber);"></i>
         </button>
 
@@ -154,7 +154,7 @@
           <i class="fa-solid fa-plus"></i> <span>Registrar Inquilino</span>
         </a>
 
-        <button type="button" class="btn-theme-toggle" data-roles="admin" onclick="resetDemoData()" title="Restablecer todos los datos ficticios de la demo">
+        <button type="button" class="btn-theme-toggle" data-roles="admin" data-click="resetDemoData()" title="Restablecer todos los datos ficticios de la demo">
           <i class="fa-solid fa-rotate-left" style="color: var(--cyan);"></i>
         </button>
       </div>
@@ -262,7 +262,7 @@
 
           <!-- BOTÓN DIRECTO DE PROCESAR PAGO (PARA INQUILINO) Y BADGE DE REVISIONES PENDIENTES (PARA ADMIN) -->
           <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
-            <button type="button" class="btn-onboarding-cta" id="btn-tenant-pay-header" data-roles="tenant" onclick="openTenantQuickPay()" style="background: var(--emerald); border-color: var(--emerald); color: #ffffff; padding: 7px 16px;">
+            <button type="button" class="btn-onboarding-cta" id="btn-tenant-pay-header" data-roles="tenant" data-click="openTenantQuickPay()" style="background: var(--emerald); border-color: var(--emerald); color: #ffffff; padding: 7px 16px;">
               <i class="fa-solid fa-file-invoice-dollar"></i> <span>Reportar / Cargar Pago</span>
             </button>
             <div id="admin-pending-review-badge" data-roles="admin" style="display: none; align-items: center; gap: 6px; background: var(--amber-glow); border: 1px solid var(--amber); border-radius: 20px; padding: 4px 10px; font-size: 11px; font-weight: 700; color: var(--amber);">
@@ -274,7 +274,7 @@
           <div class="period-filters-bar" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <div style="display: flex; align-items: center; gap: 6px;">
               <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;"><i class="fa-regular fa-calendar"></i> Mes:</label>
-              <select id="filter-cobranzas-month" class="form-control" onchange="applyCobranzasFilters()" style="padding: 5px 8px; font-size: 12px; width: auto;">
+              <select id="filter-cobranzas-month" class="form-control" data-change="applyCobranzasFilters()" style="padding: 5px 8px; font-size: 12px; width: auto;">
                 <option value="all">Todos los Meses</option>
                 <option value="1">Enero</option>
                 <option value="2">Febrero</option>
@@ -293,7 +293,7 @@
 
             <div style="display: flex; align-items: center; gap: 6px;">
               <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Año:</label>
-              <select id="filter-cobranzas-year" class="form-control" onchange="applyCobranzasFilters()" style="padding: 5px 8px; font-size: 12px; width: auto;">
+              <select id="filter-cobranzas-year" class="form-control" data-change="applyCobranzasFilters()" style="padding: 5px 8px; font-size: 12px; width: auto;">
                 <option value="all">Todos</option>
                 <option value="2025">2025</option>
                 <option value="2026" selected>2026</option>
@@ -303,7 +303,7 @@
 
             <div style="display: flex; align-items: center; gap: 6px;">
               <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Estado:</label>
-              <select id="filter-cobranzas-status" class="form-control" onchange="applyCobranzasFilters()" style="padding: 5px 8px; font-size: 12px; width: auto;">
+              <select id="filter-cobranzas-status" class="form-control" data-change="applyCobranzasFilters()" style="padding: 5px 8px; font-size: 12px; width: auto;">
                 <option value="all">Cualquiera</option>
                 <option value="pendiente">Pendientes</option>
                 <option value="verificando">En Revisión</option>
@@ -312,7 +312,7 @@
               </select>
             </div>
 
-            <button type="button" class="btn-currency-toggle" onclick="exportPaymentsCSV()" title="Descargar Libro de Cobranzas en formato CSV / Excel" style="padding: 5px 10px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 6px;">
+            <button type="button" class="btn-currency-toggle" data-click="exportPaymentsCSV()" title="Descargar Libro de Cobranzas en formato CSV / Excel" style="padding: 5px 10px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 6px;">
               <i class="fa-solid fa-file-csv" style="color: var(--emerald);"></i>
               <span>Exportar CSV</span>
             </button>
@@ -377,7 +377,7 @@
             <div class="period-filters-bar" style="display: flex; align-items: center; gap: 8px;">
               <div style="display: flex; align-items: center; gap: 6px;">
                 <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Mes:</label>
-                <select id="filter-condo-month" class="form-control" onchange="applyCondoFilters()" style="padding: 5px 8px; font-size: 12px; width: auto;">
+                <select id="filter-condo-month" class="form-control" data-change="applyCondoFilters()" style="padding: 5px 8px; font-size: 12px; width: auto;">
                   <option value="all">Todos</option>
                   <option value="1">Enero</option>
                   <option value="2">Febrero</option>
@@ -387,7 +387,7 @@
               </div>
               <div style="display: flex; align-items: center; gap: 6px;">
                 <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Año:</label>
-                <select id="filter-condo-year" class="form-control" onchange="applyCondoFilters()" style="padding: 5px 8px; font-size: 12px; width: auto;">
+                <select id="filter-condo-year" class="form-control" data-change="applyCondoFilters()" style="padding: 5px 8px; font-size: 12px; width: auto;">
                   <option value="2025">2025</option>
                   <option value="2026" selected>2026</option>
                 </select>
@@ -395,12 +395,12 @@
             </div>
 
             <div style="display: flex; align-items: center; gap: 8px;">
-              <button type="button" class="btn-currency-toggle" onclick="exportExpensesCSV()" title="Descargar Libro de Gastos en formato CSV / Excel" style="padding: 6px 12px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 6px;">
+              <button type="button" class="btn-currency-toggle" data-click="exportExpensesCSV()" title="Descargar Libro de Gastos en formato CSV / Excel" style="padding: 6px 12px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 6px;">
                 <i class="fa-solid fa-file-csv" style="color: var(--purple);"></i>
                 <span>Exportar CSV</span>
               </button>
 
-              <button type="button" class="btn-onboarding-cta" id="btn-open-expense-modal" onclick="openExpenseModal()" style="padding: 7px 14px; font-size: 12px; background: var(--purple); border-color: var(--purple); display: inline-flex; align-items: center; gap: 6px;" data-roles="admin" title="Registrar Gasto Común o Factura de Proveedor">
+              <button type="button" class="btn-onboarding-cta" id="btn-open-expense-modal" data-click="openExpenseModal()" style="padding: 7px 14px; font-size: 12px; background: var(--purple); border-color: var(--purple); display: inline-flex; align-items: center; gap: 6px;" data-roles="admin" title="Registrar Gasto Común o Factura de Proveedor">
                 <i class="fa-solid fa-file-invoice-dollar"></i> <span class="btn-label-desktop">Registrar Gasto / Factura</span><span class="btn-label-mobile">+ Gasto</span>
               </button>
             </div>
@@ -462,11 +462,11 @@
 
           <!-- FILTRO Y ACCIONES CALENDARIO -->
           <div class="period-filters-bar" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <button type="button" class="btn btn-primary" onclick="openAddCalendarEventModal()" style="font-size: 12px; padding: 6px 14px; gap: 6px; font-weight: 800;" title="Crear nuevo recordatorio en el calendario">
+            <button type="button" class="btn btn-primary" data-click="openAddCalendarEventModal()" style="font-size: 12px; padding: 6px 14px; gap: 6px; font-weight: 800;" title="Crear nuevo recordatorio en el calendario">
               <i class="fa-solid fa-calendar-plus"></i> <span>+ Nuevo Recordatorio</span>
             </button>
             <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Tipo:</label>
-            <select id="filter-calendar-type" class="form-control" onchange="applyCalendarFilter()" style="padding: 5px 8px; font-size: 12px; width: auto;">
+            <select id="filter-calendar-type" class="form-control" data-change="applyCalendarFilter()" style="padding: 5px 8px; font-size: 12px; width: auto;">
               <option value="all">Todos los Eventos</option>
               <option value="cuota">Vencimiento de Cuotas</option>
               <option value="condominio">Corte de Condominio</option>
@@ -482,11 +482,11 @@
         <div class="data-card calendar-card" style="padding: 20px; margin-bottom: 20px;">
           <div class="calendar-nav-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
             <div style="display: flex; align-items: center; gap: 10px;">
-              <button type="button" class="btn-action-icon" onclick="changeCalendarMonth(-1)" title="Mes Anterior">
+              <button type="button" class="btn-action-icon" data-click="changeCalendarMonth(-1)" title="Mes Anterior">
                 <i class="fa-solid fa-chevron-left"></i>
               </button>
               <h4 id="calendar-month-title" style="font-family: var(--font-heading); font-size: 16px; font-weight: 800; color: var(--txt-primary); min-width: 170px; text-align: center; margin: 0;">Marzo 2026</h4>
-              <button type="button" class="btn-action-icon" onclick="changeCalendarMonth(1)" title="Mes Siguiente">
+              <button type="button" class="btn-action-icon" data-click="changeCalendarMonth(1)" title="Mes Siguiente">
                 <i class="fa-solid fa-chevron-right"></i>
               </button>
             </div>
@@ -557,7 +557,7 @@
               </div>
             </div>
 
-            <form id="form-config-cuotas" onsubmit="saveCuotasConfig(event)" style="display: flex; flex-direction: column; gap: 14px;">
+            <form id="form-config-cuotas" data-submit="saveCuotasConfig(event)" style="display: flex; flex-direction: column; gap: 14px;">
               <div class="form-group">
                 <label>Canon Base Locales Comerciales ($/m²/mes)</label>
                 <input type="number" step="0.1" class="form-control" id="cfg-rate-locales" value="4.5" required>
@@ -594,7 +594,7 @@
               </div>
             </div>
 
-            <form id="form-config-alertas" onsubmit="saveAlertasConfig(event)" style="display: flex; flex-direction: column; gap: 14px;">
+            <form id="form-config-alertas" data-submit="saveAlertasConfig(event)" style="display: flex; flex-direction: column; gap: 14px;">
               <div class="form-group">
                 <label>Día de Corte Mensual (Fecha límite de pago)</label>
                 <input type="number" min="1" max="31" class="form-control" id="cfg-cutoff-day" value="5" required>
@@ -632,7 +632,7 @@
                 <p style="font-size: 11px; color: var(--txt-secondary);">Personalice los textos automatizados para WhatsApp Web y correo electrónico.</p>
               </div>
             </div>
-            <button type="button" class="btn-action-icon" onclick="resetDefaultTemplates()" title="Restablecer plantilla original de Gaceta Oficial 40.418" style="width: auto; padding: 6px 12px; font-size: 11px; gap: 6px;">
+            <button type="button" class="btn-action-icon" data-click="resetDefaultTemplates()" title="Restablecer plantilla original de Gaceta Oficial 40.418" style="width: auto; padding: 6px 12px; font-size: 11px; gap: 6px;">
               <i class="fa-solid fa-rotate-left"></i> <span>Restablecer Plantilla</span>
             </button>
           </div>
@@ -643,20 +643,20 @@
               <i class="fa-solid fa-tags" style="color: var(--amber);"></i> Insertar Variable Dinámica (Clic para agregar):
             </div>
             <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-              <button type="button" class="template-var-pill" onclick="insertVarToActiveTemplate('{inquilino}')">+{inquilino}</button>
-              <button type="button" class="template-var-pill" onclick="insertVarToActiveTemplate('{unidad}')">+{unidad}</button>
-              <button type="button" class="template-var-pill" onclick="insertVarToActiveTemplate('{periodo}')">+{periodo}</button>
-              <button type="button" class="template-var-pill" onclick="insertVarToActiveTemplate('{monto_usd}')">+{monto_usd}</button>
-              <button type="button" class="template-var-pill" onclick="insertVarToActiveTemplate('{monto_bs}')">+{monto_bs}</button>
-              <button type="button" class="template-var-pill" onclick="insertVarToActiveTemplate('{tasa_bcv}')">+{tasa_bcv}</button>
-              <button type="button" class="template-var-pill" onclick="insertVarToActiveTemplate('{fecha_limite}')">+{fecha_limite}</button>
+              <button type="button" class="template-var-pill" data-click="insertVarToActiveTemplate('{inquilino}')">+{inquilino}</button>
+              <button type="button" class="template-var-pill" data-click="insertVarToActiveTemplate('{unidad}')">+{unidad}</button>
+              <button type="button" class="template-var-pill" data-click="insertVarToActiveTemplate('{periodo}')">+{periodo}</button>
+              <button type="button" class="template-var-pill" data-click="insertVarToActiveTemplate('{monto_usd}')">+{monto_usd}</button>
+              <button type="button" class="template-var-pill" data-click="insertVarToActiveTemplate('{monto_bs}')">+{monto_bs}</button>
+              <button type="button" class="template-var-pill" data-click="insertVarToActiveTemplate('{tasa_bcv}')">+{tasa_bcv}</button>
+              <button type="button" class="template-var-pill" data-click="insertVarToActiveTemplate('{fecha_limite}')">+{fecha_limite}</button>
             </div>
           </div>
 
-          <form id="form-config-mensajes" onsubmit="saveMensajesConfig(event)" style="display: flex; flex-direction: column; gap: 16px;">
+          <form id="form-config-mensajes" data-submit="saveMensajesConfig(event)" style="display: flex; flex-direction: column; gap: 16px;">
             <div class="form-group">
               <label><i class="fa-solid fa-comment-dots" style="color: var(--amber);"></i> Plantilla: Aviso Preventivo de Cobro (WhatsApp / Correo)</label>
-              <textarea class="form-control" id="cfg-msg-preventive" rows="4" style="font-family: monospace; font-size: 12px; resize: vertical;" oninput="updateTemplateLivePreview()" onfocus="window.activeTemplateTextarea = this" required></textarea>
+              <textarea class="form-control" id="cfg-msg-preventive" rows="4" style="font-family: monospace; font-size: 12px; resize: vertical;" data-input="updateTemplateLivePreview()" data-focus="window.activeTemplateTextarea = this" required></textarea>
               <div style="margin-top: 4px;">
                 <span style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Vista Previa del Mensaje:</span>
                 <div id="preview-msg-preventive" class="template-preview-box"></div>
@@ -665,7 +665,7 @@
 
             <div class="form-group">
               <label><i class="fa-solid fa-triangle-exclamation" style="color: var(--rose);"></i> Plantilla: Alerta de Retraso o Mora Legal (G.O. 40.418)</label>
-              <textarea class="form-control" id="cfg-msg-mora" rows="4" style="font-family: monospace; font-size: 12px; resize: vertical;" oninput="updateTemplateLivePreview()" onfocus="window.activeTemplateTextarea = this" required></textarea>
+              <textarea class="form-control" id="cfg-msg-mora" rows="4" style="font-family: monospace; font-size: 12px; resize: vertical;" data-input="updateTemplateLivePreview()" data-focus="window.activeTemplateTextarea = this" required></textarea>
               <div style="margin-top: 4px;">
                 <span style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Vista Previa del Mensaje:</span>
                 <div id="preview-msg-mora" class="template-preview-box"></div>
@@ -690,7 +690,7 @@
                 <p style="font-size: 11.5px; color: var(--txt-secondary);">Configure las cuentas receptoras oficiales y defina qué inquilinos tienen autorización para visualizarlas en su portal.</p>
               </div>
             </div>
-            <button type="button" class="btn-onboarding-cta" onclick="openBankAccountModal()" style="padding: 6px 14px; font-size: 12px;">
+            <button type="button" class="btn-onboarding-cta" data-click="openBankAccountModal()" style="padding: 6px 14px; font-size: 12px;">
               <i class="fa-solid fa-plus"></i> <span>Nueva Cuenta Receptora</span>
             </button>
           </div>
@@ -725,10 +725,10 @@
               </div>
             </div>
             <div style="display: flex; gap: 8px;">
-              <button type="button" class="btn-currency-toggle" onclick="renderUserApprovalsTable()" style="padding: 6px 12px; font-size: 11.5px; gap: 6px;">
+              <button type="button" class="btn-currency-toggle" data-click="renderUserApprovalsTable()" style="padding: 6px 12px; font-size: 11.5px; gap: 6px;">
                 <i class="fa-solid fa-rotate"></i> <span>Refrescar Lista</span>
               </button>
-              <button type="button" class="btn-onboarding-cta" onclick="openInviteUserModal()" style="padding: 6px 14px; font-size: 12px; background: var(--amber); border-color: var(--amber); color: #000;">
+              <button type="button" class="btn-onboarding-cta" data-click="openInviteUserModal()" style="padding: 6px 14px; font-size: 12px; background: var(--amber); border-color: var(--amber); color: #000;">
                 <i class="fa-solid fa-user-shield"></i> <span>Invitar / Autorizar Usuario</span>
               </button>
             </div>
@@ -767,19 +767,19 @@
 
           <!-- BARRA DE ACCIONES DE REPORTES -->
           <div style="display: flex; align-items: center; gap: 8px; margin-left: auto; flex-wrap: wrap;">
-            <button type="button" class="btn-currency-toggle" onclick="generateSelectedReport()" style="padding: 7px 14px; font-size: 12px; gap: 6px;">
+            <button type="button" class="btn-currency-toggle" data-click="generateSelectedReport()" style="padding: 7px 14px; font-size: 12px; gap: 6px;">
               <i class="fa-solid fa-rotate"></i> <span>Actualizar</span>
             </button>
-            <button type="button" class="btn-action-icon" id="btn-export-seniat-txt" onclick="downloadSeniatTxtReport()" style="display: none; width: auto; padding: 7px 12px; font-size: 12px; gap: 6px; background: rgba(245, 158, 11, 0.15); color: var(--amber); border-color: rgba(245, 158, 11, 0.3);" title="Descargar archivo TXT oficial para carga en el portal fiscal del SENIAT">
+            <button type="button" class="btn-action-icon" id="btn-export-seniat-txt" data-click="downloadSeniatTxtReport()" style="display: none; width: auto; padding: 7px 12px; font-size: 12px; gap: 6px; background: rgba(245, 158, 11, 0.15); color: var(--amber); border-color: rgba(245, 158, 11, 0.3);" title="Descargar archivo TXT oficial para carga en el portal fiscal del SENIAT">
               <i class="fa-solid fa-file-code"></i> <span>TXT SENIAT</span>
             </button>
-            <button type="button" class="btn-action-icon" onclick="exportReportToCSV()" style="width: auto; padding: 7px 12px; font-size: 12px; gap: 6px; background: rgba(16, 185, 129, 0.15); color: var(--emerald); border-color: rgba(16, 185, 129, 0.3);" title="Descargar como archivo compatible con Excel / Calc (.csv)">
+            <button type="button" class="btn-action-icon" data-click="exportReportToCSV()" style="width: auto; padding: 7px 12px; font-size: 12px; gap: 6px; background: rgba(16, 185, 129, 0.15); color: var(--emerald); border-color: rgba(16, 185, 129, 0.3);" title="Descargar como archivo compatible con Excel / Calc (.csv)">
               <i class="fa-solid fa-file-excel"></i> <span>Excel (.csv)</span>
             </button>
-            <button type="button" class="btn-action-icon" onclick="copyReportForGoogleSheets()" style="width: auto; padding: 7px 12px; font-size: 12px; gap: 6px; background: rgba(14, 165, 233, 0.15); color: var(--cyan); border-color: rgba(14, 165, 233, 0.3);" title="Copiar tabla en formato compatible con Google Sheets">
+            <button type="button" class="btn-action-icon" data-click="copyReportForGoogleSheets()" style="width: auto; padding: 7px 12px; font-size: 12px; gap: 6px; background: rgba(14, 165, 233, 0.15); color: var(--cyan); border-color: rgba(14, 165, 233, 0.3);" title="Copiar tabla en formato compatible con Google Sheets">
               <i class="fa-solid fa-table"></i> <span>Copiar p/ Google Sheets</span>
             </button>
-            <button type="button" class="btn-onboarding-cta" onclick="printCurrentReport()" style="background: var(--cyan); border-color: var(--cyan); color: #000; padding: 7px 16px; font-weight: 700;">
+            <button type="button" class="btn-onboarding-cta" data-click="printCurrentReport()" style="background: var(--cyan); border-color: var(--cyan); color: #000; padding: 7px 16px; font-weight: 700;">
               <i class="fa-solid fa-print"></i> <span>Imprimir / PDF</span>
             </button>
           </div>
@@ -792,7 +792,7 @@
               <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">
                 <i class="fa-solid fa-folder-tree"></i> Tipo de Informe:
               </label>
-              <select id="report-type-select" class="form-control" onchange="onReportTypeChange()" style="padding: 8px 10px; font-size: 13px; text-overflow: ellipsis;">
+              <select id="report-type-select" class="form-control" data-change="onReportTypeChange()" style="padding: 8px 10px; font-size: 13px; text-overflow: ellipsis;">
                 <option value="recaudacion">1. Informe Mensual de Recaudación & Cobranzas</option>
                 <option value="condominio">2. Informe de Gastos Comunes & Liquidación Condominial</option>
                 <option value="solvencia">3. Estado de Cuenta & Certificado de Solvencia por Inquilino</option>
@@ -805,7 +805,7 @@
             <div id="report-param-period" style="display: flex; gap: 10px; flex: 1.5 1 200px; min-width: 0; width: 100%;">
               <div style="flex: 1; min-width: 0;">
                 <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">Mes:</label>
-                <select id="report-param-month" class="form-control" onchange="generateSelectedReport()" style="padding: 8px 10px; font-size: 13px;">
+                <select id="report-param-month" class="form-control" data-change="generateSelectedReport()" style="padding: 8px 10px; font-size: 13px;">
                   <option value="1">Enero</option>
                   <option value="2">Febrero</option>
                   <option value="3" selected>Marzo</option>
@@ -822,7 +822,7 @@
               </div>
               <div style="flex: 1; min-width: 0;">
                 <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">Año:</label>
-                <select id="report-param-year" class="form-control" onchange="generateSelectedReport()" style="padding: 8px 10px; font-size: 13px;">
+                <select id="report-param-year" class="form-control" data-change="generateSelectedReport()" style="padding: 8px 10px; font-size: 13px;">
                   <option value="2026" selected>2026</option>
                   <option value="2025">2025</option>
                 </select>
@@ -833,7 +833,7 @@
               <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">
                 <i class="fa-solid fa-store"></i> Inquilino / Arrendatario:
               </label>
-              <select id="report-param-tenant" class="form-control" onchange="generateSelectedReport()" style="padding: 8px 10px; font-size: 13px;">
+              <select id="report-param-tenant" class="form-control" data-change="generateSelectedReport()" style="padding: 8px 10px; font-size: 13px;">
                 <!-- Injected via JS -->
               </select>
             </div>
@@ -880,7 +880,7 @@
       
       <div class="form-group" id="pay-select-invoice-group" style="display: none;">
         <label><i class="fa-solid fa-list-check" style="color: var(--amber);"></i> Seleccionar Cuota a Pagar</label>
-        <select class="form-control" id="pay-invoice-select" onchange="onSelectInvoiceToPay(this.value)">
+        <select class="form-control" id="pay-invoice-select" data-change="onSelectInvoiceToPay(this.value)">
           <!-- Injected via JS -->
         </select>
       </div>
@@ -895,7 +895,7 @@
 
       <div class="form-group">
         <label>Moneda Recibida</label>
-        <select class="form-control" id="pay-currency-select" onchange="updatePaymentEquivalents()" required>
+        <select class="form-control" id="pay-currency-select" data-change="updatePaymentEquivalents()" required>
           <option value="USD">Dólares Estadounidenses (USD $)</option>
           <option value="VES">Bolívares (VES Bs. - Tasa BCV)</option>
           <option value="EUR">Euros (EUR €)</option>
@@ -905,12 +905,12 @@
 
       <div class="form-group">
         <label>Monto Recibido</label>
-        <input type="number" step="0.01" class="form-control" id="pay-amount" oninput="updatePaymentEquivalents()" required>
+        <input type="number" step="0.01" class="form-control" id="pay-amount" data-input="updatePaymentEquivalents()" required>
       </div>
 
       <div class="form-group">
         <label>Método de Pago</label>
-        <select class="form-control" id="pay-method" onchange="updatePaymentEquivalents()" required>
+        <select class="form-control" id="pay-method" data-change="updatePaymentEquivalents()" required>
           <option value="Pago Móvil Banesco">Pago Móvil (Banesco / Mercantil / BDV)</option>
           <option value="Transferencia Bancaria Bs">Transferencia Bancaria Nacional (Bs)</option>
           <option value="Zelle">Zelle (USD)</option>
@@ -958,11 +958,11 @@
           </label>
           
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-            <label id="label-origin-registered" class="pay-origin-pill active" onclick="setPaymentOriginType('registered')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--emerald); border-radius: 6px; background: rgba(16, 185, 129, 0.12); cursor: pointer; font-size: 12px; font-weight: 600; color: var(--txt-primary); transition: all 0.2s;">
+            <label id="label-origin-registered" class="pay-origin-pill active" data-click="setPaymentOriginType('registered')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--emerald); border-radius: 6px; background: rgba(16, 185, 129, 0.12); cursor: pointer; font-size: 12px; font-weight: 600; color: var(--txt-primary); transition: all 0.2s;">
               <input type="radio" name="pay_origin_type" id="origin-type-registered" value="registered" checked style="accent-color: var(--emerald); cursor: pointer;">
               <span>Mismo Número / Titular</span>
             </label>
-            <label id="label-origin-third" class="pay-origin-pill" onclick="setPaymentOriginType('third_party')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--border-subtle); border-radius: 6px; background: transparent; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--txt-secondary); transition: all 0.2s;">
+            <label id="label-origin-third" class="pay-origin-pill" data-click="setPaymentOriginType('third_party')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--border-subtle); border-radius: 6px; background: transparent; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--txt-secondary); transition: all 0.2s;">
               <input type="radio" name="pay_origin_type" id="origin-type-third" value="third_party" style="accent-color: var(--amber); cursor: pointer;">
               <span>Otro Número / Tercero</span>
             </label>
@@ -1032,9 +1032,9 @@
       <!-- CARGA DE COMPROBANTE DE PAGO (DRAG & DROP + BOTÓN MÓVIL) -->
       <div class="form-group" style="margin-top: 4px;">
         <label><i class="fa-solid fa-paperclip" style="color: var(--amber);"></i> Adjuntar Comprobante de Pago (Voucher / Captura / PDF)</label>
-        <input type="file" id="pay-receipt-file" accept="image/*,.pdf" onchange="handleReceiptFileChange(event)" style="display: none;">
+        <input type="file" id="pay-receipt-file" accept="image/*,.pdf" data-change="handleReceiptFileChange(event)" style="display: none;">
         
-        <div class="custom-file-dropzone amber-zone" id="pay-receipt-dropzone" onclick="document.getElementById('pay-receipt-file').click()">
+        <div class="custom-file-dropzone amber-zone" id="pay-receipt-dropzone" data-click="document.getElementById('pay-receipt-file').click()">
           <i class="fa-solid fa-cloud-arrow-up dropzone-icon"></i>
           <span class="dropzone-main-text">Arrastra el comprobante aquí o haz clic para examinar</span>
           <span class="dropzone-sub-text">Soporta JPG, PNG o PDF bancario (Máx. 10 MB)</span>
@@ -1049,13 +1049,13 @@
               <div id="receipt-file-size" class="file-preview-size"></div>
             </div>
           </div>
-          <button type="button" class="file-preview-remove" onclick="removeReceiptFile(event)" title="Eliminar comprobante adjunto">
+          <button type="button" class="file-preview-remove" data-click="removeReceiptFile(event)" title="Eliminar comprobante adjunto">
             <i class="fa-solid fa-trash-can"></i>
           </button>
         </div>
       </div>
 
-      <button type="button" id="pay-reject-btn" onclick="rejectPendingPayment()" class="btn-currency-toggle" style="display:none;width:100%;justify-content:center;margin-top:10px;color:var(--rose);border-color:var(--rose);">
+      <button type="button" id="pay-reject-btn" data-click="rejectPendingPayment()" class="btn-currency-toggle" style="display:none;width:100%;justify-content:center;margin-top:10px;color:var(--rose);border-color:var(--rose);">
         <i class="fa-solid fa-xmark"></i> Rechazar comprobante
       </button>
       <button type="submit" class="btn-onboarding-cta" style="width: 100%; justify-content: center; margin-top: 10px;">
@@ -1148,7 +1148,7 @@
         <input type="number" step="0.5" class="form-control" id="pror-years-input" value="1.0" min="0.5" max="30">
       </div>
 
-      <button type="button" class="btn-onboarding-cta" onclick="calculateProrroga()" style="justify-content: center;">
+      <button type="button" class="btn-onboarding-cta" data-click="calculateProrroga()" style="justify-content: center;">
         <i class="fa-solid fa-calculator"></i> <span>Calcular Prórroga Legal</span>
       </button>
 
@@ -1171,9 +1171,9 @@
       <h3 class="modal-title" id="bank-account-modal-title">
         <i class="fa-solid fa-building-columns" style="color: var(--amber);"></i> Configurar Cuenta Receptora
       </h3>
-      <button class="modal-close" onclick="closeBankAccountModal()"><i class="fa-solid fa-xmark"></i></button>
+      <button class="modal-close" data-click="closeBankAccountModal()"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <form id="bank-account-form" onsubmit="saveBankAccount(event)" class="modal-body" style="display: flex; flex-direction: column; gap: 12px;">
+    <form id="bank-account-form" data-submit="saveBankAccount(event)" class="modal-body" style="display: flex; flex-direction: column; gap: 12px;">
       <input type="hidden" id="bank-acc-id" value="">
 
       <div class="form-grid-2">
@@ -1228,11 +1228,11 @@
         </p>
         <div style="display: flex; gap: 16px; margin-bottom: 8px;">
           <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12.5px;">
-            <input type="radio" name="acc-assign-type" value="all" checked onchange="onAccountAssignChange()">
+            <input type="radio" name="acc-assign-type" value="all" checked data-change="onAccountAssignChange()">
             <span>Visible para <strong>Todos los Inquilinos</strong></span>
           </label>
           <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12.5px;">
-            <input type="radio" name="acc-assign-type" value="custom" onchange="onAccountAssignChange()">
+            <input type="radio" name="acc-assign-type" value="custom" data-change="onAccountAssignChange()">
             <span>Asignar a <strong>Inquilinos Específicos</strong></span>
           </label>
         </div>
@@ -1242,7 +1242,7 @@
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px;">
-        <button type="button" class="btn-currency-toggle" onclick="closeBankAccountModal()">Cancelar</button>
+        <button type="button" class="btn-currency-toggle" data-click="closeBankAccountModal()">Cancelar</button>
         <button type="submit" class="btn-onboarding-cta">
           <i class="fa-solid fa-floppy-disk"></i> Guardar Cuenta Receptora
         </button>
@@ -1259,10 +1259,10 @@
         <i class="fa-solid fa-file-contract" style="color: var(--amber);"></i> Instrumento Jurídico de Arrendamiento Comercial
       </h3>
       <div style="display: flex; align-items: center; gap: 8px;">
-        <button type="button" class="btn-onboarding-cta" onclick="window.printActiveContract()" style="font-size: 11.5px; padding: 6px 12px;">
+        <button type="button" class="btn-onboarding-cta" data-click="window.printActiveContract()" style="font-size: 11.5px; padding: 6px 12px;">
           <i class="fa-solid fa-print"></i> Imprimir Contrato
         </button>
-        <button class="modal-close" onclick="closeContractModal()"><i class="fa-solid fa-xmark"></i></button>
+        <button class="modal-close" data-click="closeContractModal()"><i class="fa-solid fa-xmark"></i></button>
       </div>
     </div>
     <div class="modal-body" style="max-height: 75vh; overflow-y: auto; padding: 16px;">
@@ -1281,10 +1281,10 @@
         <i class="fa-solid fa-receipt" style="color: var(--emerald);"></i> Recibo Oficial de Cobranza & Asiento Contable
       </h3>
       <div style="display: flex; align-items: center; gap: 8px;">
-        <button type="button" class="btn-onboarding-cta" onclick="window.printActiveReceipt()" style="font-size: 11.5px; padding: 6px 12px; background: var(--emerald);">
+        <button type="button" class="btn-onboarding-cta" data-click="window.printActiveReceipt()" style="font-size: 11.5px; padding: 6px 12px; background: var(--emerald);">
           <i class="fa-solid fa-print"></i> Imprimir Recibo Oficial
         </button>
-        <button class="modal-close" onclick="closeReceiptPreviewModal()"><i class="fa-solid fa-xmark"></i></button>
+        <button class="modal-close" data-click="closeReceiptPreviewModal()"><i class="fa-solid fa-xmark"></i></button>
       </div>
     </div>
     <div class="modal-body" style="max-height: 75vh; overflow-y: auto; padding: 16px;">
@@ -1302,9 +1302,9 @@
       <h3 class="modal-title" id="expense-modal-title">
         <i class="fa-solid fa-file-invoice-dollar" style="color: var(--purple);"></i> Registrar Gasto / Factura de Proveedor
       </h3>
-      <button class="modal-close" onclick="closeExpenseModal()"><i class="fa-solid fa-xmark"></i></button>
+      <button class="modal-close" data-click="closeExpenseModal()"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <form id="expense-form" onsubmit="saveExpense(event)" class="modal-body" style="display: flex; flex-direction: column; gap: 12px;">
+    <form id="expense-form" data-submit="saveExpense(event)" class="modal-body" style="display: flex; flex-direction: column; gap: 12px;">
       <input type="hidden" id="exp-id" value="">
 
       <div class="form-group">
@@ -1376,7 +1376,7 @@
       <div class="form-grid-2">
         <div class="form-group">
           <label>Monto Base Facturado (USD $)</label>
-          <input type="number" step="0.01" class="form-control" id="exp-amount-usd" placeholder="0.00" oninput="updateExpenseEquivalents()" required>
+          <input type="number" step="0.01" class="form-control" id="exp-amount-usd" placeholder="0.00" data-input="updateExpenseEquivalents()" required>
         </div>
         <div class="form-group">
           <label>Equivalente en Bolívares (Tasa BCV)</label>
@@ -1393,11 +1393,11 @@
         </label>
         <div style="display: flex; gap: 20px; flex-wrap: wrap;">
           <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer;">
-            <input type="checkbox" id="exp-withhold-iva" checked onchange="updateExpenseEquivalents()">
+            <input type="checkbox" id="exp-withhold-iva" checked data-change="updateExpenseEquivalents()">
             <span>Retención de IVA (75%)</span>
           </label>
           <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer;">
-            <input type="checkbox" id="exp-withhold-islr" checked onchange="updateExpenseEquivalents()">
+            <input type="checkbox" id="exp-withhold-islr" checked data-change="updateExpenseEquivalents()">
             <span>Retención de ISLR (2% Servicios)</span>
           </label>
         </div>
@@ -1409,9 +1409,9 @@
       <!-- CARGA DE FACTURA DIGITAL / SOPORTE FISCAL (DRAG & DROP + BOTÓN MÓVIL) -->
       <div class="form-group">
         <label><i class="fa-solid fa-paperclip" style="color: var(--purple);"></i> Adjuntar Factura / Soporte Fiscal (PDF o Imagen)</label>
-        <input type="file" id="exp-proof-file" accept="image/*,.pdf" onchange="handleExpenseFileChange(event)" style="display: none;">
+        <input type="file" id="exp-proof-file" accept="image/*,.pdf" data-change="handleExpenseFileChange(event)" style="display: none;">
         
-        <div class="custom-file-dropzone" id="exp-proof-dropzone" onclick="document.getElementById('exp-proof-file').click()">
+        <div class="custom-file-dropzone" id="exp-proof-dropzone" data-click="document.getElementById('exp-proof-file').click()">
           <i class="fa-solid fa-cloud-arrow-up dropzone-icon"></i>
           <span class="dropzone-main-text">Arrastra y suelta tu factura aquí o haz clic para examinar</span>
           <span class="dropzone-sub-text">Soporta JPG, PNG o PDF fiscal (Máx. 10 MB)</span>
@@ -1426,14 +1426,14 @@
               <div id="exp-file-size" class="file-preview-size"></div>
             </div>
           </div>
-          <button type="button" class="file-preview-remove" onclick="removeExpenseFile(event)" title="Eliminar archivo adjunto">
+          <button type="button" class="file-preview-remove" data-click="removeExpenseFile(event)" title="Eliminar archivo adjunto">
             <i class="fa-solid fa-trash-can"></i>
           </button>
         </div>
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px;">
-        <button type="button" class="btn-currency-toggle" onclick="closeExpenseModal()">Cancelar</button>
+        <button type="button" class="btn-currency-toggle" data-click="closeExpenseModal()">Cancelar</button>
         <button type="submit" class="btn-onboarding-cta" style="background: var(--purple); border-color: var(--purple);">
           <i class="fa-solid fa-floppy-disk"></i> <span>Guardar Gasto y Liquidar</span>
         </button>
@@ -1449,7 +1449,7 @@
       <h3 class="modal-title">
         <i class="fa-solid fa-file-invoice" style="color: var(--purple);"></i> Soporte Fiscal de Gasto Común
       </h3>
-      <button class="modal-close" onclick="closeExpenseProofModal()"><i class="fa-solid fa-xmark"></i></button>
+      <button class="modal-close" data-click="closeExpenseProofModal()"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="modal-body" style="text-align: center; max-height: 75vh; overflow-y: auto; padding: 16px;">
       <div id="expense-proof-viewer-content">
@@ -1466,16 +1466,16 @@
       <h3 class="modal-title">
         <i class="fa-solid fa-user-shield" style="color: var(--amber);"></i> Autorizar / Invitar Usuario al Portal
       </h3>
-      <button class="modal-close" onclick="closeInviteUserModal()"><i class="fa-solid fa-xmark"></i></button>
+      <button class="modal-close" data-click="closeInviteUserModal()"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <form id="invite-user-form" onsubmit="handleSaveUserApproval(event)" class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+    <form id="invite-user-form" data-submit="handleSaveUserApproval(event)" class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
       <p style="font-size: 12px; color: var(--txt-secondary);">
         Como miembro autorizado del comité o administrador principal, registre y autorice el acceso de un inquilino o nuevo administrador de la sociedad.
       </p>
 
       <div class="form-group">
         <label>Rol Corporativo a Asignar</label>
-        <select class="form-control" id="inv-role" onchange="onInviteRoleChange(this.value)" required>
+        <select class="form-control" id="inv-role" data-change="onInviteRoleChange(this.value)" required>
           <option value="tenant" selected>Inquilino / Arrendatario Comercial</option>
           <option value="admin">Administrador / Personal de Cobranzas</option>
         </select>
@@ -1505,7 +1505,7 @@
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
-        <button type="button" class="btn-currency-toggle" onclick="closeInviteUserModal()">Cancelar</button>
+        <button type="button" class="btn-currency-toggle" data-click="closeInviteUserModal()">Cancelar</button>
         <button type="submit" class="btn-onboarding-cta" style="background: var(--amber); border-color: var(--amber); color: #000;">
           <i class="fa-solid fa-check"></i> Autorizar Acceso
         </button>
@@ -1521,7 +1521,7 @@
       <h3 class="modal-title">
         <i class="fa-solid fa-calendar-check" style="color: var(--amber);"></i> Detalle de Hito & Vencimiento
       </h3>
-      <button class="modal-close" onclick="closeCalendarDetailModal()"><i class="fa-solid fa-xmark"></i></button>
+      <button class="modal-close" data-click="closeCalendarDetailModal()"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="modal-body" style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
       <div style="display: flex; align-items: flex-start; gap: 12px; background: rgba(255,255,255,0.02); padding: 14px; border-radius: 8px; border: 1px solid var(--border-subtle);">
@@ -1544,7 +1544,7 @@
       </div>
 
       <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; flex-wrap: wrap; gap: 10px;">
-        <button type="button" class="btn-currency-toggle" onclick="closeCalendarDetailModal()">Cerrar</button>
+        <button type="button" class="btn-currency-toggle" data-click="closeCalendarDetailModal()">Cerrar</button>
         <a id="cal-detail-gcal-btn" href="#" target="_blank" rel="noopener noreferrer" class="btn-onboarding-cta" style="text-decoration: none; background: rgba(14, 165, 233, 0.15); border-color: rgba(14, 165, 233, 0.3); color: var(--cyan); font-weight: 700;">
           <i class="fa-brands fa-google"></i> Programar en Google Calendar
         </a>
@@ -1560,9 +1560,9 @@
       <h3 class="modal-title">
         <i class="fa-solid fa-calendar-plus" style="color: var(--amber);"></i> Nuevo Recordatorio / Evento
       </h3>
-      <button class="modal-close" onclick="closeAddCalendarEventModal()"><i class="fa-solid fa-xmark"></i></button>
+      <button class="modal-close" data-click="closeAddCalendarEventModal()"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <form id="form-add-calendar-event" onsubmit="handleSaveCalendarEvent(event)">
+    <form id="form-add-calendar-event" data-submit="handleSaveCalendarEvent(event)">
       <div class="modal-body" style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
         <div class="form-group">
           <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Título del Recordatorio *</label>
@@ -1592,7 +1592,7 @@
         </div>
 
         <div style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 8px;">
-          <button type="button" class="btn-currency-toggle" onclick="closeAddCalendarEventModal()">Cancelar</button>
+          <button type="button" class="btn-currency-toggle" data-click="closeAddCalendarEventModal()">Cancelar</button>
           <button type="submit" class="btn btn-primary" style="font-weight: 800; gap: 6px;">
             <i class="fa-solid fa-save"></i> Guardar Recordatorio
           </button>
@@ -1609,9 +1609,9 @@
       <h3 class="modal-title">
         <i class="fa-solid fa-coins" style="color: var(--amber);"></i> Ajuste Manual de Tasas Cambiarias
       </h3>
-      <button class="modal-close" onclick="closeRatesEditorModal()"><i class="fa-solid fa-xmark"></i></button>
+      <button class="modal-close" data-click="closeRatesEditorModal()"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <form id="form-rates-editor" onsubmit="handleSaveManualRates(event)" class="modal-body" style="display: flex; flex-direction: column; gap: 14px; padding: 20px;">
+    <form id="form-rates-editor" data-submit="handleSaveManualRates(event)" class="modal-body" style="display: flex; flex-direction: column; gap: 14px; padding: 20px;">
       <p style="font-size: 12px; color: var(--txt-secondary);">
         Configure manualmente los tipos de cambio aplicables en caso de contingencia o desfase de los servicios externos.
       </p>
@@ -1629,7 +1629,7 @@
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px;">
-        <button type="button" class="btn-currency-toggle" onclick="closeRatesEditorModal()">Cancelar</button>
+        <button type="button" class="btn-currency-toggle" data-click="closeRatesEditorModal()">Cancelar</button>
         <button type="submit" class="btn-onboarding-cta" style="background: var(--amber); border-color: var(--amber); color: #000; font-weight: 800;">
           <i class="fa-solid fa-floppy-disk"></i> Guardar Tasas
         </button>
