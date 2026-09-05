@@ -918,6 +918,104 @@
         </select>
       </div>
 
+      <!-- SELECCIÓN DE BANCO EMISOR Y ORIGEN DEL PAGO (ESTILO CASHEA) -->
+      <div id="venezuela-bank-fields" style="display: block;">
+        <div class="form-group">
+          <label><i class="fa-solid fa-building-columns" style="color: var(--amber);"></i> Banco Emisor (Desde dónde realizó el pago)</label>
+          <select class="form-control" id="pay-bank-issuer">
+            <option value="">-- Seleccione su Banco Emisor --</option>
+            <option value="0102 - Banco de Venezuela">0102 - Banco de Venezuela (BDV)</option>
+            <option value="0134 - Banesco Banco Universal">0134 - Banesco Banco Universal</option>
+            <option value="0105 - Banco Mercantil">0105 - Banco Mercantil</option>
+            <option value="0108 - Banco Provincial (BBVA)">0108 - Banco Provincial (BBVA)</option>
+            <option value="0172 - Bancamiga Banco Universal">0172 - Bancamiga Banco Universal</option>
+            <option value="0191 - BNC (Banco Nacional de Crédito)">0191 - Banco Nacional de Crédito (BNC)</option>
+            <option value="0114 - Bancaribe">0114 - Bancaribe</option>
+            <option value="0115 - Banco Exterior">0115 - Banco Exterior</option>
+            <option value="0174 - Banplus Banco Universal">0174 - Banplus Banco Universal</option>
+            <option value="0175 - Banco Digital Bicentenario">0175 - Banco Digital Bicentenario</option>
+            <option value="0163 - Banco del Tesoro">0163 - Banco del Tesoro</option>
+            <option value="0156 - 100% Banco">0156 - 100% Banco</option>
+            <option value="0151 - BFC Banco Fondo Común">0151 - BFC Banco Fondo Común</option>
+            <option value="0169 - Banco Plaza">0169 - Banco Plaza</option>
+            <option value="0177 - BANFANB">0177 - BANFANB</option>
+            <option value="0137 - Banco Sofitasa">0137 - Banco Sofitasa</option>
+            <option value="0168 - Bancrecer">0168 - Bancrecer</option>
+            <option value="0128 - Banco Caroní">0128 - Banco Caroní</option>
+            <option value="0171 - Banco Activo">0171 - Banco Activo</option>
+            <option value="0157 - Del Sur Banco Universal">0157 - Del Sur Banco Universal</option>
+            <option value="Otro Banco Nacional">Otro Banco Nacional</option>
+          </select>
+        </div>
+
+        <!-- TOGGLE ORIGEN DEL PAGO (ESTILO CASHEA: TITULAR REGISTRADO VS OTRO TITULAR/NÚMERO) -->
+        <div class="form-group" id="pay-origin-selector-group" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+          <label style="display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; font-weight: 700; color: var(--txt-secondary); margin-bottom: 8px; text-transform: uppercase;">
+            <span><i class="fa-solid fa-user-check" style="color: var(--emerald);"></i> ¿Quién emitió el Pago Móvil / Transferencia?</span>
+          </label>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <label id="label-origin-registered" class="pay-origin-pill active" onclick="setPaymentOriginType('registered')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--emerald); border-radius: 6px; background: rgba(16, 185, 129, 0.12); cursor: pointer; font-size: 12px; font-weight: 600; color: var(--txt-primary); transition: all 0.2s;">
+              <input type="radio" name="pay_origin_type" id="origin-type-registered" value="registered" checked style="accent-color: var(--emerald); cursor: pointer;">
+              <span>Mismo Número / Titular</span>
+            </label>
+            <label id="label-origin-third" class="pay-origin-pill" onclick="setPaymentOriginType('third_party')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--border-subtle); border-radius: 6px; background: transparent; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--txt-secondary); transition: all 0.2s;">
+              <input type="radio" name="pay_origin_type" id="origin-type-third" value="third_party" style="accent-color: var(--amber); cursor: pointer;">
+              <span>Otro Número / Tercero</span>
+            </label>
+          </div>
+
+          <!-- INFO DEL TITULAR REGISTRADO (AUTO-CARGADO ESTILO CASHEA) -->
+          <div id="pay-registered-info-box" style="margin-top: 10px; font-size: 11.5px; color: var(--txt-secondary); background: var(--bg-card); border-radius: 6px; padding: 8px 12px; border-left: 3px solid var(--emerald); display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div>Titular: <strong id="pay-registered-name" style="color: var(--txt-primary); font-weight: 700;">Inquilino</strong></div>
+              <div style="margin-top: 2px;">Teléfono: <strong id="pay-registered-phone" style="color: var(--emerald); font-family: monospace;">-</strong> | RIF/CI: <strong id="pay-registered-doc" style="font-family: monospace;">-</strong></div>
+            </div>
+            <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: var(--emerald); font-size: 10px; padding: 3px 8px; border-radius: 12px; font-weight: 700;">
+              <i class="fa-solid fa-bolt"></i> Autocargado
+            </span>
+          </div>
+
+          <!-- CAMPOS PARA OTRO NÚMERO / TERCERO (ESTILO CASHEA) -->
+          <div id="pay-third-party-box" style="display: none; margin-top: 12px; gap: 8px; flex-direction: column;">
+            <div style="font-size: 11px; color: var(--amber); margin-bottom: 2px; display: flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-circle-info"></i> Indique los datos de la cuenta o teléfono desde el cual se emitió el pago:
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <div>
+                <label style="font-size: 11px; color: var(--txt-secondary); font-weight: 600; margin-bottom: 4px; display: block;">Teléfono Emisor</label>
+                <input type="tel" class="form-control" id="pay-sender-phone" placeholder="Ej: 0414-1234567" style="font-size: 12px; padding: 7px 10px;">
+              </div>
+              <div>
+                <label style="font-size: 11px; color: var(--txt-secondary); font-weight: 600; margin-bottom: 4px; display: block;">Cédula / RIF Emisor</label>
+                <input type="text" class="form-control" id="pay-sender-doc" placeholder="Ej: V-18456789" style="font-size: 12px; padding: 7px 10px;">
+              </div>
+            </div>
+            <div style="margin-top: 4px;">
+              <label style="font-size: 11px; color: var(--txt-secondary); font-weight: 600; margin-bottom: 4px; display: block;">Nombre del Titular Emisor (Opcional)</label>
+              <input type="text" class="form-control" id="pay-sender-name" placeholder="Ej: María Pérez" style="font-size: 12px; padding: 7px 10px;">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CAMPOS PARA ZELLE (SI APLICA) -->
+      <div id="zelle-fields" style="display: none; background: rgba(147, 51, 234, 0.05); border: 1px solid rgba(147, 51, 234, 0.3); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+        <div style="font-size: 11.5px; font-weight: 700; color: #c084fc; margin-bottom: 8px; text-transform: uppercase;">
+          <i class="fa-solid fa-arrow-right-arrow-left"></i> Datos de la Cuenta Zelle Emisora
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div>
+            <label style="font-size: 11px; color: var(--txt-secondary); font-weight: 600; margin-bottom: 4px; display: block;">Titular de la Cuenta Zelle</label>
+            <input type="text" class="form-control" id="pay-zelle-holder" placeholder="Ej: John Doe" style="font-size: 12px; padding: 7px 10px;">
+          </div>
+          <div>
+            <label style="font-size: 11px; color: var(--txt-secondary); font-weight: 600; margin-bottom: 4px; display: block;">Correo o Teléfono Zelle</label>
+            <input type="text" class="form-control" id="pay-zelle-email" placeholder="Ej: pagos@empresa.com" style="font-size: 12px; padding: 7px 10px;">
+          </div>
+        </div>
+      </div>
+
       <div class="form-group">
         <label>Número de Referencia Bancaria</label>
         <input type="text" class="form-control" id="pay-ref" placeholder="Ej: REF-88901234" required>

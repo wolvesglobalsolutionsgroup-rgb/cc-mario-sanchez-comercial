@@ -1520,6 +1520,37 @@ document.addEventListener('DOMContentLoaded', () => {
     window.openPaymentModal(invoiceId);
   };
 
+  // Toggle para origen del pago móvil/transferencia (Estilo Cashea)
+  window.setPaymentOriginType = function(type) {
+    const isRegistered = type === 'registered';
+    const regRadio = document.getElementById('origin-type-registered');
+    const thirdRadio = document.getElementById('origin-type-third');
+    const labelReg = document.getElementById('label-origin-registered');
+    const labelThird = document.getElementById('label-origin-third');
+    const infoBox = document.getElementById('pay-registered-info-box');
+    const thirdBox = document.getElementById('pay-third-party-box');
+
+    if (regRadio) regRadio.checked = isRegistered;
+    if (thirdRadio) thirdRadio.checked = !isRegistered;
+
+    if (labelReg) {
+      labelReg.className = isRegistered ? 'pay-origin-pill active' : 'pay-origin-pill';
+      labelReg.style.borderColor = isRegistered ? 'var(--emerald)' : 'var(--border-subtle)';
+      labelReg.style.background = isRegistered ? 'rgba(16, 185, 129, 0.12)' : 'transparent';
+      labelReg.style.color = isRegistered ? 'var(--txt-primary)' : 'var(--txt-secondary)';
+    }
+
+    if (labelThird) {
+      labelThird.className = !isRegistered ? 'pay-origin-pill active' : 'pay-origin-pill';
+      labelThird.style.borderColor = !isRegistered ? 'var(--amber)' : 'var(--border-subtle)';
+      labelThird.style.background = !isRegistered ? 'rgba(245, 158, 11, 0.12)' : 'transparent';
+      labelThird.style.color = !isRegistered ? 'var(--txt-primary)' : 'var(--txt-secondary)';
+    }
+
+    if (infoBox) infoBox.style.display = isRegistered ? 'flex' : 'none';
+    if (thirdBox) thirdBox.style.display = isRegistered ? 'none' : 'flex';
+  };
+
   window.openPaymentModal = function(invoiceId) {
     const inv = dbService.getInvoices().find(i => i.id === invoiceId);
     if (!inv) return;
@@ -1557,6 +1588,23 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    // Cargar datos del inquilino para autocompletado Cashea
+    const allTenants = dbService.getTenants();
+    const invTenant = allTenants.find(t => t.id === inv.tenant_id || t.unit_code === inv.unit_code);
+    const currTenant = (window.AuthGuard && window.AuthGuard.currentTenant) ? window.AuthGuard.currentTenant() : null;
+    const activeTenantObj = invTenant || currTenant || {
+      business_name: 'Inquilino Titular',
+      phone: '0414-5550192',
+      rif: 'J-50123456-7'
+    };
+
+    const regNameEl = document.getElementById('pay-registered-name');
+    const regPhoneEl = document.getElementById('pay-registered-phone');
+    const regDocEl = document.getElementById('pay-registered-doc');
+    if (regNameEl) regNameEl.textContent = activeTenantObj.business_name || activeTenantObj.legal_name || 'Inquilino Titular';
+    if (regPhoneEl) regPhoneEl.textContent = activeTenantObj.phone || '0414-5550192';
+    if (regDocEl) regDocEl.textContent = activeTenantObj.rif || activeTenantObj.doc_id || 'J-50123456-7';
+
     const pending = currentRole === 'admin' ? dbService.getPendingPayment(invoiceId) : null;
     const isTenantSubmission = currentRole === 'tenant';
     const isAdminReview = currentRole === 'admin' && Boolean(pending);
@@ -1569,6 +1617,29 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('pay-currency-select').value = pending.currency;
       document.getElementById('pay-method').value = pending.payment_method;
       document.getElementById('pay-ref').value = pending.reference_number || '';
+    }
+
+    // Resetear o cargar datos del banco emisor y origen (Estilo Cashea)
+    const bankSelect = document.getElementById('pay-bank-issuer');
+    if (bankSelect) {
+      bankSelect.value = (pending && pending.issuing_bank) ? pending.issuing_bank : (inv && inv.issuing_bank ? inv.issuing_bank : '');
+    }
+
+    if (pending && pending.origin_type === 'third_party') {
+      window.setPaymentOriginType('third_party');
+      if (document.getElementById('pay-sender-phone')) document.getElementById('pay-sender-phone').value = pending.origin_phone || '';
+      if (document.getElementById('pay-sender-doc')) document.getElementById('pay-sender-doc').value = pending.origin_doc || '';
+      if (document.getElementById('pay-sender-name')) document.getElementById('pay-sender-name').value = pending.origin_name || '';
+    } else {
+      window.setPaymentOriginType('registered');
+      if (document.getElementById('pay-sender-phone')) document.getElementById('pay-sender-phone').value = '';
+      if (document.getElementById('pay-sender-doc')) document.getElementById('pay-sender-doc').value = '';
+      if (document.getElementById('pay-sender-name')) document.getElementById('pay-sender-name').value = '';
+    }
+
+    if (pending && pending.zelle_holder) {
+      if (document.getElementById('pay-zelle-holder')) document.getElementById('pay-zelle-holder').value = pending.zelle_holder;
+      if (document.getElementById('pay-zelle-email')) document.getElementById('pay-zelle-email').value = pending.zelle_email || '';
     }
 
     // Inicializar dropzone y soporte visual de comprobante
@@ -1596,7 +1667,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // Actualización dinámica de equivalencias en el modal de pago
+  // Actualización dinámica de equivalencias y campos condicionales en el modal de pago
   window.updatePaymentEquivalents = function() {
     const amount = parseFloat(document.getElementById('pay-amount').value) || 0;
     const cur = document.getElementById('pay-currency-select').value;
@@ -1617,10 +1688,21 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('pay-eq-ves').innerText = `Bs. ${vesEq.toLocaleString('es-VE', { minimumFractionDigits: 2 })}`;
     }
 
+    // Alternar campos condicionales (Bancos Venezuela vs Zelle vs Cripto TxID)
+    const isVesBank = method.includes('Pago Móvil') || method.includes('Transferencia Bancaria Bs') || method.includes('Transferencia Divisas');
+    const isZelle = method.includes('Zelle');
+    const isCrypto = cur === 'USDT' || method.includes('Cripto');
+
+    const veBankFields = document.getElementById('venezuela-bank-fields');
+    if (veBankFields) veBankFields.style.display = isVesBank ? 'block' : 'none';
+
+    const zelleFields = document.getElementById('zelle-fields');
+    if (zelleFields) zelleFields.style.display = isZelle ? 'block' : 'none';
+
     // Mostrar campo TxID si es Cripto USDT
     const txidGroup = document.getElementById('pay-txid-group');
     if (txidGroup) {
-      txidGroup.style.display = (cur === 'USDT' || method.includes('Cripto')) ? 'flex' : 'none';
+      txidGroup.style.display = isCrypto ? 'block' : 'none';
     }
   };
 
@@ -1635,6 +1717,20 @@ document.addEventListener('DOMContentLoaded', () => {
       const amount = parseFloat(document.getElementById('pay-amount').value);
       const currency = document.getElementById('pay-currency-select').value;
       const txid = document.getElementById('pay-txid') ? document.getElementById('pay-txid').value.trim() : '';
+
+      const bankIssuer = document.getElementById('pay-bank-issuer') ? document.getElementById('pay-bank-issuer').value : '';
+      const originType = document.querySelector('input[name="pay_origin_type"]:checked')?.value || 'registered';
+      const senderPhone = (originType === 'third_party' && document.getElementById('pay-sender-phone'))
+        ? document.getElementById('pay-sender-phone').value.trim()
+        : (document.getElementById('pay-registered-phone')?.textContent || '');
+      const senderDoc = (originType === 'third_party' && document.getElementById('pay-sender-doc'))
+        ? document.getElementById('pay-sender-doc').value.trim()
+        : (document.getElementById('pay-registered-doc')?.textContent || '');
+      const senderName = (originType === 'third_party' && document.getElementById('pay-sender-name'))
+        ? document.getElementById('pay-sender-name').value.trim()
+        : (document.getElementById('pay-registered-name')?.textContent || '');
+      const zelleHolder = document.getElementById('pay-zelle-holder') ? document.getElementById('pay-zelle-holder').value.trim() : '';
+      const zelleEmail = document.getElementById('pay-zelle-email') ? document.getElementById('pay-zelle-email').value.trim() : '';
 
       // Mitigación de Abuso / Rate Limiting (Máx 6 intentos por minuto)
       if (window.SecuritySuite && window.SecuritySuite.checkRateLimit) {
@@ -1653,7 +1749,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (window.SecuritySuite && window.SecuritySuite.detectThreats) {
         const threatRef = SecuritySuite.detectThreats(ref);
         const threatTx = SecuritySuite.detectThreats(txid);
-        if (!threatRef.safe || !threatTx.safe) {
+        const threatBank = SecuritySuite.detectThreats(bankIssuer);
+        const threatPhone = SecuritySuite.detectThreats(senderPhone);
+        if (!threatRef.safe || !threatTx.safe || !threatBank.safe || !threatPhone.safe) {
           if (window.SecuritySuite.toast) {
             window.SecuritySuite.toast('Se detectaron caracteres o patrones no permitidos en la referencia o comprobante.', 'error', 'Entrada Rechazada');
           } else {
@@ -1701,6 +1799,13 @@ document.addEventListener('DOMContentLoaded', () => {
           txid: txid,
           amount_paid: amount,
           currency: currency,
+          issuing_bank: bankIssuer,
+          origin_type: originType,
+          origin_phone: senderPhone,
+          origin_doc: senderDoc,
+          origin_name: senderName,
+          zelle_holder: zelleHolder,
+          zelle_email: zelleEmail,
           snapshot: snapshot,
           receipt_proof: currentUploadedProof,
           submitted_by: AuthGuard.currentUser()?.identifier
@@ -3600,6 +3705,9 @@ document.addEventListener('DOMContentLoaded', () => {
           <div><strong>Período Liquidado:</strong> ${receipt.period_month}/${receipt.period_year}</div>
           <div><strong>Método de Pago:</strong> ${escapeHtml(receipt.payment_method)}</div>
           <div><strong>N° Referencia Bancaria:</strong> <span style="font-family: monospace; font-weight: 700;">${escapeHtml(receipt.reference_number)}</span></div>
+          ${receipt.issuing_bank ? `<div><strong>Banco Emisor:</strong> <span style="font-weight: 600; color: #1e293b;">${escapeHtml(receipt.issuing_bank)}</span></div>` : ''}
+          ${receipt.origin_phone ? `<div><strong>Teléfono / Origen Pago:</strong> <span style="font-family: monospace;">${escapeHtml(receipt.origin_phone)}</span> ${receipt.origin_doc ? `(${escapeHtml(receipt.origin_doc)})` : ''}</div>` : ''}
+          ${receipt.zelle_holder ? `<div style="grid-column: 1 / -1;"><strong>Titular Zelle Emisor:</strong> ${escapeHtml(receipt.zelle_holder)} (${escapeHtml(receipt.zelle_email || 'N/A')})</div>` : ''}
           ${receipt.txid ? `<div style="grid-column: 1 / -1;"><strong>Hash Cripto TxID:</strong> <span style="font-family: monospace; font-size: 10.5px; color: #059669; word-break: break-all;">${escapeHtml(receipt.txid)}</span></div>` : ''}
         </div>
 
