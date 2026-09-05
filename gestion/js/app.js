@@ -1728,6 +1728,77 @@ document.addEventListener('DOMContentLoaded', () => {
           });
         }
 
+        if (currentRole === 'tenant') {
+          // Secuencia visual interactiva de procesamiento y cifrado para Inquilinos
+          const modalContent = document.querySelector('#modal-payment .modal-content') || document.getElementById('modal-payment');
+          const originalModalHTML = modalContent.innerHTML;
+          
+          modalContent.innerHTML = `
+            <div style="padding: 36px 20px; text-align: center;">
+              <div style="width: 68px; height: 68px; margin: 0 auto 18px; border-radius: 50%; background: var(--cyan-glow); display: flex; align-items: center; justify-content: center; font-size: 26px; color: var(--cyan);">
+                <i class="fa-solid fa-shield-halved fa-spin" style="--fa-animation-duration: 2.5s;"></i>
+              </div>
+              <h3 id="proc-anim-title" style="font-family: var(--font-heading); font-size: 18px; color: var(--txt-primary); margin-bottom: 8px;">
+                Cifrando Comprobante de Pago...
+              </h3>
+              <p id="proc-anim-desc" style="font-size: 12.5px; color: var(--txt-secondary); margin-bottom: 22px;">
+                Generando hash de integridad SHA-256 y protegiendo metadatos bancarios.
+              </p>
+              
+              <div style="width: 100%; max-width: 320px; height: 6px; background: var(--border-subtle); border-radius: 4px; margin: 0 auto 18px; overflow: hidden;">
+                <div id="proc-anim-bar" style="width: 30%; height: 100%; background: linear-gradient(90deg, var(--cyan), var(--emerald)); transition: width 0.4s ease; border-radius: 4px;"></div>
+              </div>
+
+              <div id="proc-anim-steps" style="display: flex; flex-direction: column; gap: 8px; text-align: left; max-width: 320px; margin: 0 auto; font-size: 12px; color: var(--txt-secondary);">
+                <div id="step-1" style="display: flex; align-items: center; gap: 8px; color: var(--cyan);"><i class="fa-solid fa-circle-check"></i> Cifrado de comprobante completado</div>
+                <div id="step-2" style="display: flex; align-items: center; gap: 8px; color: var(--txt-muted);"><i class="fa-solid fa-circle-notch fa-spin"></i> Notificando a Administración (Email & WhatsApp)...</div>
+                <div id="step-3" style="display: flex; align-items: center; gap: 8px; color: var(--txt-muted);"><i class="fa-regular fa-circle"></i> Asignando estado: En Revisión</div>
+              </div>
+            </div>
+          `;
+
+          setTimeout(() => {
+            const step2 = document.getElementById('step-2');
+            const step3 = document.getElementById('step-3');
+            const bar = document.getElementById('proc-anim-bar');
+            const title = document.getElementById('proc-anim-title');
+            const desc = document.getElementById('proc-anim-desc');
+            if (bar) bar.style.width = '70%';
+            if (step2) { step2.style.color = 'var(--cyan)'; step2.innerHTML = '<i class="fa-solid fa-circle-check"></i> Alerta despachada a Administración'; }
+            if (step3) { step3.style.color = 'var(--amber)'; step3.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Asignando estado: En Revisión...'; }
+            if (title) title.innerText = 'Notificando a Administración...';
+            if (desc) desc.innerText = 'Despachando alertas seguras al departamento de cobranzas.';
+          }, 600);
+
+          setTimeout(() => {
+            const step3 = document.getElementById('step-3');
+            const bar = document.getElementById('proc-anim-bar');
+            const title = document.getElementById('proc-anim-title');
+            const desc = document.getElementById('proc-anim-desc');
+            if (bar) bar.style.width = '100%';
+            if (step3) { step3.style.color = 'var(--emerald)'; step3.innerHTML = '<i class="fa-solid fa-circle-check"></i> Estado asignado: ⏳ En Revisión'; }
+            if (title) { title.innerText = '¡Comprobante Enviado con Éxito!'; title.style.color = 'var(--emerald)'; }
+            if (desc) desc.innerText = 'El administrador verificará la acreditación bancaria y emitirá su recibo oficial.';
+          }, 1200);
+
+          setTimeout(() => {
+            const modalEl = document.getElementById('modal-payment');
+            if (modalEl) {
+              modalEl.classList.remove('open', 'active');
+              modalEl.style.display = 'none';
+            }
+            modalContent.innerHTML = originalModalHTML;
+            paymentForm.reset();
+            removeReceiptFile();
+            renderAll();
+            if (window.SecuritySuite && window.SecuritySuite.toast) {
+              window.SecuritySuite.toast('Comprobante enviado a Administración. Su cuota está ⏳ En Revisión hasta su validación.', 'success', 'Comprobante Registrado');
+            }
+          }, 1900);
+
+          return;
+        }
+
         document.getElementById('modal-payment').classList.remove('open');
         document.getElementById('modal-payment').classList.remove('active');
         paymentForm.reset();
@@ -1740,11 +1811,9 @@ document.addEventListener('DOMContentLoaded', () => {
             window.SecuritySuite.toast('Pago aprobado. Se ha emitido y archivado el recibo oficial correlativo.', 'success', 'Cobranza Conciliada');
           }
         } else {
-          const successMsg = currentRole === 'tenant'
-            ? 'Comprobante enviado a Administración. El pago quedará en revisión hasta su validación.'
-            : `Pago registrado y conciliado exitosamente (Tasa BCV: ${snapshot.bcv_rate_applied.toFixed(2)} Bs/USD).`;
+          const successMsg = `Pago registrado y conciliado exitosamente (Tasa BCV: ${snapshot.bcv_rate_applied.toFixed(2)} Bs/USD).`;
           if (window.SecuritySuite && window.SecuritySuite.toast) {
-            window.SecuritySuite.toast(successMsg, 'success', currentRole === 'tenant' ? 'Comprobante Enviado' : 'Pago Conciliado');
+            window.SecuritySuite.toast(successMsg, 'success', 'Pago Conciliado');
           } else {
             alert(successMsg);
           }
