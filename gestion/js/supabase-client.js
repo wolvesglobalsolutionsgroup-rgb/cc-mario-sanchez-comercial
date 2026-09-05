@@ -514,6 +514,27 @@ class DatabaseService {
           amount_paid: 2050,
           currency: 'USD',
           status: 'verificado'
+        },
+        {
+          id: 'p-5',
+          invoice_id: 'inv-4',
+          payment_date: '2026-09-04',
+          payment_method: 'Pago Móvil Interbancario',
+          reference_number: 'BDV-98712340',
+          issuing_bank: '0102 - Banco de Venezuela',
+          origin_type: 'registered',
+          origin_phone: '0416-6801234',
+          origin_doc: 'J-50239011-8',
+          origin_name: 'AutoPartes & Servicios Express, C.A.',
+          amount_paid: 1130,
+          currency: 'USD',
+          status: 'pendiente',
+          receipt_proof: {
+            name: 'Comprobante_PagoMovil_BDV_LOC02.png',
+            type: 'image/png',
+            size: 148200,
+            data: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect width="400" height="300" fill="%230f172a"/><rect x="20" y="20" width="360" height="260" rx="12" fill="%231e293b" stroke="%23f59e0b" stroke-width="2"/><text x="200" y="60" fill="%23f59e0b" font-family="sans-serif" font-size="16" font-weight="bold" text-anchor="middle">BANCO DE VENEZUELA — PAGO MÓVIL</text><text x="200" y="100" fill="%2310b981" font-family="sans-serif" font-size="20" font-weight="bold" text-anchor="middle">OPERACIÓN EXITOSA</text><text x="40" y="140" fill="%2394a3b8" font-family="sans-serif" font-size="12">Referencia: BDV-98712340</text><text x="40" y="165" fill="%2394a3b8" font-family="sans-serif" font-size="12">Destino: CC Mario Sánchez (J-29881234-0)</text><text x="40" y="190" fill="%2394a3b8" font-family="sans-serif" font-size="12">Emisor: AutoPartes Express (J-50239011-8)</text><text x="40" y="215" fill="%2394a3b8" font-family="sans-serif" font-size="12">Monto Equivalente: $1,130.00 USD (Tasa BCV)</text><text x="200" y="255" fill="%2338bdf8" font-family="sans-serif" font-size="11" text-anchor="middle">Sello Digital: CCMS-GO40418-VERIFIED</text></svg>'
+          }
         }
       ]
     };
@@ -538,6 +559,29 @@ class DatabaseService {
       if (!data.condo_expenses || !Array.isArray(data.condo_expenses) || data.condo_expenses.length === 0) {
         data.condo_expenses = this.getDefaultCondoExpenses();
         dirty = true;
+      }
+      if (data.invoices && Array.isArray(data.invoices)) {
+        const inv4 = data.invoices.find(i => i.id === 'inv-4');
+        if (inv4 && inv4.status === 'verificando' && (!data.payments || !data.payments.some(p => p.invoice_id === 'inv-4' && p.status === 'pendiente'))) {
+          if (!data.payments) data.payments = [];
+          data.payments.push({
+            id: 'p-5',
+            invoice_id: 'inv-4',
+            payment_date: '2026-09-04',
+            payment_method: 'Pago Móvil Interbancario',
+            reference_number: 'BDV-98712340',
+            issuing_bank: '0102 - Banco de Venezuela',
+            origin_type: 'registered',
+            origin_phone: '0416-6801234',
+            origin_doc: 'J-50239011-8',
+            origin_name: 'AutoPartes & Servicios Express, C.A.',
+            amount_paid: 1130,
+            currency: 'USD',
+            status: 'pendiente',
+            receipt_proof: inv4.receipt_proof || null
+          });
+          dirty = true;
+        }
       }
       if (dirty) {
         this.saveData(data);
