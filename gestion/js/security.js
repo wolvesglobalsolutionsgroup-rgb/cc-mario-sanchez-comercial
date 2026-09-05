@@ -347,6 +347,75 @@
     });
   }
 
+  function showModernPrompt(message, title = 'Ingresar Dato', confirmText = 'Aceptar', cancelText = 'Cancelar', defaultValue = '') {
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.className = 'ccms-dialog-overlay';
+
+      overlay.innerHTML = `
+        <div class="ccms-dialog-card">
+          <div class="ccms-dialog-header">
+            <div class="ccms-dialog-icon" style="background: var(--amber-glow); color: var(--amber); border: 1px solid var(--border-highlight);">
+              <i class="fa-solid fa-pen-to-square"></i>
+            </div>
+            <div>
+              <h4 class="ccms-dialog-title">${escapeHtml(title)}</h4>
+              <span style="font-size: 11px; color: var(--txt-muted);">CC Mario Sánchez — Gestión Segura</span>
+            </div>
+          </div>
+          <div class="ccms-dialog-body" style="padding: 16px 20px;">
+            <p style="margin: 0 0 12px; font-size: 13px; color: var(--txt-primary);">${escapeHtml(message)}</p>
+            <input type="text" id="ccms-dialog-prompt-input" class="form-control" value="${escapeHtml(defaultValue)}" style="width: 100%; font-size: 13px; padding: 10px 12px;" />
+          </div>
+          <div class="ccms-dialog-actions" style="display: flex; justify-content: flex-end; gap: 10px; padding: 12px 20px; border-top: 1px solid var(--border-subtle);">
+            <button type="button" class="btn-currency-toggle" id="ccms-dialog-cancel-btn">${escapeHtml(cancelText)}</button>
+            <button type="button" class="btn-onboarding-cta" id="ccms-dialog-confirm-btn" style="background: var(--amber); border-color: var(--amber); color: #000; font-weight: 800;">
+              ${escapeHtml(confirmText)}
+            </button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(overlay);
+
+      const input = overlay.querySelector('#ccms-dialog-prompt-input');
+      const confirmBtn = overlay.querySelector('#ccms-dialog-confirm-btn');
+      const cancelBtn = overlay.querySelector('#ccms-dialog-cancel-btn');
+
+      if (input) {
+        setTimeout(() => {
+          input.focus();
+          input.select();
+        }, 50);
+      }
+
+      const cleanup = (val) => {
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.remove(), 200);
+        resolve(val);
+      };
+
+      if (input) {
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            cleanup(input.value.trim());
+          }
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            cleanup(null);
+          }
+        });
+      }
+
+      confirmBtn.onclick = () => cleanup(input ? input.value.trim() : '');
+      cancelBtn.onclick = () => cleanup(null);
+      overlay.onclick = (e) => {
+        if (e.target === overlay) cleanup(null);
+      };
+    });
+  }
+
   // --- 8. EXPORTACIÓN GLOBAL ---
   global.SecuritySuite = {
     escapeHtml,
@@ -361,7 +430,8 @@
     renderErrorState,
     renderEmptyState,
     toast: showToast,
-    confirm: showModernConfirm
+    confirm: showModernConfirm,
+    prompt: showModernPrompt
   };
 
   global.escapeHtml = escapeHtml;

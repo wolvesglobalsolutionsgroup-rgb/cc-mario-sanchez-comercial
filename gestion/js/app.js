@@ -25,6 +25,46 @@ if ('serviceWorker' in navigator) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  /**
+   * Helper para notificaciones tipo Toast seguras y no intrusivas
+   */
+  function showToast(message, type = 'info', title = null) {
+    if (window.SecuritySuite && window.SecuritySuite.toast) {
+      window.SecuritySuite.toast(message, type, title);
+    } else {
+      console.log(`[TOAST ${type}]`, title ? `${title}: ${message}` : message);
+    }
+  }
+  window.showToast = showToast;
+
+  /**
+   * Genera sello SHA-256 REAL de 256 bits vía WebCrypto API
+   * Reemplaza el hash de 4x32 bits en los recibos oficiales
+   */
+  async function generateReceiptSealAsync(receipt, bcvRate) {
+    const rawSealData = [
+      receipt.receipt_number,
+      receipt.tenant_rif,
+      Number(receipt.total_usd || 0).toFixed(2),
+      bcvRate,
+      'GO40418',
+      receipt.approved_at || Date.now()
+    ].join('|');
+
+    try {
+      const digest = await crypto.subtle.digest(
+        'SHA-256',
+        new TextEncoder().encode(rawSealData)
+      );
+      const hashHex = Array.from(new Uint8Array(digest))
+        .map(b => b.toString(16).padStart(2, '0')).join('');
+      return `CCMS-SHA256-${hashHex.substring(0, 16).toUpperCase()}-${hashHex.substring(48, 64).toUpperCase()}`;
+    } catch (err) {
+      console.warn('[SECURITY] WebCrypto no disponible, usando fallback:', err);
+      return `CCMS-LEGACY-${Date.now().toString(16).toUpperCase()}`;
+    }
+  }
+
   // Aplicar visibilidad y chip de usuario
   if (window.AuthGuard) {
     AuthGuard.mountUserChip();
@@ -260,6 +300,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const activeView = document.getElementById(`tab-${currentTab}`);
       if (activeView) activeView.style.display = 'block';
 
+      if (currentTab === 'ayuda' && window.HelpContent && typeof window.HelpContent.render === 'function') {
+        window.HelpContent.render();
+      }
+
       if (window.innerWidth <= 1024) {
         closeMobileSidebar();
       }
@@ -287,6 +331,9 @@ document.addEventListener('DOMContentLoaded', () => {
       renderAdminBankAccounts();
       renderUserApprovalsTable();
       initReportsTab();
+    }
+    if (window.HelpContent && typeof window.HelpContent.render === 'function') {
+      window.HelpContent.render();
     }
   }
 
@@ -989,10 +1036,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('modal-add-calendar-event');
     if (!modal) return;
 
-    const dateInput = document.getElementById('new-event-date');
-    const titleInput = document.getElementById('new-event-title');
-    const descInput = document.getElementById('new-event-desc');
-    const typeSelect = document.getElementById('new-event-type');
+    const dateInput = document.getElementById('new-cal-date');
+    const titleInput = document.getElementById('new-cal-title');
+    const descInput = document.getElementById('new-cal-desc');
+    const typeSelect = document.getElementById('new-cal-type');
 
     if (dateInput) {
       if (defaultDate) {
@@ -1024,10 +1071,10 @@ document.addEventListener('DOMContentLoaded', () => {
   window.handleSaveCalendarEvent = function(e) {
     if (e && e.preventDefault) e.preventDefault();
 
-    const titleInput = document.getElementById('new-event-title');
-    const dateInput = document.getElementById('new-event-date');
-    const typeSelect = document.getElementById('new-event-type');
-    const descInput = document.getElementById('new-event-desc');
+    const titleInput = document.getElementById('new-cal-title');
+    const dateInput = document.getElementById('new-cal-date');
+    const typeSelect = document.getElementById('new-cal-type');
+    const descInput = document.getElementById('new-cal-desc');
 
     const title = titleInput ? titleInput.value.trim() : '';
     const date = dateInput ? dateInput.value.trim() : '';
@@ -1035,13 +1082,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const desc = descInput ? descInput.value.trim() : '';
 
     if (!title || !date) {
-      showToast('Por favor ingrese el título y la fecha del evento', 'warning');
+      showToast('Por favor ingrese el título y la fecha del evento', 'warning', 'Campos Requeridos');
       return;
     }
 
     const parts = date.split('-');
     if (parts.length !== 3) {
-      showToast('Formato de fecha inválido', 'error');
+      showToast('Formato de fecha inválido', 'error', 'Error de Fecha');
       return;
     }
 
@@ -1063,7 +1110,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     closeAddCalendarEventModal();
     renderCalendarView();
-    showToast(`Recordatorio guardado con éxito`, 'success');
+    showToast(`Recordatorio "${title}" guardado con éxito`, 'success', 'Recordatorio Creado');
   };
 
   // E. CALENDARIO DE VENCIMIENTOS INTERACTIVO
@@ -1418,14 +1465,14 @@ document.addEventListener('DOMContentLoaded', () => {
   window.openTenantQuickPay = function() {
     const currentTenant = AuthGuard.currentTenant();
     if (!currentTenant) {
-      alert("No se encontró el inquilino activo o la sesión ha expirado.");
+      showToast("No se encontró el inquilino activo o la sesión ha expirado.", "error", "Sesión Expirada");
       return;
     }
     const myInvoices = dbService.getInvoices().filter(i => i.tenant_id === currentTenant.id);
     const pendingInvoices = myInvoices.filter(i => i.status !== 'pagado');
 
     if (pendingInvoices.length === 0) {
-      alert("¡Felicitaciones! Su cuenta se encuentra totalmente solvente y al día sin cuotas pendientes por pagar.");
+      showToast("¡Felicitaciones! Su cuenta se encuentra totalmente solvente y al día sin cuotas pendientes por pagar.", "success", "Cuenta Solvente");
       return;
     }
 
@@ -1680,17 +1727,26 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  window.rejectPendingPayment = function() {
+  window.rejectPendingPayment = async function() {
     const invoiceId = document.getElementById('pay-invoice-id').value;
-    const reason = window.prompt('Indique el motivo del rechazo:');
+    let reason = null;
+    if (window.SecuritySuite && window.SecuritySuite.prompt) {
+      reason = await window.SecuritySuite.prompt(
+        'Indique detalladamente el motivo del rechazo del comprobante de pago para notificación del inquilino:',
+        'Rechazar Comprobante de Pago',
+        'Ej: Referencia no coincide con extracto bancario o monto incompleto'
+      );
+    } else {
+      reason = window.prompt('Indique el motivo del rechazo:');
+    }
     if (!reason || !reason.trim()) return;
     try {
       dbService.rejectPayment(invoiceId, reason.trim(), AuthGuard.currentUser()?.identifier);
       document.getElementById('modal-payment').classList.remove('open');
       renderAll();
-      alert('Comprobante rechazado y motivo registrado en la trazabilidad.');
+      showToast('Comprobante rechazado y motivo registrado en la trazabilidad.', 'info', 'Pago Rechazado');
     } catch (err) {
-      alert('Error: ' + err.message);
+      showToast('Error: ' + err.message, 'error', 'Error al Rechazar');
     }
   };
 
@@ -1704,7 +1760,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Validación de tamaño (Máx 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      alert("El comprobante seleccionado excede el límite máximo de 10MB.");
+      showToast("El comprobante seleccionado excede el límite máximo de 10MB.", "warning", "Archivo Excedido");
       const input = document.getElementById('pay-receipt-file');
       if (input) input.value = '';
       return;
@@ -1750,12 +1806,12 @@ document.addEventListener('DOMContentLoaded', () => {
   window.viewReceiptProof = function(invoiceId) {
     const inv = dbService.getInvoices().find(i => i.id === invoiceId);
     if (!inv || !inv.receipt_proof) {
-      alert("Esta cuota no posee un comprobante adjunto.");
+      showToast("Esta cuota no posee un comprobante adjunto.", "info", "Comprobante");
       return;
     }
     const proof = inv.receipt_proof;
     if (!proof || !isSafeReceiptDataUrl(proof.data)) {
-      alert('El comprobante no tiene un formato seguro o válido.');
+      showToast('El comprobante no tiene un formato seguro o válido.', 'error', 'Formato Inválido');
       return;
     }
     const win = window.open('', '_blank');
@@ -2256,7 +2312,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const checkedBoxes = document.querySelectorAll('.acc-tenant-chk:checked');
       assignedTenants = Array.from(checkedBoxes).map(cb => cb.value);
       if (assignedTenants.length === 0) {
-        alert("Seleccione al menos un inquilino autorizado para esta cuenta o seleccione 'Todos los Inquilinos'.");
+        showToast("Seleccione al menos un inquilino autorizado para esta cuenta o seleccione 'Todos los Inquilinos'.", "warning", "Validación Requerida");
         return;
       }
     }
@@ -2310,17 +2366,9 @@ document.addEventListener('DOMContentLoaded', () => {
       dbService.saveReceivingAccount(payload);
       closeBankAccountModal();
       renderAll();
-      if (window.SecuritySuite && window.SecuritySuite.toast) {
-        window.SecuritySuite.toast('Cuenta receptora oficial guardada y actualizada con éxito.', 'success', 'Cuenta Configurada');
-      } else {
-        alert("¡Cuenta receptora guardada y actualizada con éxito!");
-      }
+      showToast('Cuenta receptora oficial guardada y actualizada con éxito.', 'success', 'Cuenta Configurada');
     } catch (err) {
-      if (window.SecuritySuite && window.SecuritySuite.toast) {
-        window.SecuritySuite.toast('Error al guardar cuenta: ' + err.message, 'error');
-      } else {
-        alert("Error al guardar cuenta: " + err.message);
-      }
+      showToast('Error al guardar cuenta: ' + err.message, 'error', 'Error en Cuenta');
     }
   };
 
@@ -2329,15 +2377,9 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       dbService.toggleReceivingAccount(accountId);
       renderAll();
-      if (window.SecuritySuite && window.SecuritySuite.toast) {
-        window.SecuritySuite.toast('Estado de disponibilidad de la cuenta actualizado.', 'info', 'Cuenta Modificada');
-      }
+      showToast('Estado de disponibilidad de la cuenta actualizado.', 'info', 'Cuenta Modificada');
     } catch (err) {
-      if (window.SecuritySuite && window.SecuritySuite.toast) {
-        window.SecuritySuite.toast(err.message, 'error');
-      } else {
-        alert("Error: " + err.message);
-      }
+      showToast('Error: ' + err.message, 'error', 'Error en Cuenta');
     }
   };
 
@@ -2350,15 +2392,9 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       dbService.deleteReceivingAccount(accountId);
       renderAll();
-      if (window.SecuritySuite && window.SecuritySuite.toast) {
-        window.SecuritySuite.toast('Cuenta receptora eliminada satisfactoriamente.', 'warning', 'Cuenta Eliminada');
-      }
+      showToast('Cuenta receptora eliminada satisfactoriamente.', 'warning', 'Cuenta Eliminada');
     } catch (err) {
-      if (window.SecuritySuite && window.SecuritySuite.toast) {
-        window.SecuritySuite.toast(err.message, 'error');
-      } else {
-        alert("Error: " + err.message);
-      }
+      showToast('Error: ' + err.message, 'error', 'Error al Eliminar');
     }
   };
 
@@ -2438,17 +2474,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const res = window.AuthGuard.approveUser(userId);
     if (res.ok) {
       window.renderUserApprovalsTable();
-      if (window.SecuritySuite && window.SecuritySuite.toast) {
-        window.SecuritySuite.toast(`Acceso aprobado con éxito para ${res.user.display_name}.`, 'success', 'Usuario Activado');
-      } else {
-        alert(`Acceso aprobado con éxito para ${res.user.display_name}.`);
-      }
+      showToast(`Acceso aprobado con éxito para ${res.user.display_name}.`, 'success', 'Usuario Activado');
     } else {
-      if (window.SecuritySuite && window.SecuritySuite.toast) {
-        window.SecuritySuite.toast('Error: ' + res.error, 'error', 'Fallo de Activación');
-      } else {
-        alert("Error: " + res.error);
-      }
+      showToast('Error: ' + res.error, 'error', 'Fallo de Activación');
     }
   };
 
@@ -2461,17 +2489,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const res = window.AuthGuard.rejectUser(userId);
     if (res.ok) {
       window.renderUserApprovalsTable();
-      if (window.SecuritySuite && window.SecuritySuite.toast) {
-        window.SecuritySuite.toast(`Acceso revocado para ${res.user.display_name}.`, 'warning', 'Acceso Revocado');
-      } else {
-        alert(`Acceso revocado para ${res.user.display_name}.`);
-      }
+      showToast(`Acceso revocado para ${res.user.display_name}.`, 'warning', 'Acceso Revocado');
     } else {
-      if (window.SecuritySuite && window.SecuritySuite.toast) {
-        window.SecuritySuite.toast('Error: ' + res.error, 'error');
-      } else {
-        alert("Error: " + res.error);
-      }
+      showToast('Error: ' + res.error, 'error', 'Error al Revocar');
     }
   };
 
@@ -2514,11 +2534,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const status = document.getElementById('inv-status').value;
 
     if (!name || !identifier) {
-      if (window.SecuritySuite && window.SecuritySuite.toast) {
-        window.SecuritySuite.toast('Por favor complete todos los campos obligatorios del formulario.', 'warning', 'Campos Incompletos');
-      } else {
-        alert("Por favor complete los campos obligatorios.");
-      }
+      showToast('Por favor complete todos los campos obligatorios del formulario.', 'warning', 'Campos Incompletos');
       return;
     }
 
@@ -2534,17 +2550,9 @@ document.addEventListener('DOMContentLoaded', () => {
       window.closeInviteUserModal();
       window.renderUserApprovalsTable();
       const statusLabel = status === 'active' ? 'Activo & Autorizado' : 'Pendiente de Comité';
-      if (window.SecuritySuite && window.SecuritySuite.toast) {
-        window.SecuritySuite.toast(`Usuario ${name} registrado satisfactoriamente (${statusLabel}).`, 'success', 'Usuario Registrado');
-      } else {
-        alert(`Usuario ${name} registrado satisfactoriamente con estado: ${status === 'active' ? 'Activo' : 'Pendiente de Comité'}.`);
-      }
+      showToast(`Usuario ${name} registrado satisfactoriamente (${statusLabel}).`, 'success', 'Usuario Registrado');
     } else {
-      if (window.SecuritySuite && window.SecuritySuite.toast) {
-        window.SecuritySuite.toast(res.error, 'error', 'Error al Registrar');
-      } else {
-        alert("Error: " + res.error);
-      }
+      showToast(res.error, 'error', 'Error al Registrar');
     }
   };
 
@@ -3296,7 +3304,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!container) return;
     const tables = container.querySelectorAll('table');
     if (tables.length === 0) {
-      alert("No hay tablas de datos para exportar en el informe actual.");
+      showToast("No hay tablas de datos para exportar en el informe actual.", "info", "Informe Vacío");
       return;
     }
 
@@ -3328,6 +3336,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    showToast(`Archivo CSV "${filename}" descargado exitosamente.`, 'success', 'Exportación CSV');
   };
 
   /**
@@ -3339,7 +3348,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!container) return;
     const tables = container.querySelectorAll('table');
     if (tables.length === 0) {
-      alert("No hay tablas de datos en el informe actual.");
+      showToast("No hay tablas de datos en el informe actual.", "info", "Informe Vacío");
       return;
     }
 
@@ -3360,13 +3369,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(tsvContent).then(() => {
-        alert("✓ Datos copiados al portapapeles en formato tabular.\n\nAbra su hoja en Google Sheets y presione Ctrl + V para pegar las celdas automáticamente alineadas.");
+        showToast("✓ Datos copiados al portapapeles. Abra Google Sheets y presione Ctrl + V para pegar.", "success", "Copiado a Google Sheets");
       }).catch(err => {
-        console.error(err);
-        prompt("Copie el contenido para Google Sheets manualmente (Ctrl+C):", tsvContent);
+        console.warn('[CLIPBOARD] Fallback a prompt:', err);
+        showToast("No se pudo copiar automáticamente al portapapeles.", "warning", "Copiado Manual");
       });
     } else {
-      prompt("Copie el contenido para Google Sheets manualmente (Ctrl+C):", tsvContent);
+      showToast("Portapapeles no soportado en este entorno de navegación.", "warning", "Portapapeles");
     }
   };
 
@@ -3380,11 +3389,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const tenant = dbService.getTenants().find(t => t.id === tenantId);
     if (!tenant) {
-      if (window.SecuritySuite && window.SecuritySuite.toast) {
-        window.SecuritySuite.toast('No se encontró el inquilino seleccionado.', 'error');
-      } else {
-        alert('No se encontró el inquilino seleccionado.');
-      }
+      showToast('No se encontró el inquilino seleccionado.', 'error', 'Inquilino No Encontrado');
       return;
     }
 
@@ -3451,7 +3456,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // =========================================================================
   // MÓDULO 4: VISOR & RECIBO OFICIAL TRAS APROBACIÓN DE PAGO
   // =========================================================================
-  window.openReceiptPreview = function(receipt) {
+  window.openReceiptPreview = async function(receipt) {
     const modal = document.getElementById('modal-receipt-preview');
     const wrapper = document.getElementById('receipt-document-wrapper');
     if (!modal || !wrapper || !receipt) return;
@@ -3467,21 +3472,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const tenantRif = (window.TenantConfig && window.TenantConfig.getRif) ? window.TenantConfig.getRif() : 'J-29881234-0';
     const tenantAddr = (window.TenantConfig && window.TenantConfig.getAddress) ? window.TenantConfig.getAddress() : 'Av. Municipal, Puerto La Cruz, Venezuela';
 
-    // Generar Sello Criptográfico Digital Inmutable (SHA-256)
-    const rawSealData = `${receipt.receipt_number}|${receipt.tenant_rif}|${receipt.total_usd}|${bcvRate}|GO40418|${receipt.approved_at || Date.now()}`;
-    let h1 = 0xdeadbeef, h2 = 0x41c64e6d, h3 = 0x5a17a932, h4 = 0x9b4b92c1;
-    for (let i = 0; i < rawSealData.length; i++) {
-      const ch = rawSealData.charCodeAt(i);
-      h1 = Math.imul(h1 ^ ch, 2654435761);
-      h2 = Math.imul(h2 ^ ch, 1597334677);
-      h3 = Math.imul(h3 ^ ch, 974241219);
-      h4 = Math.imul(h4 ^ ch, 3344921057);
-    }
-    const part1 = (h1 >>> 0).toString(16).padStart(8, '0').toUpperCase();
-    const part2 = (h2 >>> 0).toString(16).padStart(8, '0').toUpperCase();
-    const part3 = (h3 >>> 0).toString(16).padStart(8, '0').toUpperCase();
-    const part4 = (h4 >>> 0).toString(16).padStart(8, '0').toUpperCase();
-    const digitalSeal = `CCMS-SHA256-${part1}${part2}-${part3}${part4}`;
+    // Generar Sello Criptográfico Digital Inmutable (SHA-256 REAL vía WebCrypto)
+    const digitalSeal = await generateReceiptSealAsync(receipt, bcvRate);
 
     wrapper.innerHTML = `
       <div style="border: 2px solid #0f172a; padding: 24px; border-radius: 8px; background: white; color: #0f172a;">
@@ -3701,7 +3693,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!file) return;
 
     if (file.size > 10 * 1024 * 1024) {
-      alert("La factura o comprobante fiscal excede el límite de 10MB.");
+      showToast("La factura o comprobante fiscal excede el límite de 10MB.", "warning", "Archivo Excedido");
       const input = document.getElementById('exp-proof-file');
       if (input) input.value = '';
       return;
@@ -3761,11 +3753,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const withholdIslr = document.getElementById('exp-withhold-islr').checked;
 
     if (isNaN(amountUsd) || amountUsd <= 0) {
-      if (window.SecuritySuite && window.SecuritySuite.toast) {
-        window.SecuritySuite.toast('Por favor ingrese un monto facturado válido mayor a cero.', 'warning', 'Monto Requerido');
-      } else {
-        alert("Por favor ingrese un monto facturado válido mayor a cero.");
-      }
+      showToast('Por favor ingrese un monto facturado válido mayor a cero.', 'warning', 'Monto Requerido');
       return;
     }
 
@@ -3791,17 +3779,9 @@ document.addEventListener('DOMContentLoaded', () => {
       dbService.saveCondoExpense(payload);
       closeExpenseModal();
       renderAll();
-      if (window.SecuritySuite && window.SecuritySuite.toast) {
-        window.SecuritySuite.toast('Gasto operativo y factura fiscal registrados y liquidados exitosamente.', 'success', 'Gasto Liquidado');
-      } else {
-        alert("¡Gasto operativo y factura fiscal registrados y liquidados exitosamente!");
-      }
+      showToast('Gasto operativo y factura fiscal registrados y liquidados exitosamente.', 'success', 'Gasto Liquidado');
     } catch (err) {
-      if (window.SecuritySuite && window.SecuritySuite.toast) {
-        window.SecuritySuite.toast('Error al guardar gasto: ' + err.message, 'error');
-      } else {
-        alert("Error al guardar gasto: " + err.message);
-      }
+      showToast('Error al guardar gasto: ' + err.message, 'error', 'Error al Guardar');
     }
   };
 
@@ -3814,15 +3794,9 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       dbService.deleteCondoExpense(expenseId);
       renderAll();
-      if (window.SecuritySuite && window.SecuritySuite.toast) {
-        window.SecuritySuite.toast('Gasto operativo eliminado y cuotas condominales recalculadas.', 'warning', 'Gasto Eliminado');
-      }
+      showToast('Gasto operativo eliminado y cuotas condominales recalculadas.', 'warning', 'Gasto Eliminado');
     } catch (err) {
-      if (window.SecuritySuite && window.SecuritySuite.toast) {
-        window.SecuritySuite.toast('Error: ' + err.message, 'error');
-      } else {
-        alert("Error: " + err.message);
-      }
+      showToast('Error: ' + err.message, 'error', 'Error al Eliminar');
     }
   };
 
@@ -3830,7 +3804,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const expenses = dbService.getCondoExpenses ? dbService.getCondoExpenses() : [];
     const exp = expenses.find(e => e.id === expenseId);
     if (!exp || !exp.invoice_proof) {
-      alert("Este gasto no tiene factura digital adjunta.");
+      showToast("Este gasto no tiene factura digital adjunta.", "info", "Sin Factura Adjunta");
       return;
     }
 

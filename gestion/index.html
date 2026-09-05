@@ -843,87 +843,20 @@
         </div>
       </section>
 
-      <!-- TAB 8: AYUDA, MARCO LEGAL & ESPECIFICACIONES DE LA APLICACIÓN -->
+      <!-- TAB 8: AYUDA INTERACTIVA & GUÍA DIDÁCTICA EXPANDIDA -->
       <section class="tab-view" id="tab-ayuda" style="display: none;">
         <div class="section-head">
           <div>
             <h3 class="section-title">
-              <i class="fa-solid fa-circle-question" style="color: var(--cyan);"></i> Centro de Ayuda, Instrucciones & Marco Legal
+              <i class="fa-solid fa-circle-question" style="color: var(--cyan);"></i> Centro de Ayuda Interactivo & Guía del Usuario
             </h3>
-            <span style="font-size: 12px; color: var(--txt-secondary);">Guía operativa de la plataforma, fundamentación jurídica y arquitectura de seguridad</span>
+            <span style="font-size: 12px; color: var(--txt-secondary);">Tutorial paso a paso, marco legal completo, KPIs y resolución de problemas</span>
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
-          
-          <!-- TARJETA A: MARCO LEGAL VENEZOLANO (GACETA OFICIAL N° 40.418) -->
-          <div class="data-card" style="padding: 24px; border-top: 4px solid var(--amber);">
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
-              <div class="kpi-icon-badge badge-amber"><i class="fa-solid fa-scale-balanced"></i></div>
-              <div>
-                <h4 style="font-family: var(--font-heading); font-size: 16px; color: var(--txt-primary);">Marco Jurídico de Arrendamiento Comercial</h4>
-                <span style="font-size: 11px; color: var(--amber); font-weight: 700;">Gaceta Oficial N° 40.418 (Decreto con Rango, Valor y Fuerza de Ley)</span>
-              </div>
-            </div>
-            <p style="font-size: 12.5px; color: var(--txt-secondary); line-height: 1.6; margin-bottom: 12px;">
-              Esta plataforma inmobiliaria y contable está estructurada estrictamente bajo el ordenamiento legal venezolano que rige los inmuebles destinados al uso comercial:
-            </p>
-            <ul style="font-size: 12px; color: var(--txt-secondary); display: flex; flex-direction: column; gap: 8px; padding-left: 18px; line-height: 1.5;">
-              <li><strong>Artículo 25 (Prórroga Legal):</strong> Duración obligatoria en beneficio del arrendatario solvente (de 6 meses a 3 años según antigüedad).</li>
-              <li><strong>Artículo 32 (Moneda y Pagos):</strong> Cánones fijados en divisa o referencia extranjera liquidables al tipo de cambio oficial publicado por el BCV a la fecha de pago efectiva.</li>
-              <li><strong>Artículo 38 (Gastos Comunes):</strong> Distribución transparente de condominio mediante alícuota porcentual fundamentada en facturas reales de servicios.</li>
-              <li><strong>Facturación y SENIAT:</strong> Emisión de recibos oficiales con numeración correlativa inmutable, datos fiscales y soporte digital adjunto.</li>
-            </ul>
-          </div>
-
-          <!-- TARJETA B: INSTRUCCIONES DE USO & ARQUITECTURA MULTIMONEDA -->
-          <div class="data-card" style="padding: 24px; border-top: 4px solid var(--cyan);">
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
-              <div class="kpi-icon-badge badge-cyan"><i class="fa-solid fa-coins"></i></div>
-              <div>
-                <h4 style="font-family: var(--font-heading); font-size: 16px; color: var(--txt-primary);">Operativa Cuatrimoneda en Tiempo Real</h4>
-                <span style="font-size: 11px; color: var(--cyan); font-weight: 700;">Sincronización Dual BCV & Binance P2P</span>
-              </div>
-            </div>
-            <p style="font-size: 12.5px; color: var(--txt-secondary); line-height: 1.6; margin-bottom: 12px;">
-              El sistema permite la conversión y visualización instantánea entre 4 denominaciones cambiarias sin alterar los registros base:
-            </p>
-            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12px;">
-              <div style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid var(--border-subtle);">
-                <strong style="color: var(--txt-primary);"><i class="fa-solid fa-dollar-sign" style="color: var(--amber);"></i> USD ($):</strong> Moneda base de fijación de contratos y cánones mensuales.
-              </div>
-              <div style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid var(--border-subtle);">
-                <strong style="color: var(--txt-primary);"><i class="fa-solid fa-landmark" style="color: var(--cyan);"></i> VES (Bs.):</strong> Calculado automáticamente al tipo de cambio oficial BCV del día con fecha y hora auditada.
-              </div>
-              <div style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid var(--border-subtle);">
-                <strong style="color: var(--txt-primary);"><i class="fa-solid fa-coins" style="color: var(--emerald);"></i> USDT (₮):</strong> Sincronización con libro de órdenes P2P de Binance para liquidaciones cripto verificables.
-              </div>
-              <div style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid var(--border-subtle);">
-                <strong style="color: var(--txt-primary);"><i class="fa-solid fa-euro-sign" style="color: var(--purple);"></i> EUR (€):</strong> Tasa de paridad oficial BCV para cuentas en moneda europea.
-              </div>
-            </div>
-          </div>
-
-          <!-- TARJETA C: SEGURIDAD ZERO-TRUST, PERMISOS & COMITÉ DE APROBACIÓN -->
-          <div class="data-card" style="padding: 24px; border-top: 4px solid var(--emerald);">
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
-              <div class="kpi-icon-badge badge-emerald"><i class="fa-solid fa-shield-halved"></i></div>
-              <div>
-                <h4 style="font-family: var(--font-heading); font-size: 16px; color: var(--txt-primary);">Seguridad Integral & White-Label SaaS</h4>
-                <span style="font-size: 11px; color: var(--emerald); font-weight: 700;">Zero-Trust, RBAC y Aprobación Delegada</span>
-              </div>
-            </div>
-            <p style="font-size: 12.5px; color: var(--txt-secondary); line-height: 1.6; margin-bottom: 12px;">
-              Mecanismos de defensa activos integrados en el código de la aplicación:
-            </p>
-            <ul style="font-size: 12px; color: var(--txt-secondary); display: flex; flex-direction: column; gap: 8px; padding-left: 18px; line-height: 1.5;">
-              <li><strong>Aprobación por Comité:</strong> Los nuevos usuarios permanecen inactivos hasta que el Administrador Principal valida su identidad y local comercial.</li>
-              <li><strong>Protección IDOR:</strong> Aislamiento estricto de comprobantes y recibos; los inquilinos solo pueden consultar transacciones vinculadas a su unidad.</li>
-              <li><strong>Sanitización OWASP:</strong> Detección y bloqueo en tiempo real contra inyecciones SQL, comandos de sistema y Prompt Injection.</li>
-              <li><strong>Portabilidad Multi-Cliente:</strong> Arquitectura desacoplada lista para desplegarse para cualquier centro comercial o condominio reemplazando únicamente la identidad corporativa.</li>
-            </ul>
-          </div>
-
+        <!-- CONTENEDOR DINÁMICO DE AYUDA -->
+        <div id="help-content-container">
+          <!-- Injected via HelpContent.render() -->
         </div>
       </section>
 
@@ -1615,6 +1548,7 @@
 <script src="js/google-workspace.js"></script>
 <script src="js/notifications.js"></script>
 <script src="js/supabase-client.js"></script>
+<script src="js/ayuda-content.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

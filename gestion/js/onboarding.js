@@ -73,7 +73,11 @@ function goToStep(step) {
     const rif = document.getElementById('ob-rif') ? document.getElementById('ob-rif').value.trim() : '';
     const rep = document.getElementById('ob-rep-name') ? document.getElementById('ob-rep-name').value.trim() : '';
     if (!name || !rif || !rep) {
-      alert('Por favor complete los campos obligatorios del Arrendatario (Razón Social, RIF y Representante Legal).');
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast('Por favor complete los campos obligatorios del Arrendatario (Razón Social, RIF y Representante Legal).', 'warning', 'Campos Requeridos');
+      } else {
+        alert('Por favor complete los campos obligatorios del Arrendatario (Razón Social, RIF y Representante Legal).');
+      }
       return;
     }
   } else if (step === 4) {
@@ -134,10 +138,21 @@ function submitOnboarding() {
 
   try {
     dbService.addTenant(tenantData, contractData);
-    alert('¡Inquilino y Contrato registrados exitosamente en el sistema!');
-    window.location.href = 'index.html';
+    if (window.SecuritySuite && window.SecuritySuite.toast) {
+      window.SecuritySuite.toast('¡Inquilino y Contrato registrados exitosamente en el sistema!', 'success', 'Registro Exitoso');
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 1000);
+    } else {
+      alert('¡Inquilino y Contrato registrados exitosamente en el sistema!');
+      window.location.href = 'index.html';
+    }
   } catch (err) {
-    alert('Error al registrar: ' + err.message);
+    if (window.SecuritySuite && window.SecuritySuite.toast) {
+      window.SecuritySuite.toast('Error al registrar: ' + err.message, 'error', 'Error en Registro');
+    } else {
+      alert('Error al registrar: ' + err.message);
+    }
   }
 }
 
