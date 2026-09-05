@@ -219,7 +219,7 @@
         <h4 style="font-family: var(--font-heading); font-size: 15px; font-weight: 800; color: var(--rose); margin: 0 0 6px 0;">${escapeHtml(title)}</h4>
         <p style="font-size: 12px; color: var(--txt-secondary); max-width: 460px; margin: 0 auto 16px auto;">${escapeHtml(detail)}</p>
         ${retryFnName ? `
-          <button type="button" class="btn-action-icon" onclick="${retryFnName}()" style="width: auto; padding: 7px 16px; font-size: 12px; font-weight: 700; gap: 8px; background: var(--bg-card); border-color: var(--border-subtle); color: var(--txt-primary);">
+          <button type="button" class="btn-action-icon" data-click="${retryFnName}()" style="width: auto; padding: 7px 16px; font-size: 12px; font-weight: 700; gap: 8px; background: var(--bg-card); border-color: var(--border-subtle); color: var(--txt-primary);">
             <i class="fa-solid fa-rotate-right"></i> <span>Reintentar Operación</span>
           </button>
         ` : ''}

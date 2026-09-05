@@ -289,7 +289,7 @@ function renderCatalogCards(items) {
 
     card.innerHTML = `
       <div class="card-photo-wrapper">
-        <img src="${item.image}" alt="${item.name}" onerror="this.src='https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80'" class="card-photo-img">
+        <img src="${item.image}" alt="${item.name}"  class="card-photo-img">
         <div class="card-photo-overlay">
           <span class="card-code-tag">${item.id}</span>
           <span class="badge-status ${statusBadgeClass}">${item.statusText}</span>

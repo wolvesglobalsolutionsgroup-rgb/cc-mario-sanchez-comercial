@@ -181,7 +181,7 @@
       </div>
 
       <div style="display: flex; justify-content: flex-end; margin-top: 24px;">
-        <button type="button" class="btn-onboarding-cta" onclick="goToStep(2)">
+        <button type="button" class="btn-onboarding-cta" data-click="goToStep(2)">
           <span>Continuar a Datos del Inquilino</span> <i class="fa-solid fa-arrow-right"></i>
         </button>
       </div>
@@ -246,10 +246,10 @@
       </div>
 
       <div style="display: flex; justify-content: space-between; margin-top: 24px;">
-        <button type="button" class="btn-currency-toggle" onclick="goToStep(1)">
+        <button type="button" class="btn-currency-toggle" data-click="goToStep(1)">
           <i class="fa-solid fa-arrow-left"></i> <span>Atrás</span>
         </button>
-        <button type="button" class="btn-onboarding-cta" onclick="goToStep(3)">
+        <button type="button" class="btn-onboarding-cta" data-click="goToStep(3)">
           <span>Continuar a Condiciones Legales</span> <i class="fa-solid fa-arrow-right"></i>
         </button>
       </div>
@@ -282,7 +282,7 @@
       <div class="form-grid-2" style="margin-top: 14px;">
         <div class="form-group">
           <label>Meses de Depósito en Garantía (Art. 19)</label>
-          <select class="form-control" id="ob-deposit-months" onchange="updateDepositCalc()">
+          <select class="form-control" id="ob-deposit-months" data-change="updateDepositCalc()">
             <option value="1">1 Mes de Canon</option>
             <option value="2">2 Meses de Canon</option>
             <option value="3" selected>3 Meses de Canon (Tope Máximo Legal Art. 19)</option>
@@ -313,10 +313,10 @@
       </div>
 
       <div style="display: flex; justify-content: space-between; margin-top: 24px;">
-        <button type="button" class="btn-currency-toggle" onclick="goToStep(2)">
+        <button type="button" class="btn-currency-toggle" data-click="goToStep(2)">
           <i class="fa-solid fa-arrow-left"></i> <span>Atrás</span>
         </button>
-        <button type="button" class="btn-onboarding-cta" onclick="goToStep(4)">
+        <button type="button" class="btn-onboarding-cta" data-click="goToStep(4)">
           <span>Revisar Expediente</span> <i class="fa-solid fa-arrow-right"></i>
         </button>
       </div>
@@ -348,10 +348,10 @@
       </div>
 
       <div style="display: flex; justify-content: space-between; margin-top: 24px;">
-        <button type="button" class="btn-currency-toggle" onclick="goToStep(3)">
+        <button type="button" class="btn-currency-toggle" data-click="goToStep(3)">
           <i class="fa-solid fa-arrow-left"></i> <span>Atrás</span>
         </button>
-        <button type="button" class="btn-onboarding-cta" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff;" onclick="submitOnboarding()">
+        <button type="button" class="btn-onboarding-cta" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff;" data-click="submitOnboarding()">
           <i class="fa-solid fa-check-circle"></i> <span>Completar Onboarding & Activar</span>
         </button>
       </div>

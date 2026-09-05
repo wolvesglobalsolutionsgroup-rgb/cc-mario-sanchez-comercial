@@ -722,16 +722,16 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>
           <div style="display: flex; gap: 6px;">
             ${tenant ? `
-              <button class="btn-action-icon" title="Ver Expediente Jurídico" onclick="window.openTenantDossier('${tenant.id}')">
+              <button class="btn-action-icon" title="Ver Expediente Jurídico" data-click="openTenantDossier('${tenant.id}')">
                 <i class="fa-solid fa-folder-open"></i>
               </button>
-              <button class="btn-action-icon" title="Ver Contrato de Arrendamiento (G.O. 40.418)" style="color: var(--cyan);" onclick="window.viewTenantContract('${tenant.id}')">
+              <button class="btn-action-icon" title="Ver Contrato de Arrendamiento (G.O. 40.418)" style="color: var(--cyan);" data-click="viewTenantContract('${tenant.id}')">
                 <i class="fa-solid fa-file-signature"></i>
               </button>
-              <button class="btn-action-icon btn-wa-action" title="Mensaje Instantáneo WhatsApp" onclick="window.openWhatsAppModal('${tenant.id}')">
+              <button class="btn-action-icon btn-wa-action" title="Mensaje Instantáneo WhatsApp" data-click="openWhatsAppModal('${tenant.id}')">
                 <i class="fa-brands fa-whatsapp"></i>
               </button>
-              <button class="btn-action-icon" title="Calcular Prórroga Legal" style="color: var(--amber);" onclick="window.openProrrogaModal('${unit.code}')">
+              <button class="btn-action-icon" title="Calcular Prórroga Legal" style="color: var(--amber);" data-click="openProrrogaModal('${unit.code}')">
                 <i class="fa-solid fa-scale-balanced"></i>
               </button>
             ` : `
@@ -882,20 +882,20 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>
           <div style="display: flex; gap: 6px;">
             ${inv.status !== 'pagado' && (currentRole === 'admin' || currentRole === 'tenant') ? `
-              <button class="btn-action-icon" title="${currentRole === 'tenant' ? 'Reportar pago y adjuntar comprobante' : (inv.status === 'verificando' ? 'Revisar comprobante' : 'Registrar Pago Multimoneda')}" style="background: var(--emerald-glow); color: var(--emerald);" onclick="window.openPaymentModal('${inv.id}')">
+              <button class="btn-action-icon" title="${currentRole === 'tenant' ? 'Reportar pago y adjuntar comprobante' : (inv.status === 'verificando' ? 'Revisar comprobante' : 'Registrar Pago Multimoneda')}" style="background: var(--emerald-glow); color: var(--emerald);" data-click="openPaymentModal('${inv.id}')">
                 <i class="fa-solid fa-receipt"></i>
               </button>
             ` : ''}
             ${inv.receipt_proof ? `
-              <button class="btn-action-icon" title="Ver Comprobante de Pago Adjunto" style="color: var(--cyan); border-color: var(--cyan);" onclick="window.viewReceiptProof('${inv.id}')">
+              <button class="btn-action-icon" title="Ver Comprobante de Pago Adjunto" style="color: var(--cyan); border-color: var(--cyan);" data-click="viewReceiptProof('${inv.id}')">
                 <i class="fa-solid fa-paperclip"></i>
               </button>
             ` : ''}
-            <button class="btn-action-icon" title="Imprimir Recibo Oficial" onclick="window.printReceipt('${inv.id}')">
+            <button class="btn-action-icon" title="Imprimir Recibo Oficial" data-click="printReceipt('${inv.id}')">
               <i class="fa-solid fa-print"></i>
             </button>
             ${currentRole === 'admin' ? `
-              <button class="btn-action-icon btn-wa-action" title="Aviso de Cobranza WhatsApp" onclick="window.openWhatsAppModal('${tenant.id}', '${inv.id}')">
+              <button class="btn-action-icon btn-wa-action" title="Aviso de Cobranza WhatsApp" data-click="openWhatsAppModal('${tenant.id}', '${inv.id}')">
                 <i class="fa-brands fa-whatsapp"></i>
               </button>
             ` : ''}
@@ -961,7 +961,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (withholdBadges.length === 0) withholdBadges.push('<span style="font-size:10px;color:var(--txt-muted);font-style:italic;">Exento / No aplica</span>');
 
       const proofBtn = exp.invoice_proof ? `
-        <button type="button" class="btn-action-icon" style="color:var(--purple);border-color:var(--purple);" title="Ver Factura de Proveedor" onclick="window.viewExpenseProof('${exp.id}')">
+        <button type="button" class="btn-action-icon" style="color:var(--purple);border-color:var(--purple);" title="Ver Factura de Proveedor" data-click="viewExpenseProof('${exp.id}')">
           <i class="fa-solid fa-file-pdf"></i>
         </button>
       ` : `<span style="font-size:10.5px;color:var(--txt-muted);font-style:italic;">Sin archivo</span>`;
@@ -993,10 +993,10 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>
           ${currentRole === 'admin' ? `
             <div style="display:flex;gap:4px;">
-              <button type="button" class="btn-action-icon" title="Editar Gasto" onclick="window.openExpenseModal('${exp.id}')">
+              <button type="button" class="btn-action-icon" title="Editar Gasto" data-click="openExpenseModal('${exp.id}')">
                 <i class="fa-solid fa-pen-to-square"></i>
               </button>
-              <button type="button" class="btn-action-icon" style="color:var(--rose);border-color:var(--rose);" title="Eliminar Gasto" onclick="window.deleteExpense('${exp.id}')">
+              <button type="button" class="btn-action-icon" style="color:var(--rose);border-color:var(--rose);" title="Eliminar Gasto" data-click="deleteExpense('${exp.id}')">
                 <i class="fa-solid fa-trash"></i>
               </button>
             </div>
@@ -2272,11 +2272,11 @@ document.addEventListener('DOMContentLoaded', () => {
             <td>${stBadge}</td>
             <td>
               <div style="display:flex;gap:4px;">
-                <button type="button" class="btn-action-icon" style="width:26px;height:26px;font-size:11px;" title="Imprimir Recibo" onclick="window.printReceipt('${inv.id}')">
+                <button type="button" class="btn-action-icon" style="width:26px;height:26px;font-size:11px;" title="Imprimir Recibo" data-click="printReceipt('${inv.id}')">
                   <i class="fa-solid fa-print"></i>
                 </button>
                 ${inv.receipt_proof ? `
-                  <button type="button" class="btn-action-icon" style="width:26px;height:26px;font-size:11px;color:var(--cyan);border-color:var(--cyan);" title="Ver Comprobante" onclick="window.viewReceiptProof('${inv.id}')">
+                  <button type="button" class="btn-action-icon" style="width:26px;height:26px;font-size:11px;color:var(--cyan);border-color:var(--cyan);" title="Ver Comprobante" data-click="viewReceiptProof('${inv.id}')">
                     <i class="fa-solid fa-paperclip"></i>
                   </button>
                 ` : ''}
@@ -2428,16 +2428,16 @@ document.addEventListener('DOMContentLoaded', () => {
         </td>
         <td>${assignedText}</td>
         <td>
-          <span class="status-pill ${isAct ? 'pill-active' : 'pill-overdue'}" style="font-size:10.5px;cursor:pointer;" onclick="window.toggleAccountStatus('${acc.id}')" title="Click para alternar estado">
+          <span class="status-pill ${isAct ? 'pill-active' : 'pill-overdue'}" style="font-size:10.5px;cursor:pointer;" data-click="toggleAccountStatus('${acc.id}')" title="Click para alternar estado">
             <i class="fa-solid ${isAct ? 'fa-check' : 'fa-ban'}"></i> ${isAct ? 'Habilitada' : 'Inactiva'}
           </span>
         </td>
         <td>
           <div style="display:flex;gap:6px;">
-            <button type="button" class="btn-action-icon" title="Editar Cuenta" onclick="window.openBankAccountModal('${acc.id}')">
+            <button type="button" class="btn-action-icon" title="Editar Cuenta" data-click="openBankAccountModal('${acc.id}')">
               <i class="fa-solid fa-pen-to-square"></i>
             </button>
-            <button type="button" class="btn-action-icon" style="color:var(--rose);border-color:var(--rose);" title="Eliminar Cuenta" onclick="window.deleteAccount('${acc.id}')">
+            <button type="button" class="btn-action-icon" style="color:var(--rose);border-color:var(--rose);" title="Eliminar Cuenta" data-click="deleteAccount('${acc.id}')">
               <i class="fa-solid fa-trash"></i>
             </button>
           </div>
@@ -2680,12 +2680,12 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>
           <div style="display:flex;gap:6px;">
             ${!isAct ? `
-              <button type="button" class="btn-action-icon" title="Aprobar y Autorizar Acceso" onclick="window.approveUserAccess('${u.id}')" style="background: rgba(16,185,129,0.15); color: var(--emerald); border-color: rgba(16,185,129,0.3);">
+              <button type="button" class="btn-action-icon" title="Aprobar y Autorizar Acceso" data-click="approveUserAccess('${u.id}')" style="background: rgba(16,185,129,0.15); color: var(--emerald); border-color: rgba(16,185,129,0.3);">
                 <i class="fa-solid fa-check"></i>
               </button>
             ` : ''}
             ${!isRej && u.id !== 'u-admin-1' ? `
-              <button type="button" class="btn-action-icon" title="Revocar Acceso" onclick="window.rejectUserAccess('${u.id}')" style="background: rgba(244,63,94,0.15); color: var(--rose); border-color: rgba(244,63,94,0.3);">
+              <button type="button" class="btn-action-icon" title="Revocar Acceso" data-click="rejectUserAccess('${u.id}')" style="background: rgba(244,63,94,0.15); color: var(--rose); border-color: rgba(244,63,94,0.3);">
                 <i class="fa-solid fa-ban"></i>
               </button>
             ` : ''}
