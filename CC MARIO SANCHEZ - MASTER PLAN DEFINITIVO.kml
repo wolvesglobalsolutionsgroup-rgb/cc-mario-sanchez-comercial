@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+  <name>CC MARIO SANCHEZ - MASTER PLAN 5.190 M² (PASILLO 20M)</name>
+  <open>1</open>
+
+  <LookAt>
+    <longitude>-64.63290</longitude>
+    <latitude>10.20468</latitude>
+    <altitude>0</altitude>
+    <heading>0</heading>
+    <tilt>0</tilt>
+    <range>270</range>
+  </LookAt>
+
+  <!-- ESTILOS -->
+  <Style id="perimetroGeneral">
+    <LineStyle><color>ffffaa00</color><width>3</width></LineStyle>
+    <PolyStyle><color>10ffffff</color></PolyStyle>
+  </Style>
+  <Style id="plazaAjustada">
+    <LineStyle><color>ff00aaff</color><width>3.2</width></LineStyle>
+    <PolyStyle><color>2500aaff</color></PolyStyle>
+  </Style>
+  <Style id="loteC01">
+    <LineStyle><color>ff00aaff</color><width>3</width></LineStyle>
+    <PolyStyle><color>6000aaff</color></PolyStyle>
+  </Style>
+  <Style id="loteC02">
+    <LineStyle><color>ffe9a50e</color><width>3</width></LineStyle>
+    <PolyStyle><color>60e9a50e</color></PolyStyle>
+  </Style>
+  <Style id="loteC03">
+    <LineStyle><color>fffca8a8</color><width>3</width></LineStyle>
+    <PolyStyle><color>60fca8a8</color></PolyStyle>
+  </Style>
+  <Style id="lineaCheck">
+    <LineStyle><color>ff2f2fd3</color><width>2.5</width></LineStyle>
+  </Style>
+  <Style id="lblBlanca"><IconStyle><scale>0</scale></IconStyle><LabelStyle><color>ffffffff</color><scale>0.85</scale></LabelStyle></Style>
+  <Style id="lblAmarilla"><IconStyle><scale>0</scale></IconStyle><LabelStyle><color>ff00ffff</color><scale>0.85</scale></LabelStyle></Style>
+  <Style id="lblRoja"><IconStyle><scale>0</scale></IconStyle><LabelStyle><color>ff5555ff</color><scale>0.85</scale></LabelStyle></Style>
+  <Style id="lblAzul"><IconStyle><scale>0</scale></IconStyle><LabelStyle><color>ffffaa00</color><scale>0.85</scale></LabelStyle></Style>
+
+  <!-- 1. POLÍGONO GENERAL -->
+  <Folder>
+    <name>1. Terreno Total (14.207 m²)</name>
+    <Placemark>
+      <name>Linderos Generales (14.207 m²)</name>
+      <description>Área total del predio: 14.206,86 m² | Perímetro: 480,62 m</description>
+      <styleUrl>#perimetroGeneral</styleUrl>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>
+        -64.6334931,10.2041270,0 -64.6325898,10.2039085,0 -64.6322931,10.2051063,0 -64.6332604,10.2053150,0 -64.6334931,10.2041270,0
+      </coordinates></LinearRing></outerBoundaryIs></Polygon>
+    </Placemark>
+    <Placemark><name>Sur: 101.88 m</name><styleUrl>#lblBlanca</styleUrl><Point><coordinates>-64.633041,10.20398,0</coordinates></Point></Placemark>
+    <Placemark><name>Este: 136.42 m</name><styleUrl>#lblBlanca</styleUrl><Point><coordinates>-64.63238,10.204507,0</coordinates></Point></Placemark>
+    <Placemark><name>Norte: 108.47 m</name><styleUrl>#lblBlanca</styleUrl><Point><coordinates>-64.632777,10.20525,0</coordinates></Point></Placemark>
+    <Placemark><name>Oeste: 133.85 m</name><styleUrl>#lblBlanca</styleUrl><Point><coordinates>-64.63343,10.204721,0</coordinates></Point></Placemark>
+  </Folder>
+
+  <!-- 2. HUELLA CENTRAL (5.190 M²) SUBDIVIDIDA EN 3 MACRO-LOTES -->
+  <Folder>
+    <name>2. Subdivisión Huella Central (3 Macro-Lotes de 1.730 m²)</name>
+    
+    <!-- LOT-C01 -->
+    <Placemark>
+      <name>LOT-C01: Macro-Lote Norte (1.730 m²)</name>
+      <description><![CDATA[
+        <b>Superficie:</b> 1.730 m² (Nominal)<br>
+        <b>Frente Vial:</b> 27,95 m al Pasillo Oeste de gandolas (20 m) + 64,31 m al Retiro Norte de Clientes.<br>
+        <b>Usos Aprobados:</b> Concesionario, showroom de maquinaria, ferretería mayorista o retail.
+      ]]></description>
+      <styleUrl>#loteC01</styleUrl>
+      <Polygon>
+        <extrude>1</extrude>
+        <altitudeMode>relativeToGround</altitudeMode>
+        <outerBoundaryIs><LinearRing><coordinates>
+          -64.6330805,10.2052798,4
+          -64.6325082,10.2051530,4
+          -64.6325616,10.2049191,4
+          -64.6331306,10.2050319,4
+          -64.6330805,10.2052798,4
+        </coordinates></LinearRing></outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+    <Placemark><name>LOT-C01: 1.730 m² (Fte. 27,95 m)</name><styleUrl>#lblAmarilla</styleUrl><Point><coordinates>-64.63282,10.20509,4</coordinates></Point></Placemark>
+
+    <!-- LOT-C02 -->
+    <Placemark>
+      <name>LOT-C02: Macro-Lote Central (1.730 m²)</name>
+      <description><![CDATA[
+        <b>Superficie:</b> 1.730 m² (Nominal)<br>
+        <b>Frente Vial:</b> 27,95 m al Pasillo Oeste de gandolas (20 m) + Fondo Este al pasillo de retorno (23,80 m).<br>
+        <b>Usos Aprobados:</b> Patio logístico de contenedores, galpón modular desmontable, almacén seco.
+      ]]></description>
+      <styleUrl>#loteC02</styleUrl>
+      <Polygon>
+        <extrude>1</extrude>
+        <altitudeMode>relativeToGround</altitudeMode>
+        <outerBoundaryIs><LinearRing><coordinates>
+          -64.6331306,10.2050319,4
+          -64.6325616,10.2049191,4
+          -64.6326151,10.2046851,4
+          -64.6331808,10.2047841,4
+          -64.6331306,10.2050319,4
+        </coordinates></LinearRing></outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+    <Placemark><name>LOT-C02: 1.730 m² (Fte. 27,95 m)</name><styleUrl>#lblAmarilla</styleUrl><Point><coordinates>-64.63287,10.20485,4</coordinates></Point></Placemark>
+
+    <!-- LOT-C03 -->
+    <Placemark>
+      <name>LOT-C03: Macro-Lote Sur (1.730 m²)</name>
+      <description><![CDATA[
+        <b>Superficie:</b> 1.730 m² (Nominal)<br>
+        <b>Frente Vial:</b> 27,96 m al Pasillo Oeste (20 m) + Frente Sur directo al Patio de Maniobras de 20 m.<br>
+        <b>Usos Aprobados:</b> Taller de servicio pesado, patio de gandolas y maquinaria, centro de distribución.
+      ]]></description>
+      <styleUrl>#loteC03</styleUrl>
+      <Polygon>
+        <extrude>1</extrude>
+        <altitudeMode>relativeToGround</altitudeMode>
+        <outerBoundaryIs><LinearRing><coordinates>
+          -64.6331808,10.2047841,4
+          -64.6326151,10.2046851,4
+          -64.6326685,10.2044512,4
+          -64.6332309,10.2045362,4
+          -64.6331808,10.2047841,4
+        </coordinates></LinearRing></outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+    <Placemark><name>LOT-C03: 1.730 m² (Fte. 27,96 m)</name><styleUrl>#lblAmarilla</styleUrl><Point><coordinates>-64.63292,10.20461,4</coordinates></Point></Placemark>
+  </Folder>
+
+  <!-- 3. PASILLOS Y ESTACIONAMIENTOS -->
+  <Folder>
+    <name>3. Pasillos y Operación Vial</name>
+    <!-- Pasillo Oeste 20 m -->
+    <Placemark>
+      <name>Pasillo O: 20.00 m</name>
+      <description>Avenida de servicio mixta: canal de rodamiento para gandolas continuas + batería de estacionamiento a 90° (~35 puestos) para locales comerciales del ala oeste.</description>
+      <styleUrl>#lblAzul</styleUrl>
+      <Point><coordinates>-64.63330,10.20473,0</coordinates></Point>
+    </Placemark>
+
+    <!-- Patio Sur 20 m -->
+    <Placemark>
+      <name>Patio Sur: 20.00 m</name>
+      <description>Patio de maniobra y carga pesada frente a Repuestos de Oriente.</description>
+      <styleUrl>#lblRoja</styleUrl>
+      <Point><coordinates>-64.63290,10.20438,0</coordinates></Point>
+    </Placemark>
+    <Placemark><name>Cota Sur</name><styleUrl>#lineaCheck</styleUrl><LineString><coordinates>-64.6328983,10.2044512,0 -64.6329145,10.2043100,0</coordinates></LineString></Placemark>
+
+    <!-- Retiro Norte 23.86 m -->
+    <Placemark>
+      <name>Retiro Norte: 23.86 m</name>
+      <description>Acceso principal y zona de estacionamiento de vehículos ligeros para clientes.</description>
+      <styleUrl>#lblRoja</styleUrl>
+      <Point><coordinates>-64.63293,10.20538,0</coordinates></Point>
+    </Placemark>
+    <Placemark><name>Cota Norte</name><styleUrl>#lineaCheck</styleUrl><LineString><coordinates>-64.6329559,10.2052798,0 -64.6329095,10.2054600,0</coordinates></LineString></Placemark>
+
+    <!-- Pasillo Este 23.80 m -->
+    <Placemark>
+      <name>Pasillo Este: 23.80 m</name>
+      <description>Vía de retorno horario de gandolas y área de estacionamiento de carga.</description>
+      <styleUrl>#lblRoja</styleUrl>
+      <Point><coordinates>-64.63246,10.20478,0</coordinates></Point>
+    </Placemark>
+
+    <!-- Callejón de Acceso -->
+    <Placemark><name>Boca: 11.50 m</name><styleUrl>#lblRoja</styleUrl><Point><coordinates>-64.633879,10.205651,0</coordinates></Point></Placemark>
+    <Placemark><name>Eje: 76.00 m</name><styleUrl>#lblRoja</styleUrl><Point><coordinates>-64.63357,10.20546,0</coordinates></Point></Placemark>
+    <Placemark><name>Eje Vial</name><styleUrl>#lineaCheck</styleUrl><LineString><coordinates>-64.6338884,10.2056053,0 -64.6335738,10.2054640,0 -64.6332600,10.2053150,0</coordinates></LineString></Placemark>
+  </Folder>
+</Document>
+</kml>
