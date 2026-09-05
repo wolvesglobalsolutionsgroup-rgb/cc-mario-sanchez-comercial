@@ -273,6 +273,12 @@ const spacesData = [
   }
 ];
 
+function getSpaceThumb(item) {
+  const color = encodeURIComponent(item.color || '#f59e0b');
+  const cat = item.category === 'macro-lotes' ? 'LOTE' : item.category === 'galpones' ? 'GALPÓN' : 'LOCAL';
+  return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" rx="8" fill="%230b1220"/><rect x="3" y="3" width="58" height="58" rx="6" fill="none" stroke="${color}" stroke-width="1.5" stroke-dasharray="3,3"/><text x="32" y="28" fill="%23ffffff" font-family="sans-serif" font-weight="900" font-size="11" text-anchor="middle">${item.id}</text><text x="32" y="44" fill="${color}" font-family="sans-serif" font-weight="700" font-size="8.5" text-anchor="middle">${cat}</text></svg>`;
+}
+
 // 3. Render Cards in Side List
 function renderList(items) {
   const listContainer = document.getElementById('spaces-list-box');
@@ -290,7 +296,7 @@ function renderList(items) {
     card.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') openDetailModal(item.id); };
 
     card.innerHTML = `
-      <img src="${item.image}" alt="Vista previa de ${item.name}" loading="lazy" width="64" height="64" class="w-16 h-16 rounded-lg object-cover flex-shrink-0 group-hover:scale-105 transition-transform bg-slate-800">
+      <img src="${getSpaceThumb(item)}" alt="Vista previa de ${item.name}" loading="lazy" width="64" height="64" class="w-16 h-16 rounded-lg object-contain flex-shrink-0 group-hover:scale-105 transition-transform bg-slate-900 border border-white/10">
       <div class="flex-1 min-w-0">
         <div class="flex items-center justify-between gap-1">
           <span class="font-heading font-extrabold text-xs text-white truncate">${item.name}</span>
@@ -625,11 +631,18 @@ window.updateSim = updateSim;
 window.handleLeadSubmit = handleLeadSubmit;
 
 function setupLazyMap() {
-  renderList(spacesData);
   const mapEl = document.getElementById('interactive-map');
-  if (!mapEl) return;
+  let listRendered = false;
+
+  const triggerList = () => {
+    if (!listRendered) {
+      listRendered = true;
+      renderList(spacesData);
+    }
+  };
 
   const triggerInit = () => {
+    triggerList();
     if (mapInitialized) return;
     loadLeafletAssets(() => {
       initLandingMap();
@@ -645,9 +658,16 @@ function setupLazyMap() {
         }
       });
     }, { rootMargin: '300px' });
-    mapObserver.observe(mapEl);
+    if (mapEl) mapObserver.observe(mapEl);
   } else {
     triggerInit();
+  }
+
+  // Backup fallback on idle
+  if (typeof requestIdleCallback !== 'undefined') {
+    requestIdleCallback(() => triggerList(), { timeout: 2000 });
+  } else {
+    setTimeout(triggerList, 1500);
   }
 }
 
