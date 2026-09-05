@@ -362,6 +362,39 @@
     return getSession();
   }
 
+  function currentTenant() {
+    const sess = getSession();
+    if (!sess) return null;
+    if (typeof global.dbService !== 'undefined' && global.dbService.getTenants) {
+      const tenants = global.dbService.getTenants();
+      if (sess.tenant_id) {
+        const found = tenants.find(t => t.id === sess.tenant_id);
+        if (found) return found;
+      }
+      if (sess.identifier) {
+        const found = tenants.find(t => t.rif === sess.identifier || t.email === sess.identifier);
+        if (found) return found;
+      }
+      if (sess.unit) {
+        const found = tenants.find(t => t.unit_code === sess.unit || (sess.unit && sess.unit.includes(t.unit_code)));
+        if (found) return found;
+      }
+      if (sess.display_name) {
+        const found = tenants.find(t => t.business_name && (t.business_name.includes(sess.display_name) || sess.display_name.includes(t.business_name)));
+        if (found) return found;
+      }
+      if (sess.role === 'tenant' && tenants.length > 0) {
+        return tenants[0];
+      }
+    }
+    return {
+      id: sess.tenant_id || 't-1',
+      business_name: sess.display_name || 'Inquilino Comercial',
+      rif: sess.identifier || 'J-29881234-0',
+      unit_code: sess.unit || 'PB-01'
+    };
+  }
+
   function require(requiredRole) {
     const sess = getSession();
     if (!sess) {
@@ -545,6 +578,7 @@
     login,
     logout,
     currentUser,
+    currentTenant,
     mountUserChip,
     applyRoleVisibility,
     listUsers,

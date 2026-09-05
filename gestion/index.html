@@ -124,7 +124,7 @@
           <button type="button" class="btn-sync-bcv" onclick="syncBcvRate()" title="Actualizar tasas en vivo (BCV DolarApi y Binance P2P Yadio)" style="background: none; border: none; color: var(--amber); cursor: pointer; padding: 2px 4px; font-size: 11px;">
             <i class="fa-solid fa-arrows-rotate" id="bcv-sync-icon"></i>
           </button>
-          <button type="button" class="btn-edit-bcv" onclick="editBcvRate()" title="Editar tasa manualmente" style="background: none; border: none; color: var(--txt-muted); cursor: pointer; padding: 2px 4px; font-size: 11px;">
+          <button type="button" class="btn-edit-bcv" data-roles="admin" onclick="editBcvRate()" title="Editar tasa manualmente" style="background: none; border: none; color: var(--txt-muted); cursor: pointer; padding: 2px 4px; font-size: 11px;">
             <i class="fa-solid fa-pen-to-square"></i>
           </button>
         </div>
@@ -140,8 +140,8 @@
           <button class="cur-pill" data-cur="USDT"><i class="fa-solid fa-coins" style="font-size: 10px; color: var(--emerald);"></i> USDT</button>
         </div>
 
-        <!-- BOTÓN DE ACCESO DIRECTO A CONFIGURACIÓN -->
-        <button class="btn-theme-toggle" onclick="openConfigTab()" title="Configuración de la App (Cuotas, Alertas y Mensajes)">
+        <!-- BOTÓN DE ACCESO DIRECTO A CONFIGURACIÓN (SOLO ADMIN) -->
+        <button class="btn-theme-toggle" data-roles="admin" onclick="openConfigTab()" title="Configuración de la App (Cuotas, Alertas y Mensajes)">
           <i class="fa-solid fa-gear" style="color: var(--amber);"></i>
         </button>
 

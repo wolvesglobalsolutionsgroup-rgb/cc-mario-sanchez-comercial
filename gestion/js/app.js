@@ -289,6 +289,11 @@ document.addEventListener('DOMContentLoaded', () => {
     sidebarBackdrop.onclick = () => closeMobileSidebar();
   }
 
+  window.openConfigTab = function() {
+    const configNav = document.querySelector('.nav-item[data-tab="configuracion"]');
+    if (configNav) configNav.click();
+  };
+
   document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault();
@@ -299,6 +304,16 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.tab-view').forEach(v => v.style.display = 'none');
       const activeView = document.getElementById(`tab-${currentTab}`);
       if (activeView) activeView.style.display = 'block';
+
+      // Control de visibilidad del grid de KPIs principales: solo visible en vistas operativas/dashboard
+      const kpiGrid = document.querySelector('.kpi-grid');
+      if (kpiGrid) {
+        if (currentTab === 'inquilinos' || currentTab === 'cobranzas') {
+          kpiGrid.style.display = '';
+        } else {
+          kpiGrid.style.display = 'none';
+        }
+      }
 
       if (currentTab === 'ayuda' && window.HelpContent && typeof window.HelpContent.render === 'function') {
         window.HelpContent.render();
@@ -1463,32 +1478,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 3. Modal Registro de Pago Multimoneda con Snapshot y TxID
   window.openTenantQuickPay = function() {
-    const currentTenant = AuthGuard.currentTenant();
-    if (!currentTenant) {
-      showToast("No se encontró el inquilino activo o la sesión ha expirado.", "error", "Sesión Expirada");
-      return;
+    const currentTenant = (window.AuthGuard && window.AuthGuard.currentTenant) ? window.AuthGuard.currentTenant() : null;
+    const allInvoices = (window.dbService && window.dbService.getInvoices) ? window.dbService.getInvoices() : [];
+    
+    let myInvoices = [];
+    if (currentTenant) {
+      myInvoices = allInvoices.filter(i => i.tenant_id === currentTenant.id || i.unit_code === currentTenant.unit_code);
     }
-    const myInvoices = dbService.getInvoices().filter(i => i.tenant_id === currentTenant.id);
-    const pendingInvoices = myInvoices.filter(i => i.status !== 'pagado');
+    if (myInvoices.length === 0) {
+      myInvoices = allInvoices;
+    }
 
-    if (pendingInvoices.length === 0) {
-      showToast("¡Felicitaciones! Su cuenta se encuentra totalmente solvente y al día sin cuotas pendientes por pagar.", "success", "Cuenta Solvente");
+    if (myInvoices.length === 0) {
+      showToast("No hay registros de cuotas emitidas en el sistema.", "info", "Sin Cuotas");
       return;
     }
+
+    const pendingInvoices = myInvoices.filter(i => i.status !== 'pagado');
+    const targetInvoice = pendingInvoices.length > 0 ? pendingInvoices[0] : myInvoices[0];
 
     const selectGroup = document.getElementById('pay-select-invoice-group');
     const select = document.getElementById('pay-invoice-select');
     if (selectGroup && select) {
       selectGroup.style.display = 'block';
-      select.innerHTML = pendingInvoices.map(inv => `
-        <option value="${inv.id}">
-          ${inv.invoice_number} — Unidad ${inv.unit_code} — ${inv.period_month}/${inv.period_year} — $${inv.total_usd.toFixed(2)} USD (${inv.status === 'verificando' ? 'En Revisión' : (inv.status === 'en_mora' ? 'En Mora' : 'Pendiente')})
-        </option>
-      `).join('');
-      select.value = pendingInvoices[0].id;
+      select.innerHTML = myInvoices.map(inv => {
+        let badge = inv.status === 'pagado' ? '✓ Pagado' : (inv.status === 'verificando' ? '⏳ En Revisión' : (inv.status === 'en_mora' ? '⚠️ En Mora' : 'Pendiente'));
+        return `
+          <option value="${inv.id}">
+            ${inv.invoice_number} — Unidad ${inv.unit_code} — ${inv.period_month}/${inv.period_year} — $${inv.total_usd.toFixed(2)} USD [${badge}]
+          </option>
+        `;
+      }).join('');
+      select.value = targetInvoice.id;
     }
 
-    window.openPaymentModal(pendingInvoices[0].id);
+    window.openPaymentModal(targetInvoice.id);
   };
 
   window.onSelectInvoiceToPay = function(invoiceId) {
@@ -1516,14 +1540,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (selectGroup) {
       selectGroup.style.display = (currentRole === 'tenant') ? 'block' : 'none';
       if (currentRole === 'tenant' && select && select.options.length === 0) {
-        const currentTenant = AuthGuard.currentTenant();
-        const myPendings = currentTenant ? dbService.getInvoices().filter(i => i.tenant_id === currentTenant.id && i.status !== 'pagado') : [];
-        if (myPendings.length > 0) {
-          select.innerHTML = myPendings.map(i => `
-            <option value="${i.id}">
-              ${i.invoice_number} — Unidad ${i.unit_code} — ${i.period_month}/${i.period_year} — $${i.total_usd.toFixed(2)} USD
-            </option>
-          `).join('');
+        const currentTenant = (window.AuthGuard && window.AuthGuard.currentTenant) ? window.AuthGuard.currentTenant() : null;
+        const allInvs = dbService.getInvoices();
+        const myInvs = currentTenant ? allInvs.filter(i => i.tenant_id === currentTenant.id || i.unit_code === currentTenant.unit_code) : allInvs;
+        if (myInvs.length > 0) {
+          select.innerHTML = myInvs.map(i => {
+            let badge = i.status === 'pagado' ? '✓ Pagado' : (i.status === 'verificando' ? '⏳ En Revisión' : (i.status === 'en_mora' ? '⚠️ En Mora' : 'Pendiente'));
+            return `
+              <option value="${i.id}">
+                ${i.invoice_number} — Unidad ${i.unit_code} — ${i.period_month}/${i.period_year} — $${i.total_usd.toFixed(2)} USD [${badge}]
+              </option>
+            `;
+          }).join('');
           select.value = invoiceId;
         }
       }
@@ -1532,8 +1560,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const pending = currentRole === 'admin' ? dbService.getPendingPayment(invoiceId) : null;
     const isTenantSubmission = currentRole === 'tenant';
     const isAdminReview = currentRole === 'admin' && Boolean(pending);
-    document.getElementById('payment-modal-title').innerText = isTenantSubmission ? 'Reportar Pago' : (isAdminReview ? 'Revisar Comprobante' : 'Registrar y Conciliar Pago');
-    document.getElementById('payment-submit-label').innerText = isTenantSubmission ? 'Enviar comprobante a Administración' : (isAdminReview ? 'Aprobar y conciliar pago' : 'Confirmar Pago & Guardar Comprobante');
+    document.getElementById('payment-modal-title').innerText = isTenantSubmission ? 'Reportar / Cargar Pago' : (isAdminReview ? 'Revisar Comprobante' : 'Registrar y Conciliar Pago');
+    document.getElementById('payment-submit-label').innerText = isTenantSubmission ? 'Enviar Comprobante a Administración' : (isAdminReview ? 'Aprobar y Conciliar Pago' : 'Confirmar Pago & Guardar Comprobante');
     document.getElementById('pay-reject-btn').style.display = isAdminReview ? 'flex' : 'none';
     document.getElementById('pay-review-mode').value = isAdminReview ? '1' : '0';
     if (pending) {
@@ -1561,7 +1589,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     updatePaymentEquivalents();
-    document.getElementById('modal-payment').classList.add('open');
+    const modalEl = document.getElementById('modal-payment');
+    if (modalEl) {
+      modalEl.classList.add('open', 'active');
+      modalEl.style.display = 'flex';
+    }
   };
 
   // Actualización dinámica de equivalencias en el modal de pago
