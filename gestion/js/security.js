@@ -352,6 +352,10 @@
       const overlay = document.createElement('div');
       overlay.className = 'ccms-dialog-overlay';
 
+      const isPlaceholder = typeof defaultValue === 'string' && defaultValue.startsWith('Ej:');
+      const inputVal = isPlaceholder ? '' : defaultValue;
+      const inputPlaceholder = isPlaceholder ? defaultValue : '';
+
       overlay.innerHTML = `
         <div class="ccms-dialog-card">
           <div class="ccms-dialog-header">
@@ -365,7 +369,7 @@
           </div>
           <div class="ccms-dialog-body" style="padding: 16px 20px;">
             <p style="margin: 0 0 12px; font-size: 13px; color: var(--txt-primary);">${escapeHtml(message)}</p>
-            <input type="text" id="ccms-dialog-prompt-input" class="form-control" value="${escapeHtml(defaultValue)}" style="width: 100%; font-size: 13px; padding: 10px 12px;" />
+            <input type="text" id="ccms-dialog-prompt-input" class="form-control" value="${escapeHtml(inputVal)}" placeholder="${escapeHtml(inputPlaceholder)}" style="width: 100%; font-size: 13px; padding: 10px 12px;" />
           </div>
           <div class="ccms-dialog-actions" style="display: flex; justify-content: flex-end; gap: 10px; padding: 12px 20px; border-top: 1px solid var(--border-subtle);">
             <button type="button" class="btn-currency-toggle" id="ccms-dialog-cancel-btn">${escapeHtml(cancelText)}</button>

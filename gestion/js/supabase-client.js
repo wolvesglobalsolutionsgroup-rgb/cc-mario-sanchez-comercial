@@ -311,8 +311,17 @@ class DatabaseService {
           condo_usd: 80,
           total_usd: 1130,
           due_date: '2026-03-05',
-          status: 'pendiente',
-          paid_at: null
+          status: 'verificando',
+          paid_at: null,
+          issuing_bank: '0102 - Banco de Venezuela',
+          payment_method: 'Pago Móvil Interbancario',
+          reference_number: 'BDV-98712340',
+          receipt_proof: {
+            name: 'Comprobante_PagoMovil_BDV_LOC02.png',
+            type: 'image/png',
+            size: 148200,
+            data: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect width="400" height="300" fill="%230f172a"/><rect x="20" y="20" width="360" height="260" rx="12" fill="%231e293b" stroke="%23f59e0b" stroke-width="2"/><text x="200" y="60" fill="%23f59e0b" font-family="sans-serif" font-size="16" font-weight="bold" text-anchor="middle">BANCO DE VENEZUELA — PAGO MÓVIL</text><text x="200" y="100" fill="%2310b981" font-family="sans-serif" font-size="20" font-weight="bold" text-anchor="middle">OPERACIÓN EXITOSA</text><text x="40" y="140" fill="%2394a3b8" font-family="sans-serif" font-size="12">Referencia: BDV-98712340</text><text x="40" y="165" fill="%2394a3b8" font-family="sans-serif" font-size="12">Destino: CC Mario Sánchez (J-29881234-0)</text><text x="40" y="190" fill="%2394a3b8" font-family="sans-serif" font-size="12">Emisor: AutoPartes Express (J-50239011-8)</text><text x="40" y="215" fill="%2394a3b8" font-family="sans-serif" font-size="12">Monto Equivalente: $1,130.00 USD (Tasa BCV)</text><text x="200" y="255" fill="%2338bdf8" font-family="sans-serif" font-size="11" text-anchor="middle">Sello Digital: CCMS-GO40418-VERIFIED</text></svg>'
+          }
         },
         {
           id: 'inv-5',
@@ -326,6 +335,7 @@ class DatabaseService {
           total_usd: 910,
           due_date: '2026-03-05',
           status: 'en_mora',
+          mora_days: 12,
           paid_at: null
         },
         {
@@ -368,6 +378,21 @@ class DatabaseService {
           total_usd: 4050,
           due_date: '2026-04-05',
           status: 'pendiente',
+          paid_at: null
+        },
+        {
+          id: 'inv-9',
+          invoice_number: 'CSH-2026-03-001',
+          tenant_id: 't-3',
+          unit_code: 'LOC-01',
+          period_month: 3,
+          period_year: 2026,
+          rent_usd: 366.66,
+          condo_usd: 0,
+          total_usd: 366.66,
+          due_date: '2026-03-15',
+          status: 'pendiente',
+          cashea_plan: 'Cashea 3 Cuotas (Cuota 1/3)',
           paid_at: null
         },
         // --- HISTORIAL PREVIO (ENERO Y FEBRERO 2026) PARA AUDITORÍA SOCIETARIA ---
@@ -428,6 +453,27 @@ class DatabaseService {
           paid_at: '2026-02-08'
         }
       ],
+      pending_payments: {
+        'inv-4': {
+          invoice_id: 'inv-4',
+          amount_paid: 1130,
+          currency: 'USD',
+          payment_method: 'Pago Móvil Interbancario',
+          reference_number: 'BDV-98712340',
+          issuing_bank: '0102 - Banco de Venezuela',
+          origin_type: 'registered',
+          origin_phone: '0416-6801234',
+          origin_doc: 'J-50239011-8',
+          origin_name: 'AutoPartes & Servicios Express, C.A.',
+          submitted_at: '2026-09-04T18:30:00.000Z',
+          receipt_proof: {
+            name: 'Comprobante_PagoMovil_BDV_LOC02.png',
+            type: 'image/png',
+            size: 148200,
+            data: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect width="400" height="300" fill="%230f172a"/><rect x="20" y="20" width="360" height="260" rx="12" fill="%231e293b" stroke="%23f59e0b" stroke-width="2"/><text x="200" y="60" fill="%23f59e0b" font-family="sans-serif" font-size="16" font-weight="bold" text-anchor="middle">BANCO DE VENEZUELA — PAGO MÓVIL</text><text x="200" y="100" fill="%2310b981" font-family="sans-serif" font-size="20" font-weight="bold" text-anchor="middle">OPERACIÓN EXITOSA</text><text x="40" y="140" fill="%2394a3b8" font-family="sans-serif" font-size="12">Referencia: BDV-98712340</text><text x="40" y="165" fill="%2394a3b8" font-family="sans-serif" font-size="12">Destino: CC Mario Sánchez (J-29881234-0)</text><text x="40" y="190" fill="%2394a3b8" font-family="sans-serif" font-size="12">Emisor: AutoPartes Express (J-50239011-8)</text><text x="40" y="215" fill="%2394a3b8" font-family="sans-serif" font-size="12">Monto Equivalente: $1,130.00 USD (Tasa BCV)</text><text x="200" y="255" fill="%2338bdf8" font-family="sans-serif" font-size="11" text-anchor="middle">Sello Digital: CCMS-GO40418-VERIFIED</text></svg>'
+          }
+        }
+      },
       payments: [
         {
           id: 'p-1',

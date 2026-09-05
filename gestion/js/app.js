@@ -1964,6 +1964,8 @@ document.addEventListener('DOMContentLoaded', () => {
       reason = await window.SecuritySuite.prompt(
         'Indique detalladamente el motivo del rechazo del comprobante de pago para notificación del inquilino:',
         'Rechazar Comprobante de Pago',
+        'Rechazar Comprobante',
+        'Cancelar',
         'Ej: Referencia no coincide con extracto bancario o monto incompleto'
       );
     } else {
