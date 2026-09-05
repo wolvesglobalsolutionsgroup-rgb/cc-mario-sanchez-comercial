@@ -1,15 +1,16 @@
 /**
  * ==============================================================================
- * SERVICE WORKER: SOPORTE PWA OFFLINE & CACHE INTELIGENTE
+ * SERVICE WORKER: SOPORTE PWA & ACTUALIZACIÓN INMEDIATA (NETWORK-FIRST)
  * Centro Comercial Mario Sánchez — Puerto La Cruz, Venezuela
  * ==============================================================================
  */
 
-const CACHE_NAME = 'ccms-erp-v2.6.0';
+const CACHE_NAME = 'ccms-erp-v2.7.0';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/alquiler.html',
+  '/gestion/',
   '/gestion/index.html',
   '/gestion/login.html',
   '/gestion/onboarding.html',
@@ -23,18 +24,13 @@ const STATIC_ASSETS = [
   '/gestion/js/tenant-loader.js',
   '/gestion/js/supabase-client.js',
   '/gestion/js/notifications.js',
+  '/gestion/js/ayuda-content.js',
+  '/gestion/js/app.js',
   '/favicon_2k.png',
   '/apple-touch-icon_2k.png'
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS).catch(err => {
-        console.warn('[SW] Fallo al precachear algunos assets:', err);
-      });
-    })
-  );
   self.skipWaiting();
 });
 
@@ -42,17 +38,13 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
+        keys.map((key) => caches.delete(key))
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
+// Estrategia Network-First: Siempre intenta obtener la versión más reciente de la red
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
@@ -61,8 +53,8 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
 
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request).then((networkResponse) => {
+    fetch(event.request)
+      .then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
           const resClone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -70,17 +62,17 @@ self.addEventListener('fetch', (event) => {
           });
         }
         return networkResponse;
-      }).catch((err) => {
-        if (cachedResponse) return cachedResponse;
-        // Si no hay red ni cache y es HTML, retornar login/index de respaldo
-        if (event.request.headers.get('accept')?.includes('text/html')) {
-          return caches.match('/gestion/login.html') || caches.match('/index.html');
-        }
-        throw err;
-      });
-
-      return cachedResponse || fetchPromise;
-    })
+      })
+      .catch(() => {
+        // Fallback a caché solo si no hay conexión a internet
+        return caches.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) return cachedResponse;
+          if (event.request.headers.get('accept')?.includes('text/html')) {
+            return caches.match('/gestion/login.html') || caches.match('/gestion/index.html') || caches.match('/index.html');
+          }
+        });
+      })
   );
 });
+
 
