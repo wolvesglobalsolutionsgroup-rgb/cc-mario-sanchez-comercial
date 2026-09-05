@@ -162,4 +162,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnDemoA) btnDemoA.addEventListener('click', (e) => { e.preventDefault(); fillDemo('admin', true); });
   if (btnDemoT) btnDemoT.addEventListener('click', (e) => { e.preventDefault(); fillDemo('tenant', true); });
   if (btnDemoP) btnDemoP.addEventListener('click', (e) => { e.preventDefault(); fillDemo('pending', true); });
+
+  const form = document.getElementById('login-form');
+  if (form) form.addEventListener('submit', handleLogin);
+
+  const forgotLink = document.getElementById('forgot-password-link');
+  if (forgotLink) forgotLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    alert('Contacte al Administrador Principal para restablecer credenciales.');
+  });
 });

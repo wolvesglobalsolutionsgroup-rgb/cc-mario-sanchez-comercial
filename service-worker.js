@@ -5,11 +5,12 @@
  * ==============================================================================
  */
 
-const CACHE_NAME = 'ccms-erp-v2.7.2';
+const CACHE_NAME = 'ccms-erp-v2.7.3';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/alquiler.html',
+  '/css/tailwind-built.min.css',
   '/gestion/',
   '/gestion/index.html',
   '/gestion/login.html',
@@ -17,6 +18,7 @@ const STATIC_ASSETS = [
   '/gestion/css/dashboard.css',
   '/gestion/js/security.js',
   '/gestion/js/auth-guard.js',
+  '/gestion/js/login.js',
   '/gestion/js/financial-engine.js',
   '/gestion/js/venezuela-legal.js',
   '/gestion/js/seniat-engine.js',
