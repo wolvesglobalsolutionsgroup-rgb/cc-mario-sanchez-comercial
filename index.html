@@ -557,44 +557,71 @@
           <div class="md:col-span-7 flex flex-col gap-6">
             
             <!-- Type of business -->
+            <!-- Type of business -->
             <div>
               <label class="font-heading font-bold text-sm text-slate-200 block mb-3">Tipo de Operación Comercial:</label>
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <button type="button" class="sim-btn active px-3 py-2.5 rounded-xl border border-amber-500 bg-amber-500/20 text-amber-300 font-heading font-bold text-xs text-center transition-all" onclick="setSimType('retail', this)">Retail / Tienda</button>
-                <button type="button" class="sim-btn px-3 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 font-heading font-bold text-xs text-center transition-all" onclick="setSimType('containers', this)">Contenedores</button>
-                <button type="button" class="sim-btn px-3 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 font-heading font-bold text-xs text-center transition-all" onclick="setSimType('logistica', this)">Logística</button>
-                <button type="button" class="sim-btn px-3 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 font-heading font-bold text-xs text-center transition-all" onclick="setSimType('automotriz', this)">Taller / Showroom</button>
+                <button type="button" class="sim-btn active px-3 py-2.5 rounded-xl border border-amber-500 bg-amber-500/20 text-amber-300 font-heading font-bold text-xs text-center transition-all hover:scale-[1.02] active:scale-95" onclick="setSimType('retail', this)">Retail / Tienda</button>
+                <button type="button" class="sim-btn px-3 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 font-heading font-bold text-xs text-center transition-all hover:scale-[1.02] active:scale-95" onclick="setSimType('containers', this)">Contenedores</button>
+                <button type="button" class="sim-btn px-3 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 font-heading font-bold text-xs text-center transition-all hover:scale-[1.02] active:scale-95" onclick="setSimType('logistica', this)">Logística</button>
+                <button type="button" class="sim-btn px-3 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 font-heading font-bold text-xs text-center transition-all hover:scale-[1.02] active:scale-95" onclick="setSimType('automotriz', this)">Taller / Showroom</button>
+              </div>
+            </div>
+
+            <!-- Quick Presets -->
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-heading font-bold text-slate-300">Medidas Populares Predefinidas:</span>
+                <span class="text-[10.5px] text-amber-400 font-medium">Clic para ajuste rápido</span>
+              </div>
+              <div class="flex flex-wrap gap-1.5">
+                <button type="button" class="preset-chip px-2.5 py-1 rounded-lg bg-white/5 hover:bg-amber-500/20 hover:text-amber-300 border border-white/10 text-slate-300 text-xs font-heading font-bold transition-all active:scale-95" onclick="setSimPreset(95)">95 m² (Local)</button>
+                <button type="button" class="preset-chip px-2.5 py-1 rounded-lg bg-white/5 hover:bg-amber-500/20 hover:text-amber-300 border border-white/10 text-slate-300 text-xs font-heading font-bold transition-all active:scale-95" onclick="setSimPreset(110)">110 m² (Comercial)</button>
+                <button type="button" class="preset-chip px-2.5 py-1 rounded-lg bg-white/5 hover:bg-amber-500/20 hover:text-amber-300 border border-white/10 text-slate-300 text-xs font-heading font-bold transition-all active:scale-95" onclick="setSimPreset(250)">250 m² (Depósito)</button>
+                <button type="button" class="preset-chip px-2.5 py-1 rounded-lg bg-white/5 hover:bg-amber-500/20 hover:text-amber-300 border border-white/10 text-slate-300 text-xs font-heading font-bold transition-all active:scale-95" onclick="setSimPreset(500)">500 m² (Módulo)</button>
+                <button type="button" class="preset-chip px-2.5 py-1 rounded-lg bg-white/5 hover:bg-amber-500/20 hover:text-amber-300 border border-white/10 text-slate-300 text-xs font-heading font-bold transition-all active:scale-95" onclick="setSimPreset(850)">850 m² (Galpón)</button>
+                <button type="button" class="preset-chip px-2.5 py-1 rounded-lg bg-white/5 hover:bg-amber-500/20 hover:text-amber-300 border border-white/10 text-slate-300 text-xs font-heading font-bold transition-all active:scale-95" onclick="setSimPreset(1730)">1.730 m² (Macro-Lote)</button>
               </div>
             </div>
 
             <!-- Slider Area -->
             <div>
               <div class="flex justify-between items-center mb-2">
-                <label for="sim-range" class="font-heading font-bold text-sm text-slate-200">Superficie Estimada Requerida:</label>
-                <span class="font-heading font-bold text-amber-400 text-2xl" id="sim-area-val">500 m²</span>
+                <label for="sim-range" class="font-heading font-bold text-sm text-slate-200">Superficie Deseada:</label>
+                <span class="font-heading font-extrabold text-amber-400 text-2xl sm:text-3xl tracking-tight transition-transform" id="sim-area-val">500 m²</span>
               </div>
-              <input type="range" id="sim-range" min="50" max="1500" step="25" value="500" aria-label="Superficie Estimada Requerida en metros cuadrados" class="w-full accent-amber-500 h-2.5 bg-slate-800 rounded-lg cursor-pointer" oninput="updateSim()">
+              <input type="range" id="sim-range" min="50" max="1730" step="10" value="500" aria-label="Superficie Estimada Requerida en metros cuadrados" class="w-full accent-amber-500 h-3 bg-slate-800 rounded-lg cursor-pointer transition-all" oninput="updateSim()">
               <div class="flex justify-between text-[11px] text-slate-400 font-heading mt-2">
-                <span>50 m² (Local)</span>
+                <span>50 m² (Local Mín.)</span>
                 <span>500 m² (Módulo)</span>
-                <span>1.500 m² (Macro-Lote)</span>
+                <span>1.730 m² (Macro-Lote Máx.)</span>
               </div>
             </div>
 
-            <!-- Visual Capacity Gauge -->
-            <div class="p-4 rounded-xl bg-slate-900/80 border border-white/10 flex items-center justify-between">
-              <span class="text-xs text-slate-300 font-medium">Capacidad de Estacionamiento Estimada:</span>
-              <span class="text-xs font-heading font-bold text-emerald-400" id="sim-parking-est">~15 a 20 vehículos</span>
+            <!-- Visual Capacity & Financial Estimate -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="p-3.5 rounded-xl bg-slate-900/80 border border-white/10 flex flex-col justify-center">
+                <span class="text-[10.5px] text-slate-400 font-semibold uppercase">Estacionamiento Estimado:</span>
+                <span class="text-xs font-heading font-bold text-emerald-400 mt-0.5" id="sim-parking-est">~15 a 20 vehículos</span>
+              </div>
+              <div class="p-3.5 rounded-xl bg-slate-900/80 border border-white/10 flex flex-col justify-center">
+                <span class="text-[10.5px] text-slate-400 font-semibold uppercase">Alícuota Condominio Estimada:</span>
+                <span class="text-xs font-heading font-bold text-cyan-400 mt-0.5" id="sim-alicuota-est">~9.6% indivisa</span>
+              </div>
             </div>
           </div>
 
           <!-- Calculated Output Card -->
-          <div class="md:col-span-5 bg-slate-900/95 border border-amber-500/40 rounded-2xl p-6 flex flex-col justify-between shadow-2xl min-h-[320px]">
+          <div class="md:col-span-5 bg-slate-900/95 border border-amber-500/40 rounded-2xl p-6 flex flex-col justify-between shadow-2xl min-h-[340px] relative overflow-hidden group">
+            <div class="absolute -top-12 -right-12 w-36 h-36 bg-amber-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-amber-500/20 transition-all duration-500"></div>
             <div>
-              <span class="text-[10px] font-heading uppercase font-bold text-amber-400 tracking-wider block mb-1">Recomendación Arquitectónica:</span>
+              <div class="flex items-center justify-between gap-2 mb-1">
+                <span class="text-[10px] font-heading uppercase font-bold text-amber-400 tracking-wider block">Recomendación Arquitectónica:</span>
+                <span class="text-[10px] font-mono font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded" id="sim-code-badge">MOD-500</span>
+              </div>
               <h3 class="font-heading font-black text-xl text-white leading-tight" id="sim-result-title">Macro-Lote C o Módulo Central</h3>
               
-              <div class="mt-4 flex flex-col gap-3 text-xs text-slate-300">
+              <div class="mt-4 flex flex-col gap-2.5 text-xs text-slate-300">
                 <div class="flex items-start gap-2.5">
                   <i class="fa-solid fa-check text-emerald-400 mt-0.5"></i>
                   <span>Capacidad: <strong class="text-white" id="sim-result-cap">~12 Contenedores de 40ft</strong></span>
@@ -607,10 +634,14 @@
                   <i class="fa-solid fa-truck text-cyan-400 mt-0.5"></i>
                   <span>Vialidad: <strong class="text-white" id="sim-result-access">Pasillo Oeste 20m (Gandolas)</strong></span>
                 </div>
+                <div class="flex items-start gap-2.5 pt-2 border-t border-white/5">
+                  <i class="fa-solid fa-calculator text-purple-400 mt-0.5"></i>
+                  <span>Rango Estimado: <strong class="text-amber-300 font-mono" id="sim-price-est">$6 - $10 / m²</strong></span>
+                </div>
               </div>
             </div>
 
-            <a href="https://wa.me/584247380002?text=%C2%A1Hola!%20Utilic%C3%A9%20el%20simulador%20y%20deseo%20cotizar%20un%20espacio%20de%20500%20m2%20para%20CC%20Mario%20S%C3%A1nchez." target="_blank" rel="noopener noreferrer" id="sim-wa-btn" class="mt-6 inline-flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 text-white font-heading font-extrabold text-xs shadow-lg shadow-emerald-500/20 transition-all">
+            <a href="https://wa.me/584247380002?text=%C2%A1Hola!%20Utilic%C3%A9%20el%20simulador%20y%20deseo%20cotizar%20un%20espacio%20de%20500%20m2%20para%20CC%20Mario%20S%C3%A1nchez." target="_blank" rel="noopener noreferrer" id="sim-wa-btn" class="mt-6 inline-flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 text-white font-heading font-extrabold text-xs shadow-lg shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-95">
               <i class="fa-brands fa-whatsapp text-sm"></i> Cotizar este metraje por WhatsApp
             </a>
           </div>

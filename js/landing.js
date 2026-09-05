@@ -411,14 +411,31 @@ function filterMap(cat, btn) {
 
 // 6. Dynamic Simulator Logic
 let currentType = 'retail';
+
 function setSimType(type, btn) {
   currentType = type;
   document.querySelectorAll('.sim-btn').forEach(b => {
-    b.className = 'sim-btn px-3 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 font-heading font-bold text-xs text-center transition-all';
+    b.className = 'sim-btn px-3 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 font-heading font-bold text-xs text-center transition-all hover:scale-[1.02] active:scale-95';
   });
   if (btn) {
-    btn.className = 'sim-btn active px-3 py-2.5 rounded-xl border border-amber-500 bg-amber-500/20 text-amber-300 font-heading font-bold text-xs text-center transition-all';
+    btn.className = 'sim-btn active px-3 py-2.5 rounded-xl border border-amber-500 bg-amber-500/20 text-amber-300 font-heading font-bold text-xs text-center transition-all hover:scale-[1.02] active:scale-95';
   }
+  updateSim();
+}
+
+function setSimPreset(area) {
+  const rangeEl = document.getElementById('sim-range');
+  if (rangeEl) {
+    rangeEl.value = area;
+  }
+  document.querySelectorAll('.preset-chip').forEach(c => {
+    const isTarget = c.textContent.includes(`${area} m²`);
+    if (isTarget) {
+      c.className = 'preset-chip px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-heading font-extrabold text-xs transition-all shadow-md';
+    } else {
+      c.className = 'preset-chip px-2.5 py-1 rounded-lg bg-white/5 hover:bg-amber-500/20 hover:text-amber-300 border border-white/10 text-slate-300 text-xs font-heading font-bold transition-all active:scale-95';
+    }
+  });
   updateSim();
 }
 
@@ -427,34 +444,70 @@ function updateSim() {
   if (!rangeEl) return;
   const area = parseInt(rangeEl.value);
   const areaValEl = document.getElementById('sim-area-val');
-  if (areaValEl) areaValEl.innerText = `${area} m²`;
+  if (areaValEl) {
+    areaValEl.innerText = `${area.toLocaleString('es-VE')} m²`;
+    areaValEl.style.transform = 'scale(1.08)';
+    setTimeout(() => { if (areaValEl) areaValEl.style.transform = 'scale(1)'; }, 140);
+  }
 
   const titleEl = document.getElementById('sim-result-title');
   const capEl = document.getElementById('sim-result-cap');
   const powerEl = document.getElementById('sim-result-power');
   const accessEl = document.getElementById('sim-result-access');
   const parkingEstEl = document.getElementById('sim-parking-est');
+  const alicuotaEstEl = document.getElementById('sim-alicuota-est');
+  const priceEstEl = document.getElementById('sim-price-est');
+  const codeBadgeEl = document.getElementById('sim-code-badge');
 
-  const parkingSlots = Math.round(area / 25);
-  if (parkingEstEl) parkingEstEl.innerText = `~${parkingSlots} a ${parkingSlots + 6} vehículos`;
+  // Parking & Condominium Alícuota
+  const parkingSlots = Math.max(2, Math.round(area / 28));
+  if (parkingEstEl) parkingEstEl.innerText = `~${parkingSlots} a ${parkingSlots + 4} puestos`;
+  
+  const totalCommercialFootprint = 5190;
+  const alicuotaVal = ((area / totalCommercialFootprint) * 100).toFixed(2);
+  if (alicuotaEstEl) alicuotaEstEl.innerText = `~${alicuotaVal}% indivisa`;
+
+  // Rates according to typology
+  let rateMin = 6;
+  let rateMax = 12;
+  if (currentType === 'retail') { rateMin = 8; rateMax = 14; }
+  else if (currentType === 'containers') { rateMin = 6; rateMax = 11; }
+  else if (currentType === 'logistica') { rateMin = 4; rateMax = 8; }
+  else if (currentType === 'automotriz') { rateMin = 5; rateMax = 9; }
+
+  // Adjust for macro scales
+  if (area >= 1000) {
+    rateMin = Math.max(2.5, rateMin * 0.65);
+    rateMax = Math.max(4.5, rateMax * 0.70);
+  }
+
+  const estTotalMin = Math.round(area * rateMin);
+  const estTotalMax = Math.round(area * rateMax);
+  if (priceEstEl) {
+    priceEstEl.innerText = `$${rateMin.toFixed(1)} - $${rateMax.toFixed(1)}/m² ($${estTotalMin.toLocaleString()} - $${estTotalMax.toLocaleString()}/mes)`;
+  }
 
   if (titleEl && capEl && powerEl && accessEl) {
     if (area <= 120) {
+      if (codeBadgeEl) codeBadgeEl.innerText = area <= 95 ? 'LOC-N01' : (area <= 110 ? 'LOC-N02' : 'LOC-O04');
       titleEl.innerText = "Local Comercial Frontal o Showroom Oeste";
       capEl.innerText = `~${Math.round(area / 6)} a ${Math.round(area / 4)} personas de aforo`;
-      powerEl.innerText = "Bifásica / 220V";
+      powerEl.innerText = "Bifásica / 220V Comercial";
       accessEl.innerText = "Retiro Norte (Estacionamiento Clientes)";
     } else if (area <= 400) {
+      if (codeBadgeEl) codeBadgeEl.innerText = area <= 250 ? 'DEP-E01' : 'DEP-E02';
       titleEl.innerText = "Depósito Logístico Este o Showroom Ampliado";
-      capEl.innerText = `~${Math.round(area / 45)} Contenedores 40ft / ${Math.round(area * 0.8)} pallets`;
-      powerEl.innerText = "Trifásica 220V";
+      capEl.innerText = `~${Math.max(2, Math.round(area / 45))} Contenedores 40ft / ${Math.round(area * 0.8)} pallets`;
+      powerEl.innerText = "Trifásica 220V Industrial";
       accessEl.innerText = "Pasillo Este (23.80 m Libres)";
-    } else if (area <= 1200) {
-      titleEl.innerText = "Franja Comercial o Módulo de Almacén";
-      capEl.innerText = `~12 a 16 Contenedores 40ft o Galpón Mediano`;
+    } else if (area <= 1000) {
+      if (codeBadgeEl) codeBadgeEl.innerText = 'GAL-S01';
+      titleEl.innerText = "Galpón Industrial o Franja Comercial Mediana";
+      capEl.innerText = `~10 a 16 Contenedores 40ft o Almacén Mediano`;
       powerEl.innerText = "Trifásica Industrial 220V/440V";
       accessEl.innerText = "Patio Sur de Maniobras (20.00 m) / Pasillo Este";
     } else {
+      if (codeBadgeEl) codeBadgeEl.innerText = 'LOT-C01/02/03';
       titleEl.innerText = "Macro-Lote C01, C02 o C03 (1.730 m² c/u)";
       capEl.innerText = `~28 m lineales de frente al corredor de gandolas de 20 m`;
       powerEl.innerText = "Trifásica Industrial 440V con Transformador Propio";
@@ -471,7 +524,7 @@ function updateSim() {
 
   const simWaBtn = document.getElementById('sim-wa-btn');
   if (simWaBtn) {
-    const waText = encodeURIComponent(`¡Hola! Utilicé el simulador del CC Mario Sánchez y deseo cotizar un espacio de [${area} m²] para el rubro de [${typeLabels[currentType]}].`);
+    const waText = encodeURIComponent(`¡Hola! Utilicé el simulador del CC Mario Sánchez y deseo cotizar un espacio de [${area} m²] para el rubro de [${typeLabels[currentType]}] (Estimado: $${estTotalMin}-$${estTotalMax}/mes).`);
     simWaBtn.href = `https://wa.me/584247380002?text=${waText}`;
   }
 }
@@ -532,6 +585,7 @@ window.openDetailModal = openDetailModal;
 window.closeDetailModal = closeDetailModal;
 window.filterMap = filterMap;
 window.setSimType = setSimType;
+window.setSimPreset = setSimPreset;
 window.updateSim = updateSim;
 window.handleLeadSubmit = handleLeadSubmit;
 
