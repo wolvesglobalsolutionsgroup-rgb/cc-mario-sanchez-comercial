@@ -11,10 +11,39 @@ window.addEventListener('load', function() {
   }
 });
 
-// 1. Initial Leaflet Map inside Landing (Lazy-Loaded)
+// 1. Initial Leaflet Map inside Landing (Ultra Lazy-Loaded on demand)
 let map = null;
 let mapInitialized = false;
+let leafletLoading = false;
 const mapLayers = {};
+
+function loadLeafletAssets(callback) {
+  if (typeof L !== 'undefined') {
+    callback();
+    return;
+  }
+  if (leafletLoading) {
+    const checkTimer = setInterval(() => {
+      if (typeof L !== 'undefined') {
+        clearInterval(checkTimer);
+        callback();
+      }
+    }, 50);
+    return;
+  }
+  leafletLoading = true;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+  document.head.appendChild(link);
+
+  const script = document.createElement('script');
+  script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+  script.onload = () => {
+    callback();
+  };
+  document.head.appendChild(script);
+}
 
 function initLandingMap() {
   if (mapInitialized) return;
@@ -78,7 +107,7 @@ const spacesData = [
     area: "1.730 m²",
     status: "Disponible",
     color: "#f59e0b",
-    image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=200&q=70",
+    image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&auto=format&fit=crop&w=120&q=60",
     road: "Pasillo Oeste (20.00 m) + Frente Norte (64.31 m)",
     power: "Trifásica 220V/440V Industrial",
     use: "Concesionario / Retail Mayorista / Showroom",
@@ -97,7 +126,7 @@ const spacesData = [
     area: "1.730 m²",
     status: "Disponible",
     color: "#0ea5e9",
-    image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=200&q=70",
+    image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&auto=format&fit=crop&w=120&q=60",
     road: "Pasillo Oeste (20.00 m) + Pasillo Este (23.80 m)",
     power: "Trifásica 220V/440V Industrial",
     use: "Patio Logístico / Galpón Modular / Almacén Seco",
@@ -116,7 +145,7 @@ const spacesData = [
     area: "1.730 m²",
     status: "Disponible",
     color: "#c084fc",
-    image: "https://images.unsplash.com/photo-1587293852726-70cdb56c2866?auto=format&fit=crop&w=200&q=70",
+    image: "https://images.unsplash.com/photo-1587293852726-70cdb56c2866?auto=format&fit=crop&auto=format&fit=crop&w=120&q=60",
     road: "Pasillo Oeste (20.00 m) + Patio Sur (20.00 m)",
     power: "Industrial 440V con Transformador",
     use: "Taller Servicio Pesado / Patio Gandolas / Distribución",
@@ -135,7 +164,7 @@ const spacesData = [
     area: "95 m²",
     status: "Disponible",
     color: "#10b981",
-    image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=200&q=70",
+    image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&auto=format&fit=crop&w=120&q=60",
     road: "Frente Norte a Av. Municipal (Retiro)",
     power: "Bifásica 110V/220V Comercial",
     use: "Cafetería / Boutique / Farmacia",
@@ -154,7 +183,7 @@ const spacesData = [
     area: "110 m²",
     status: "Disponible",
     color: "#10b981",
-    image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=200&q=70",
+    image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&auto=format&fit=crop&w=120&q=60",
     road: "Frente Norte a Av. Municipal (Retiro)",
     power: "Trifásica 220V",
     use: "Minimarket / Consultorio / Retail",
@@ -173,7 +202,7 @@ const spacesData = [
     area: "120 m²",
     status: "Disponible",
     color: "#0ea5e9",
-    image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=200&q=70",
+    image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&auto=format&fit=crop&w=120&q=60",
     road: "Pasillo Oeste (20.00 m)",
     power: "Trifásica 220V",
     use: "Venta de Repuestos / Taller Rápido",
@@ -192,7 +221,7 @@ const spacesData = [
     area: "850 m²",
     status: "Arrendado",
     color: "#f43f5e",
-    image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=200&q=70",
+    image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&auto=format&fit=crop&w=120&q=60",
     road: "Patio Sur",
     power: "Trifásica 440V",
     use: "Distribución Automotriz (En Operación)",
@@ -211,7 +240,7 @@ const spacesData = [
     area: "250 m²",
     status: "Disponible",
     color: "#a855f7",
-    image: "https://images.unsplash.com/photo-1586528116493-a029325540fa?auto=format&fit=crop&w=200&q=70",
+    image: "https://images.unsplash.com/photo-1586528116493-a029325540fa?auto=format&fit=crop&auto=format&fit=crop&w=120&q=60",
     road: "Pasillo Este (23.80 m)",
     power: "Trifásica 220V",
     use: "Almacén Seco / Montacargas",
@@ -230,7 +259,7 @@ const spacesData = [
     area: "180 m²",
     status: "Disponible",
     color: "#a855f7",
-    image: "https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=200&q=70",
+    image: "https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&auto=format&fit=crop&w=120&q=60",
     road: "Pasillo Este (23.80 m)",
     power: "Trifásica 220V",
     use: "Depósito de Encomiendas / Mercancía",
@@ -271,7 +300,7 @@ function renderList(items) {
         <div class="flex items-center justify-between mt-1.5 pt-1.5 border-t border-white/5 text-[10.5px]">
           <span class="${item.status === 'Arrendado' ? 'text-rose-400' : 'text-emerald-400'} font-semibold">${item.status}</span>
           <span class="text-amber-400 font-bold group-hover:underline flex items-center gap-1">
-            Ver Detalles <i class="fa-solid fa-arrow-right text-[9px]" aria-hidden="true"></i>
+            Ver Detalles <svg class="w-2.5 h-2.5 inline-block ml-0.5 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
           </span>
         </div>
       </div>
@@ -600,28 +629,65 @@ function setupLazyMap() {
   const mapEl = document.getElementById('interactive-map');
   if (!mapEl) return;
 
+  const triggerInit = () => {
+    if (mapInitialized) return;
+    loadLeafletAssets(() => {
+      initLandingMap();
+    });
+  };
+
   if ('IntersectionObserver' in window) {
     const mapObserver = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
-        if (entry.isIntersecting && !mapInitialized) {
-          initLandingMap();
+        if (entry.isIntersecting) {
+          triggerInit();
           mapObserver.disconnect();
         }
       });
     }, { rootMargin: '300px' });
     mapObserver.observe(mapEl);
   } else {
-    initLandingMap();
+    triggerInit();
   }
 }
 
 function initLandingApp() {
   setupLazyMap();
+
+  // Attach DOM Listeners (Zero-inline CSP Compliant)
+  document.querySelectorAll('[data-map-filter]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      filterMap(this.getAttribute('data-map-filter'), this);
+    });
+  });
+
+  document.querySelectorAll('[data-sim-type]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      setSimType(this.getAttribute('data-sim-type'), this);
+    });
+  });
+
+  document.querySelectorAll('[data-sim-preset]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      setSimPreset(Number(this.getAttribute('data-sim-preset')));
+    });
+  });
+
+  document.querySelectorAll('[data-action="close-modal"]').forEach(el => {
+    el.addEventListener('click', closeDetailModal);
+  });
+
   const simRange = document.getElementById('sim-range');
   if (simRange) {
     simRange.addEventListener('input', updateSim);
     simRange.addEventListener('change', updateSim);
   }
+
+  const leadForm = document.getElementById('lead-form');
+  if (leadForm) {
+    leadForm.addEventListener('submit', handleLeadSubmit);
+  }
+
   updateSim();
   initScrollReveal();
 }

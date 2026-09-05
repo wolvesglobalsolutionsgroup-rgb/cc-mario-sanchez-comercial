@@ -430,8 +430,19 @@ function toggleSidebar(forceState) {
 }
 
 if (mobileFab) {
-  mobileFab.onclick = () => toggleSidebar();
+  mobileFab.addEventListener('click', () => toggleSidebar());
 }
+
+const sidebarCloseBtn = document.getElementById('sidebar-close-btn');
+if (sidebarCloseBtn) {
+  sidebarCloseBtn.addEventListener('click', () => toggleSidebar(false));
+}
+
+document.querySelectorAll('.filter-btn[data-filter]').forEach(btn => {
+  btn.addEventListener('click', function() {
+    filterCatalog(this.getAttribute('data-filter'), this);
+  });
+});
 
 // 8. PWA Service Worker
 if ('serviceWorker' in navigator) {

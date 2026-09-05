@@ -23,16 +23,16 @@
   <meta name="theme-color" content="#091024">
 
   <!-- Leaflet Core CSS & JS (Deferred & Non-blocking) -->
-  <link rel="preload" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <link rel="preload" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" rel="stylesheet" >
   <noscript><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"></noscript>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
   <!-- Google Fonts: Outfit & Manrope no-bloqueante -->
-  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" >
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap"></noscript>
 
   <!-- FontAwesome 6 no-bloqueante -->
-  <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" >
   <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"></noscript>
 
   <style>
@@ -847,19 +847,19 @@
     
     <!-- FILTER BAR -->
     <div class="filter-bar">
-      <button class="filter-btn active" onclick="filterCatalog('all', this)">
+      <button class="filter-btn active" data-filter="all">
         <i class="fa-solid fa-layer-group"></i> Todos (9)
       </button>
-      <button class="filter-btn" onclick="filterCatalog('macro-lotes', this)">
+      <button class="filter-btn" data-filter="macro-lotes">
         <i class="fa-solid fa-vector-square" style="color: var(--amber);"></i> Huella (5.190 m²)
       </button>
-      <button class="filter-btn" onclick="filterCatalog('locales', this)">
+      <button class="filter-btn" data-filter="locales">
         <i class="fa-solid fa-store" style="color: var(--cyan-light);"></i> Locales
       </button>
-      <button class="filter-btn" onclick="filterCatalog('galpones', this)">
+      <button class="filter-btn" data-filter="galpones">
         <i class="fa-solid fa-warehouse" style="color: var(--purple);"></i> Galpones
       </button>
-      <button class="filter-btn" onclick="filterCatalog('disponibles', this)">
+      <button class="filter-btn" data-filter="disponibles">
         <i class="fa-solid fa-circle-check" style="color: var(--emerald-light);"></i> Disponibles
       </button>
     </div>
@@ -874,7 +874,7 @@
           <h2><i class="fa-solid fa-building-circle-arrow-right" style="color: var(--amber);"></i> Catálogo de Espacios</h2>
           <p id="catalog-counter">9 espacios listados</p>
         </div>
-        <button class="btn-close-sidebar" id="sidebar-close-btn" title="Cerrar Catálogo" onclick="toggleSidebar(false)">
+        <button class="btn-close-sidebar" id="sidebar-close-btn" title="Cerrar Catálogo" data-action="close-sidebar">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
@@ -887,7 +887,7 @@
     <!-- OFFCANVAS DOSSIER DRAWER -->
     <div id="drawer">
       <div class="drawer-hero">
-        <img src="" alt="Foto Espacio" class="drawer-hero-img" id="drawer-hero-img" onerror="this.src='https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80'">
+        <img src="" alt="Foto Espacio" class="drawer-hero-img" id="drawer-hero-img">
         <div class="drawer-hero-overlay">
           <div class="drawer-hero-top">
             <span class="badge-status status-disp" id="drawer-badge-status">Disponible</span>
