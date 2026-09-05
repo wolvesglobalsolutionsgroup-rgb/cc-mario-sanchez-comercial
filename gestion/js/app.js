@@ -37,6 +37,51 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   window.showToast = showToast;
 
+  // ==============================================================================
+  // GESTOR UNIVERSAL DE MODALES (EJECUTIVO, ROBUSTO Y MULTI-NAVEGADOR)
+  // ==============================================================================
+  window.openModal = function(modalOrId) {
+    const modal = (typeof modalOrId === 'string') 
+      ? document.getElementById(modalOrId) 
+      : modalOrId;
+    if (modal) {
+      modal.style.removeProperty('display');
+      modal.style.display = 'flex';
+      modal.classList.add('open', 'active');
+      const win = modal.querySelector('.modal-window');
+      if (win) win.scrollTop = 0;
+    }
+  };
+
+  window.closeModal = function(modalOrId) {
+    const modal = (typeof modalOrId === 'string') 
+      ? document.getElementById(modalOrId) 
+      : modalOrId;
+    if (modal) {
+      modal.classList.remove('open', 'active');
+      modal.style.display = 'none';
+    }
+  };
+
+  window.closeAllModals = function() {
+    document.querySelectorAll('.modal-overlay').forEach(m => {
+      m.classList.remove('open', 'active');
+      m.style.display = 'none';
+    });
+  };
+
+  window.closePaymentModal = function() { window.closeModal('modal-payment'); };
+  window.closeDossierModal = function() { window.closeModal('modal-dossier'); };
+  window.closeProrrogaModal = function() { window.closeModal('modal-prorroga'); };
+  window.closeExpenseProofModal = function() { window.closeModal('modal-expense-proof'); };
+  window.closeInviteUserModal = function() { window.closeModal('modal-invite-user'); };
+  window.closeCalendarDetailModal = function() { window.closeModal('modal-calendar-detail'); };
+  window.closeRatesEditorModal = function() { window.closeModal('modal-rates-editor'); };
+  window.closeBankAccountModal = function() { window.closeModal('modal-bank-account'); };
+  window.closeContractModal = function() { window.closeModal('modal-contract-viewer'); };
+  window.closeReceiptPreviewModal = function() { window.closeModal('modal-receipt-preview'); };
+  window.closeExpenseModal = function() { window.closeModal('modal-expense'); };
+
   /**
    * Genera sello SHA-256 REAL de 256 bits vía WebCrypto API
    * Reemplaza el hash de 4x32 bits en los recibos oficiales
@@ -212,16 +257,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const usdtInput = document.getElementById('rate-edit-usdt');
     if (bcvInput) bcvInput.value = rates.VES.toFixed(2);
     if (usdtInput) usdtInput.value = (rates.USDT_VES || rates.VES).toFixed(2);
-    modal.classList.add('open');
-    modal.classList.add('active');
+    window.openModal(modal);
   };
 
   window.closeRatesEditorModal = function() {
-    const modal = document.getElementById('modal-rates-editor');
-    if (modal) {
-      modal.classList.remove('open');
-      modal.classList.remove('active');
-    }
+    window.closeModal('modal-rates-editor');
   };
 
   window.handleSaveManualRates = function(e) {
@@ -315,8 +355,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
+      // Re-renderizar de inmediato para garantizar datos frescos y sincronizados al instante
+      renderAll();
+
       if (currentTab === 'ayuda' && window.HelpContent && typeof window.HelpContent.render === 'function') {
-        window.HelpContent.render();
+        try { window.HelpContent.render(); } catch (err) { console.error('[HelpContent] Render error:', err); }
       }
 
       if (window.innerWidth <= 1024) {
@@ -331,24 +374,24 @@ document.addEventListener('DOMContentLoaded', () => {
     return financialEngine.format(converted, currentCurrency);
   }
 
-  // 6. RENDERIZACIÓN GLOBAL
+  // 6. RENDERIZACIÓN GLOBAL RESILIENTE (PROTECCIÓN AISLADA POR MÓDULO)
   function renderAll() {
-    renderKPIsAndBalances();
+    try { renderKPIsAndBalances(); } catch (e) { console.error('[RenderError] KPIs:', e); }
     if (currentRole === 'admin') {
-      renderTenantsTable();
-      renderCondoExpenses();
+      try { renderTenantsTable(); } catch (e) { console.error('[RenderError] TenantsTable:', e); }
+      try { renderCondoExpenses(); } catch (e) { console.error('[RenderError] CondoExpenses:', e); }
     }
-    renderReceivingAccounts();
-    renderInvoicesTable();
-    renderCalendarView();
-    renderAlertsCenter();
+    try { renderReceivingAccounts(); } catch (e) { console.error('[RenderError] ReceivingAccounts:', e); }
+    try { renderInvoicesTable(); } catch (e) { console.error('[RenderError] InvoicesTable:', e); }
+    try { renderCalendarView(); } catch (e) { console.error('[RenderError] CalendarView:', e); }
+    try { renderAlertsCenter(); } catch (e) { console.error('[RenderError] AlertsCenter:', e); }
     if (currentRole === 'admin') {
-      renderAdminBankAccounts();
-      renderUserApprovalsTable();
-      initReportsTab();
+      try { renderAdminBankAccounts(); } catch (e) { console.error('[RenderError] AdminBankAccounts:', e); }
+      try { renderUserApprovalsTable(); } catch (e) { console.error('[RenderError] UserApprovals:', e); }
+      try { initReportsTab(); } catch (e) { console.error('[RenderError] ReportsTab:', e); }
     }
     if (window.HelpContent && typeof window.HelpContent.render === 'function') {
-      window.HelpContent.render();
+      try { window.HelpContent.render(); } catch (e) { console.error('[RenderError] HelpContent:', e); }
     }
   }
 
@@ -1017,16 +1060,11 @@ document.addEventListener('DOMContentLoaded', () => {
       gcalBtn.href = calUrl;
     }
 
-    modal.classList.add('open');
-    modal.classList.add('active');
+    window.openModal(modal);
   };
 
   window.closeCalendarDetailModal = function() {
-    const modal = document.getElementById('modal-calendar-detail');
-    if (modal) {
-      modal.classList.remove('open');
-      modal.classList.remove('active');
-    }
+    window.closeModal('modal-calendar-detail');
   };
 
   // --- GESTIÓN DE RECORDATORIOS / EVENTOS PERSONALIZADOS DEL CALENDARIO ---
@@ -1071,16 +1109,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (descInput) descInput.value = '';
     if (typeSelect) typeSelect.value = 'cuota';
 
-    modal.classList.add('open');
-    modal.classList.add('active');
+    window.openModal(modal);
   };
 
   window.closeAddCalendarEventModal = function() {
-    const modal = document.getElementById('modal-add-calendar-event');
-    if (modal) {
-      modal.classList.remove('open');
-      modal.classList.remove('active');
-    }
+    window.closeModal('modal-add-calendar-event');
   };
 
   window.handleSaveCalendarEvent = function(e) {
@@ -1464,7 +1497,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('pror-unit-code').innerText = unitCode;
     document.getElementById('pror-calc-result').style.display = 'none';
-    modal.classList.add('open');
+    window.openModal(modal);
   };
 
   window.calculateProrroga = function() {
@@ -1660,11 +1693,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     updatePaymentEquivalents();
-    const modalEl = document.getElementById('modal-payment');
-    if (modalEl) {
-      modalEl.classList.add('open', 'active');
-      modalEl.style.display = 'flex';
-    }
+    window.openModal('modal-payment');
   };
 
   // Actualización dinámica de equivalencias y campos condicionales en el modal de pago
@@ -1887,11 +1916,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }, 1200);
 
           setTimeout(() => {
-            const modalEl = document.getElementById('modal-payment');
-            if (modalEl) {
-              modalEl.classList.remove('open', 'active');
-              modalEl.style.display = 'none';
-            }
+            window.closeModal('modal-payment');
             modalContent.innerHTML = originalModalHTML;
             paymentForm.reset();
             removeReceiptFile();
@@ -1904,8 +1929,7 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
 
-        document.getElementById('modal-payment').classList.remove('open');
-        document.getElementById('modal-payment').classList.remove('active');
+        window.closeModal('modal-payment');
         paymentForm.reset();
         removeReceiptFile();
         renderAll();
@@ -1948,7 +1972,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!reason || !reason.trim()) return;
     try {
       dbService.rejectPayment(invoiceId, reason.trim(), AuthGuard.currentUser()?.identifier);
-      document.getElementById('modal-payment').classList.remove('open');
+      window.closeModal('modal-payment');
       renderAll();
       showToast('Comprobante rechazado y motivo registrado en la trazabilidad.', 'info', 'Pago Rechazado');
     } catch (err) {
@@ -2269,7 +2293,7 @@ document.addEventListener('DOMContentLoaded', () => {
       };
     }
 
-    document.getElementById('modal-dossier').classList.add('open');
+    window.openModal('modal-dossier');
   };
 
   // 5. Imprimir Recibo Cuatrimoneda
@@ -2481,12 +2505,11 @@ document.addEventListener('DOMContentLoaded', () => {
       window.onAccountAssignChange();
     }
 
-    modal.classList.add('open');
+    window.openModal(modal);
   };
 
   window.closeBankAccountModal = function() {
-    const modal = document.getElementById('modal-bank-account');
-    if (modal) modal.classList.remove('open');
+    window.closeModal('modal-bank-account');
   };
 
   window.onAccountAssignChange = function() {
@@ -2707,17 +2730,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const form = document.getElementById('invite-user-form');
       if (form) form.reset();
       window.onInviteRoleChange('tenant');
-      modal.classList.add('open');
-      modal.classList.add('active');
+      window.openModal(modal);
     }
   };
 
   window.closeInviteUserModal = function() {
-    const modal = document.getElementById('modal-invite-user');
-    if (modal) {
-      modal.classList.remove('open');
-      modal.classList.remove('active');
-    }
+    window.closeModal('modal-invite-user');
   };
 
   window.onInviteRoleChange = function(role) {
@@ -3627,12 +3645,11 @@ document.addEventListener('DOMContentLoaded', () => {
       docWrapper.innerHTML = `<div style="padding:20px;">Generador de contratos no disponible temporalmente.</div>`;
     }
 
-    modal.classList.add('open');
+    window.openModal(modal);
   };
 
   window.closeContractModal = function() {
-    const modal = document.getElementById('modal-contract-viewer');
-    if (modal) modal.classList.remove('open');
+    window.closeModal('modal-contract-viewer');
   };
 
   window.printActiveContract = function() {
@@ -3766,8 +3783,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.closeReceiptPreviewModal = function() {
-    const modal = document.getElementById('modal-receipt-preview');
-    if (modal) modal.classList.remove('open');
+    window.closeModal('modal-receipt-preview');
   };
 
   window.printActiveReceipt = function() {
@@ -3856,12 +3872,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     updateExpenseEquivalents();
-    modal.classList.add('open');
+    window.openModal(modal);
   };
 
   window.closeExpenseModal = function() {
-    const modal = document.getElementById('modal-expense');
-    if (modal) modal.classList.remove('open');
+    window.closeModal('modal-expense');
   };
 
   window.updateExpenseEquivalents = function() {
@@ -4050,47 +4065,8 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
     }
 
-    modal.classList.add('open');
+    window.openModal(modal);
   };
-
-  // ==============================================================================
-  // GESTOR UNIVERSAL DE MODALES (EJECUTIVO, ACCESIBLE Y RESPONSIVO)
-  // ==============================================================================
-  window.closeModal = function(modalOrId) {
-    const modal = (typeof modalOrId === 'string') 
-      ? document.getElementById(modalOrId) 
-      : modalOrId;
-    if (modal) {
-      modal.classList.remove('open', 'active');
-      modal.style.display = 'none';
-    }
-  };
-
-  window.closeAllModals = function() {
-    document.querySelectorAll('.modal-overlay').forEach(m => {
-      m.classList.remove('open', 'active');
-      m.style.display = 'none';
-    });
-  };
-
-  window.openModal = function(modalOrId) {
-    const modal = (typeof modalOrId === 'string') 
-      ? document.getElementById(modalOrId) 
-      : modalOrId;
-    if (modal) {
-      modal.style.display = 'flex';
-      modal.classList.add('open', 'active');
-    }
-  };
-
-  window.closeExpenseProofModal = function() { window.closeModal('modal-expense-proof'); };
-  window.closeInviteUserModal = function() { window.closeModal('modal-invite-user'); };
-  window.closeCalendarDetailModal = function() { window.closeModal('modal-calendar-detail'); };
-  window.closeRatesEditorModal = function() { window.closeModal('modal-rates-editor'); };
-  window.closeBankAccountModal = function() { window.closeModal('modal-bank-account'); };
-  window.closeContractModal = function() { window.closeModal('modal-contract-viewer'); };
-  window.closeReceiptPreviewModal = function() { window.closeModal('modal-receipt-preview'); };
-  window.closeExpenseModal = function() { window.closeModal('modal-expense'); };
 
   // Listener Delegado para Botones de Cierre y Backdrop
   document.addEventListener('click', (e) => {

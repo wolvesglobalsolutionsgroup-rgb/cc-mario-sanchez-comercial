@@ -1138,8 +1138,40 @@ select.form-control optgroup {
 }
 
 /* ==========================================================================
-   CALENDARIO INTERACTIVO MENSUAL & SEMÁFORO DE SOLVENCIA
+   CALENDARIO INTERACTIVO MENSUAL & SEMÁFORO DE SOLVENCIA (RESPONSIVE MÓVIL)
    ========================================================================== */
+.calendar-card {
+  padding: 20px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.calendar-scroll-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 6px;
+}
+
+.calendar-weekdays-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+  text-align: center;
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--txt-muted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.calendar-cells-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
 .cal-cell {
   min-height: 75px;
   background: var(--bg-card);
@@ -1203,6 +1235,46 @@ select.form-control optgroup {
   background: rgba(14, 165, 233, 0.15);
   color: var(--cyan);
   border: 1px solid rgba(14, 165, 233, 0.3);
+}
+
+@media (max-width: 768px) {
+  .calendar-card {
+    padding: 14px 10px !important;
+  }
+  .calendar-scroll-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  .calendar-weekdays-grid,
+  .calendar-cells-grid {
+    min-width: 520px !important;
+    gap: 4px !important;
+  }
+  .cal-cell {
+    min-height: 64px !important;
+    padding: 4px !important;
+  }
+  .cal-day-num {
+    font-size: 11px !important;
+  }
+  .cal-event-badge {
+    font-size: 8.5px !important;
+    padding: 2px 3px !important;
+  }
+  .calendar-nav-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+  .calendar-nav-header > div:first-child {
+    justify-content: center !important;
+  }
+  .calendar-legend-container {
+    justify-content: center !important;
+    font-size: 10.5px !important;
+    gap: 8px !important;
+  }
 }
 
 /* SEMÁFORO DE SOLVENCIA KPI */
