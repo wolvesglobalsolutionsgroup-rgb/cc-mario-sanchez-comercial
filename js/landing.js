@@ -429,7 +429,12 @@ function setSimPreset(area) {
     rangeEl.value = area;
   }
   document.querySelectorAll('.preset-chip').forEach(c => {
-    const isTarget = c.textContent.includes(`${area} m²`);
+    const oc = c.getAttribute('onclick') || '';
+    const text = c.textContent || '';
+    const isTarget = oc.includes(String(area)) || 
+                     text.includes(`${area} m²`) || 
+                     text.includes(`${area.toLocaleString('es-VE')} m²`) || 
+                     text.includes(`${area.toLocaleString('en-US')} m²`);
     if (isTarget) {
       c.className = 'preset-chip px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-heading font-extrabold text-xs transition-all shadow-md';
     } else {
@@ -589,16 +594,21 @@ window.setSimPreset = setSimPreset;
 window.updateSim = updateSim;
 window.handleLeadSubmit = handleLeadSubmit;
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    initLandingMap();
-    updateSim();
-    initScrollReveal();
-  });
-} else {
+function initLandingApp() {
   initLandingMap();
+  const simRange = document.getElementById('sim-range');
+  if (simRange) {
+    simRange.addEventListener('input', updateSim);
+    simRange.addEventListener('change', updateSim);
+  }
   updateSim();
   initScrollReveal();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initLandingApp);
+} else {
+  initLandingApp();
 }
 
 // PWA Service Worker Registration

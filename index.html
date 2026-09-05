@@ -590,7 +590,7 @@
                 <label for="sim-range" class="font-heading font-bold text-sm text-slate-200">Superficie Deseada:</label>
                 <span class="font-heading font-extrabold text-amber-400 text-2xl sm:text-3xl tracking-tight transition-transform" id="sim-area-val">500 m²</span>
               </div>
-              <input type="range" id="sim-range" min="50" max="1730" step="10" value="500" aria-label="Superficie Estimada Requerida en metros cuadrados" class="w-full accent-amber-500 h-3 bg-slate-800 rounded-lg cursor-pointer transition-all" oninput="updateSim()">
+              <input type="range" id="sim-range" min="50" max="1730" step="10" value="500" aria-label="Superficie Estimada Requerida en metros cuadrados" class="w-full accent-amber-500 h-3 bg-slate-800 rounded-lg cursor-pointer transition-all" oninput="updateSim()" onchange="updateSim()">
               <div class="flex justify-between text-[11px] text-slate-400 font-heading mt-2">
                 <span>50 m² (Local Mín.)</span>
                 <span>500 m² (Módulo)</span>

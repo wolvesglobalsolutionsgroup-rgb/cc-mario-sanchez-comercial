@@ -39,7 +39,11 @@ function switchRole(role) {
   }
 }
 
-function fillDemo(role) {
+function fillDemo(role, autoSubmit = false) {
+  hideError();
+  // Limpiar cualquier bloqueo previo en el navegador
+  try { localStorage.removeItem('ccms_login_lockout'); } catch (e) {}
+
   if (!AuthGuard.demoEnabled) {
     showError('El acceso demo está deshabilitado en producción. Configure Supabase Auth para ingresar.');
     return;
@@ -57,8 +61,13 @@ function fillDemo(role) {
     if (userIn) userIn.value = role === 'admin' ? 'administracion@ccmariosanchez.com' : 'J-30987123-4';
     if (passIn) passIn.value = role === 'admin' ? 'Admin2026*' : 'Demo2026*';
   }
-  const passIn = document.getElementById('login-pass');
-  if (passIn) passIn.focus();
+
+  if (autoSubmit) {
+    handleLogin();
+  } else {
+    const passIn = document.getElementById('login-pass');
+    if (passIn) passIn.focus();
+  }
 }
 
 function showError(msg) {
