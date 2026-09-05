@@ -121,4 +121,23 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-demo-login]').forEach((el) => { el.style.display = 'none'; });
   }
   switchRole('admin');
+  
+  // Pre-llenar credenciales admin por defecto para experiencia fluida
+  const userIn = document.getElementById('login-user');
+  const passIn = document.getElementById('login-pass');
+  if (userIn && !userIn.value) userIn.value = 'administracion@ccmariosanchez.com';
+  if (passIn && !passIn.value) passIn.value = 'Admin2026*';
+
+  // Enlazar listeners programáticos directos (Multi-navegador / Cero dependencia de inline)
+  const btnAdmin = document.getElementById('btn-role-admin');
+  const btnTenant = document.getElementById('btn-role-tenant');
+  const btnDemoA = document.getElementById('btn-demo-admin');
+  const btnDemoT = document.getElementById('btn-demo-tenant');
+  const btnDemoP = document.getElementById('btn-demo-pending');
+
+  if (btnAdmin) btnAdmin.addEventListener('click', (e) => { e.preventDefault(); switchRole('admin'); });
+  if (btnTenant) btnTenant.addEventListener('click', (e) => { e.preventDefault(); switchRole('tenant'); });
+  if (btnDemoA) btnDemoA.addEventListener('click', (e) => { e.preventDefault(); fillDemo('admin', true); });
+  if (btnDemoT) btnDemoT.addEventListener('click', (e) => { e.preventDefault(); fillDemo('tenant', true); });
+  if (btnDemoP) btnDemoP.addEventListener('click', (e) => { e.preventDefault(); fillDemo('pending', true); });
 });
