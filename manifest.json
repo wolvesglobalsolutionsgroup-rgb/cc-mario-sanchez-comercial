@@ -1,0 +1,26 @@
+{
+  "name": "Centro Comercial Mario Sánchez — ERP Inmobiliario",
+  "short_name": "CCMS Gestión",
+  "description": "Sistema Empresarial de Gestión Inmobiliaria, Cobranzas Cuatrimoneda y Contabilidad Comercial",
+  "start_url": "/gestion/index.html",
+  "display": "standalone",
+  "background_color": "#091024",
+  "theme_color": "#091024",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/favicon_2k.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon_2k.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "finance", "productivity"],
+  "lang": "es-VE"
+}

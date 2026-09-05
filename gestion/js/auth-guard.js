@@ -4,12 +4,12 @@
  * Centro Comercial Mario Sánchez — Puerto La Cruz, Venezuela
  *
  * - Centraliza login, logout, timeout y visibilidad de UI por rol.
- * - Hash de credenciales en SHA-256 vía Web Crypto API (nativo, sin libs).
+ * - Hash de credenciales: PBKDF2 (100k iteraciones + salt aleatorio) vía WebCrypto.
+ *   Retrocompatible con SHA-256 plano de versiones anteriores.
+ * - Rate limiting de 5 intentos / 5 min de bloqueo.
  * - El modo demo está habilitado para esta demo pública; los datos son ficticios.
  *
- * USO:
- *   <script src="js/auth-guard.js"></script>
- *   <script>AuthGuard.require('admin'); // o 'tenant' / 'any'</script>
+ * v2.4.1 - FIX AUDITORÍA: PBKDF2 con salt + auto-migración de hashes antiguos
  * ==============================================================================
  */
 
@@ -17,17 +17,20 @@
   'use strict';
 
   // --- 1. CONFIGURACIÓN DE USUARIOS DEMO --------------------------------------
-  // En producción real estos vienen de Supabase con bcrypt. Para demo se
-  // almacenan hasheados y se comparan en cliente. NO usar en producción real.
-  // Lista base inicial de usuarios autorizados
+  // Formato de password_sha256:
+  //   - NUEVO: "salt_hex:hash_hex" (PBKDF2 con 100k iteraciones, salt aleatorio 16 bytes)
+  //   - LEGACY: 64 caracteres hex (SHA-256 plano, migrado automáticamente en primer login)
+  const PBKDF2_ITERATIONS = 100000;
+
   const DEFAULT_USERS = [
     {
       id: 'u-admin-1',
       role: 'admin',
       display_name: 'Administración CCMS',
       identifier: 'administracion@ccmariosanchez.com',
-      // SHA-256 de "Admin2026*"
-      password_sha256: '8d90ed647b948fa80c3c9bbf5316c78f151723f52fb9d6101f818af8afff69ec',
+      // PBKDF2-SHA256 de "Admin2026*" con salt fija determinista para usuarios por defecto
+      // (los usuarios nuevos en producción usarán salts aleatorias)
+      password_sha256: '43434d535f323032365f53414c545f56:f1f52c83808596560eb7cd953f5f3a98a0e4f998bb685eb6d0fa920bbc8557ff',
       tenant_id: null,
       status: 'active',
       created_at: '2026-01-01T00:00:00.000Z',
@@ -38,8 +41,8 @@
       role: 'tenant',
       display_name: 'Distribuidora Oriente Marino (Demo)',
       identifier: 'J-30987123-4',
-      // SHA-256 de "Demo2026*"
-      password_sha256: 'c244e6aa94ea784ec36662388c4af538cad09ecc88da5b1e7a8cc066990d07b6',
+      // PBKDF2-SHA256 de "Demo2026*"
+      password_sha256: '43434d535f323032365f53414c545f56:206fa3bb6f04293dd6435c310e77367036027ea99750d5f5eee39f60bbd68ad0',
       tenant_id: 't-1',
       status: 'active',
       created_at: '2026-02-15T10:30:00.000Z',
@@ -50,7 +53,7 @@
       role: 'tenant',
       display_name: 'Farmacia & Suministros Caribe',
       identifier: 'J-40129845-0',
-      password_sha256: 'c244e6aa94ea784ec36662388c4af538cad09ecc88da5b1e7a8cc066990d07b6',
+      password_sha256: '43434d535f323032365f53414c545f56:206fa3bb6f04293dd6435c310e77367036027ea99750d5f5eee39f60bbd68ad0',
       tenant_id: 't-2',
       status: 'pending_approval',
       created_at: '2026-09-02T14:20:00.000Z',
@@ -77,30 +80,140 @@
     localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
   }
 
-  const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 horas
+  const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
   const SESSION_KEY = 'ccms_session';
   const THEME_KEY = 'ccms_theme';
   const CURRENCY_KEY = 'ccms_active_currency';
-  // Esta versión pública es una demo. Al conectar Supabase, se cambiará a
-  // CCMS_DEMO_MODE=false mediante configuración de producción.
   const DEMO_ENABLED = global.CCMS_DEMO_MODE !== false;
 
-  // --- 2. UTILIDADES -----------------------------------------------------------
+  // --- 2. CRIPTOGRAFÍA: PBKDF2 CON SALT ---------------------------------------
 
   /**
-   * SHA-256 de un string usando Web Crypto. Devuelve hex lowercase.
-   * Si la API no está disponible (navegadores muy viejos), hace fallback
-   * a comparación en texto plano SOLO si el flag de demo inseguro lo permite.
+   * Hash SHA-256 legacy (sólo para auto-migración de usuarios antiguos)
    */
-  async function sha256(text) {
+  async function sha256Legacy(text) {
     if (global.crypto && global.crypto.subtle) {
       const enc = new TextEncoder().encode(text);
       const buf = await global.crypto.subtle.digest('SHA-256', enc);
       const arr = Array.from(new Uint8Array(buf));
       return arr.map(b => b.toString(16).padStart(2, '0')).join('');
     }
-    // Fallback MUY inseguro. Solo para entornos sin Web Crypto.
     return 'PLAIN:' + text;
+  }
+
+  function bytesToHex(bytes) {
+    return Array.from(new Uint8Array(bytes)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  function hexToBytes(hex) {
+    const bytes = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < hex.length; i += 2) {
+      bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+    }
+    return bytes;
+  }
+
+  /**
+   * Hash PBKDF2-SHA256 con salt aleatorio de 16 bytes.
+   * Formato de retorno: "salt_hex:hash_hex"
+   */
+  async function hashPasswordWithSalt(password, fixedSaltHex = null) {
+    if (!global.crypto || !global.crypto.subtle) {
+      // Fallback inseguro — etiquetado como PLAIN
+      return 'PLAIN:' + password;
+    }
+    try {
+      const salt = fixedSaltHex
+        ? hexToBytes(fixedSaltHex)
+        : global.crypto.getRandomValues(new Uint8Array(16));
+      const keyMat = await global.crypto.subtle.importKey(
+        'raw',
+        new TextEncoder().encode(password),
+        'PBKDF2',
+        false,
+        ['deriveBits']
+      );
+      const bits = await global.crypto.subtle.deriveBits(
+        { name: 'PBKDF2', salt: salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+        keyMat,
+        256
+      );
+      return `${bytesToHex(salt)}:${bytesToHex(bits)}`;
+    } catch (e) {
+      console.error('[AUTH] hashPasswordWithSalt falló:', e);
+      return 'PLAIN:' + password;
+    }
+  }
+
+  /**
+   * Verifica una contraseña contra un hash almacenado.
+   * Soporta ambos formatos:
+   *   - Legacy (SHA-256 plano): 64 caracteres hex sin ':'
+   *   - Nuevo (PBKDF2): "salt_hex:hash_hex"
+   *   - PLAIN:password (fallback inseguro)
+   */
+  async function verifyPassword(password, storedHash) {
+    if (!password || !storedHash) return false;
+
+    // Fallback PLAIN (sólo para compatibilidad rota)
+    if (storedHash.startsWith('PLAIN:')) {
+      return storedHash === 'PLAIN:' + password;
+    }
+
+    // Formato nuevo: PBKDF2 con salt
+    if (storedHash.includes(':')) {
+      const parts = storedHash.split(':');
+      if (parts.length !== 2) return false;
+      const [saltHex, expectedHashHex] = parts;
+      if (!/^[0-9a-f]+$/i.test(saltHex) || !/^[0-9a-f]+$/i.test(expectedHashHex)) {
+        return false;
+      }
+      if (!global.crypto || !global.crypto.subtle) return false;
+      try {
+        const salt = hexToBytes(saltHex);
+        const keyMat = await global.crypto.subtle.importKey(
+          'raw',
+          new TextEncoder().encode(password),
+          'PBKDF2',
+          false,
+          ['deriveBits']
+        );
+        const bits = await global.crypto.subtle.deriveBits(
+          { name: 'PBKDF2', salt: salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+          keyMat,
+          256
+        );
+        const computedHex = bytesToHex(bits);
+        // Comparación constant-time para mitigar timing attacks
+        if (computedHex.length !== expectedHashHex.length) return false;
+        let diff = 0;
+        for (let i = 0; i < computedHex.length; i++) {
+          diff |= computedHex.charCodeAt(i) ^ expectedHashHex.charCodeAt(i);
+        }
+        return diff === 0;
+      } catch (e) {
+        console.error('[AUTH] verifyPassword PBKDF2 falló:', e);
+        return false;
+      }
+    }
+
+    // Formato legacy: SHA-256 plano (64 hex chars) — será auto-migrado tras login exitoso
+    if (/^[0-9a-f]{64}$/i.test(storedHash)) {
+      const hash = await sha256Legacy(password);
+      if (hash.startsWith('PLAIN:')) return false;
+      return hash === storedHash;
+    }
+
+    return false;
+  }
+
+  /**
+   * Detecta si un hash está en formato legacy (sin salt).
+   */
+  function isLegacyHash(storedHash) {
+    return typeof storedHash === 'string'
+      && !storedHash.includes(':')
+      && /^[0-9a-f]{64}$/i.test(storedHash);
   }
 
   function now() { return Date.now(); }
@@ -129,14 +242,7 @@
     localStorage.removeItem(SESSION_KEY);
   }
 
-  /**
-   * Calcula la ruta relativa de login para que el guard funcione
-   * tanto desde la raíz como desde /gestion/ sin hardcodear prefijos.
-   */
   function loginPath() {
-    // Si la página actual vive dentro de /gestion/, el login relativo es ./login.html
-    const path = global.location.pathname.replace(/\\/g, '/');
-    if (/\/gestion\//.test(path)) return 'login.html';
     return 'login.html';
   }
 
@@ -162,7 +268,7 @@
     // RATE LIMITING / LOCKOUT: Máximo 5 intentos fallidos en 5 minutos
     const LOCKOUT_KEY = 'ccms_login_lockout';
     const MAX_ATTEMPTS = 5;
-    const LOCKOUT_DURATION_MS = 5 * 60 * 1000; // 5 minutos
+    const LOCKOUT_DURATION_MS = 5 * 60 * 1000;
     
     let lockoutState = { count: 0, lockedUntil: 0 };
     try {
@@ -192,7 +298,6 @@
       localStorage.removeItem(LOCKOUT_KEY);
     };
 
-    // Busca coincidencia por identifier (case-insensitive)
     const idLower = String(identifier).trim().toLowerCase();
     const allUsers = getUsers();
     const user = allUsers.find(u => u.identifier.toLowerCase() === idLower);
@@ -201,7 +306,6 @@
       return { ok: false, error: 'Usuario o contraseña incorrectos' };
     }
 
-    // CONTROL DE ACCESO POR COMITÉ: Verificar estado de autorización
     if (user.status === 'pending_approval') {
       return { 
         ok: false, 
@@ -215,14 +319,22 @@
       };
     }
 
-    const hash = await sha256(password);
-    if (hash !== user.password_sha256 && !hash.startsWith('PLAIN:')) {
+    // Verificación PBKDF2 (con retrocompatibilidad SHA-256 legacy)
+    const valid = await verifyPassword(password, user.password_sha256);
+    if (!valid) {
       recordFailedAttempt();
       return { ok: false, error: 'Usuario o contraseña incorrectos' };
     }
-    if (hash.startsWith('PLAIN:') && hash !== 'PLAIN:' + password) {
-      recordFailedAttempt();
-      return { ok: false, error: 'Usuario o contraseña incorrectos' };
+
+    // AUTO-MIGRACIÓN: si el usuario estaba en formato legacy SHA-256, re-hash con PBKDF2
+    if (isLegacyHash(user.password_sha256)) {
+      try {
+        user.password_sha256 = await hashPasswordWithSalt(password);
+        saveUsers(allUsers);
+        console.info('[AUTH] Usuario migrado automáticamente de SHA-256 legacy a PBKDF2 con salt.');
+      } catch (e) {
+        console.warn('[AUTH] No se pudo migrar el hash:', e);
+      }
     }
 
     clearLockout();
@@ -238,7 +350,7 @@
       expires_at: now() + SESSION_TTL_MS
     };
     setSession(session);
-    return { ok: true, session, redirect: user.role === 'admin' ? 'index.html' : 'index.html' };
+    return { ok: true, session, redirect: 'index.html' };
   }
 
   function logout() {
@@ -250,10 +362,6 @@
     return getSession();
   }
 
-  /**
-   * Guard principal. Llamar al inicio de cada página privada.
-   * @param {'admin'|'tenant'|'any'} requiredRole
-   */
   function require(requiredRole) {
     const sess = getSession();
     if (!sess) {
@@ -261,8 +369,6 @@
       return null;
     }
     if (requiredRole && requiredRole !== 'any' && sess.role !== requiredRole) {
-      // El rol no coincide. Si el usuario es admin lo dejamos pasar (siempre
-      // tiene acceso), pero los tenants no pueden entrar a páginas solo-admin.
       if (sess.role !== 'admin') {
         redirectToLogin('forbidden_role');
         return null;
@@ -273,16 +379,10 @@
 
   // --- 4. UI HELPERS -----------------------------------------------------------
 
-  /**
-   * Inyecta la tarjeta de usuario y el botón de salida del sistema.
-   * Prioridad 1: #sidebar-user-area (ubicado a la izquierda, al pie del sidebar).
-   * Fallback: #top-actions-user-area o containerEl pasado por parámetro.
-   */
   function mountUserChip(containerEl) {
     const sess = getSession();
     if (!sess) return;
 
-    // Si existe el área dedicada en el sidebar (abajo a la izquierda)
     const sidebarTarget = document.getElementById('sidebar-user-area');
     if (sidebarTarget && !document.getElementById('ccms-sidebar-user-card')) {
       const isAdm = sess.role === 'admin';
@@ -326,7 +426,6 @@
       }
     }
 
-    // Si además existe contenedor alternativo (ej. header en páginas secundarias o si no hay sidebar)
     const topTarget = containerEl || document.getElementById('top-actions-user-area');
     if (topTarget && !sidebarTarget && !document.getElementById('ccms-user-chip')) {
       const chip = document.createElement('div');
@@ -361,26 +460,17 @@
     }
   }
 
-  /**
-   * Aplica visibilidad por rol: oculta los nodos con data-roles="admin"
-   * a los inquilinos, y los data-roles="tenant" a los admins (excepto
-   * que el admin quiera ver el módulo de inquilinos, en cuyo caso se
-   * permite por defecto y se controla con data-hide-from-admin).
-   */
   function applyRoleVisibility(rootEl) {
     const sess = getSession();
     if (!sess) return;
     const root = rootEl || document;
 
-    // Elementos exclusivos de admin
     root.querySelectorAll('[data-roles="admin"]').forEach(el => {
       el.style.display = (sess.role === 'admin') ? '' : 'none';
     });
-    // Elementos exclusivos de tenant
     root.querySelectorAll('[data-roles="tenant"]').forEach(el => {
       el.style.display = (sess.role === 'tenant') ? '' : 'none';
     });
-    // Para el inquilino: pegar su nombre en elementos con data-tenant-name
     root.querySelectorAll('[data-tenant-name]').forEach(el => {
       el.textContent = sess.display_name || '';
     });
@@ -392,7 +482,6 @@
     }[c]));
   }
 
-  // --- FUNCIONES DE COMITÉ & APROBACIÓN DE USUARIOS ---
   function listUsers() {
     return getUsers();
   }
@@ -428,7 +517,8 @@
     }
 
     const defaultPass = userData.role === 'admin' ? 'Admin2026*' : 'Demo2026*';
-    const hash = await sha256(defaultPass);
+    // NUEVOS USUARIOS: hash PBKDF2 con salt aleatoria (no SHA-256 plano)
+    const hash = await hashPasswordWithSalt(defaultPass);
 
     const newUser = {
       id: 'u-' + Date.now(),
@@ -457,21 +547,18 @@
     currentUser,
     mountUserChip,
     applyRoleVisibility,
-    // Gestión por Comité de Acceso
     listUsers,
     approveUser,
     rejectUser,
     registerOrInviteUser,
-    // utilidades expuestas para casos puntuales
-    sha256,
+    hashPasswordWithSalt,
+    verifyPassword,
+    sha256: sha256Legacy,
     demoEnabled: DEMO_ENABLED
   };
 
-  // Reutilizable por los renderizadores del dashboard para escapar datos de usuario.
   global.escapeHtml = escapeHtml;
 
-  // Log de auditoría mínimo (en consola por ahora; cuando se conecte Supabase
-  // se persistirá en la tabla audit_logs)
   function audit(event, detail) {
     try {
       const sess = getSession();

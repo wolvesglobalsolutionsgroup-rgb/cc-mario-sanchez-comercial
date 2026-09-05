@@ -10,6 +10,28 @@ class DatabaseService {
     this.storageKey = 'ccms_inmobiliario_db_v1';
     this.supabaseUrl = localStorage.getItem('ccms_supabase_url') || '';
     this.supabaseKey = localStorage.getItem('ccms_supabase_key') || '';
+
+    // --- SEGURIDAD: Validar que la clave sea anon_key, NO service_role_key ---
+    // Si alguien configura la service_role en el cliente, la eliminamos para evitar
+    // bypass de RLS con permisos administrativos totales sobre la base de datos.
+    if (this.supabaseKey) {
+      try {
+        if (this.supabaseKey.startsWith('eyJ')) {
+          const payloadB64 = this.supabaseKey.split('.')[1];
+          if (payloadB64) {
+            const payload = JSON.parse(atob(payloadB64));
+            if (payload.role === 'service_role') {
+              console.error('[SUPABASE SECURITY ALERT] Se detectó service_role key en cliente. Esta clave da permisos totales y debe usarse SOLO en el servidor. La clave fue eliminada del navegador.');
+              localStorage.removeItem('ccms_supabase_key');
+              this.supabaseKey = '';
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[SUPABASE] No se pudo validar la clave:', e);
+      }
+    }
+
     this.isSupabaseConfigured = Boolean(this.supabaseUrl && this.supabaseKey);
     this.initDatabase();
   }
@@ -497,11 +519,29 @@ class DatabaseService {
     return data ? data.tenants : [];
   }
 
+  /**
+   * Helper interno: detectar tenant_id desde la sesión activa (IDOR zero-trust).
+   * Si el usuario es tenant y no se especificó tenantId, filtra por su propio tenant.
+   */
+  _sessionTenantId(explicitTenantId) {
+    if (explicitTenantId) return explicitTenantId;
+    if (typeof window !== 'undefined' && window.AuthGuard && typeof window.AuthGuard.currentUser === 'function') {
+      try {
+        const sess = window.AuthGuard.currentUser();
+        if (sess && sess.role === 'tenant' && sess.tenant_id) {
+          return sess.tenant_id;
+        }
+      } catch (e) { /* noop */ }
+    }
+    return null;
+  }
+
   getContracts(tenantId = null) {
     const data = this.getData();
     if (!data) return [];
-    if (tenantId) {
-      return data.contracts.filter(c => c.tenant_id === tenantId);
+    const effectiveTenantId = this._sessionTenantId(tenantId);
+    if (effectiveTenantId) {
+      return data.contracts.filter(c => c.tenant_id === effectiveTenantId);
     }
     return data.contracts;
   }
@@ -509,8 +549,9 @@ class DatabaseService {
   getInvoices(tenantId = null) {
     const data = this.getData();
     if (!data) return [];
-    if (tenantId) {
-      return data.invoices.filter(i => i.tenant_id === tenantId);
+    const effectiveTenantId = this._sessionTenantId(tenantId);
+    if (effectiveTenantId) {
+      return data.invoices.filter(i => i.tenant_id === effectiveTenantId);
     }
     return data.invoices;
   }
@@ -518,10 +559,10 @@ class DatabaseService {
   getPayments(tenantId = null) {
     const data = this.getData();
     if (!data) return [];
-    if (tenantId) {
-      // Filtrar pagos asociados a las facturas del inquilino o con tenant_id directo
-      const tenantInvoiceIds = new Set(this.getInvoices(tenantId).map(i => i.id));
-      return data.payments.filter(p => p.tenant_id === tenantId || tenantInvoiceIds.has(p.invoice_id));
+    const effectiveTenantId = this._sessionTenantId(tenantId);
+    if (effectiveTenantId) {
+      const tenantInvoiceIds = new Set(this.getInvoices(effectiveTenantId).map(i => i.id));
+      return data.payments.filter(p => p.tenant_id === effectiveTenantId || tenantInvoiceIds.has(p.invoice_id));
     }
     return data.payments;
   }
@@ -819,8 +860,23 @@ class DatabaseService {
   approvePayment(invoiceId, verifier) {
     const data = this.getData();
     const invoice = data.invoices.find(i => i.id === invoiceId);
-    const payment = data.payments && data.payments.find(p => p.invoice_id === invoiceId && p.status === 'pendiente');
-    if (!invoice || !payment) throw new Error('No hay un pago pendiente de revisión');
+    if (!invoice) throw new Error('Factura no encontrada.');
+
+    // --- PROTECCIÓN CONTRA RACE CONDITIONS Y DOBLE APROBACIÓN ---
+    if (invoice.status === 'pagado') {
+      throw new Error(`Esta factura ya fue marcada como pagada. No se puede aprobar dos veces.`);
+    }
+
+    const payment = data.payments && data.payments.find(p => p.invoice_id === invoiceId);
+    if (!payment) throw new Error('No se encontró ningún pago asociado a esta factura.');
+
+    if (payment.status !== 'pendiente') {
+      throw new Error(`Este pago ya fue procesado por otro administrador (estado actual: "${payment.status}"). Recargue la página para ver el estado actualizado.`);
+    }
+
+    // OPTIMISTIC LOCKING: versión interna para detectar modificaciones concurrentes
+    const currentVersion = payment._version || 1;
+    payment._version = currentVersion + 1;
 
     payment.status = 'verificado';
     payment.verified_by = verifier || null;

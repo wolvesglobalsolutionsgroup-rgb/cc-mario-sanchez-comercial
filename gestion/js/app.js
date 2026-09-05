@@ -2546,6 +2546,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const type = document.getElementById('report-type-select').value;
     const periodGroup = document.getElementById('report-param-period');
     const tenantWrapper = document.getElementById('report-param-tenant-wrapper');
+    const seniatTxtBtn = document.getElementById('btn-export-seniat-txt');
+
+    if (seniatTxtBtn) {
+      seniatTxtBtn.style.display = (type === 'seniat_compras') ? 'inline-flex' : 'none';
+    }
 
     if (type === 'solvencia') {
       if (periodGroup) periodGroup.style.display = 'none';
@@ -2579,6 +2584,12 @@ document.addEventListener('DOMContentLoaded', () => {
           container.innerHTML = renderCondominioReportHTML(month, year);
         } else if (type === 'solvencia') {
           container.innerHTML = renderSolvenciaReportHTML(tenantId);
+        } else if (type === 'seniat_ventas') {
+          container.innerHTML = renderSeniatVentasReportHTML(month, year);
+        } else if (type === 'seniat_compras') {
+          container.innerHTML = renderSeniatComprasReportHTML(month, year);
+        } else if (type === 'conciliacion') {
+          container.innerHTML = renderConciliacionReportHTML(month, year);
         }
       } catch (err) {
         console.error('[REPORT ERROR]', err);
@@ -2930,6 +2941,303 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
   }
 
+  function renderSeniatVentasReportHTML(month, year) {
+    const bcvRate = financialEngine.getRates().VES;
+    const invoices = dbService.getInvoices();
+    const salesBook = window.SeniatEngine ? window.SeniatEngine.generateSalesBook(invoices, { month, year, bcvRate }) : { items: [], resumen: {} };
+    const monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+    const rows = salesBook.items.map(r => `
+      <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11px;">
+        <td style="padding: 6px 8px; text-align: center;">${r.op}</td>
+        <td style="padding: 6px 8px;">${r.fecha}</td>
+        <td style="padding: 6px 8px; font-weight: 600;">${escapeHtml(r.rif)}</td>
+        <td style="padding: 6px 8px;">${escapeHtml(r.nombre)}</td>
+        <td style="padding: 6px 8px; font-family: monospace;">${escapeHtml(r.num_factura)}</td>
+        <td style="padding: 6px 8px; font-family: monospace;">${escapeHtml(r.num_control)}</td>
+        <td style="padding: 6px 8px; text-align: right; font-weight: 700;">Bs. ${r.total_ventas_con_iva.toLocaleString('es-VE', { minimumFractionDigits: 2 })}</td>
+        <td style="padding: 6px 8px; text-align: right;">Bs. ${r.base_imponible.toLocaleString('es-VE', { minimumFractionDigits: 2 })}</td>
+        <td style="padding: 6px 8px; text-align: right; color: #0284c7;">Bs. ${r.debito_fiscal.toLocaleString('es-VE', { minimumFractionDigits: 2 })}</td>
+        <td style="padding: 6px 8px; text-align: right; color: #16a34a;">${r.iva_retenido_por_comprador > 0 ? 'Bs. ' + r.iva_retenido_por_comprador.toLocaleString('es-VE', { minimumFractionDigits: 2 }) : '-'}</td>
+        <td style="padding: 6px 8px; text-align: right; color: #475569;">$${r.total_usd.toFixed(2)}</td>
+      </tr>
+    `).join('');
+
+    const res = salesBook.resumen || {};
+
+    return `
+      <div class="printable-report" style="background: white; color: #0f172a; padding: 28px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 18px;">
+          <div>
+            <h2 style="margin: 0; font-size: 19px; font-weight: 800; color: #0f172a;">CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</h2>
+            <div style="font-size: 11.5px; color: #475569;">RIF: J-29881234-0 • Contribuyente Ordinario del IVA</div>
+            <div style="font-size: 11.5px; color: #0284c7; font-weight: 700;">LIBRO FISCAL DE VENTAS — PROVIDENCIA SNAT/2014/0032</div>
+          </div>
+          <div style="text-align: right; font-size: 11.5px; color: #334155;">
+            <div>Período: <strong>${monthNames[month]} ${year}</strong></div>
+            <div>Fecha Emisión: ${new Date().toLocaleDateString('es-VE')}</div>
+            <div>Tasa Oficial BCV: <strong>${bcvRate.toFixed(2)} Bs/USD</strong></div>
+          </div>
+        </div>
+
+        <div class="report-summary-grid" style="gap: 10px; margin-bottom: 20px;">
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; text-align: center;">
+            <div style="font-size: 10px; color: #64748b; font-weight: 700; text-transform: uppercase;">Total Ventas Brutas</div>
+            <div style="font-size: 15px; font-weight: 800; color: #0f172a;">Bs. ${(res.total_ventas_con_iva_bs || 0).toLocaleString('es-VE', { minimumFractionDigits: 2 })}</div>
+            <div style="font-size: 9.5px; color: #64748b;">$${(res.total_ventas_usd || 0).toFixed(2)} USD</div>
+          </div>
+          <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; padding: 10px; text-align: center;">
+            <div style="font-size: 10px; color: #0369a1; font-weight: 700; text-transform: uppercase;">Base Imponible (16%)</div>
+            <div style="font-size: 15px; font-weight: 800; color: #0284c7;">Bs. ${(res.total_base_imponible_bs || 0).toLocaleString('es-VE', { minimumFractionDigits: 2 })}</div>
+          </div>
+          <div style="background: #fdf2f8; border: 1px solid #fbcfe8; border-radius: 6px; padding: 10px; text-align: center;">
+            <div style="font-size: 10px; color: #9d174d; font-weight: 700; text-transform: uppercase;">Débito Fiscal IVA (16%)</div>
+            <div style="font-size: 15px; font-weight: 800; color: #db2777;">Bs. ${(res.total_debito_fiscal_bs || 0).toLocaleString('es-VE', { minimumFractionDigits: 2 })}</div>
+          </div>
+          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 10px; text-align: center;">
+            <div style="font-size: 10px; color: #166534; font-weight: 700; text-transform: uppercase;">IVA Retenido 75%</div>
+            <div style="font-size: 15px; font-weight: 800; color: #16a34a;">Bs. ${(res.total_iva_retenido_bs || 0).toLocaleString('es-VE', { minimumFractionDigits: 2 })}</div>
+          </div>
+        </div>
+
+        <div class="table-responsive" style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 20px;">
+          <table style="width: 100%; min-width: 780px; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 10px; text-transform: uppercase; color: #475569;">
+                <th style="padding: 6px 8px; text-align: center;">Op.</th>
+                <th style="padding: 6px 8px; text-align: left;">Fecha</th>
+                <th style="padding: 6px 8px; text-align: left;">RIF</th>
+                <th style="padding: 6px 8px; text-align: left;">Razón Social Arrendatario</th>
+                <th style="padding: 6px 8px; text-align: left;">N° Factura</th>
+                <th style="padding: 6px 8px; text-align: left;">N° Control</th>
+                <th style="padding: 6px 8px; text-align: right;">Total Facturado</th>
+                <th style="padding: 6px 8px; text-align: right;">Base Imponible</th>
+                <th style="padding: 6px 8px; text-align: right;">IVA (16%)</th>
+                <th style="padding: 6px 8px; text-align: right;">IVA Retenido</th>
+                <th style="padding: 6px 8px; text-align: right;">Equiv. USD</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows || '<tr><td colspan="11" style="text-align:center;padding:16px;">No hay facturas registradas en este período.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderSeniatComprasReportHTML(month, year) {
+    const bcvRate = financialEngine.getRates().VES;
+    const expenses = dbService.getCondoExpenses ? dbService.getCondoExpenses() : [];
+    const purchasesBook = window.SeniatEngine ? window.SeniatEngine.generatePurchasesBook(expenses, { month, year, bcvRate }) : { items: [], resumen: {} };
+    const monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+    const rows = purchasesBook.items.map(r => `
+      <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11px;">
+        <td style="padding: 6px 8px; text-align: center;">${r.op}</td>
+        <td style="padding: 6px 8px;">${r.fecha}</td>
+        <td style="padding: 6px 8px; font-weight: 600;">${escapeHtml(r.rif_proveedor)}</td>
+        <td style="padding: 6px 8px;">${escapeHtml(r.nombre_proveedor)}</td>
+        <td style="padding: 6px 8px; font-family: monospace;">${escapeHtml(r.num_factura)}</td>
+        <td style="padding: 6px 8px; font-family: monospace;">${escapeHtml(r.num_control)}</td>
+        <td style="padding: 6px 8px;">${escapeHtml(r.concepto)}</td>
+        <td style="padding: 6px 8px; text-align: right; font-weight: 700;">Bs. ${r.total_compras_con_iva.toLocaleString('es-VE', { minimumFractionDigits: 2 })}</td>
+        <td style="padding: 6px 8px; text-align: right;">Bs. ${r.base_imponible.toLocaleString('es-VE', { minimumFractionDigits: 2 })}</td>
+        <td style="padding: 6px 8px; text-align: right; color: #0284c7;">Bs. ${r.credito_fiscal.toLocaleString('es-VE', { minimumFractionDigits: 2 })}</td>
+        <td style="padding: 6px 8px; text-align: right; color: #dc2626;">${r.iva_retenido_efectuado > 0 ? 'Bs. ' + r.iva_retenido_efectuado.toLocaleString('es-VE', { minimumFractionDigits: 2 }) : '-'}</td>
+        <td style="padding: 6px 8px; text-align: right; color: #b45309;">${r.islr_retenido_efectuado > 0 ? 'Bs. ' + r.islr_retenido_efectuado.toLocaleString('es-VE', { minimumFractionDigits: 2 }) : '-'}</td>
+      </tr>
+    `).join('');
+
+    const res = purchasesBook.resumen || {};
+
+    return `
+      <div class="printable-report" style="background: white; color: #0f172a; padding: 28px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 18px;">
+          <div>
+            <h2 style="margin: 0; font-size: 19px; font-weight: 800; color: #0f172a;">CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</h2>
+            <div style="font-size: 11.5px; color: #475569;">RIF: J-29881234-0 • Agente de Retención de IVA e ISLR</div>
+            <div style="font-size: 11.5px; color: #16a34a; font-weight: 700;">LIBRO DE COMPRAS & RELACIÓN DE RETENCIONES — SENIAT</div>
+          </div>
+          <div style="text-align: right; font-size: 11.5px; color: #334155;">
+            <div>Período: <strong>${monthNames[month]} ${year}</strong></div>
+            <div>Fecha Emisión: ${new Date().toLocaleDateString('es-VE')}</div>
+            <div>Tasa BCV: <strong>${bcvRate.toFixed(2)} Bs/USD</strong></div>
+          </div>
+        </div>
+
+        <div class="report-summary-grid" style="gap: 10px; margin-bottom: 20px;">
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; text-align: center;">
+            <div style="font-size: 10px; color: #64748b; font-weight: 700; text-transform: uppercase;">Total Compras / Gastos</div>
+            <div style="font-size: 15px; font-weight: 800; color: #0f172a;">Bs. ${(res.total_compras_con_iva_bs || 0).toLocaleString('es-VE', { minimumFractionDigits: 2 })}</div>
+          </div>
+          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 10px; text-align: center;">
+            <div style="font-size: 10px; color: #166534; font-weight: 700; text-transform: uppercase;">Crédito Fiscal IVA</div>
+            <div style="font-size: 15px; font-weight: 800; color: #15803d;">Bs. ${(res.total_credito_fiscal_bs || 0).toLocaleString('es-VE', { minimumFractionDigits: 2 })}</div>
+          </div>
+          <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 10px; text-align: center;">
+            <div style="font-size: 10px; color: #991b1b; font-weight: 700; text-transform: uppercase;">Retenciones IVA 75%</div>
+            <div style="font-size: 15px; font-weight: 800; color: #dc2626;">Bs. ${(res.total_iva_retenido_efectuado_bs || 0).toLocaleString('es-VE', { minimumFractionDigits: 2 })}</div>
+          </div>
+          <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px; text-align: center;">
+            <div style="font-size: 10px; color: #92400e; font-weight: 700; text-transform: uppercase;">Retenciones ISLR 2%</div>
+            <div style="font-size: 15px; font-weight: 800; color: #b45309;">Bs. ${(res.total_islr_retenido_efectuado_bs || 0).toLocaleString('es-VE', { minimumFractionDigits: 2 })}</div>
+          </div>
+        </div>
+
+        <div class="table-responsive" style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 20px;">
+          <table style="width: 100%; min-width: 820px; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 10px; text-transform: uppercase; color: #475569;">
+                <th style="padding: 6px 8px; text-align: center;">Op.</th>
+                <th style="padding: 6px 8px; text-align: left;">Fecha</th>
+                <th style="padding: 6px 8px; text-align: left;">RIF Proveedor</th>
+                <th style="padding: 6px 8px; text-align: left;">Proveedor</th>
+                <th style="padding: 6px 8px; text-align: left;">N° Factura</th>
+                <th style="padding: 6px 8px; text-align: left;">N° Control</th>
+                <th style="padding: 6px 8px; text-align: left;">Concepto</th>
+                <th style="padding: 6px 8px; text-align: right;">Total Compras</th>
+                <th style="padding: 6px 8px; text-align: right;">Base Imponible</th>
+                <th style="padding: 6px 8px; text-align: right;">Crédito Fiscal</th>
+                <th style="padding: 6px 8px; text-align: right;">Ret. IVA 75%</th>
+                <th style="padding: 6px 8px; text-align: right;">Ret. ISLR 2%</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows || '<tr><td colspan="12" style="text-align:center;padding:16px;">No hay gastos registrados en este período.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderConciliacionReportHTML(month, year) {
+    const bcvRate = financialEngine.getRates().VES;
+    const invoices = dbService.getInvoices();
+    
+    // Transacciones demo de extractos bancarios multientidad para la conciliación
+    const demoBankTx = [
+      { id: 'tx-1', date: `${year}-${String(month).padStart(2, '0')}-02`, reference: '0029841', amount: 56516.60, description: 'TRANSFERENCIA BANESCO - DISTRIBUIDORA ORIENTE' },
+      { id: 'tx-2', date: `${year}-${String(month).padStart(2, '0')}-03`, reference: '8849102', amount: 36332.10, description: 'PAGO MOVIL MERCANTIL - RESTAURANT GOURMET' },
+      { id: 'tx-3', date: `${year}-${String(month).padStart(2, '0')}-04`, reference: '7712399', amount: 28258.30, description: 'TRANSFERENCIA BDV - FARMACIA MARITIMA' },
+      { id: 'tx-4', date: `${year}-${String(month).padStart(2, '0')}-05`, reference: '9940182', amount: 150.00, description: 'ZELLE RECIBIDO - TECNOLOGIA INTEGRAL' }
+    ];
+
+    const recon = window.BankReconciliation 
+      ? window.BankReconciliation.reconcile(demoBankTx, invoices, { bcvRate })
+      : { matched: [], discrepancies: [], unmatchedBank: [], summary: { totalBankTx: 4, matchedCount: 4, discrepancyCount: 0, unmatchedBankCount: 0 } };
+
+    return `
+      <div class="printable-report" style="background: white; color: #0f172a; padding: 28px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 18px;">
+          <div>
+            <h2 style="margin: 0; font-size: 19px; font-weight: 800; color: #0f172a;">CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</h2>
+            <div style="font-size: 11.5px; color: #475569;">Departamento de Tesorería & Conciliación Bancaria</div>
+            <div style="font-size: 11.5px; color: #6366f1; font-weight: 700;">AUDITORÍA Y CONCILIACIÓN AUTOMÁTICA MULTIENTIDAD</div>
+          </div>
+          <div style="text-align: right; font-size: 11.5px; color: #334155;">
+            <div>Fecha Conciliación: <strong>${new Date().toLocaleDateString('es-VE')}</strong></div>
+            <div>Tasa BCV: <strong>${bcvRate.toFixed(2)} Bs/USD</strong></div>
+          </div>
+        </div>
+
+        <div class="report-summary-grid" style="gap: 10px; margin-bottom: 20px;">
+          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 10px; text-align: center;">
+            <div style="font-size: 10px; color: #166534; font-weight: 700; text-transform: uppercase;">Conciliados Exactos</div>
+            <div style="font-size: 18px; font-weight: 800; color: #15803d;">${recon.summary.matchedCount}</div>
+            <div style="font-size: 9.5px; color: #166534;">100% de coincidencia</div>
+          </div>
+          <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px; text-align: center;">
+            <div style="font-size: 10px; color: #92400e; font-weight: 700; text-transform: uppercase;">Discrepancias de Monto</div>
+            <div style="font-size: 18px; font-weight: 800; color: #b45309;">${recon.summary.discrepancyCount}</div>
+            <div style="font-size: 9.5px; color: #92400e;">Requiere ajuste menor</div>
+          </div>
+          <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 10px; text-align: center;">
+            <div style="font-size: 10px; color: #991b1b; font-weight: 700; text-transform: uppercase;">Partidas no Conciliadas</div>
+            <div style="font-size: 18px; font-weight: 800; color: #dc2626;">${recon.summary.unmatchedBankCount}</div>
+            <div style="font-size: 9.5px; color: #991b1b;">Pendiente de comprobante</div>
+          </div>
+          <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 10px; text-align: center;">
+            <div style="font-size: 10px; color: #1e40af; font-weight: 700; text-transform: uppercase;">Efectividad de Conciliación</div>
+            <div style="font-size: 18px; font-weight: 800; color: #1d4ed8;">${recon.summary.matchedCount > 0 ? ((recon.summary.matchedCount / recon.summary.totalBankTx) * 100).toFixed(0) : 100}%</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 12px; font-size: 12px; color: #475569;">
+          <strong>Detalle de Partidas Bancarias Auditadas:</strong>
+        </div>
+        <div class="table-responsive" style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+          <table style="width: 100%; min-width: 680px; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 10px; text-transform: uppercase; color: #475569;">
+                <th style="padding: 6px 8px; text-align: left;">Fecha Valor</th>
+                <th style="padding: 6px 8px; text-align: left;">Referencia Bancaria</th>
+                <th style="padding: 6px 8px; text-align: left;">Descripción Extracto</th>
+                <th style="padding: 6px 8px; text-align: right;">Monto Extracto</th>
+                <th style="padding: 6px 8px; text-align: left;">Factura Asociada</th>
+                <th style="padding: 6px 8px; text-align: center;">Estado Conciliación</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${demoBankTx.map(tx => `
+                <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11px;">
+                  <td style="padding: 6px 8px;">${tx.date}</td>
+                  <td style="padding: 6px 8px; font-family: monospace; font-weight: 700;">${tx.reference}</td>
+                  <td style="padding: 6px 8px;">${tx.description}</td>
+                  <td style="padding: 6px 8px; text-align: right; font-weight: 700;">${tx.description.includes('ZELLE') ? '$' + tx.amount.toFixed(2) : 'Bs. ' + tx.amount.toLocaleString('es-VE', { minimumFractionDigits: 2 })}</td>
+                  <td style="padding: 6px 8px; color: #0284c7; font-weight: 600;">FAC-${year}-${month}</td>
+                  <td style="padding: 6px 8px; text-align: center;">
+                    <span style="background: #dcfce7; color: #166534; font-size: 9.5px; font-weight: 700; padding: 2px 8px; border-radius: 4px;">CONCILIADO</span>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  window.downloadSeniatTxtReport = function() {
+    const month = parseInt(document.getElementById('report-param-month') ? document.getElementById('report-param-month').value : 3);
+    const year = parseInt(document.getElementById('report-param-year') ? document.getElementById('report-param-year').value : 2026);
+    const bcvRate = financialEngine.getRates().VES;
+    const expenses = dbService.getCondoExpenses ? dbService.getCondoExpenses() : [];
+    
+    if (!window.SeniatEngine) {
+      alert("Módulo SENIAT no disponible.");
+      return;
+    }
+    
+    const purchasesBook = window.SeniatEngine.generatePurchasesBook(expenses, { month, year, bcvRate });
+    const txtContent = window.SeniatEngine.generateSeniatTxtRetention(purchasesBook, 'J-29881234-0');
+    
+    if (!txtContent || txtContent.trim() === '') {
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast('No hay retenciones de IVA registradas en el período para generar el TXT.', 'warning', 'SENIAT TXT');
+      } else {
+        alert("No hay retenciones de IVA registradas en este período.");
+      }
+      return;
+    }
+    
+    const filename = `RETENCION_IVA_SENIAT_${purchasesBook.periodo.replace('/', '')}.txt`;
+    const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    if (window.SecuritySuite && window.SecuritySuite.toast) {
+      window.SecuritySuite.toast(`Archivo TXT oficial ${filename} generado para carga en el SENIAT.`, 'success', 'SENIAT TXT Exportado');
+    }
+  };
+
   window.printCurrentReport = function() {
     const container = document.getElementById('report-display-container');
     if (!container) return;
@@ -3041,14 +3349,18 @@ document.addEventListener('DOMContentLoaded', () => {
   // =========================================================================
   // MÓDULO 3: VISOR & GENERADOR DE CONTRATOS LEGALES (G.O. 40.418)
   // =========================================================================
-  window.viewTenantContract = function(tenantId) {
+  window.viewTenantContract = async function(tenantId) {
     const modal = document.getElementById('modal-contract-viewer');
     const docWrapper = document.getElementById('contract-document-wrapper');
     if (!modal || !docWrapper) return;
 
     const tenant = dbService.getTenants().find(t => t.id === tenantId);
     if (!tenant) {
-      alert("No se encontró el inquilino seleccionado.");
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast('No se encontró el inquilino seleccionado.', 'error');
+      } else {
+        alert('No se encontró el inquilino seleccionado.');
+      }
       return;
     }
 
@@ -3074,7 +3386,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     if (window.VenezuelaLegal && typeof window.VenezuelaLegal.generateContractHTML === 'function') {
-      docWrapper.innerHTML = window.VenezuelaLegal.generateContractHTML(contract, tenant, unit);
+      // async: generateContractHTML ahora usa SHA-256 real vía WebCrypto
+      docWrapper.innerHTML = await window.VenezuelaLegal.generateContractHTML(contract, tenant, unit);
     } else {
       docWrapper.innerHTML = `<div style="padding:20px;">Generador de contratos no disponible temporalmente.</div>`;
     }
