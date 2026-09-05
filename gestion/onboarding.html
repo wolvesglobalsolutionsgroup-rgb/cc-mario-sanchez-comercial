@@ -13,14 +13,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
   <link rel="stylesheet" href="css/dashboard.css">
-
-  <script>
-    (function() {
-      const savedTheme = localStorage.getItem('ccms_theme') || 'dark';
-      document.documentElement.setAttribute('data-theme', savedTheme);
-      document.documentElement.className = savedTheme;
-    })();
-  </script>
+  <script src="js/theme-init.js"></script>
 
   <style>
     .wizard-container {
@@ -369,130 +362,10 @@
 </div>
 
 <script src="js/security.js"></script>
+<script src="js/auth-guard.js"></script>
 <script src="js/venezuela-legal.js"></script>
 <script src="js/google-workspace.js"></script>
 <script src="js/supabase-client.js"></script>
-
-<script>
-  let currentStep = 1;
-  const units = dbService.getUnits();
-
-  document.addEventListener('DOMContentLoaded', () => {
-    const select = document.getElementById('ob-unit-select');
-    const urlParams = new URLSearchParams(window.location.search);
-    const targetUnit = urlParams.get('unit');
-
-    units.forEach(u => {
-      const opt = document.createElement('option');
-      opt.value = u.code;
-      opt.innerText = `${u.code} — ${u.name} (${u.area_m2} m²) [${u.status.toUpperCase()}]`;
-      if (targetUnit && u.code === targetUnit) opt.selected = true;
-      select.appendChild(opt);
-    });
-
-    select.onchange = updateUnitPreview;
-    updateUnitPreview();
-  });
-
-  function updateUnitPreview() {
-    const code = document.getElementById('ob-unit-select').value;
-    const u = units.find(x => x.code === code) || units[0];
-
-    document.getElementById('prev-unit-name').innerText = `${u.code}: ${u.name}`;
-    document.getElementById('prev-unit-cat').innerText = u.category;
-    document.getElementById('prev-unit-area').innerText = `${u.area_m2.toLocaleString()} m²`;
-    document.getElementById('prev-unit-rent').innerText = `$ ${u.base_rent_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD/mes`;
-
-    document.getElementById('ob-rent-usd').value = u.base_rent_usd;
-    updateDepositCalc();
-  }
-
-  function updateDepositCalc() {
-    const rent = parseFloat(document.getElementById('ob-rent-usd').value) || 0;
-    const months = parseInt(document.getElementById('ob-deposit-months').value) || 3;
-    document.getElementById('ob-deposit-usd').value = (rent * months).toFixed(2);
-  }
-
-  function goToStep(step) {
-    if (step === 2) {
-      // Validate step 1
-    } else if (step === 3) {
-      const name = document.getElementById('ob-business-name').value.trim();
-      const rif = document.getElementById('ob-rif').value.trim();
-      const rep = document.getElementById('ob-rep-name').value.trim();
-      if (!name || !rif || !rep) {
-        alert('Por favor complete los campos obligatorios del Arrendatario (Razón Social, RIF y Representante Legal).');
-        return;
-      }
-    } else if (step === 4) {
-      updateSummary();
-    }
-
-    currentStep = step;
-    document.querySelectorAll('.step-pane').forEach((p, idx) => {
-      p.classList.toggle('active', idx + 1 === step);
-    });
-    document.querySelectorAll('.step-item').forEach((s, idx) => {
-      s.classList.toggle('active', idx + 1 === step);
-      s.classList.toggle('completed', idx + 1 < step);
-    });
-  }
-
-  function updateSummary() {
-    document.getElementById('sum-business').innerText = document.getElementById('ob-business-name').value;
-    document.getElementById('sum-rif').innerText = document.getElementById('ob-rif').value;
-    document.getElementById('sum-rep').innerText = `${document.getElementById('ob-rep-name').value} (${document.getElementById('ob-rep-dni').value})`;
-    document.getElementById('sum-unit').innerText = document.getElementById('ob-unit-select').value;
-    document.getElementById('sum-rent').innerText = parseFloat(document.getElementById('ob-rent-usd').value).toLocaleString();
-    document.getElementById('sum-deposit').innerText = parseFloat(document.getElementById('ob-deposit-usd').value).toLocaleString();
-    document.getElementById('sum-dates').innerText = `${document.getElementById('ob-start-date').value} al ${document.getElementById('ob-end-date').value}`;
-  }
-
-  function submitOnboarding() {
-    const tenantData = {
-      rif: document.getElementById('ob-rif').value.trim(),
-      business_name: document.getElementById('ob-business-name').value.trim(),
-      trade_name: document.getElementById('ob-trade-name').value.trim(),
-      commercial_registry: document.getElementById('ob-registry').value.trim(),
-      legal_rep_name: document.getElementById('ob-rep-name').value.trim(),
-      legal_rep_dni: document.getElementById('ob-rep-dni').value.trim(),
-      email: document.getElementById('ob-email').value.trim(),
-      phone: document.getElementById('ob-whatsapp').value.trim(),
-      whatsapp: document.getElementById('ob-whatsapp').value.trim(),
-      commercial_activity: document.getElementById('ob-activity').value.trim(),
-      unit_code: document.getElementById('ob-unit-select').value
-    };
-
-    const contractData = {
-      start_date: document.getElementById('ob-start-date').value,
-      end_date: document.getElementById('ob-end-date').value,
-      rent_usd: document.getElementById('ob-rent-usd').value,
-      rent_method: document.getElementById('ob-rent-method').value,
-      deposit_usd: document.getElementById('ob-deposit-usd').value,
-      deposit_months: document.getElementById('ob-deposit-months').value
-    };
-
-    try {
-      dbService.addTenant(tenantData, contractData);
-      alert('¡Inquilino y Contrato registrados exitosamente en el sistema!');
-      window.location.href = 'index.html';
-    } catch (err) {
-      alert('Error al registrar: ' + err.message);
-    }
-  }
-</script>
-
-<script src="js/auth-guard.js"></script>
-<script>
-  // El wizard de onboarding es solo-admin
-  (function() {
-    const sess = AuthGuard.require('admin');
-    if (!sess) return;
-    document.addEventListener('DOMContentLoaded', function() {
-      AuthGuard.mountUserChip();
-    });
-  })();
-</script>
-
+<script src="js/onboarding.js"></script>
 </body>
 </html>

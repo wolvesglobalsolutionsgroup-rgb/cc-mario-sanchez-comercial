@@ -6,7 +6,31 @@
  * ==============================================================================
  */
 
+// Guard de acceso inmediato (Auto-redirect si no hay sesión)
+(function() {
+  if (typeof AuthGuard !== 'undefined') {
+    const sess = AuthGuard.require('any');
+    if (!sess) return;
+    document.documentElement.removeAttribute('data-auth-pending');
+  }
+})();
+
+// PWA Service Worker Registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js').catch(err => {
+      console.warn('[PWA] ServiceWorker registration skipped:', err);
+    });
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  // Aplicar visibilidad y chip de usuario
+  if (window.AuthGuard) {
+    AuthGuard.mountUserChip();
+    AuthGuard.applyRoleVisibility();
+  }
+
   // 1. ESTADO GLOBAL
   const session = (window.AuthGuard && window.AuthGuard.currentUser) ? window.AuthGuard.currentUser() : null;
   const currentRole = session ? session.role : 'admin'; // fallback si guard no está cargado

@@ -13,14 +13,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
   <link rel="stylesheet" href="css/dashboard.css">
-
-  <script>
-    (function() {
-      const savedTheme = localStorage.getItem('ccms_theme') || 'dark';
-      document.documentElement.setAttribute('data-theme', savedTheme);
-      document.documentElement.className = savedTheme;
-    })();
-  </script>
+  <script src="js/theme-init.js"></script>
 
   <style>
     body {
@@ -169,124 +162,8 @@
     <div style="margin-top: 2px;">Sistema auditado conforme a G.O. N° 40.418</div>
   </div>
 
-</div>
-
 <script src="js/auth-guard.js"></script>
 <script src="js/tenant-loader.js"></script>
-<script>
-  // Si ya hay sesión activa y no expiró, mandar al dashboard directamente
-  (function() {
-    const existing = AuthGuard.currentUser();
-    if (existing) {
-      // Si llegó con ?expired=1, mantenerlo en login y limpiar la URL
-      const u = new URL(window.location.href);
-      if (u.searchParams.get('expired')) {
-        u.searchParams.delete('expired');
-        window.history.replaceState({}, '', u.pathname + (u.search ? u.search : '') + u.hash);
-      } else {
-        window.location.replace('index.html');
-      }
-    }
-  })();
-
-  let currentRole = 'admin';
-
-  function switchRole(role) {
-    currentRole = role;
-    const btnAdmin = document.getElementById('btn-role-admin');
-    const btnTenant = document.getElementById('btn-role-tenant');
-    const lblUser = document.getElementById('lbl-identifier');
-    const inputUser = document.getElementById('login-user');
-    const btnDemoA = document.getElementById('btn-demo-admin');
-    const btnDemoT = document.getElementById('btn-demo-tenant');
-
-    if (role === 'admin') {
-      btnAdmin.classList.add('active');
-      btnTenant.classList.remove('active');
-      btnDemoA.classList.add('active');
-      btnDemoT.classList.remove('active');
-      lblUser.innerText = 'Correo Electrónico Administrador';
-    } else {
-      btnTenant.classList.add('active');
-      btnAdmin.classList.remove('active');
-      btnDemoT.classList.add('active');
-      btnDemoA.classList.remove('active');
-      lblUser.innerText = 'RIF Jurídico o Correo del Arrendatario';
-    }
-    // No autocompletar identifier hasta que el usuario pulse Demo
-  }
-
-  function fillDemo(role) {
-    if (!AuthGuard.demoEnabled) {
-      showError('El acceso demo está deshabilitado en producción. Configure Supabase Auth para ingresar.');
-      return;
-    }
-    if (role === 'pending') {
-      switchRole('tenant');
-      document.getElementById('login-user').value = 'J-40129845-0';
-      document.getElementById('login-pass').value = 'Demo2026*';
-    } else {
-      switchRole(role);
-      document.getElementById('login-user').value = role === 'admin'
-        ? 'administracion@ccmariosanchez.com'
-        : 'J-30987123-4';
-      document.getElementById('login-pass').value = role === 'admin' ? 'Admin2026*' : 'Demo2026*';
-    }
-    document.getElementById('login-pass').focus();
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    if (!AuthGuard.demoEnabled) {
-      document.querySelectorAll('[data-demo-login]').forEach((el) => { el.style.display = 'none'; });
-    }
-  });
-
-  function showError(msg) {
-    const box = document.getElementById('login-error');
-    const span = document.getElementById('login-error-msg');
-    if (!box || !span) return;
-    span.textContent = msg;
-    box.style.display = 'block';
-  }
-
-  function hideError() {
-    const box = document.getElementById('login-error');
-    if (box) box.style.display = 'none';
-  }
-
-  async function handleLogin(e) {
-    e.preventDefault();
-    hideError();
-    const identifier = document.getElementById('login-user').value;
-    const password = document.getElementById('login-pass').value;
-    const submitBtn = document.getElementById('login-submit-btn');
-    const submitText = document.getElementById('login-submit-text');
-
-    submitBtn.disabled = true;
-    submitText.textContent = 'Verificando…';
-
-    try {
-      const res = await AuthGuard.login(identifier, password);
-      if (!res.ok) {
-        showError(res.error || 'No fue posible iniciar sesión');
-        submitBtn.disabled = false;
-        submitText.textContent = 'Ingresar al Portal';
-        return;
-      }
-      AuthGuard.audit('login_ok', { role: res.session.role, identifier: res.session.identifier });
-      // Forzar redirect para que el AuthGuard del destino evalúe la sesión
-      window.location.replace(res.redirect || 'index.html');
-    } catch (err) {
-      console.error(err);
-      showError('Error técnico al autenticar. Reintente.');
-      submitBtn.disabled = false;
-      submitText.textContent = 'Ingresar al Portal';
-    }
-  }
-
-  // Inicializar visualmente en modo admin
-  switchRole('admin');
-</script>
-
+<script src="js/login.js"></script>
 </body>
 </html>

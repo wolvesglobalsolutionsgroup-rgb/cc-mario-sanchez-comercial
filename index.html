@@ -886,12 +886,5 @@
 
   <!-- JAVASCRIPT FOR LEAFLET MAP, CARDS, SIMULATOR & INTERACTION -->
   <script defer src="js/landing.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js').catch(() => {});
-      });
-    }
-  </script>
 </body>
 </html>
