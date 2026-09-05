@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Centro Comercial Mario Sánchez — Plataforma Técnica & Visor GIS</title>
+  
+  <!-- Favicon SVG -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230b1120'/><path d='M20 75 L50 20 L80 75 Z' fill='none' stroke='%230284c7' stroke-width='9'/><circle cx='50' cy='52' r='10' fill='%23f59e0b'/></svg>">
+
+  <!-- Leaflet Core -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Proj4js (UTM 19N) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+
+  <style>
+    :root {
+      --bg-base: #090d16;
+      --panel-bg: rgba(15, 23, 42, 0.96);
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --surface-1: rgba(255, 255, 255, 0.03);
+      --surface-2: rgba(255, 255, 255, 0.06);
+      --surface-border: rgba(255, 255, 255, 0.07);
+      
+      --cyan-400: #38bdf8;
+      --cyan-500: #0ea5e9;
+      --amber-400: #fbbf24;
+      --emerald-400: #34d399;
+      --rose-400: #f43f5e;
+      --purple-400: #c084fc;
+      --blue-400: #60a5fa;
+      
+      --text-1: #f8fafc;
+      --text-2: #94a3b8;
+      --text-3: #64748b;
+      
+      --sidebar-w: 360px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      height: 100%;
+      height: 100dvh;
+      width: 100vw;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg-base);
+      color: var(--text-1);
+      overflow: hidden;
+    }
+
+    #app-container {
+      display: flex;
+      height: 100%;
+      height: 100dvh;
+      width: 100vw;
+      position: relative;
+    }
+
+    /* MAP CONTAINER */
+    #map {
+      flex: 1;
+      height: 100%;
+      width: 100%;
+      background: #0b0f19;
+      z-index: 1;
+    }
+
+    /* SIDEBAR (DESKTOP & MODAL EN MÓVIL) */
+    #sidebar {
+      width: var(--sidebar-w);
+      height: 100%;
+      background: var(--panel-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-right: 1px solid var(--panel-border);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 8px 0 32px rgba(0, 0, 0, 0.5);
+      transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    #sidebar.collapsed {
+      transform: translateX(-100%);
+    }
+
+    .sidebar-header {
+      padding: 18px 18px 14px;
+      border-bottom: 1px solid var(--panel-border);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, transparent 100%);
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-text-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-title {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      color: #ffffff;
+      line-height: 1.25;
+    }
+
+    .sidebar-meta {
+      font-size: 11.5px;
+      color: var(--text-2);
+      margin-top: 3px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .drawer-close-btn {
+      display: none;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-1);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .drawer-close-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    .sidebar-body {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .sidebar-body::-webkit-scrollbar {
+      width: 4px;
+    }
+    .sidebar-body::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 4px;
+    }
+
+    /* CARDS */
+    .card {
+      background: var(--surface-1);
+      border: 1px solid var(--surface-border);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+
+    .card-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-2);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* CARD DE ZONIFICACIÓN / RESTRICCIÓN VIAL */
+    .info-plan-card {
+      background: rgba(14, 165, 233, 0.08);
+      border-color: rgba(14, 165, 233, 0.25);
+    }
+
+    .info-plan-body {
+      font-size: 11px;
+      line-height: 1.45;
+      color: #bae6fd;
+    }
+
+    .info-plan-body strong {
+      color: #ffffff;
+    }
+
+    /* CARD DE COORDENADAS EN SIDEBAR */
+    .coords-box {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-1);
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+      padding: 8px 10px;
+    }
+
+    .coord-tag {
+      font-size: 9.5px;
+      color: var(--cyan-400);
+      font-weight: 600;
+      margin-right: 4px;
+    }
+
+    /* PILL TOGGLES */
+    .layer-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    }
+    .layer-row:last-child {
+      border-bottom: none;
+    }
+
+    .layer-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #e2e8f0;
+    }
+
+    .dot-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .pill-toggle {
+      position: relative;
+      display: inline-block;
+      width: 32px;
+      height: 18px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .pill-toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .pill-slider {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(255, 255, 255, 0.14);
+      transition: .2s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 20px;
+    }
+
+    .pill-slider:before {
+      position: absolute;
+      content: "";
+      height: 12px;
+      width: 12px;
+      left: 3px;
+      bottom: 3px;
+      background-color: #cbd5e1;
+      transition: .2s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 50%;
+    }
+
+    .pill-toggle input:checked + .pill-slider {
+      background-color: var(--cyan-500);
+    }
+
+    .pill-toggle input:checked + .pill-slider:before {
+      transform: translateX(14px);
+      background-color: #ffffff;
+    }
+
+    /* METRICS GRID */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .metric-cell {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 6px;
+      padding: 8px 10px;
+    }
+
+    .metric-label {
+      font-size: 10px;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .metric-val {
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: #ffffff;
+      margin-top: 2px;
+    }
+
+    .metric-sub {
+      font-size: 9.5px;
+      color: var(--cyan-400);
+      margin-top: 1px;
+    }
+
+    /* ACTION BUTTONS */
+    .action-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .btn-ui {
+      background: var(--surface-2);
+      border: 1px solid var(--surface-border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      color: var(--text-1);
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      justify-content: flex-start;
+    }
+
+    .btn-ui:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+    }
+
+    .btn-full {
+      grid-column: span 2;
+    }
+
+    .btn-accent {
+      background: #0284c7;
+      border-color: #38bdf8;
+      color: #ffffff;
+      font-weight: 600;
+      justify-content: center;
+    }
+    .btn-accent:hover {
+      background: #0369a1;
+      border-color: #7dd3fc;
+    }
+
+    /* SIDEBAR TOGGLE (DESKTOP) */
+    .sidebar-collapse-btn {
+      position: absolute;
+      top: 14px;
+      left: calc(var(--sidebar-w) + 12px);
+      z-index: 1001;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      color: var(--text-1);
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+      transition: left 0.28s cubic-bezier(0.16, 1, 0.3, 1), background 0.15s;
+    }
+    .sidebar-collapse-btn:hover {
+      background: #1f2937;
+      color: var(--cyan-400);
+    }
+    .sidebar-collapse-btn.sidebar-is-collapsed {
+      left: 12px;
+    }
+
+    /* TOP CONTROLS BAR (CLAROS Y SEPARADOS) */
+    .map-controls-top {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      z-index: 990;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tool-pill-btn {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      color: var(--text-1);
+      padding: 7px 12px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      transition: all 0.15s ease;
+      font-size: 11.5px;
+      font-weight: 600;
+      font-family: inherit;
+    }
+    .tool-pill-btn:hover {
+      background: #1f2937;
+      color: var(--cyan-400);
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+    .tool-pill-btn.active {
+      background: #0284c7;
+      color: #ffffff;
+      border-color: var(--cyan-400);
+    }
+
+    /* PANEL MODERNO DE MEDICIÓN INTERACTIVA */
+    #measure-box {
+      display: none;
+      position: absolute;
+      top: 60px;
+      right: 14px;
+      z-index: 995;
+      background: rgba(15, 23, 42, 0.96);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 8px;
+      padding: 10px 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      min-width: 250px;
+    }
+
+    #measure-box.active {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .measure-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--cyan-400);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 6px;
+    }
+
+    .measure-modes {
+      display: flex;
+      gap: 6px;
+    }
+
+    .measure-mode-btn {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-2);
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: all 0.15s;
+    }
+    .measure-mode-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+    }
+    .measure-mode-btn.active {
+      background: #0284c7;
+      color: #fff;
+      border-color: var(--cyan-400);
+    }
+
+    .measure-result-card {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 6px;
+      padding: 6px 8px;
+    }
+
+    .measure-result-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--amber-400);
+    }
+
+    .measure-result-sub {
+      font-size: 10px;
+      color: var(--text-2);
+      margin-top: 2px;
+    }
+
+    .measure-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .measure-act-btn {
+      flex: 1;
+      padding: 5px 8px;
+      font-size: 10.5px;
+      font-weight: 600;
+      border-radius: 4px;
+      cursor: pointer;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .measure-btn-clear {
+      background: rgba(244, 63, 94, 0.2);
+      border: 1px solid rgba(244, 63, 94, 0.4);
+      color: #fecdd3;
+    }
+    .measure-btn-clear:hover {
+      background: rgba(244, 63, 94, 0.35);
+    }
+
+    .measure-btn-finish {
+      background: rgba(52, 211, 153, 0.2);
+      border: 1px solid rgba(52, 211, 153, 0.4);
+      color: #a7f3d0;
+    }
+    .measure-btn-finish:hover {
+      background: rgba(52, 211, 153, 0.35);
+    }
+
+    /* FLOATING BOTTOM HUD (DESKTOP) */
+    .hud-bar {
+      position: absolute;
+      bottom: 14px;
+      left: calc(var(--sidebar-w) + 14px);
+      z-index: 990;
+      background: rgba(15, 23, 42, 0.90);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--panel-border);
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-2);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      transition: left 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+    .hud-bar.sidebar-is-collapsed {
+      left: 14px;
+    }
+    .hud-bar span {
+      color: var(--text-1);
+      font-weight: 500;
+    }
+
+    /* BOTÓN FLOTANTE PRINCIPAL EN MÓVIL */
+    .mobile-fab-container {
+      display: none;
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 995;
+    }
+
+    .mobile-fab-btn {
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #ffffff;
+      padding: 11px 22px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55), 0 0 15px rgba(2, 132, 199, 0.35);
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .mobile-fab-btn:active {
+      transform: scale(0.97);
+    }
+
+    /* BACKDROP OSCURO PARA MÓVIL */
+    .modal-backdrop {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 1050;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    .modal-backdrop.active {
+      display: block;
+      opacity: 1;
+    }
+
+    /* LEAFLET CONTROLS */
+    .leaflet-top.leaflet-right {
+      top: 56px !important;
+      right: 14px !important;
+    }
+    .leaflet-bottom.leaflet-right {
+      bottom: 14px !important;
+      right: 14px !important;
+    }
+
+    .leaflet-bar {
+      border: 1px solid var(--panel-border) !important;
+      border-radius: 6px !important;
+      overflow: hidden;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
+    }
+    .leaflet-bar a {
+      background-color: var(--panel-bg) !important;
+      color: var(--text-1) !important;
+      border-bottom: 1px solid var(--panel-border) !important;
+      width: 32px !important;
+      height: 32px !important;
+      line-height: 32px !important;
+    }
+    .leaflet-bar a:hover {
+      background-color: #1f2937 !important;
+      color: var(--cyan-400) !important;
+    }
+
+    /* TABLETITAS DE COTAS CON CONTENCIÓN TOTAL */
+    .cota-wrapper {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+
+    .cota-pill {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: auto !important;
+      min-width: max-content !important;
+      max-width: none !important;
+      white-space: nowrap !important;
+      box-sizing: border-box !important;
+      
+      background: rgba(15, 23, 42, 0.94) !important;
+      backdrop-filter: blur(8px) !important;
+      -webkit-backdrop-filter: blur(8px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.38) !important;
+      color: #ffffff !important;
+      font-family: 'Inter', system-ui, sans-serif !important;
+      font-weight: 600 !important;
+      font-size: 11px !important;
+      line-height: 1 !important;
+      padding: 4px 8px !important;
+      border-radius: 4px !important;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.65) !important;
+      
+      transform: translate(-50%, -50%) !important;
+      pointer-events: none !important;
+    }
+
+    .cota-pill-amber {
+      border-color: rgba(251, 191, 36, 0.85) !important;
+      color: #fef08a !important;
+      background: rgba(28, 19, 3, 0.96) !important;
+    }
+
+    .cota-pill-rose {
+      border-color: rgba(244, 63, 94, 0.85) !important;
+      color: #ffe4e6 !important;
+      background: rgba(38, 7, 13, 0.96) !important;
+    }
+
+    .cota-pill-blue {
+      border-color: rgba(96, 165, 250, 0.85) !important;
+      color: #dbeafe !important;
+      background: rgba(15, 23, 42, 0.96) !important;
+    }
+
+    .flow-marker-wrapper {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+
+    .flow-marker-inner {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.9));
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    /* PUNTOS DE MEDICIÓN INTERACTIVA */
+    .measure-dot {
+      width: 12px;
+      height: 12px;
+      background: #fbbf24;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.8), 0 0 10px #fbbf24;
+      transform: translate(-50%, -50%);
+    }
+
+    /* RESPONSIVE MÓVIL ESTRICTO (< 768px) */
+    @media (max-width: 767px) {
+      .mobile-fab-container {
+        display: block;
+      }
+
+      #sidebar {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: auto;
+        max-height: 82dvh;
+        border-right: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 20px 20px 0 0;
+        transform: translateY(100%);
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        z-index: 1100;
+        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.65);
+      }
+
+      #sidebar.open {
+        transform: translateY(0);
+      }
+
+      .drawer-close-btn {
+        display: flex;
+      }
+
+      .sidebar-collapse-btn {
+        display: none;
+      }
+
+      /* Ocultar barra HUD en mapa para dejar 100% de pantalla libre en móvil */
+      .hud-bar {
+        display: none !important;
+      }
+
+      .cota-pill {
+        font-size: 9.5px !important;
+        padding: 3px 6px !important;
+      }
+
+      .map-controls-top {
+        top: 14px;
+        right: 14px;
+        flex-direction: row;
+      }
+
+      #measure-box {
+        top: 56px;
+        right: 10px;
+        left: 10px;
+        min-width: auto;
+      }
+
+      .leaflet-top.leaflet-right {
+        top: 56px !important;
+        right: 14px !important;
+      }
+
+      .leaflet-bottom.leaflet-right {
+        bottom: 14px !important;
+        right: 14px !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div id="app-container">
+  <!-- BACKDROP OSCURO PARA MÓVIL -->
+  <div id="modal-backdrop" class="modal-backdrop"></div>
+
+  <!-- SIDEBAR / DRAWER -->
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <div class="header-text-group">
+        <h1 class="sidebar-title">Centro Comercial Mario Sánchez</h1>
+        <div class="sidebar-meta">
+          <i class="fa-solid fa-location-dot" style="color: var(--cyan-400);"></i> Puerto La Cruz, Anzoátegui
+        </div>
+      </div>
+      <button class="drawer-close-btn" id="drawer-close-btn" title="Cerrar Panel">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="sidebar-body">
+      <!-- INFO DEFINITIVA: 5.190 M² -->
+      <div class="card info-plan-card">
+        <div class="card-title" style="color: #38bdf8;">
+          <span><i class="fa-solid fa-circle-check"></i> Huella Central: 5.190 m² (Real: 5.189,67 m²)</span>
+        </div>
+        <div class="info-plan-body">
+          <p><strong>• Pasillo Oeste (20.00 m):</strong> Avenida de servicio con circulación para gandolas y <strong>batería de estacionamiento a 90° (~35 puestos)</strong> para los locales comerciales existentes.</p>
+          <p style="margin-top: 5px;"><strong>• Patio Sur (20.00 m):</strong> Área de maniobra y carga pesada frente a Repuestos de Oriente.</p>
+          <p style="margin-top: 5px;"><strong>• Estacionamiento Clientes:</strong> Retiro Norte (23.86 m), Pasillo Este (23.80 m) y Pasillo Oeste (20.00 m).</p>
+        </div>
+      </div>
+
+      <!-- COORDENADAS EN VIVO -->
+      <div class="card">
+        <div class="card-title">
+          <span>Coordenadas en Vivo (Cursor / Toque)</span>
+        </div>
+        <div class="coords-box">
+          <div><span class="coord-tag">WGS84:</span> <span id="sidebar-wgs">10.20468° N, 64.63290° W</span></div>
+          <div style="margin-top: 5px;"><span class="coord-tag">UTM 19N:</span> <span id="sidebar-utm">E: 978749.5 m | N: 1131279.9 m</span></div>
+        </div>
+      </div>
+
+      <!-- CAPAS -->
+      <div class="card">
+        <div class="card-title">
+          <span>Capas de Información</span>
+        </div>
+        
+        <div class="layer-row">
+          <div class="layer-left">
+            <span class="dot-indicator" style="background: var(--cyan-400);"></span>
+            <span>Polígono General</span>
+          </div>
+          <label class="pill-toggle">
+            <input type="checkbox" id="toggle-general" checked>
+            <span class="pill-slider"></span>
+          </label>
+        </div>
+
+        <div class="layer-row">
+          <div class="layer-left">
+            <span class="dot-indicator" style="background: var(--amber-400);"></span>
+            <span>Huella Central (5.190 m²)</span>
+          </div>
+          <label class="pill-toggle">
+            <input type="checkbox" id="toggle-plaza" checked>
+            <span class="pill-slider"></span>
+          </label>
+        </div>
+
+        <div class="layer-row">
+          <div class="layer-left">
+            <span class="dot-indicator" style="background: var(--blue-400);"></span>
+            <span>Estacionamientos Pasillo O (~35 Puestos)</span>
+          </div>
+          <label class="pill-toggle">
+            <input type="checkbox" id="toggle-estac" checked>
+            <span class="pill-slider"></span>
+          </label>
+        </div>
+
+        <div class="layer-row">
+          <div class="layer-left">
+            <span class="dot-indicator" style="background: var(--emerald-400);"></span>
+            <span>Anillo Gandolas (Horario)</span>
+          </div>
+          <label class="pill-toggle">
+            <input type="checkbox" id="toggle-transito" checked>
+            <span class="pill-slider"></span>
+          </label>
+        </div>
+
+        <div class="layer-row">
+          <div class="layer-left">
+            <span class="dot-indicator" style="background: var(--rose-400);"></span>
+            <span>Retiros y Pasillos Críticos</span>
+          </div>
+          <label class="pill-toggle">
+            <input type="checkbox" id="toggle-retiros" checked>
+            <span class="pill-slider"></span>
+          </label>
+        </div>
+
+        <div class="layer-row">
+          <div class="layer-left">
+            <span class="dot-indicator" style="background: var(--purple-400);"></span>
+            <span>Garganta Acceso Av. Municipal</span>
+          </div>
+          <label class="pill-toggle">
+            <input type="checkbox" id="toggle-acceso" checked>
+            <span class="pill-slider"></span>
+          </label>
+        </div>
+
+        <div class="layer-row">
+          <div class="layer-left">
+            <span class="dot-indicator" style="background: #ffffff;"></span>
+            <span>Cotas Métricas Detalladas</span>
+          </div>
+          <label class="pill-toggle">
+            <input type="checkbox" id="toggle-cotas" checked>
+            <span class="pill-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- BALANCE DE SUPERFICIES -->
+      <div class="card">
+        <div class="card-title">
+          <span>Resumen de Superficies (Definitivo)</span>
+        </div>
+        <div class="metrics-grid">
+          <div class="metric-cell">
+            <div class="metric-label">Área General</div>
+            <div class="metric-val">14.207 m²</div>
+            <div class="metric-sub">1,421 Hectáreas</div>
+          </div>
+          <div class="metric-cell">
+            <div class="metric-label">Huella Central</div>
+            <div class="metric-val">5.190 m²</div>
+            <div class="metric-sub">Real: 5.189,67 m²</div>
+          </div>
+          <div class="metric-cell">
+            <div class="metric-label">Vías y Rodamiento</div>
+            <div class="metric-val">9.017 m²</div>
+            <div class="metric-sub">63.5% Maniobras / Estac.</div>
+          </div>
+          <div class="metric-cell">
+            <div class="metric-label">Estacionamientos</div>
+            <div class="metric-val">~230 Puestos</div>
+            <div class="metric-sub">+35 Gandolas</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VISTAS RÁPIDAS -->
+      <div class="card">
+        <div class="card-title">
+          <span>Vistas Predefinidas</span>
+        </div>
+        <div class="action-grid">
+          <button class="btn-ui" data-view="general"><i class="fa-solid fa-expand"></i> General</button>
+          <button class="btn-ui" data-view="plaza"><i class="fa-solid fa-square-full"></i> Plaza</button>
+          <button class="btn-ui" data-view="acceso"><i class="fa-solid fa-arrow-trend-up"></i> Acceso</button>
+          <button class="btn-ui" data-view="gandolas"><i class="fa-solid fa-truck"></i> Pasillo O</button>
+        </div>
+      </div>
+
+      <!-- ENTREGABLES & DESCARGAS -->
+      <div class="card">
+        <div class="card-title">
+          <span>Entregables Técnicos</span>
+        </div>
+        <div class="action-grid">
+          <a href="PLANO_CC_MARIO_SANCHEZ.dxf" download class="btn-ui"><i class="fa-solid fa-file-code"></i> CAD UTM 19N</a>
+          <a href="PLANO_CC_MARIO_SANCHEZ_LOCAL.dxf" download class="btn-ui"><i class="fa-solid fa-drafting-compass"></i> CAD Local (0,0)</a>
+          <a href="PLANO_EJECUTIVO.pdf" target="_blank" class="btn-ui"><i class="fa-solid fa-file-pdf"></i> Lámina PDF</a>
+          <a href="PLANO_EJECUTIVO_ALTA_RESOLUCION.png" target="_blank" class="btn-ui"><i class="fa-solid fa-image"></i> Render 300 DPI</a>
+          <a href="CC MARIO SANCHEZ - MASTER PLAN DEFINITIVO.kml" download class="btn-ui btn-full"><i class="fa-solid fa-download"></i> Descargar KML Google Earth</a>
+          <a href="https://earth.google.com/earth/d/1jzOqmKyh_gcGwnTUygOGhiQ0pswln3Ea?usp=sharing" target="_blank" rel="noopener noreferrer" class="btn-ui btn-accent btn-full"><i class="fa-solid fa-earth-americas"></i> Abrir en Google Earth 3D</a>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- DESKTOP TOGGLE BUTTON -->
+  <button id="sidebar-toggle-btn" class="sidebar-collapse-btn" title="Alternar Panel Lateral">
+    <i class="fa-solid fa-chevron-left" id="toggle-icon"></i>
+  </button>
+
+  <!-- TOP TOOLBAR: RECENTRAR & MEDICIÓN -->
+  <div class="map-controls-top">
+    <button class="tool-pill-btn" id="btn-recenter" title="Ajustar y Recentrar Mapa al Terreno">
+      <i class="fa-solid fa-crosshairs"></i> <span>Recentrar</span>
+    </button>
+    <button class="tool-pill-btn" id="btn-measure" title="Herramientas de Medición en Pantalla">
+      <i class="fa-solid fa-ruler-combined"></i> <span>Medir</span>
+    </button>
+  </div>
+
+  <!-- CAJA DE HERRAMIENTA DE MEDICIÓN FLOTANTE -->
+  <div id="measure-box">
+    <div class="measure-header">
+      <span><i class="fa-solid fa-ruler"></i> Medición en Terreno</span>
+      <i class="fa-solid fa-xmark" id="btn-measure-close" style="cursor: pointer; padding: 2px;"></i>
+    </div>
+    <div class="measure-modes">
+      <button class="measure-mode-btn active" id="btn-mode-distance">
+        <i class="fa-solid fa-route"></i> Distancia
+      </button>
+      <button class="measure-mode-btn" id="btn-mode-area">
+        <i class="fa-solid fa-draw-polygon"></i> Área
+      </button>
+    </div>
+    <div class="measure-result-card">
+      <div class="measure-result-val" id="measure-output">0.00 m</div>
+      <div class="measure-result-sub" id="measure-hint">Toca en el mapa para iniciar medición</div>
+    </div>
+    <div class="measure-actions">
+      <button class="measure-act-btn measure-btn-clear" id="btn-measure-clear">
+        <i class="fa-solid fa-trash-can"></i> Borrar
+      </button>
+      <button class="measure-act-btn measure-btn-finish" id="btn-measure-finish">
+        <i class="fa-solid fa-check"></i> Listo
+      </button>
+    </div>
+  </div>
+
+  <!-- BOTÓN FLOTANTE EN MÓVIL (DESTACADO PARA ABRIR CAPAS Y DATOS) -->
+  <div class="mobile-fab-container">
+    <button class="mobile-fab-btn" id="mobile-fab-btn">
+      <i class="fa-solid fa-sliders"></i> <span>Capas & Panel Técnico</span>
+    </button>
+  </div>
+
+  <!-- MAP -->
+  <div id="map"></div>
+
+  <!-- HUD COORDENADAS (DESKTOP) -->
+  <div id="hud-bar" class="hud-bar">
+    <div><strong>WGS84:</strong> <span id="hud-wgs">10.20468° N, 64.63290° W</span></div>
+    <div><strong>UTM 19N:</strong> <span id="hud-utm">E: 978749.5 m | N: 1131279.9 m</span></div>
+  </div>
+</div>
+
+<script src="js/gis-app.js"></script>
+</body>
+</html>
