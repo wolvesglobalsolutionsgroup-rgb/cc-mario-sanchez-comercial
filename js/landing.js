@@ -11,13 +11,16 @@ window.addEventListener('load', function() {
   }
 });
 
-// 1. Initial Leaflet Map inside Landing
+// 1. Initial Leaflet Map inside Landing (Lazy-Loaded)
 let map = null;
+let mapInitialized = false;
 const mapLayers = {};
 
 function initLandingMap() {
+  if (mapInitialized) return;
   const mapEl = document.getElementById('interactive-map');
   if (!mapEl || typeof L === 'undefined') return;
+  mapInitialized = true;
 
   map = L.map('interactive-map', {
     center: [10.20468, -64.63290],
@@ -36,7 +39,7 @@ function initLandingMap() {
     attribution: '© Google Earth'
   }).addTo(map);
 
-  setTimeout(() => map.invalidateSize(), 350);
+  setTimeout(() => map && map.invalidateSize(), 350);
   window.addEventListener('resize', () => map && map.invalidateSize());
 
   // Render Polygons & Markers
@@ -64,11 +67,9 @@ function initLandingMap() {
 
     mapLayers[item.id] = { poly, marker, data: item };
   });
-
-  renderList(spacesData);
 }
 
-// 2. Spaces Catalog Data
+// 2. Spaces Catalog Data with Mobile-Optimized WebP Dimensions
 const spacesData = [
   {
     id: "LOT-C01",
@@ -77,7 +78,7 @@ const spacesData = [
     area: "1.730 m²",
     status: "Disponible",
     color: "#f59e0b",
-    image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
+    image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=200&q=70",
     road: "Pasillo Oeste (20.00 m) + Frente Norte (64.31 m)",
     power: "Trifásica 220V/440V Industrial",
     use: "Concesionario / Retail Mayorista / Showroom",
@@ -96,7 +97,7 @@ const spacesData = [
     area: "1.730 m²",
     status: "Disponible",
     color: "#0ea5e9",
-    image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80",
+    image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=200&q=70",
     road: "Pasillo Oeste (20.00 m) + Pasillo Este (23.80 m)",
     power: "Trifásica 220V/440V Industrial",
     use: "Patio Logístico / Galpón Modular / Almacén Seco",
@@ -115,7 +116,7 @@ const spacesData = [
     area: "1.730 m²",
     status: "Disponible",
     color: "#c084fc",
-    image: "https://images.unsplash.com/photo-1587293852726-70cdb56c2866?auto=format&fit=crop&w=800&q=80",
+    image: "https://images.unsplash.com/photo-1587293852726-70cdb56c2866?auto=format&fit=crop&w=200&q=70",
     road: "Pasillo Oeste (20.00 m) + Patio Sur (20.00 m)",
     power: "Industrial 440V con Transformador",
     use: "Taller Servicio Pesado / Patio Gandolas / Distribución",
@@ -134,7 +135,7 @@ const spacesData = [
     area: "95 m²",
     status: "Disponible",
     color: "#10b981",
-    image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80",
+    image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=200&q=70",
     road: "Frente Norte a Av. Municipal (Retiro)",
     power: "Bifásica 110V/220V Comercial",
     use: "Cafetería / Boutique / Farmacia",
@@ -153,7 +154,7 @@ const spacesData = [
     area: "110 m²",
     status: "Disponible",
     color: "#10b981",
-    image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80",
+    image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=200&q=70",
     road: "Frente Norte a Av. Municipal (Retiro)",
     power: "Trifásica 220V",
     use: "Minimarket / Consultorio / Retail",
@@ -172,7 +173,7 @@ const spacesData = [
     area: "120 m²",
     status: "Disponible",
     color: "#0ea5e9",
-    image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80",
+    image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=200&q=70",
     road: "Pasillo Oeste (20.00 m)",
     power: "Trifásica 220V",
     use: "Venta de Repuestos / Taller Rápido",
@@ -191,7 +192,7 @@ const spacesData = [
     area: "850 m²",
     status: "Arrendado",
     color: "#f43f5e",
-    image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80",
+    image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=200&q=70",
     road: "Patio Sur",
     power: "Trifásica 440V",
     use: "Distribución Automotriz (En Operación)",
@@ -210,7 +211,7 @@ const spacesData = [
     area: "250 m²",
     status: "Disponible",
     color: "#a855f7",
-    image: "https://images.unsplash.com/photo-1586528116493-a029325540fa?auto=format&fit=crop&w=800&q=80",
+    image: "https://images.unsplash.com/photo-1586528116493-a029325540fa?auto=format&fit=crop&w=200&q=70",
     road: "Pasillo Este (23.80 m)",
     power: "Trifásica 220V",
     use: "Almacén Seco / Montacargas",
@@ -229,7 +230,7 @@ const spacesData = [
     area: "180 m²",
     status: "Disponible",
     color: "#a855f7",
-    image: "https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=800&q=80",
+    image: "https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=200&q=70",
     road: "Pasillo Este (23.80 m)",
     power: "Trifásica 220V",
     use: "Depósito de Encomiendas / Mercancía",
@@ -594,8 +595,28 @@ window.setSimPreset = setSimPreset;
 window.updateSim = updateSim;
 window.handleLeadSubmit = handleLeadSubmit;
 
+function setupLazyMap() {
+  renderList(spacesData);
+  const mapEl = document.getElementById('interactive-map');
+  if (!mapEl) return;
+
+  if ('IntersectionObserver' in window) {
+    const mapObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && !mapInitialized) {
+          initLandingMap();
+          mapObserver.disconnect();
+        }
+      });
+    }, { rootMargin: '300px' });
+    mapObserver.observe(mapEl);
+  } else {
+    initLandingMap();
+  }
+}
+
 function initLandingApp() {
-  initLandingMap();
+  setupLazyMap();
   const simRange = document.getElementById('sim-range');
   if (simRange) {
     simRange.addEventListener('input', updateSim);

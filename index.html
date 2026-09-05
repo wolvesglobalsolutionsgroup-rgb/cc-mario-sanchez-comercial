@@ -53,6 +53,10 @@
   <link rel="icon" type="image/svg+xml" href="logo_cc_mario_sanchez_2k.svg?v=20260904">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon_2k.png?v=20260904">
 
+  <!-- Preload Hero LCP Image -->
+  <link rel="preload" as="image" href="puerto_la_cruz_drone_mobile.webp" type="image/webp" media="(max-width: 768px)" fetchpriority="high">
+  <link rel="preload" as="image" href="puerto_la_cruz_drone.webp" type="image/webp" media="(min-width: 769px)" fetchpriority="high">
+
   <!-- Leaflet Core CSS & JS (Deferred & Non-blocking) -->
   <link rel="preload" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"></noscript>
@@ -683,7 +687,7 @@
               RO
             </div>
             <div>
-              <h4 class="font-heading font-bold text-sm text-white">Repuestos de Oriente</h4>
+              <h3 class="font-heading font-bold text-sm text-white">Repuestos de Oriente</h3>
               <span class="text-xs text-slate-400">Distribución Automotriz</span>
             </div>
           </div>
@@ -703,7 +707,7 @@
               FM
             </div>
             <div>
-              <h4 class="font-heading font-bold text-sm text-white">Franquicia Gastronómica</h4>
+              <h3 class="font-heading font-bold text-sm text-white">Franquicia Gastronómica</h3>
               <span class="text-xs text-slate-400">Plaza Central Modular</span>
             </div>
           </div>
@@ -723,7 +727,7 @@
               SL
             </div>
             <div>
-              <h4 class="font-heading font-bold text-sm text-white">Servicios Logísticos del Este</h4>
+              <h3 class="font-heading font-bold text-sm text-white">Servicios Logísticos del Este</h3>
               <span class="text-xs text-slate-400">Almacenaje y Encomiendas</span>
             </div>
           </div>
@@ -847,7 +851,7 @@
         <a href="mailto:administracion@ccmariosanchez.com" class="hover:text-amber-400 transition-colors inline-flex items-center gap-1.5 text-slate-300">
           <i class="fa-regular fa-envelope text-amber-400"></i> <span>administracion@ccmariosanchez.com</span>
         </a>
-        <span class="text-[11px] text-slate-500">© 2026 Centro Comercial Mario Sánchez. Todos los derechos reservados.</span>
+        <span class="text-[11px] text-slate-400">© 2026 Centro Comercial Mario Sánchez. Todos los derechos reservados.</span>
       </div>
     </div>
   </footer>
