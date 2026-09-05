@@ -1,8 +1,5 @@
-/**
- * Centro Comercial Mario Sánchez — Tailwind CSS Design Tokens
- * Wolves Global Solutions (c) 2026 Enterprise Architecture
- */
-tailwind.config = {
+window.tailwind = window.tailwind || {};
+window.tailwind.config = {
   darkMode: 'class',
   theme: {
     extend: {
