@@ -71,79 +71,60 @@ function initLandingMap() {
 // 2. Spaces Catalog Data
 const spacesData = [
   {
-    id: "LOT-A1",
-    name: "Macro-Lote A (Noroeste)",
+    id: "LOT-C01",
+    name: "Macro-Lote C01 (Norte)",
     category: "macro-lotes",
-    area: "1.500 m²",
+    area: "1.730 m²",
     status: "Disponible",
     color: "#f59e0b",
     image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
-    road: "Pasillo Oeste (20.00 m Libres)",
+    road: "Pasillo Oeste (20.00 m) + Frente Norte (64.31 m)",
     power: "Trifásica 220V/440V Industrial",
-    use: "Patio de Contenedores / Showroom de Maquinaria",
-    desc: "Macro-Lote de 1.500 m² con frente directo al Pasillo Oeste de 20m. Acometida para transformador propio y rodamiento continuo para gandolas.",
+    use: "Concesionario / Retail Mayorista / Showroom",
+    desc: "Macro-Lote comercial transversal norte (1.730 m²). Dispone de 27,95 m de frente al Pasillo Oeste de gandolas (20 m) y 64,31 m de frente al Retiro de Clientes.",
     coords: [
       [10.2052798, -64.6330805],
-      [10.2052164, -64.6327943],
-      [10.2048550, -64.6328720],
-      [10.2049080, -64.6331557]
+      [10.2051530, -64.6325082],
+      [10.2049191, -64.6325616],
+      [10.2050319, -64.6331306]
     ]
   },
   {
-    id: "LOT-B1",
-    name: "Macro-Lote B (Suroeste)",
+    id: "LOT-C02",
+    name: "Macro-Lote C02 (Medio)",
     category: "macro-lotes",
-    area: "1.500 m²",
+    area: "1.730 m²",
     status: "Disponible",
-    color: "#fbbf24",
+    color: "#0ea5e9",
     image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80",
-    road: "Doble Frente (Pasillo O 20m + Patio Sur 20m)",
+    road: "Pasillo Oeste (20.00 m) + Pasillo Este (23.80 m)",
     power: "Trifásica 220V/440V Industrial",
-    use: "Galpón Desmontable / Taller Integral",
-    desc: "Ubicación estratégica en esquina sur-oeste con doble frente vial de 20 metros para maniobras pesadas.",
+    use: "Patio Logístico / Galpón Modular / Almacén Seco",
+    desc: "Macro-Lote central intermedio (1.730 m²). 27,95 m de frente a la Avenida de Servicio de 20 m y fondo este al pasillo de retorno de 23,80 m.",
     coords: [
-      [10.2049080, -64.6331557],
-      [10.2048550, -64.6328720],
-      [10.2044800, -64.6329400],
-      [10.2045400, -64.6332300]
+      [10.2050319, -64.6331306],
+      [10.2049191, -64.6325616],
+      [10.2046851, -64.6326151],
+      [10.2047841, -64.6331808]
     ]
   },
   {
-    id: "LOT-C1",
-    name: "Macro-Lote C (Sureste)",
+    id: "LOT-C03",
+    name: "Macro-Lote C03 (Sur)",
     category: "macro-lotes",
-    area: "1.190 m²",
+    area: "1.730 m²",
     status: "Disponible",
-    color: "#38bdf8",
-    image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80",
-    road: "Patio Sur de Maniobras (20.00 m)",
-    power: "Trifásica 220V/440V",
-    use: "Centro Logístico / Depósito Mayorista",
-    desc: "Macro-Lote de 1.190 m² con piso de losa compactada y drenajes industriales. Conexión rápida a la Av. Municipal.",
+    color: "#c084fc",
+    image: "https://images.unsplash.com/photo-1587293852726-70cdb56c2866?auto=format&fit=crop&w=800&q=80",
+    road: "Pasillo Oeste (20.00 m) + Patio Sur (20.00 m)",
+    power: "Industrial 440V con Transformador",
+    use: "Taller Servicio Pesado / Patio Gandolas / Distribución",
+    desc: "Macro-Lote sur (1.730 m²). Posee 27,96 m de frente al Pasillo Oeste y frente sur directo al Patio de Maniobras de 20 m frente a Repuestos de Oriente.",
     coords: [
-      [10.2044800, -64.6329400],
-      [10.2048550, -64.6328720],
-      [10.2048000, -64.6325500],
-      [10.2044200, -64.6326200]
-    ]
-  },
-  {
-    id: "LOT-D1",
-    name: "Macro-Lote D (Noreste)",
-    category: "macro-lotes",
-    area: "1.000 m²",
-    status: "Disponible",
-    color: "#a855f7",
-    image: "https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=800&q=80",
-    road: "Pasillo Este (23.80 m Libres)",
-    power: "Trifásica 220V/440V",
-    use: "Cross-Docking / Almacenamiento Pesado",
-    desc: "Lote de 1.000 m² en pasillo este de 23.8m con radio de giro para camiones de 3 y 4 ejes.",
-    coords: [
-      [10.2052164, -64.6327943],
-      [10.2051600, -64.6325000],
-      [10.2048000, -64.6325500],
-      [10.2048550, -64.6328720]
+      [10.2047841, -64.6331808],
+      [10.2046851, -64.6326151],
+      [10.2044512, -64.6326685],
+      [10.2045362, -64.6332309]
     ]
   },
   {
@@ -468,16 +449,16 @@ function updateSim() {
       capEl.innerText = `~${Math.round(area / 45)} Contenedores 40ft / ${Math.round(area * 0.8)} pallets`;
       powerEl.innerText = "Trifásica 220V";
       accessEl.innerText = "Pasillo Este (23.80 m Libres)";
-    } else if (area <= 1190) {
-      titleEl.innerText = "Macro-Lote C (Sureste - 1.190 m²)";
-      capEl.innerText = `~15 a 18 Contenedores 40ft o Galpón Mediano`;
+    } else if (area <= 1200) {
+      titleEl.innerText = "Franja Comercial o Módulo de Almacén";
+      capEl.innerText = `~12 a 16 Contenedores 40ft o Galpón Mediano`;
       powerEl.innerText = "Trifásica Industrial 220V/440V";
-      accessEl.innerText = "Patio Sur de Maniobras (20.00 m)";
+      accessEl.innerText = "Patio Sur de Maniobras (20.00 m) / Pasillo Este";
     } else {
-      titleEl.innerText = "Macro-Lote A o B (1.500 m² c/u)";
-      capEl.innerText = `~25 Contenedores o Nave Logística Pesada`;
-      powerEl.innerText = "Trifásica Industrial 440V con Transformador";
-      accessEl.innerText = "Pasillo Oeste (20.00 m Gandolas)";
+      titleEl.innerText = "Macro-Lote C01, C02 o C03 (1.730 m² c/u)";
+      capEl.innerText = `~28 m lineales de frente al corredor de gandolas de 20 m`;
+      powerEl.innerText = "Trifásica Industrial 440V con Transformador Propio";
+      accessEl.innerText = "Pasillo Oeste (20.00 m Libres para Gandolas)";
     }
   }
 

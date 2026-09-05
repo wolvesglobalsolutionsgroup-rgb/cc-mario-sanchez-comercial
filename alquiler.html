@@ -843,7 +843,7 @@
     <!-- FILTER BAR -->
     <div class="filter-bar">
       <button class="filter-btn active" onclick="filterCatalog('all', this)">
-        <i class="fa-solid fa-layer-group"></i> Todos (10)
+        <i class="fa-solid fa-layer-group"></i> Todos (9)
       </button>
       <button class="filter-btn" onclick="filterCatalog('macro-lotes', this)">
         <i class="fa-solid fa-vector-square" style="color: var(--amber);"></i> Huella (5.190 m²)
@@ -867,7 +867,7 @@
       <div class="sidebar-head">
         <div class="sidebar-title">
           <h2><i class="fa-solid fa-building-circle-arrow-right" style="color: var(--amber);"></i> Catálogo de Espacios</h2>
-          <p id="catalog-counter">10 espacios listados</p>
+          <p id="catalog-counter">9 espacios listados</p>
         </div>
         <button class="btn-close-sidebar" id="sidebar-close-btn" title="Cerrar Catálogo" onclick="toggleSidebar(false)">
           <i class="fa-solid fa-xmark"></i>
@@ -891,8 +891,8 @@
             </button>
           </div>
           <div class="drawer-hero-bottom">
-            <span class="drawer-code" id="drawer-code">LOT-A1</span>
-            <h2 class="drawer-title" id="drawer-title">Macro-Lote A</h2>
+            <span class="drawer-code" id="drawer-code">LOT-C01</span>
+            <h2 class="drawer-title" id="drawer-title">Macro-Lote C01 (Norte)</h2>
           </div>
         </div>
       </div>
@@ -901,7 +901,7 @@
         <div class="drawer-section">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
             <span style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Superficie</span>
-            <span style="font-family: var(--font-heading); font-size: 17px; font-weight: 800; color: var(--amber);" id="drawer-area">1.500 m²</span>
+            <span style="font-family: var(--font-heading); font-size: 17px; font-weight: 800; color: var(--amber);" id="drawer-area">1.730 m²</span>
           </div>
           <p style="font-size: 12.5px; color: var(--txt-secondary); line-height: 1.5;" id="drawer-desc">
             Descripción técnica del espacio.
@@ -951,7 +951,7 @@
 
     <!-- MOBILE FAB -->
     <button class="mobile-fab" id="mobile-fab">
-      <i class="fa-solid fa-list-check"></i> <span>Ver Espacios (10)</span>
+      <i class="fa-solid fa-list-check"></i> <span>Ver Espacios (9)</span>
     </button>
   </div>
 </div>
@@ -979,107 +979,81 @@
   // 2. Real Estate Database with Real Architectural Photography & 100% Stable URLs
   const catalog = [
     {
-      id: "LOT-A1",
-      name: "Macro-Lote A (Noroeste)",
+      id: "LOT-C01",
+      name: "Macro-Lote C01 (Norte)",
       category: "macro-lotes",
-      area: "1.500 m²",
+      area: "1.730 m²",
       status: "disponible",
       statusText: "Disponible",
       color: "#f59e0b",
       image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
-      road: "Pasillo Oeste (20.00 m)",
-      power: "Trifásica 220V/440V",
-      truck: "Canal Gandolas Exclusivo",
-      parking: "Batería 90° (~35 puestos)",
-      description: "Ubicación en el cuadrante noroeste de la Huella Central. Posee frente directo a la Avenida de Servicio de 20 metros libres y acceso inmediato.",
+      road: "Pasillo Oeste (20.00 m) + Frente Norte (64.31 m)",
+      power: "Trifásica 220V/440V Industrial",
+      truck: "27,95 m Frente a Canal Gandolas",
+      parking: "Retiro Norte Clientes + Batería 90°",
+      description: "Macro-Lote comercial transversal norte. Cuenta con 27,95 m de frente vial al Pasillo Oeste de gandolas (20 m) y 64,31 m de frente al Retiro de Clientes.",
       useCases: [
-        "Patio de contenedores comerciales o módulos habitacionales/oficinas.",
-        "Showroom de camiones, maquinarias o repuestos automotrices.",
-        "Centro ferretero y distribución al mayor."
+        "Concesionario o showroom de maquinaria y camiones.",
+        "Tienda ferretera mayorista y materiales de construcción.",
+        "Retail de gran formato, supermercado o feria gastronómica."
       ],
       coords: [
         [10.2052798, -64.6330805],
-        [10.2052164, -64.6327943],
-        [10.2048550, -64.6328720],
-        [10.2049080, -64.6331557]
+        [10.2051530, -64.6325082],
+        [10.2049191, -64.6325616],
+        [10.2050319, -64.6331306]
       ]
     },
     {
-      id: "LOT-B1",
-      name: "Macro-Lote B (Suroeste)",
+      id: "LOT-C02",
+      name: "Macro-Lote C02 (Medio)",
       category: "macro-lotes",
-      area: "1.500 m²",
-      status: "disponible",
-      statusText: "Disponible",
-      color: "#fbbf24",
-      image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80",
-      road: "Pasillo O (20m) + Patio Sur (20m)",
-      power: "Trifásica Industrial",
-      truck: "Doble Frente de Maniobra",
-      parking: "Acceso Lateral Directo",
-      description: "Esquina estratégica suroeste con doble frente vial de 20 metros. Máxima maniobrabilidad para camiones y gandolas sin contraflujo.",
-      useCases: [
-        "Galpón desmontable en estructura de acero o centro de ensamblaje.",
-        "Taller automotriz integral / Centro de lubricación pesada.",
-        "Patio logístico de carga y descarga continua."
-      ],
-      coords: [
-        [10.2049080, -64.6331557],
-        [10.2048550, -64.6328720],
-        [10.2044937, -64.6329497],
-        [10.2045362, -64.6332309]
-      ]
-    },
-    {
-      id: "LOT-C1",
-      name: "Macro-Lote C (Sureste)",
-      category: "macro-lotes",
-      area: "1.190 m²",
+      area: "1.730 m²",
       status: "disponible",
       statusText: "Disponible",
       color: "#0ea5e9",
-      image: "https://images.unsplash.com/photo-1587293852726-70cdb56c2866?auto=format&fit=crop&w=800&q=80",
-      road: "Patio Sur (20m) + Pasillo E (23.8m)",
-      power: "Acometida Industrial",
-      truck: "Vía Retorno 23.80 m",
-      parking: "Estacionamiento Clientes",
-      description: "Ubicado en el cuadrante sureste con frente hacia el Patio Sur de maniobras y retorno este de 23.80 m.",
+      image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80",
+      road: "Pasillo Oeste (20.00 m) + Pasillo Este (23.80 m)",
+      power: "Trifásica 220V/440V Industrial",
+      truck: "27,95 m Frente a Canal Gandolas",
+      parking: "Pasillo de Retorno Este",
+      description: "Macro-Lote central intermedio con doble conectividad vial: 27,95 m de frente directo a la Avenida de Servicio de 20 m y fondo este al pasillo de retorno de 23,80 m.",
       useCases: [
-        "Almacén seco para alimentos, farmacia o consumo masivo.",
-        "Feria comercial techada o patio de food-trucks.",
-        "Centro de envíos, encomiendas y logística de última milla."
+        "Patio logístico de contenedores y carga pesada.",
+        "Galpón modular desmontable en estructura de acero.",
+        "Almacén seco para alimentos, farmacia o consumo masivo."
       ],
       coords: [
-        [10.2048550, -64.6328720],
-        [10.2048021, -64.6325883],
-        [10.2044512, -64.6326685],
-        [10.2044937, -64.6329497]
+        [10.2050319, -64.6331306],
+        [10.2049191, -64.6325616],
+        [10.2046851, -64.6326151],
+        [10.2047841, -64.6331808]
       ]
     },
     {
-      id: "LOT-D1",
-      name: "Macro-Lote D (Noreste)",
+      id: "LOT-C03",
+      name: "Macro-Lote C03 (Sur)",
       category: "macro-lotes",
-      area: "1.000 m²",
+      area: "1.730 m²",
       status: "disponible",
       statusText: "Disponible",
-      color: "#a855f7",
-      image: "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80",
-      road: "Retiro Norte (23.86m) + Pasillo E",
-      power: "Trifásica 220V",
-      truck: "Salida Directa Av. Municipal",
-      parking: "Retiro Norte (Clientes)",
-      description: "Esquina noreste con visual directa desde el eje de acceso. Punto de alto tráfico peatonal y vehicular.",
+      color: "#c084fc",
+      image: "https://images.unsplash.com/photo-1587293852726-70cdb56c2866?auto=format&fit=crop&w=800&q=80",
+      road: "Pasillo Oeste (20.00 m) + Patio Sur (20.00 m)",
+      power: "Acometida Industrial 440V con Transformador",
+      truck: "27,96 m Frente + Frente Sur al Patio de Maniobras",
+      parking: "Patio Sur Carga Pesada",
+      description: "Macro-Lote sur de alta capacidad operativa. Posee 27,96 m de frente al Pasillo Oeste y frente sur directo al Patio de Maniobras de 20 m frente a Repuestos de Oriente.",
       useCases: [
-        "Franquicia comercial o restaurante.",
-        "Showroom de motocicletas o electrodomésticos.",
-        "Sede corporativa o agencia bancaria."
+        "Taller de servicio pesado, mantenimiento automotriz y lubricación.",
+        "Patio de gandolas, maquinaria pesada y equipos industriales.",
+        "Centro de distribución regional y cross-docking."
       ],
       coords: [
-        [10.2052164, -64.6327943],
-        [10.2051530, -64.6325082],
-        [10.2048021, -64.6325883],
-        [10.2048550, -64.6328720]
+        [10.2047841, -64.6331808],
+        [10.2046851, -64.6326151],
+        [10.2044512, -64.6326685],
+        [10.2045362, -64.6332309]
       ]
     },
     // LOCALES

@@ -19,19 +19,20 @@ VALUES
 ('5.1.04', 'Gastos Operativos — Aseo Urbano y Manejo de Desechos', 'egreso', 'Recolección y compactación de basura')
 ON CONFLICT (code) DO NOTHING;
 
--- 2. LAS 10 UNIDADES REALES DEL CCMS
+-- 2. LAS UNIDADES REALES DEL CCMS (INCLUYE SUBDIVISIÓN DE HUELLA EN 3 MACRO-LOTES)
 INSERT INTO units (code, name, category, area_m2, base_rent_usd, condo_aliquot, status, frontage_m, power_kva, has_loading_dock)
 VALUES
-('LOT-A1', 'Macro-Lote A (Frente Av. Municipal)', 'macro-lotes', 1500.00, 3500.00, 0.2890, 'arrendado', 45.00, 'Transformador 150 kVA', true),
-('LOT-A2', 'Macro-Lote B (Zona Posterior & Maniobras)', 'macro-lotes', 1200.00, 2600.00, 0.2312, 'arrendado', 35.00, 'Transformador 100 kVA', true),
-('LOC-01', 'Local 01 — Fachada Principal', 'locales', 250.00, 1100.00, 0.0481, 'arrendado', 12.00, 'Trifásica 25 kVA', false),
-('LOC-02', 'Local 02 — Fachada Comercial', 'locales', 250.00, 1050.00, 0.0481, 'arrendado', 12.00, 'Trifásica 25 kVA', false),
-('LOC-03', 'Local 03 — Planta Baja', 'locales', 180.00, 850.00, 0.0346, 'disponible', 9.00, 'Monofásica/Trifásica', false),
-('LOC-04', 'Local 04 — Planta Baja', 'locales', 180.00, 850.00, 0.0346, 'arrendado', 9.00, 'Monofásica/Trifásica', false),
-('LOC-05', 'Local 05 — Zona Media', 'locales', 160.00, 750.00, 0.0308, 'disponible', 8.00, 'Monofásica 15 kVA', false),
-('LOC-06', 'Local 06 — Zona Media', 'locales', 160.00, 750.00, 0.0308, 'arrendado', 8.00, 'Monofásica 15 kVA', false),
-('GAL-01', 'Galpón 01 Logístico y Almacén', 'galpones', 750.00, 1900.00, 0.1445, 'arrendado', 25.00, 'Industrial 75 kVA', true),
-('GAL-02', 'Galpón 02 Distribución & Taller', 'galpones', 560.00, 1500.00, 0.1079, 'disponible', 20.00, 'Industrial 50 kVA', true)
+('LOT-C01', 'Macro-Lote C01 (Norte)', 'macro-lotes', 1730.00, 3800.00, 0.2315, 'disponible', 27.95, 'Transformador 150 kVA', true),
+('LOT-C02', 'Macro-Lote C02 (Medio)', 'macro-lotes', 1730.00, 3800.00, 0.2315, 'disponible', 27.95, 'Transformador 150 kVA', true),
+('LOT-C03', 'Macro-Lote C03 (Sur)', 'macro-lotes', 1730.00, 3800.00, 0.2315, 'disponible', 27.96, 'Transformador 150 kVA', true),
+('LOC-01', 'Local 01 — Fachada Principal', 'locales', 250.00, 1100.00, 0.0335, 'arrendado', 12.00, 'Trifásica 25 kVA', false),
+('LOC-02', 'Local 02 — Fachada Comercial', 'locales', 250.00, 1050.00, 0.0335, 'arrendado', 12.00, 'Trifásica 25 kVA', false),
+('LOC-03', 'Local 03 — Planta Baja', 'locales', 180.00, 850.00, 0.0241, 'disponible', 9.00, 'Monofásica/Trifásica', false),
+('LOC-04', 'Local 04 — Planta Baja', 'locales', 180.00, 850.00, 0.0241, 'arrendado', 9.00, 'Monofásica/Trifásica', false),
+('LOC-05', 'Local 05 — Zona Media', 'locales', 160.00, 750.00, 0.0214, 'disponible', 8.00, 'Monofásica 15 kVA', false),
+('LOC-06', 'Local 06 — Zona Media', 'locales', 160.00, 750.00, 0.0214, 'arrendado', 8.00, 'Monofásica 15 kVA', false),
+('GAL-01', 'Galpón 01 Logístico y Almacén', 'galpones', 750.00, 1900.00, 0.1004, 'arrendado', 25.00, 'Industrial 75 kVA', true),
+('GAL-02', 'Galpón 02 Distribución & Taller', 'galpones', 560.00, 1500.00, 0.0750, 'disponible', 20.00, 'Industrial 50 kVA', true)
 ON CONFLICT (code) DO NOTHING;
 
 -- 3. INQUILINOS ACTIVOS DE PUERTO LA CRUZ
