@@ -5,7 +5,7 @@
  * ==============================================================================
  */
 
-const CACHE_NAME = 'ccms-erp-v2.5.0';
+const CACHE_NAME = 'ccms-erp-v2.6.0';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -54,33 +54,33 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Ignorar peticiones que no sean GET o que vayan a APIs externas (DolarApi, Supabase, etc.)
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
+  
+  // No interceptar peticiones externas (APIs, CDNs, Supabase)
   if (url.origin !== self.location.origin) return;
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Stale-while-revalidate: retornar cache pero actualizar de fondo
-        fetch(event.request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, networkResponse.clone());
-            });
-          }
-        }).catch(() => {});
-        return cachedResponse;
-      }
-      return fetch(event.request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
+      const fetchPromise = fetch(event.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
           const resClone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, resClone);
           });
         }
         return networkResponse;
+      }).catch((err) => {
+        if (cachedResponse) return cachedResponse;
+        // Si no hay red ni cache y es HTML, retornar login/index de respaldo
+        if (event.request.headers.get('accept')?.includes('text/html')) {
+          return caches.match('/gestion/login.html') || caches.match('/index.html');
+        }
+        throw err;
       });
+
+      return cachedResponse || fetchPromise;
     })
   );
 });
+

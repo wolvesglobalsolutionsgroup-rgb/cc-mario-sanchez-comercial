@@ -1,21 +1,15 @@
 {
   "name": "cc-mario-sanchez-comercial",
-  "cleanUrls": true,
+  "cleanUrls": false,
   "rewrites": [
     { "source": "/favicon.ico", "destination": "/favicon_2k.ico" },
-    { "source": "/", "destination": "/index.html" },
     { "source": "/alquiler", "destination": "/alquiler.html" },
-    { "source": "/alquiler.html", "destination": "/alquiler.html" },
     { "source": "/gestion", "destination": "/gestion/index.html" },
     { "source": "/gestion/", "destination": "/gestion/index.html" },
-    { "source": "/onboarding", "destination": "/gestion/onboarding.html" },
-    { "source": "/login", "destination": "/gestion/login.html" }
-  ],
-  "redirects": [
-    { "source": "/login", "destination": "/gestion/login.html", "permanent": false },
-    { "source": "/onboarding", "destination": "/gestion/onboarding.html", "permanent": false },
-    { "source": "/login.html", "destination": "/login", "permanent": false },
-    { "source": "/onboarding.html", "destination": "/onboarding", "permanent": false }
+    { "source": "/gestion/login", "destination": "/gestion/login.html" },
+    { "source": "/gestion/onboarding", "destination": "/gestion/onboarding.html" },
+    { "source": "/login", "destination": "/gestion/login.html" },
+    { "source": "/onboarding", "destination": "/gestion/onboarding.html" }
   ],
   "headers": [
     {
@@ -42,28 +36,12 @@
           "value": "strict-origin-when-cross-origin"
         },
         {
-          "key": "Cross-Origin-Opener-Policy",
-          "value": "same-origin-allow-popups"
-        },
-        {
-          "key": "Cross-Origin-Resource-Policy",
-          "value": "same-origin"
-        },
-        {
-          "key": "Cross-Origin-Embedder-Policy",
-          "value": "credentialless"
-        },
-        {
           "key": "Permissions-Policy",
-          "value": "accelerometer=(), autoplay=(), camera=(), cross-origin-isolated=(), display-capture=(), encrypted-media=(), fullscreen=(self), geolocation=(), gyroscope=(), keyboard-map=(), magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), sync-xhr=(), usb=(), xr-spatial-tracking=(), interest-cohort=()"
-        },
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "https://cc-mario-sanchez-comercial.vercel.app"
+          "value": "accelerometer=(), camera=(), geolocation=(), microphone=()"
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://ve.dolarapi.com https://dolarapi.com https://api.yadio.io https://p2p.binance.com https://*.supabase.co; frame-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://ve.dolarapi.com https://dolarapi.com https://api.yadio.io https://p2p.binance.com https://*.supabase.co; frame-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;"
         }
       ]
     },
@@ -75,8 +53,8 @@
           "value": "public, max-age=0, must-revalidate"
         },
         {
-          "key": "Cross-Origin-Resource-Policy",
-          "value": "cross-origin"
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
         }
       ]
     },
