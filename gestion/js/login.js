@@ -18,24 +18,44 @@ let currentRole = 'admin';
 
 function switchRole(role) {
   currentRole = role;
+  hideError();
   const btnAdmin = document.getElementById('btn-role-admin');
   const btnTenant = document.getElementById('btn-role-tenant');
   const lblUser = document.getElementById('lbl-identifier');
+  const userIn = document.getElementById('login-user');
+  const passIn = document.getElementById('login-pass');
   const btnDemoA = document.getElementById('btn-demo-admin');
   const btnDemoT = document.getElementById('btn-demo-tenant');
+  const btnDemoP = document.getElementById('btn-demo-pending');
 
   if (role === 'admin') {
     if (btnAdmin) btnAdmin.classList.add('active');
     if (btnTenant) btnTenant.classList.remove('active');
     if (btnDemoA) btnDemoA.classList.add('active');
     if (btnDemoT) btnDemoT.classList.remove('active');
+    if (btnDemoP) btnDemoP.classList.remove('active');
     if (lblUser) lblUser.innerText = 'Correo Electrónico Administrador';
+    if (userIn) {
+      userIn.placeholder = 'ej. administracion@ccmariosanchez.com';
+      if (AuthGuard.demoEnabled) userIn.value = 'administracion@ccmariosanchez.com';
+    }
+    if (passIn && AuthGuard.demoEnabled) {
+      passIn.value = 'Admin2026*';
+    }
   } else {
     if (btnTenant) btnTenant.classList.add('active');
     if (btnAdmin) btnAdmin.classList.remove('active');
     if (btnDemoT) btnDemoT.classList.add('active');
     if (btnDemoA) btnDemoA.classList.remove('active');
+    if (btnDemoP) btnDemoP.classList.remove('active');
     if (lblUser) lblUser.innerText = 'RIF Jurídico o Correo del Arrendatario';
+    if (userIn) {
+      userIn.placeholder = 'ej. J-30987123-4';
+      if (AuthGuard.demoEnabled) userIn.value = 'J-30987123-4';
+    }
+    if (passIn && AuthGuard.demoEnabled) {
+      passIn.value = 'Demo2026*';
+    }
   }
 }
 
@@ -48,24 +68,32 @@ function fillDemo(role, autoSubmit = false) {
     showError('El acceso demo está deshabilitado en producción. Configure Supabase Auth para ingresar.');
     return;
   }
+  const btnDemoA = document.getElementById('btn-demo-admin');
+  const btnDemoT = document.getElementById('btn-demo-tenant');
+  const btnDemoP = document.getElementById('btn-demo-pending');
+  const userIn = document.getElementById('login-user');
+  const passIn = document.getElementById('login-pass');
+
   if (role === 'pending') {
     switchRole('tenant');
-    const userIn = document.getElementById('login-user');
-    const passIn = document.getElementById('login-pass');
+    if (btnDemoP) btnDemoP.classList.add('active');
+    if (btnDemoT) btnDemoT.classList.remove('active');
+    if (btnDemoA) btnDemoA.classList.remove('active');
     if (userIn) userIn.value = 'J-40129845-0';
     if (passIn) passIn.value = 'Demo2026*';
+  } else if (role === 'tenant') {
+    switchRole('tenant');
+    if (userIn) userIn.value = 'J-30987123-4';
+    if (passIn) passIn.value = 'Demo2026*';
   } else {
-    switchRole(role);
-    const userIn = document.getElementById('login-user');
-    const passIn = document.getElementById('login-pass');
-    if (userIn) userIn.value = role === 'admin' ? 'administracion@ccmariosanchez.com' : 'J-30987123-4';
-    if (passIn) passIn.value = role === 'admin' ? 'Admin2026*' : 'Demo2026*';
+    switchRole('admin');
+    if (userIn) userIn.value = 'administracion@ccmariosanchez.com';
+    if (passIn) passIn.value = 'Admin2026*';
   }
 
   if (autoSubmit) {
     handleLogin();
   } else {
-    const passIn = document.getElementById('login-pass');
     if (passIn) passIn.focus();
   }
 }
@@ -121,12 +149,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-demo-login]').forEach((el) => { el.style.display = 'none'; });
   }
   switchRole('admin');
-  
-  // Pre-llenar credenciales admin por defecto para experiencia fluida
-  const userIn = document.getElementById('login-user');
-  const passIn = document.getElementById('login-pass');
-  if (userIn && !userIn.value) userIn.value = 'administracion@ccmariosanchez.com';
-  if (passIn && !passIn.value) passIn.value = 'Admin2026*';
 
   // Enlazar listeners programáticos directos (Multi-navegador / Cero dependencia de inline)
   const btnAdmin = document.getElementById('btn-role-admin');
