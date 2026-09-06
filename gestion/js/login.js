@@ -2,21 +2,61 @@
  * Centro Comercial Mario Sánchez — Login Controller
  */
 (function() {
-  const existing = AuthGuard.currentUser();
+  const urlParams = new URLSearchParams(window.location.search);
+  const isLogout = urlParams.has('logout') || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ccms_just_logged_out') === '1');
+  const isExpired = urlParams.has('expired');
+
+  if (isLogout || isExpired) {
+    try {
+      if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem('ccms_just_logged_out');
+      if (typeof AuthGuard !== 'undefined' && typeof AuthGuard.clearSession === 'function') {
+        AuthGuard.clearSession();
+      }
+      localStorage.removeItem('ccms_session');
+      sessionStorage.clear();
+    } catch (e) {}
+    return;
+  }
+
+  const existing = (typeof AuthGuard !== 'undefined' && typeof AuthGuard.currentUser === 'function') 
+    ? AuthGuard.currentUser() 
+    : null;
   if (existing) {
-    const u = new URL(window.location.href);
-    if (u.searchParams.get('expired')) {
-      u.searchParams.delete('expired');
-      window.history.replaceState({}, '', u.pathname + (u.search ? u.search : '') + u.hash);
-    } else {
-      window.location.replace('index.html');
-    }
+    window.location.replace('index.html');
   }
 })();
 
 let currentRole = 'admin';
 
-function switchRole(role) {
+function showInfo(msg) {
+  const box = document.getElementById('login-info');
+  const span = document.getElementById('login-info-msg');
+  if (!box || !span) return;
+  span.textContent = msg;
+  box.style.display = 'block';
+  hideError();
+}
+
+function hideInfo() {
+  const box = document.getElementById('login-info');
+  if (box) box.style.display = 'none';
+}
+
+function showError(msg) {
+  const box = document.getElementById('login-error');
+  const span = document.getElementById('login-error-msg');
+  if (!box || !span) return;
+  span.textContent = msg;
+  box.style.display = 'block';
+  hideInfo();
+}
+
+function hideError() {
+  const box = document.getElementById('login-error');
+  if (box) box.style.display = 'none';
+}
+
+function switchRole(role, fillCredentials = false) {
   currentRole = role;
   hideError();
   const btnAdmin = document.getElementById('btn-role-admin');
@@ -37,9 +77,9 @@ function switchRole(role) {
     if (lblUser) lblUser.innerText = 'Correo Electrónico Administrador';
     if (userIn) {
       userIn.placeholder = 'ej. administracion@ccmariosanchez.com';
-      if (AuthGuard.demoEnabled) userIn.value = 'administracion@ccmariosanchez.com';
+      if (fillCredentials && AuthGuard.demoEnabled) userIn.value = 'administracion@ccmariosanchez.com';
     }
-    if (passIn && AuthGuard.demoEnabled) {
+    if (passIn && fillCredentials && AuthGuard.demoEnabled) {
       passIn.value = 'Admin2026*';
     }
   } else {
@@ -51,9 +91,9 @@ function switchRole(role) {
     if (lblUser) lblUser.innerText = 'RIF Jurídico o Correo del Arrendatario';
     if (userIn) {
       userIn.placeholder = 'ej. J-30987123-4';
-      if (AuthGuard.demoEnabled) userIn.value = 'J-30987123-4';
+      if (fillCredentials && AuthGuard.demoEnabled) userIn.value = 'J-30987123-4';
     }
-    if (passIn && AuthGuard.demoEnabled) {
+    if (passIn && fillCredentials && AuthGuard.demoEnabled) {
       passIn.value = 'Demo2026*';
     }
   }
@@ -61,6 +101,7 @@ function switchRole(role) {
 
 function fillDemo(role, autoSubmit = false) {
   hideError();
+  hideInfo();
   // Limpiar cualquier bloqueo previo en el navegador
   try { localStorage.removeItem('ccms_login_lockout'); } catch (e) {}
 
@@ -75,18 +116,18 @@ function fillDemo(role, autoSubmit = false) {
   const passIn = document.getElementById('login-pass');
 
   if (role === 'pending') {
-    switchRole('tenant');
+    switchRole('tenant', false);
     if (btnDemoP) btnDemoP.classList.add('active');
     if (btnDemoT) btnDemoT.classList.remove('active');
     if (btnDemoA) btnDemoA.classList.remove('active');
     if (userIn) userIn.value = 'J-40129845-0';
     if (passIn) passIn.value = 'Demo2026*';
   } else if (role === 'tenant') {
-    switchRole('tenant');
+    switchRole('tenant', false);
     if (userIn) userIn.value = 'J-30987123-4';
     if (passIn) passIn.value = 'Demo2026*';
   } else {
-    switchRole('admin');
+    switchRole('admin', false);
     if (userIn) userIn.value = 'administracion@ccmariosanchez.com';
     if (passIn) passIn.value = 'Admin2026*';
   }
@@ -98,22 +139,10 @@ function fillDemo(role, autoSubmit = false) {
   }
 }
 
-function showError(msg) {
-  const box = document.getElementById('login-error');
-  const span = document.getElementById('login-error-msg');
-  if (!box || !span) return;
-  span.textContent = msg;
-  box.style.display = 'block';
-}
-
-function hideError() {
-  const box = document.getElementById('login-error');
-  if (box) box.style.display = 'none';
-}
-
 async function handleLogin(e) {
   if (e && e.preventDefault) e.preventDefault();
   hideError();
+  hideInfo();
   const identifier = document.getElementById('login-user') ? document.getElementById('login-user').value : '';
   const password = document.getElementById('login-pass') ? document.getElementById('login-pass').value : '';
   const submitBtn = document.getElementById('login-submit-btn');
@@ -148,7 +177,17 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!AuthGuard.demoEnabled) {
     document.querySelectorAll('[data-demo-login]').forEach((el) => { el.style.display = 'none'; });
   }
-  switchRole('admin');
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.has('logout')) {
+    switchRole('admin', false);
+    showInfo('Sesión cerrada de forma segura. Puede volver a ingresar o usar los accesos Demo de prueba.');
+  } else if (urlParams.has('expired')) {
+    switchRole('admin', false);
+    showError('Su sesión anterior ha caducado. Por favor ingrese sus credenciales nuevamente.');
+  } else {
+    switchRole('admin', true);
+  }
 
   // Enlazar listeners programáticos directos (Multi-navegador / Cero dependencia de inline)
   const btnAdmin = document.getElementById('btn-role-admin');
@@ -157,8 +196,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnDemoT = document.getElementById('btn-demo-tenant');
   const btnDemoP = document.getElementById('btn-demo-pending');
 
-  if (btnAdmin) btnAdmin.addEventListener('click', (e) => { e.preventDefault(); switchRole('admin'); });
-  if (btnTenant) btnTenant.addEventListener('click', (e) => { e.preventDefault(); switchRole('tenant'); });
+  if (btnAdmin) btnAdmin.addEventListener('click', (e) => { e.preventDefault(); switchRole('admin', true); });
+  if (btnTenant) btnTenant.addEventListener('click', (e) => { e.preventDefault(); switchRole('tenant', true); });
   if (btnDemoA) btnDemoA.addEventListener('click', (e) => { e.preventDefault(); fillDemo('admin', true); });
   if (btnDemoT) btnDemoT.addEventListener('click', (e) => { e.preventDefault(); fillDemo('tenant', true); });
   if (btnDemoP) btnDemoP.addEventListener('click', (e) => { e.preventDefault(); fillDemo('pending', true); });

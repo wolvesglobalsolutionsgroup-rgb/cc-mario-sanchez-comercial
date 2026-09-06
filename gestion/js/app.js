@@ -15,6 +15,16 @@
   }
 })();
 
+// Revalidación inmediata anti-bfcache (Back/Forward Cache del navegador)
+window.addEventListener('pageshow', function(event) {
+  if (typeof AuthGuard !== 'undefined') {
+    const sess = AuthGuard.currentUser();
+    if (!sess) {
+      window.location.replace('login.html?expired=bfcache');
+    }
+  }
+});
+
 // PWA Service Worker Registration
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

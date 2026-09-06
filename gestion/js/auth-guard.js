@@ -274,7 +274,12 @@
   }
 
   function clearSession() {
-    localStorage.removeItem(SESSION_KEY);
+    try {
+      localStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem('ccms_session');
+      sessionStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem('ccms_session');
+    } catch (e) {}
   }
 
   function loginPath() {
@@ -390,7 +395,11 @@
 
   function logout() {
     clearSession();
-    global.location.replace(loginPath());
+    try {
+      sessionStorage.clear();
+      sessionStorage.setItem('ccms_just_logged_out', '1');
+    } catch (e) {}
+    global.location.replace('login.html?logout=1');
   }
 
   function currentUser() {

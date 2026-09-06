@@ -13,6 +13,16 @@
   }
 })();
 
+// Revalidación inmediata anti-bfcache
+window.addEventListener('pageshow', function() {
+  if (typeof AuthGuard !== 'undefined') {
+    const sess = AuthGuard.currentUser();
+    if (!sess || sess.role !== 'admin') {
+      window.location.replace('login.html?expired=bfcache');
+    }
+  }
+});
+
 let currentStep = 1;
 const units = (typeof dbService !== 'undefined' && dbService.getUnits) ? dbService.getUnits() : [];
 
