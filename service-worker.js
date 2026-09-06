@@ -5,7 +5,7 @@
  * ==============================================================================
  */
 
-const CACHE_NAME = 'ccms-erp-v2.7.4';
+const CACHE_NAME = 'ccms-erp-v2.8.0';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
