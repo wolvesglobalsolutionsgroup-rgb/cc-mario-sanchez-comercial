@@ -142,20 +142,32 @@
       <i class="fa-solid fa-arrow-right-to-bracket"></i> <span id="login-submit-text">Ingresar al Portal</span>
     </button>
 
-    <!-- CREDENCIALES DE DEMOSTRACIÓN (1-CLICK DEMO ACCESS) -->
+    <!-- CREDENCIALES DE DEMOSTRACIÓN (1-CLICK DEMO ACCESS POR ROL) -->
     <div style="margin-top: 14px; background: var(--amber-glow); border: 1px dashed var(--border-highlight); border-radius: 8px; padding: 12px; font-size: 12px;">
-      <div style="font-weight: 800; color: var(--amber); display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
-        <i class="fa-solid fa-key"></i> <span>Credenciales Demo para Pruebas:</span>
+      <div style="font-weight: 800; color: var(--amber); display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+        <span style="display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-key"></i> <span>Acceso Rápido por Rol (Demostración):</span>
+        </span>
+        <span style="font-size: 10px; color: var(--txt-muted);">1-Click</span>
       </div>
-      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-        <button type="button" class="cur-pill active" id="btn-demo-admin" data-demo-login style="flex: 1; min-width: 90px; padding: 6px; font-size: 11px; text-align: center;">
-          <i class="fa-solid fa-user-shield"></i> Demo Admin
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
+        <button type="button" class="cur-pill active" id="btn-demo-superadmin" data-demo-login data-role="superadmin" style="padding: 5px 8px; font-size: 10.5px; text-align: left; background: rgba(245, 158, 11, 0.15); border-color: var(--amber); color: var(--amber); font-weight: 800;">
+          👑 SuperAdmin
         </button>
-        <button type="button" class="cur-pill" id="btn-demo-tenant" data-demo-login style="flex: 1; min-width: 90px; padding: 6px; font-size: 11px; text-align: center;">
-          <i class="fa-solid fa-store"></i> Demo Inquilino
+        <button type="button" class="cur-pill" id="btn-demo-finanzas" data-demo-login data-role="finanzas" style="padding: 5px 8px; font-size: 10.5px; text-align: left;">
+          💼 Finanzas & Cobros
         </button>
-        <button type="button" class="cur-pill" id="btn-demo-pending" data-demo-login style="flex: 1; min-width: 90px; padding: 6px; font-size: 11px; text-align: center; border-color: rgba(245, 158, 11, 0.4);" title="Probar bloqueo de cuenta pendiente de autorización por Comité">
-          <i class="fa-solid fa-hourglass-half"></i> Demo Pendiente
+        <button type="button" class="cur-pill" id="btn-demo-legal" data-demo-login data-role="legal" style="padding: 5px 8px; font-size: 10.5px; text-align: left;">
+          ⚖️ Legal & Contratos
+        </button>
+        <button type="button" class="cur-pill" id="btn-demo-mantenimiento" data-demo-login data-role="mantenimiento" style="padding: 5px 8px; font-size: 10.5px; text-align: left;">
+          🛠️ Mantenimiento
+        </button>
+        <button type="button" class="cur-pill" id="btn-demo-heredero" data-demo-login data-role="heredero" style="padding: 5px 8px; font-size: 10.5px; text-align: left; color: #c084fc; border-color: rgba(168,85,247,0.4);" title="Acceso exclusivo de lectura y auditoría para los 14 herederos">
+          🏛️ Heredero (Lectura)
+        </button>
+        <button type="button" class="cur-pill" id="btn-demo-tenant" data-demo-login data-role="tenant" style="padding: 5px 8px; font-size: 10.5px; text-align: left; color: var(--emerald); border-color: rgba(16,185,129,0.4);">
+          🏪 Inquilino (Local)
         </button>
       </div>
     </div>

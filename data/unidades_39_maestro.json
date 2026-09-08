@@ -1,0 +1,1523 @@
+[
+  {
+    "id": "UNIT-01",
+    "nro": 1,
+    "local": "1",
+    "inquilino": "MUEBLERIA JUNCAL,C.A .                                                       RIF. J-08010995-3",
+    "metraje_m2": 851.0,
+    "alicuota_inmueble": 3.189,
+    "canon_base_usd": 1000.0,
+    "condominio_actual_usd": 46.0,
+    "condominio_desglose": {
+      "vigilancia": 30.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 2.0,
+      "fondo_reserva": 4.0,
+      "total": 46.0
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 51.343094983095604,
+      "base": 23.0,
+      "prorrateo_50": 25.671547491547802,
+      "total": 48.6715474915478
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-02",
+    "nro": 2,
+    "local": "2",
+    "inquilino": "INVERSIONES SUEÑO ORIENTE,C.A.                                    RIF. J-40023688-6",
+    "metraje_m2": 715.0,
+    "alicuota_inmueble": 2.6794,
+    "canon_base_usd": 300.0,
+    "condominio_actual_usd": 34.5,
+    "condominio_desglose": {
+      "vigilancia": 20.0,
+      "basura": 0.0,
+      "areas_comunes": 10.0,
+      "gastos_adm": 1.5,
+      "fondo_reserva": 3.0,
+      "total": 34.5
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 43.137853011649064,
+      "base": 23.0,
+      "prorrateo_50": 21.568926505824532,
+      "total": 44.568926505824535
+    },
+    "observaciones": "Bote basura particular",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-03",
+    "nro": 3,
+    "local": "3A",
+    "inquilino": "SAMUEL ARCIA .                            C.I.V-10.295.458",
+    "metraje_m2": 204.0,
+    "alicuota_inmueble": 0.7645,
+    "canon_base_usd": 100.0,
+    "condominio_actual_usd": 0.0,
+    "condominio_desglose": {
+      "vigilancia": 0.0,
+      "basura": 0.0,
+      "areas_comunes": 0.0,
+      "gastos_adm": 0.0,
+      "fondo_reserva": 0.0,
+      "total": 0.0
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 12.307862957169803,
+      "base": 23.0,
+      "prorrateo_50": 6.1539314785849015,
+      "total": 29.1539314785849
+    },
+    "observaciones": "Solicitud de desocupac.",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "EN LITIGIO/DESOCUPACION"
+  },
+  {
+    "id": "UNIT-04",
+    "nro": 4,
+    "local": "3A-1",
+    "inquilino": "MARLON REYES.                          C.I.V- 16.854.280",
+    "metraje_m2": 275.0,
+    "alicuota_inmueble": 1.0305,
+    "canon_base_usd": 300.0,
+    "condominio_actual_usd": 23.0,
+    "condominio_desglose": {
+      "vigilancia": 10.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 1.0,
+      "fondo_reserva": 2.0,
+      "total": 23.0
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 16.591481927557332,
+      "base": 23.0,
+      "prorrateo_50": 8.295740963778666,
+      "total": 31.295740963778666
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-05",
+    "nro": 5,
+    "local": "3B",
+    "inquilino": "STEFARLEYN VILLARROEL     C.I. V- 23.468.875",
+    "metraje_m2": 354.0,
+    "alicuota_inmueble": 1.3266,
+    "canon_base_usd": 300.0,
+    "condominio_actual_usd": 34.5,
+    "condominio_desglose": {
+      "vigilancia": 20.0,
+      "basura": 0.0,
+      "areas_comunes": 10.0,
+      "gastos_adm": 1.5,
+      "fondo_reserva": 3.0,
+      "total": 34.5
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 21.357762190382896,
+      "base": 23.0,
+      "prorrateo_50": 10.678881095191448,
+      "total": 33.67888109519145
+    },
+    "observaciones": "Bote basura particular",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": true,
+      "monto_inicial_usd": 4800.0,
+      "amortizado_acumulado_usd": 2400.0,
+      "saldo_remanente_usd": 2400.0,
+      "cuota_mensual_descuento_usd": 200.0,
+      "descripcion": "Convenio de reparaciones mayores y adecuacion electrica/sanitaria segun Art 34 G.O. 40.418"
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-06",
+    "nro": 6,
+    "local": "3C",
+    "inquilino": "SENDUS, C.A.                             RIF: J- 40076495-5",
+    "metraje_m2": 145.0,
+    "alicuota_inmueble": 0.5434,
+    "canon_base_usd": 120.0,
+    "condominio_actual_usd": 34.5,
+    "condominio_desglose": {
+      "vigilancia": 20.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 1.5,
+      "fondo_reserva": 3.0,
+      "total": 34.5
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 8.748235925439321,
+      "base": 23.0,
+      "prorrateo_50": 4.3741179627196605,
+      "total": 27.37411796271966
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "2027-03-31",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-07",
+    "nro": 7,
+    "local": "4",
+    "inquilino": "R.C. MANTENIMIENTOS HIDRAULICOS,C.A.                 RIF: J- 29716672-6",
+    "metraje_m2": 191.0,
+    "alicuota_inmueble": 0.7157,
+    "canon_base_usd": 130.0,
+    "condominio_actual_usd": 23.0,
+    "condominio_desglose": {
+      "vigilancia": 10.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 1.0,
+      "fondo_reserva": 2.0,
+      "total": 23.0
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 11.523538356958003,
+      "base": 23.0,
+      "prorrateo_50": 5.7617691784790015,
+      "total": 28.761769178479
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-08",
+    "nro": 8,
+    "local": "4-A",
+    "inquilino": "CASO:  OSIRIS E ISIS NARVAEZ SANCHEZ.",
+    "metraje_m2": 50.0,
+    "alicuota_inmueble": 0.1874,
+    "canon_base_usd": 0.0,
+    "condominio_actual_usd": 0.0,
+    "condominio_desglose": {
+      "vigilancia": 0.0,
+      "basura": 0.0,
+      "areas_comunes": 0.0,
+      "gastos_adm": 0.0,
+      "fondo_reserva": 0.0,
+      "total": 0.0
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 3.016633077737697,
+      "base": 23.0,
+      "prorrateo_50": 1.5083165388688484,
+      "total": 24.508316538868847
+    },
+    "observaciones": "Estirpe Narvaez Sánchez.",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-09",
+    "nro": 9,
+    "local": "5",
+    "inquilino": "LA PAZ DE ORIENTE, C.A.       RIF: J-29413942-6",
+    "metraje_m2": 1963.0,
+    "alicuota_inmueble": 7.3561,
+    "canon_base_usd": 0.0,
+    "condominio_actual_usd": 0.0,
+    "condominio_desglose": {
+      "vigilancia": 0.0,
+      "basura": 0.0,
+      "areas_comunes": 0.0,
+      "gastos_adm": 0.0,
+      "fondo_reserva": 0.0,
+      "total": 0.0
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 118.43301463198199,
+      "base": 23.0,
+      "prorrateo_50": 59.216507315990995,
+      "total": 82.216507315991
+    },
+    "observaciones": "POR ARRENDAR.",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "DESOCUPADO"
+  },
+  {
+    "id": "UNIT-10",
+    "nro": 10,
+    "local": "6",
+    "inquilino": "INDUSTRIA COLCHONES  COLCHOMUEBLES, C.A. RIF: J-5002628-9",
+    "metraje_m2": 858.0,
+    "alicuota_inmueble": 3.2152,
+    "canon_base_usd": 0.0,
+    "condominio_actual_usd": 34.5,
+    "condominio_desglose": {
+      "vigilancia": 20.0,
+      "basura": 0.0,
+      "areas_comunes": 10.0,
+      "gastos_adm": 1.5,
+      "fondo_reserva": 3.0,
+      "total": 34.5
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 51.76542361397888,
+      "base": 23.0,
+      "prorrateo_50": 25.88271180698944,
+      "total": 48.88271180698944
+    },
+    "observaciones": "Bote basura particular",
+    "contrato": {
+      "inicio": "2026-09-01",
+      "vencimiento": "2028-09-01",
+      "prorroga": "2029-09-01"
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-11",
+    "nro": 11,
+    "local": "7A",
+    "inquilino": "INDUSTRIA COLCHONES  COLCHOMUEBLES, C.A. RIF: J-5002628-9",
+    "metraje_m2": 431.0,
+    "alicuota_inmueble": 1.6151,
+    "canon_base_usd": 0.0,
+    "condominio_actual_usd": 34.5,
+    "condominio_desglose": {
+      "vigilancia": 20.0,
+      "basura": 0.0,
+      "areas_comunes": 10.0,
+      "gastos_adm": 1.5,
+      "fondo_reserva": 3.0,
+      "total": 34.5
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 26.003377130098947,
+      "base": 23.0,
+      "prorrateo_50": 13.001688565049474,
+      "total": 36.00168856504948
+    },
+    "observaciones": "Bote basura particular",
+    "contrato": {
+      "inicio": "2026-09-01",
+      "vencimiento": "2028-09-01",
+      "prorroga": "2029-09-01"
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-12",
+    "nro": 12,
+    "local": "7B",
+    "inquilino": "DIFERAUTO, C.A.                      RIF: J- 3067515-8",
+    "metraje_m2": 980.0,
+    "alicuota_inmueble": 3.6724,
+    "canon_base_usd": 520.0,
+    "condominio_actual_usd": 34.5,
+    "condominio_desglose": {
+      "vigilancia": 20.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 1.5,
+      "fondo_reserva": 3.0,
+      "total": 34.5
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 59.12600832365886,
+      "base": 23.0,
+      "prorrateo_50": 29.56300416182943,
+      "total": 52.563004161829426
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-13",
+    "nro": 13,
+    "local": "8",
+    "inquilino": "OPTIMA ORIENTAL,C.A.       RIF: J-3198585-5",
+    "metraje_m2": 1792.0,
+    "alicuota_inmueble": 6.7153,
+    "canon_base_usd": 500.0,
+    "condominio_actual_usd": 46.0,
+    "condominio_desglose": {
+      "vigilancia": 30.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 2.0,
+      "fondo_reserva": 4.0,
+      "total": 46.0
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 108.11612950611907,
+      "base": 23.0,
+      "prorrateo_50": 54.05806475305953,
+      "total": 77.05806475305954
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-14",
+    "nro": 14,
+    "local": "9",
+    "inquilino": "SELCO - BRYKAM OIL, C.A. RIF: J-30250691-3",
+    "metraje_m2": 845.0,
+    "alicuota_inmueble": 3.1665,
+    "canon_base_usd": 120.0,
+    "condominio_actual_usd": 23.0,
+    "condominio_desglose": {
+      "vigilancia": 10.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 1.0,
+      "fondo_reserva": 2.0,
+      "total": 23.0
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 50.98109901376708,
+      "base": 23.0,
+      "prorrateo_50": 25.49054950688354,
+      "total": 48.49054950688354
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-15",
+    "nro": 15,
+    "local": "10",
+    "inquilino": "MUNDO MUEBLE COLLECTION, C.A.                                 RIF: J-29710459-3",
+    "metraje_m2": 724.0,
+    "alicuota_inmueble": 2.7131,
+    "canon_base_usd": 300.0,
+    "condominio_actual_usd": 46.0,
+    "condominio_desglose": {
+      "vigilancia": 30.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 2.0,
+      "fondo_reserva": 4.0,
+      "total": 46.0
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 43.680846965641855,
+      "base": 23.0,
+      "prorrateo_50": 21.840423482820928,
+      "total": 44.840423482820924
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-16",
+    "nro": 16,
+    "local": "11",
+    "inquilino": "WILMEN LUNAR.                      C.I.V- 8.323.910",
+    "metraje_m2": 854.0,
+    "alicuota_inmueble": 3.2003,
+    "canon_base_usd": 350.0,
+    "condominio_actual_usd": 34.5,
+    "condominio_desglose": {
+      "vigilancia": 20.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 1.5,
+      "fondo_reserva": 3.0,
+      "total": 34.5
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 51.52409296775986,
+      "base": 23.0,
+      "prorrateo_50": 25.76204648387993,
+      "total": 48.76204648387993
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-17",
+    "nro": 17,
+    "local": "12",
+    "inquilino": "FERRETODO, C.A.                    RIF: J-50083135-8",
+    "metraje_m2": 2520.0,
+    "alicuota_inmueble": 9.4434,
+    "canon_base_usd": 250.0,
+    "condominio_actual_usd": 46.0,
+    "condominio_desglose": {
+      "vigilancia": 30.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 2.0,
+      "fondo_reserva": 4.0,
+      "total": 46.0
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 152.03830711797994,
+      "base": 23.0,
+      "prorrateo_50": 76.01915355898997,
+      "total": 99.01915355898997
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-18",
+    "nro": 18,
+    "local": "13",
+    "inquilino": "GORGE ZGHEN.                        C.I. V- 11.421.466",
+    "metraje_m2": 416.0,
+    "alicuota_inmueble": 1.5589,
+    "canon_base_usd": 85.0,
+    "condominio_actual_usd": 34.5,
+    "condominio_desglose": {
+      "vigilancia": 20.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 1.5,
+      "fondo_reserva": 3.0,
+      "total": 34.5
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 25.098387206777637,
+      "base": 23.0,
+      "prorrateo_50": 12.549193603388819,
+      "total": 35.549193603388815
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "2026-09-01",
+      "vencimiento": "2028-09-01",
+      "prorroga": "2029-09-01"
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-19",
+    "nro": 19,
+    "local": "14",
+    "inquilino": "JORGE MAKHLOUTA Z.        C.I.V- 11.907.041",
+    "metraje_m2": 187.0,
+    "alicuota_inmueble": 0.7008,
+    "canon_base_usd": 200.0,
+    "condominio_actual_usd": 34.5,
+    "condominio_desglose": {
+      "vigilancia": 20.0,
+      "basura": 0.0,
+      "areas_comunes": 10.0,
+      "gastos_adm": 1.5,
+      "fondo_reserva": 3.0,
+      "total": 34.5
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 11.282207710738987,
+      "base": 23.0,
+      "prorrateo_50": 5.641103855369494,
+      "total": 28.641103855369494
+    },
+    "observaciones": "Bote basura particular",
+    "contrato": {
+      "inicio": "2026-09-01",
+      "vencimiento": "2028-09-01",
+      "prorroga": "2029-09-01"
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-20",
+    "nro": 20,
+    "local": "15",
+    "inquilino": "GORGE ZGHEN.             C.I. V- 11.421.466",
+    "metraje_m2": 358.0,
+    "alicuota_inmueble": 1.3416,
+    "canon_base_usd": 85.0,
+    "condominio_actual_usd": 34.5,
+    "condominio_desglose": {
+      "vigilancia": 20.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 1.5,
+      "fondo_reserva": 3.0,
+      "total": 34.5
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 21.599092836601912,
+      "base": 23.0,
+      "prorrateo_50": 10.799546418300956,
+      "total": 33.799546418300956
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "2026-09-01",
+      "vencimiento": "2028-09-01",
+      "prorroga": "2029-09-01"
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-21",
+    "nro": 21,
+    "local": "16",
+    "inquilino": "DISTRIBUIDORA JUPITER, C.A.                                             RIF: J- 08004536-0",
+    "metraje_m2": 697.0,
+    "alicuota_inmueble": 2.6119,
+    "canon_base_usd": 70.0,
+    "condominio_actual_usd": 23.0,
+    "condominio_desglose": {
+      "vigilancia": 10.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 1.0,
+      "fondo_reserva": 2.0,
+      "total": 23.0
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 42.051865103663495,
+      "base": 23.0,
+      "prorrateo_50": 21.025932551831747,
+      "total": 44.025932551831744
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-22",
+    "nro": 22,
+    "local": "17",
+    "inquilino": "BEVERLY HILLS DECORACIONES, C.A.                               RIF: J- 31018994-3",
+    "metraje_m2": 650.0,
+    "alicuota_inmueble": 2.4358,
+    "canon_base_usd": 350.0,
+    "condominio_actual_usd": 46.0,
+    "condominio_desglose": {
+      "vigilancia": 30.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 2.0,
+      "fondo_reserva": 4.0,
+      "total": 46.0
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 39.21623001059006,
+      "base": 23.0,
+      "prorrateo_50": 19.60811500529503,
+      "total": 42.60811500529503
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-23",
+    "nro": 23,
+    "local": "18",
+    "inquilino": "FERRETODO, C.A.                    RIF: J-50083135-8",
+    "metraje_m2": 723.0,
+    "alicuota_inmueble": 2.7093,
+    "canon_base_usd": 400.0,
+    "condominio_actual_usd": 46.0,
+    "condominio_desglose": {
+      "vigilancia": 30.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 2.0,
+      "fondo_reserva": 4.0,
+      "total": 46.0
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 43.620514304087095,
+      "base": 23.0,
+      "prorrateo_50": 21.810257152043548,
+      "total": 44.81025715204355
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-24",
+    "nro": 24,
+    "local": "19",
+    "inquilino": "TULAY,C.A.                                 RIF: J-40076510-2",
+    "metraje_m2": 707.0,
+    "alicuota_inmueble": 2.6494,
+    "canon_base_usd": 200.0,
+    "condominio_actual_usd": 46.0,
+    "condominio_desglose": {
+      "vigilancia": 30.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 2.0,
+      "fondo_reserva": 4.0,
+      "total": 46.0
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 42.65519171921103,
+      "base": 23.0,
+      "prorrateo_50": 21.327595859605516,
+      "total": 44.327595859605516
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "2027-10-30",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-25",
+    "nro": 25,
+    "local": "20",
+    "inquilino": "WILLIAM EL OFERTON, C.A.   RIF: J- 29558935-2",
+    "metraje_m2": 945.0,
+    "alicuota_inmueble": 3.5413,
+    "canon_base_usd": 300.0,
+    "condominio_actual_usd": 46.0,
+    "condominio_desglose": {
+      "vigilancia": 30.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 2.0,
+      "fondo_reserva": 4.0,
+      "total": 46.0
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 57.014365169242474,
+      "base": 23.0,
+      "prorrateo_50": 28.507182584621237,
+      "total": 51.50718258462123
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-26",
+    "nro": 26,
+    "local": "21",
+    "inquilino": "JOSE ZAGAN.                                  C.I. V- 10.287.724",
+    "metraje_m2": 853.0,
+    "alicuota_inmueble": 3.1965,
+    "canon_base_usd": 120.0,
+    "condominio_actual_usd": 46.0,
+    "condominio_desglose": {
+      "vigilancia": 30.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 2.0,
+      "fondo_reserva": 4.0,
+      "total": 46.0
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 51.46376030620511,
+      "base": 23.0,
+      "prorrateo_50": 25.731880153102555,
+      "total": 48.73188015310255
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "2026-09-01",
+      "vencimiento": "2027-02-28",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-27",
+    "nro": 27,
+    "local": "22",
+    "inquilino": "TAYRONA,C.A.                            RIF: J- 29642261-3",
+    "metraje_m2": 857.0,
+    "alicuota_inmueble": 3.2115,
+    "canon_base_usd": 100.0,
+    "condominio_actual_usd": 34.5,
+    "condominio_desglose": {
+      "vigilancia": 20.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 1.5,
+      "fondo_reserva": 3.0,
+      "total": 34.5
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 51.70509095242413,
+      "base": 23.0,
+      "prorrateo_50": 25.852545476212065,
+      "total": 48.852545476212065
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-28",
+    "nro": 28,
+    "local": "23",
+    "inquilino": "CORP. GAM 25, C.A.               RIF:  J-",
+    "metraje_m2": 1065.0,
+    "alicuota_inmueble": 3.9909,
+    "canon_base_usd": 400.0,
+    "condominio_actual_usd": 46.0,
+    "condominio_desglose": {
+      "vigilancia": 30.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 2.0,
+      "fondo_reserva": 4.0,
+      "total": 46.0
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 64.25428455581294,
+      "base": 23.0,
+      "prorrateo_50": 32.12714227790647,
+      "total": 55.12714227790647
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-29",
+    "nro": 29,
+    "local": "24",
+    "inquilino": "TAYRONA,C.A.                            RIF:  J- 29642261-3",
+    "metraje_m2": 1135.0,
+    "alicuota_inmueble": 4.2533,
+    "canon_base_usd": 100.0,
+    "condominio_actual_usd": 34.5,
+    "condominio_desglose": {
+      "vigilancia": 20.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 1.5,
+      "fondo_reserva": 3.0,
+      "total": 34.5
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 68.47757086464573,
+      "base": 23.0,
+      "prorrateo_50": 34.238785432322864,
+      "total": 57.238785432322864
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-30",
+    "nro": 30,
+    "local": "25",
+    "inquilino": "AMHAD RADI EL DALI.               C.I. V- 13.670.255",
+    "metraje_m2": 400.0,
+    "alicuota_inmueble": 1.4989,
+    "canon_base_usd": 120.0,
+    "condominio_actual_usd": 34.5,
+    "condominio_desglose": {
+      "vigilancia": 20.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 1.5,
+      "fondo_reserva": 3.0,
+      "total": 34.5
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 24.133064621901575,
+      "base": 23.0,
+      "prorrateo_50": 12.066532310950787,
+      "total": 35.06653231095079
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-31",
+    "nro": 31,
+    "local": "26",
+    "inquilino": "REDIORCA BARCELONA, C.A.  RIF: J-30473014-4",
+    "metraje_m2": 921.0,
+    "alicuota_inmueble": 3.4513,
+    "canon_base_usd": 130.0,
+    "condominio_actual_usd": 34.5,
+    "condominio_desglose": {
+      "vigilancia": 20.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 1.5,
+      "fondo_reserva": 3.0,
+      "total": 34.5
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 55.56638129192838,
+      "base": 23.0,
+      "prorrateo_50": 27.78319064596419,
+      "total": 50.78319064596419
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-32",
+    "nro": 32,
+    "local": "M1 /M1A",
+    "inquilino": "ELECTROMANIA PLC, C.A.        RIF: J-31042487-0",
+    "metraje_m2": 330.0,
+    "alicuota_inmueble": 1.2366,
+    "canon_base_usd": 500.0,
+    "condominio_actual_usd": 46.0,
+    "condominio_desglose": {
+      "vigilancia": 30.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 2.0,
+      "fondo_reserva": 4.0,
+      "total": 46.0
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 19.9097783130688,
+      "base": 23.0,
+      "prorrateo_50": 9.9548891565344,
+      "total": 32.9548891565344
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-33",
+    "nro": 33,
+    "local": "M61",
+    "inquilino": "HERCRIS CARMONA.                   C.I. V- 13.989.052",
+    "metraje_m2": 547.0,
+    "alicuota_inmueble": 2.0498,
+    "canon_base_usd": 350.0,
+    "condominio_actual_usd": 34.5,
+    "condominio_desglose": {
+      "vigilancia": 20.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 1.5,
+      "fondo_reserva": 3.0,
+      "total": 34.5
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 33.001965870450405,
+      "base": 23.0,
+      "prorrateo_50": 16.500982935225203,
+      "total": 39.5009829352252
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-34",
+    "nro": 34,
+    "local": "M62",
+    "inquilino": "EXO MODA, C.A.                            RIF: J-29847265-0",
+    "metraje_m2": 294.0,
+    "alicuota_inmueble": 1.1017,
+    "canon_base_usd": 320.0,
+    "condominio_actual_usd": 34.5,
+    "condominio_desglose": {
+      "vigilancia": 20.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 1.5,
+      "fondo_reserva": 3.0,
+      "total": 34.5
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 17.737802497097658,
+      "base": 23.0,
+      "prorrateo_50": 8.868901248548829,
+      "total": 31.86890124854883
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "2027-06-30",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-35",
+    "nro": 35,
+    "local": "8A",
+    "inquilino": "OFICINA QUE OCUPÓ, ABG. LURIS SÁNCHEZ.",
+    "metraje_m2": 40.0,
+    "alicuota_inmueble": 0.1499,
+    "canon_base_usd": 0.0,
+    "condominio_actual_usd": 0.0,
+    "condominio_desglose": {
+      "vigilancia": 0.0,
+      "basura": 0.0,
+      "areas_comunes": 0.0,
+      "gastos_adm": 0.0,
+      "fondo_reserva": 0.0,
+      "total": 0.0
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 2.4133064621901577,
+      "base": 23.0,
+      "prorrateo_50": 1.2066532310950788,
+      "total": 24.20665323109508
+    },
+    "observaciones": "Ofic. Abg.  Luris Sánchez.",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "USO INTERNO SUCESION"
+  },
+  {
+    "id": "UNIT-36",
+    "nro": 36,
+    "local": "M63",
+    "inquilino": "AYSAR, C.A.                                    RIF: J-40262757-2",
+    "metraje_m2": 761.0,
+    "alicuota_inmueble": 2.8517,
+    "canon_base_usd": 500.0,
+    "condominio_actual_usd": 34.5,
+    "condominio_desglose": {
+      "vigilancia": 20.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 1.5,
+      "fondo_reserva": 3.0,
+      "total": 34.5
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 45.913155443167746,
+      "base": 23.0,
+      "prorrateo_50": 22.956577721583873,
+      "total": 45.95657772158387
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "2026-09-01",
+      "vencimiento": "2029-09-01",
+      "prorroga": "2030-09-01"
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-37",
+    "nro": 37,
+    "local": "M64",
+    "inquilino": "AGUILA INDUSTRIAL, C.A.      RIF: J-50170014-1",
+    "metraje_m2": 939.38,
+    "alicuota_inmueble": 3.5202,
+    "canon_base_usd": 500.0,
+    "condominio_actual_usd": 34.5,
+    "condominio_desglose": {
+      "vigilancia": 20.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 1.5,
+      "fondo_reserva": 3.0,
+      "total": 34.5
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 56.675295611304755,
+      "base": 23.0,
+      "prorrateo_50": 28.337647805652377,
+      "total": 51.33764780565238
+    },
+    "observaciones": "",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "2027-04-30",
+      "prorroga": "PENDIENTE ULTIMO PAGO"
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  },
+  {
+    "id": "UNIT-38",
+    "nro": 38,
+    "local": "OFIC.",
+    "inquilino": "OFICINA ADMINIST. SUCESIÓN MARIO SÁNCHEZ",
+    "metraje_m2": 108.0,
+    "alicuota_inmueble": 0.4047,
+    "canon_base_usd": 0.0,
+    "condominio_actual_usd": 69.0,
+    "condominio_desglose": {
+      "vigilancia": 50.0,
+      "basura": 5.0,
+      "areas_comunes": 5.0,
+      "gastos_adm": 3.0,
+      "fondo_reserva": 6.0,
+      "total": 69.0
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 6.515927447913426,
+      "base": 23.0,
+      "prorrateo_50": 3.257963723956713,
+      "total": 26.257963723956713
+    },
+    "observaciones": "SUCES. MARIO SÁNCHEZ",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "USO INTERNO SUCESION"
+  },
+  {
+    "id": "UNIT-39",
+    "nro": 39,
+    "local": "DANCO-PASO",
+    "inquilino": "LUBRICANTES DANCO, C.A.",
+    "metraje_m2": 0.0,
+    "alicuota_inmueble": 0.0,
+    "canon_base_usd": 144.0,
+    "condominio_actual_usd": 44.5,
+    "condominio_desglose": {
+      "vigilancia": 20.0,
+      "basura": 10.0,
+      "areas_comunes": 10.0,
+      "gastos_adm": 1.5,
+      "fondo_reserva": 3.0,
+      "total": 44.5
+    },
+    "propuesta_mixta_condo": {
+      "prorrateo_m2": 0.0,
+      "base": 0.0,
+      "prorrateo_50": 0.0,
+      "total": 0.0
+    },
+    "observaciones": "Aporte P/paso Minidptos.",
+    "contrato": {
+      "inicio": "",
+      "vencimiento": "",
+      "prorroga": ""
+    },
+    "amortizacion_bienhechurias": {
+      "tiene_convenio": false,
+      "monto_inicial_usd": 0.0,
+      "amortizado_acumulado_usd": 0.0,
+      "saldo_remanente_usd": 0.0,
+      "cuota_mensual_descuento_usd": 0.0,
+      "descripcion": ""
+    },
+    "estado_ocupacion": "OCUPADO_ACTIVO"
+  }
+]

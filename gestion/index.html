@@ -60,6 +60,10 @@
         <i class="fa-solid fa-calculator" style="color: var(--purple);"></i>
         <span>Gastos Comunes</span>
       </a>
+      <a href="#" class="nav-item" data-tab="inventario" data-roles="admin">
+        <i class="fa-solid fa-boxes-stacked" style="color: var(--amber);"></i>
+        <span>Bienes & Consumibles</span>
+      </a>
       <a href="#" class="nav-item" data-tab="calendario" data-roles="any">
         <i class="fa-solid fa-calendar-days" style="color: var(--amber);"></i>
         <span>Calendario & Vencimientos</span>
@@ -67,6 +71,10 @@
       <a href="#" class="nav-item" data-tab="alertas" data-roles="any">
         <i class="fa-solid fa-bell" style="color: var(--rose);"></i>
         <span>Alertas & Avisos</span>
+      </a>
+      <a href="#" class="nav-item" data-tab="logistica" data-roles="admin">
+        <i class="fa-solid fa-truck-moving" style="color: var(--emerald);"></i>
+        <span>Plaza & Gandolas</span>
       </a>
       <a href="#" class="nav-item" data-tab="informes" data-roles="admin" id="nav-tab-informes">
         <i class="fa-solid fa-file-contract" style="color: var(--cyan);"></i>
@@ -122,11 +130,15 @@
           <i class="fa-solid fa-bars"></i>
         </button>
 
-        <!-- DUAL CURRENCY TICKER (BCV OFICIAL + BINANCE P2P) CON SINCRONIZACIÓN AUTOMÁTICA EN VIVO -->
+        <!-- MULTI-CURRENCY TICKER (USD BCV + EUR BCV + BINANCE P2P USDT) CON SINCRONIZACIÓN EN VIVO -->
         <div class="bcv-ticker" title="Tasas oficiales y de mercado en tiempo real: BCV y Binance P2P" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 5px;">
-            <span class="bcv-label"><i class="fa-solid fa-landmark"></i> BCV:</span>
+            <span class="bcv-label"><i class="fa-solid fa-landmark"></i> USD BCV:</span>
             <span class="bcv-value" id="bcv-rate-val">Cargando...</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 5px; border-left: 1px solid var(--border-subtle); padding-left: 8px;">
+            <span class="bcv-label" style="color: var(--cyan);"><i class="fa-solid fa-euro-sign"></i> EUR BCV:</span>
+            <span class="bcv-value" id="eur-rate-val" style="color: var(--txt-primary);">Cargando...</span>
           </div>
           <div style="display: flex; align-items: center; gap: 5px; border-left: 1px solid var(--border-subtle); padding-left: 8px;">
             <span class="bcv-label" style="color: var(--emerald);"><i class="fa-solid fa-coins"></i> USDT Binance:</span>
@@ -137,7 +149,7 @@
             <i class="fa-regular fa-clock" style="color: var(--amber);"></i>
             <span id="bcv-sync-time-str">Sincronizando...</span>
           </div>
-          <button type="button" class="btn-sync-bcv" data-click="syncBcvRate()" title="Actualizar tasas en vivo (BCV DolarApi y Binance P2P Yadio)" style="background: none; border: none; color: var(--amber); cursor: pointer; padding: 2px 4px; font-size: 11px;">
+          <button type="button" class="btn-sync-bcv" data-click="syncBcvRate()" title="Actualizar tasas en vivo (BCV DolarApi y Binance P2P)" style="background: none; border: none; color: var(--amber); cursor: pointer; padding: 2px 4px; font-size: 11px;">
             <i class="fa-solid fa-arrows-rotate" id="bcv-sync-icon"></i>
           </button>
           <button type="button" class="btn-edit-bcv" data-roles="admin" data-click="editBcvRate()" title="Editar tasa manualmente" style="background: none; border: none; color: var(--txt-muted); cursor: pointer; padding: 2px 4px; font-size: 11px;">
@@ -528,6 +540,121 @@
         </div>
       </section>
 
+      <!-- TAB 3.5: INVENTARIO DE BIENES PROPIOS & KARDEX DE CONSUMIBLES -->
+      <section class="tab-view" id="tab-inventario" style="display: none;" data-roles="admin">
+        <div class="section-head" style="flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h3 class="section-title">
+              <i class="fa-solid fa-boxes-stacked" style="color: var(--amber);"></i> Inventario de Bienes Propios & Consumibles
+            </h3>
+            <span style="font-size: 12px; color: var(--txt-secondary);">Activos fijos de la Sucesión Mario Sánchez y control de stock de mantenimiento con Kardex</span>
+          </div>
+
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button type="button" class="btn-currency-toggle" id="btn-subtab-activos" data-click="switchInventorySubtab('activos')" style="background: var(--amber-glow); color: var(--amber); border-color: var(--amber); font-weight: 700; font-size: 11.5px; padding: 6px 12px;">
+              <i class="fa-solid fa-gem"></i> <span>Activos Fijos (Bienes)</span>
+            </button>
+            <button type="button" class="btn-currency-toggle" id="btn-subtab-consumibles" data-click="switchInventorySubtab('consumibles')" style="font-size: 11.5px; padding: 6px 12px;">
+              <i class="fa-solid fa-dolly"></i> <span>Consumibles & Stock</span>
+            </button>
+            <button type="button" class="btn-currency-toggle" id="btn-subtab-kardex" data-click="switchInventorySubtab('kardex')" style="font-size: 11.5px; padding: 6px 12px;">
+              <i class="fa-solid fa-clipboard-list"></i> <span>Kardex (Entradas / Salidas)</span>
+            </button>
+            <button type="button" class="btn-onboarding-cta" data-click="openNewInventoryItemModal()" style="font-size: 11.5px; padding: 6px 14px; background: var(--amber); border-color: var(--amber); color: #000; font-weight: 800;">
+              <i class="fa-solid fa-plus"></i> <span>+ Registrar Ítem</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- SUBTAB 1: ACTIVOS FIJOS / BIENES PROPIOS -->
+        <div id="subtab-panel-activos" style="display: block;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 16px;">
+            <div class="data-card" style="padding: 14px 16px; border-left: 4px solid var(--cyan);">
+              <div style="font-size: 11px; color: var(--txt-secondary); text-transform: uppercase; font-weight: 700;">Activos Mayores Registrados</div>
+              <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 900; color: var(--txt-primary); margin-top: 4px;" id="inv-total-activos">6 Equipos</div>
+            </div>
+            <div class="data-card" style="padding: 14px 16px; border-left: 4px solid var(--emerald);">
+              <div style="font-size: 11px; color: var(--txt-secondary); text-transform: uppercase; font-weight: 700;">Estado Operativo General</div>
+              <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 900; color: var(--emerald); margin-top: 4px;">100% Operativo</div>
+            </div>
+            <div class="data-card" style="padding: 14px 16px; border-left: 4px solid var(--amber);">
+              <div style="font-size: 11px; color: var(--txt-secondary); text-transform: uppercase; font-weight: 700;">Próximo Mantenimiento Mayor</div>
+              <div style="font-family: var(--font-heading); font-size: 15px; font-weight: 800; color: var(--amber); margin-top: 6px;">Bombas Hidroneumáticas</div>
+            </div>
+          </div>
+
+          <div class="data-card">
+            <div class="table-responsive">
+              <table class="modern-table" style="font-size: 12px;">
+                <thead>
+                  <tr>
+                    <th>Código & Activo</th>
+                    <th>Ubicación / Sector</th>
+                    <th>Especificación Técnica</th>
+                    <th>Marca / Modelo / Serial</th>
+                    <th>Estado Operativo</th>
+                    <th>Frecuencia Mant.</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="inventory-activos-table-body">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUBTAB 2: CONSUMIBLES & STOCK -->
+        <div id="subtab-panel-consumibles" style="display: none;">
+          <div class="data-card">
+            <div class="table-responsive">
+              <table class="modern-table" style="font-size: 12px;">
+                <thead>
+                  <tr>
+                    <th>Código</th>
+                    <th>Descripción del Insumo</th>
+                    <th>Categoría</th>
+                    <th>Stock Actual</th>
+                    <th>Stock Mínimo</th>
+                    <th>Costo Promedio (USD)</th>
+                    <th>Estatus Stock</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="inventory-consumibles-table-body">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUBTAB 3: KARDEX DE ENTRADAS Y SALIDAS -->
+        <div id="subtab-panel-kardex" style="display: none;">
+          <div class="data-card">
+            <div class="table-responsive">
+              <table class="modern-table" style="font-size: 12px;">
+                <thead>
+                  <tr>
+                    <th>Fecha & Hora</th>
+                    <th>Tipo Movimiento</th>
+                    <th>Insumo / Ítem</th>
+                    <th>Cantidad</th>
+                    <th>Destino / Local / Área</th>
+                    <th>Responsable / Técnico</th>
+                    <th>Comprobante / OT</th>
+                  </tr>
+                </thead>
+                <tbody id="inventory-kardex-table-body">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- TAB 4: CALENDARIO & VENCIMIENTOS -->
       <section class="tab-view" id="tab-calendario" style="display: none;">
         <div class="section-head" style="flex-wrap: wrap; gap: 12px;">
@@ -614,6 +741,70 @@
         </div>
       </section>
 
+      <!-- TAB 5.5: MÓDULO LOGÍSTICO Y COMERCIAL (PLAZA CENTRAL & GANDOLAS) -->
+      <section class="tab-view" id="tab-logistica" style="display: none;" data-roles="admin">
+        <div class="section-head" style="flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h3 class="section-title">
+              <i class="fa-solid fa-truck-moving" style="color: var(--emerald);"></i> Logística Operativa, Plaza Central & Tránsito de Gandolas
+            </h3>
+            <span style="font-size: 12px; color: var(--txt-secondary);">Levantamiento técnico de 5.190 m², reglamento de carga pesada y estacionamientos</span>
+          </div>
+
+          <div style="display: flex; gap: 8px;">
+            <a href="/levantamiento/" target="_blank" class="btn-onboarding-cta" style="background: var(--cyan); border-color: var(--cyan); color: #000; font-weight: 800; font-size: 12px; padding: 7px 14px; text-decoration: none;">
+              <i class="fa-solid fa-map-location-dot"></i> <span>Abrir Visor GIS 3D / Satelital</span>
+            </a>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 20px;">
+          <div class="data-card" style="padding: 16px; border-left: 4px solid var(--amber);">
+            <div style="font-size: 11px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Área Disponible Plaza Central</div>
+            <div style="font-family: var(--font-heading); font-size: 22px; font-weight: 900; color: var(--amber); margin-top: 4px;">5.189,67 m²</div>
+            <div style="font-size: 11.5px; color: var(--txt-secondary); margin-top: 4px;">Zonificación comercial para ferias, eventos o módulos</div>
+          </div>
+          <div class="data-card" style="padding: 16px; border-left: 4px solid var(--emerald);">
+            <div style="font-size: 11px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Anillo Perimetral de Carga</div>
+            <div style="font-family: var(--font-heading); font-size: 22px; font-weight: 900; color: var(--emerald); margin-top: 4px;">Sentido Horario</div>
+            <div style="font-size: 11.5px; color: var(--txt-secondary); margin-top: 4px;">Pasillo Oeste (20.00 m) & Patio Sur (20.00 m)</div>
+          </div>
+          <div class="data-card" style="padding: 16px; border-left: 4px solid var(--cyan);">
+            <div style="font-size: 11px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Puestos de Estacionamiento</div>
+            <div style="font-family: var(--font-heading); font-size: 22px; font-weight: 900; color: var(--cyan); margin-top: 4px;">~35 Puestos a 90°</div>
+            <div style="font-size: 11.5px; color: var(--txt-secondary); margin-top: 4px;">Batería oeste para clientes y visitantes</div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px;">
+          <!-- TARJETA 1: ESPECIFICACIONES TÉCNICAS VIALES -->
+          <div class="data-card" style="padding: 20px;">
+            <h4 style="font-family: var(--font-heading); font-size: 15px; color: var(--amber); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-road-barrier"></i> Especificaciones de Seguridad Vial & Pasillos
+            </h4>
+            <ul style="font-size: 12.5px; color: var(--txt-secondary); line-height: 1.7; padding-left: 20px;">
+              <li><strong>Pasillo Oeste (Ancho libre 20.00 m):</strong> Permite circulación fluida de gandolas de hasta 18 metros con radio de giro garantizado hacia el Patio Sur.</li>
+              <li><strong>Separación y Patio Sur (20.00 m):</strong> Zona exclusiva para maniobras de retroceso y descarga pesada frente a galpones M61 a M64.</li>
+              <li><strong>Protección de Locales:</strong> Se especifica la instalación de bolardos metálicos de 4 pulgadas rellenos de concreto en esquinas críticas (Locales 1, 12, 13 y 26).</li>
+              <li><strong>Límite de Carga por Eje:</strong> Asfalto y losa diseñada para un máximo de 12 toneladas por eje tándem.</li>
+            </ul>
+          </div>
+
+          <!-- TARJETA 2: REGLAMENTO DE CARGA Y DESCARGA -->
+          <div class="data-card" style="padding: 20px;">
+            <h4 style="font-family: var(--font-heading); font-size: 15px; color: var(--emerald); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-clock"></i> Reglamento de Carga & Descarga de Gandolas
+            </h4>
+            <div style="font-size: 12.5px; color: var(--txt-secondary); line-height: 1.7;">
+              <p><strong>• Horario Permitido:</strong> Lunes a Sábado de 06:00 AM a 09:30 AM y de 06:00 PM a 09:00 PM (fuera del pico de afluencia de clientes).</p>
+              <p style="margin-top: 6px;"><strong>• Tiempo Máximo de Permanencia en Patio:</strong> 90 minutos por unidad de transporte para evitar congestión en el anillo vial.</p>
+              <p style="margin-top: 6px;"><strong>• Notificación Previa:</strong> Todo inquilino que reciba gandola debe notificar a la caseta de vigilancia con al menos 4 horas de anticipación.</p>
+              <p style="margin-top: 6px;"><strong>• Prohibición Estricta:</strong> Prohibido el estacionamiento nocturno de carga pesada en los pasillos este y oeste.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- TAB 6: CONFIGURACIÓN DEL SISTEMA (CUOTAS, ALERTAS Y PLANTILLAS DE MENSAJES) -->
       <section class="tab-view" id="tab-configuracion" style="display: none;">
         <div class="section-head">
@@ -688,11 +879,23 @@
               <div class="form-group">
                 <label>Días de Gracia antes de declarar Mora</label>
                 <input type="number" min="0" max="30" class="form-control" id="cfg-grace-days" value="5" required>
-                <span style="font-size: 10.5px; color: var(--txt-muted);">Días transcurridos después de la fecha límite para emitir alerta de mora.</span>
+                <span style="font-size: 10.5px; color: var(--txt-muted);">Días transcurridos después de la fecha límite antes de aplicar recargo moratorio.</span>
+              </div>
+
+              <div class="form-group">
+                <label>Recargo Moratorio Mensual (% sobre saldo adeudado)</label>
+                <input type="number" step="0.1" min="0" max="15" class="form-control" id="cfg-mora-rate" value="3.0" required>
+                <span style="font-size: 10.5px; color: var(--txt-muted);">Tasa penal moratoria mensual prorrateada por día (G.O. 40.418 y Art. 108 Cód. Comercio).</span>
+              </div>
+
+              <div class="form-group">
+                <label>Frecuencia de Notificaciones de Mora (Cada N días)</label>
+                <input type="number" min="1" max="15" class="form-control" id="cfg-mora-recurrence" value="3" required>
+                <span style="font-size: 10.5px; color: var(--txt-muted);">Intervalo de re-envío automático de avisos hasta que el inquilino consigne el comprobante.</span>
               </div>
 
               <button type="submit" class="btn-onboarding-cta" style="justify-content: center; margin-top: 6px;">
-                <i class="fa-solid fa-clock"></i> <span>Guardar Tiempos de Alerta</span>
+                <i class="fa-solid fa-clock"></i> <span>Guardar Tiempos de Alerta & Mora</span>
               </button>
             </form>
           </div>
@@ -728,6 +931,11 @@
               <button type="button" class="template-var-pill" data-click="insertVarToActiveTemplate('{monto_bs}')">+{monto_bs}</button>
               <button type="button" class="template-var-pill" data-click="insertVarToActiveTemplate('{tasa_bcv}')">+{tasa_bcv}</button>
               <button type="button" class="template-var-pill" data-click="insertVarToActiveTemplate('{fecha_limite}')">+{fecha_limite}</button>
+              <button type="button" class="template-var-pill" data-click="insertVarToActiveTemplate('{dias_mora}')" style="border-color: rgba(244,63,94,0.4); color: var(--rose);">+{dias_mora}</button>
+              <button type="button" class="template-var-pill" data-click="insertVarToActiveTemplate('{recargo_mora_usd}')" style="border-color: rgba(244,63,94,0.4); color: var(--rose);">+{recargo_mora_usd}</button>
+              <button type="button" class="template-var-pill" data-click="insertVarToActiveTemplate('{recargo_mora_bs}')" style="border-color: rgba(244,63,94,0.4); color: var(--rose);">+{recargo_mora_bs}</button>
+              <button type="button" class="template-var-pill" data-click="insertVarToActiveTemplate('{total_con_mora_usd}')" style="border-color: rgba(245,158,11,0.4); color: var(--amber);">+{total_con_mora_usd}</button>
+              <button type="button" class="template-var-pill" data-click="insertVarToActiveTemplate('{total_con_mora_bs}')" style="border-color: rgba(245,158,11,0.4); color: var(--amber);">+{total_con_mora_bs}</button>
             </div>
           </div>
 
@@ -826,6 +1034,80 @@
               </thead>
               <tbody id="admin-user-approvals-table-body">
                 <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TARJETA 6: MATRIZ DE SEGREGACIÓN DE ROLES & RESPONSABILIDADES (RBAC) -->
+        <div class="data-card" style="padding: 22px; margin-top: 20px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div class="kpi-icon-badge" style="background: rgba(245, 158, 11, 0.15); color: var(--amber);"><i class="fa-solid fa-shield-halved"></i></div>
+              <div>
+                <h4 style="font-family: var(--font-heading); font-size: 15px; color: var(--txt-primary);">Matriz de Segregación de Roles & Constancia de Permisos (RBAC)</h4>
+                <p style="font-size: 11.5px; color: var(--txt-secondary);">Delimitación estricta de facultades para evitar interferencias operativas y garantizar gobernanza corporativa transparente.</p>
+              </div>
+            </div>
+            <span class="status-pill" style="background: rgba(16, 185, 129, 0.15); color: var(--emerald); border: 1px solid rgba(16, 185, 129, 0.3);">
+              <i class="fa-solid fa-lock"></i> Política RBAC Activa
+            </span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="modern-table" style="font-size: 11.5px;">
+              <thead>
+                <tr>
+                  <th style="min-width: 130px;">Rol & Perfil</th>
+                  <th style="min-width: 150px;">Facultades de Edición</th>
+                  <th style="min-width: 140px;">Acceso de Lectura</th>
+                  <th style="min-width: 150px;">Restricciones de Sistema</th>
+                  <th style="min-width: 120px;">Usuario Demo Oficial</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="background: rgba(245, 158, 11, 0.04);">
+                  <td><strong style="color: var(--amber);"><i class="fa-solid fa-crown"></i> SUPERADMIN</strong></td>
+                  <td><span class="status-pill pill-success" style="font-size: 10px;">Bypass Total / Irrestricto</span><br><small style="color: var(--txt-secondary);">Edición plena de contratos, finanzas, inventario, tasas y usuarios.</small></td>
+                  <td>100% Auditoría & Trazabilidad completa</td>
+                  <td><span style="color: var(--emerald); font-weight: 700;">Sin restricciones (Control Maestro)</span></td>
+                  <td><code>superadmin@ccmariosanchez.com</code></td>
+                </tr>
+                <tr>
+                  <td><strong style="color: var(--emerald);"><i class="fa-solid fa-coins"></i> Finanzas & Cobranzas</strong></td>
+                  <td>Cobranzas, recibos fiscales, conciliación bancaria, gastos de condominio ($2.540/mes).</td>
+                  <td>Inquilinos, contratos, cronograma, inventario general.</td>
+                  <td><span style="color: var(--rose);">Bloqueado:</span> No modifica contratos legales ni elimina bienes propios.</td>
+                  <td><code>finanzas@ccmariosanchez.com</code></td>
+                </tr>
+                <tr>
+                  <td><strong style="color: var(--cyan);"><i class="fa-solid fa-scale-balanced"></i> Legal & Contratos</strong></td>
+                  <td>Contratos mercantiles, adendas, prórrogas Art. 25 G.O. 40.418, solvencias y avisos formales.</td>
+                  <td>Cobranzas, estados de cuenta, facturación y directorio.</td>
+                  <td><span style="color: var(--rose);">Bloqueado:</span> No concilia pagos bancarios ni altera kardex de almacén.</td>
+                  <td><code>legal@ccmariosanchez.com</code></td>
+                </tr>
+                <tr>
+                  <td><strong style="color: #f97316;"><i class="fa-solid fa-wrench"></i> Mantenimiento</strong></td>
+                  <td>Kardex de entradas/salidas, inventario de consumibles, bitácora de activos mayores.</td>
+                  <td>Directorio de locales, cronograma de inspecciones técnicas.</td>
+                  <td><span style="color: var(--rose);">Bloqueado:</span> Sin acceso a recaudación de dinero, estados financieros ni contratos.</td>
+                  <td><code>mantenimiento@ccmariosanchez.com</code></td>
+                </tr>
+                <tr style="background: rgba(168, 85, 247, 0.04);">
+                  <td><strong style="color: var(--purple);"><i class="fa-solid fa-landmark"></i> Heredero (1/14 Cuota)</strong></td>
+                  <td><span class="status-pill pill-overdue" style="font-size: 10px;">0% Edición (Solo Lectura)</span></td>
+                  <td>Ingresos, egresos, liquidación mensual de utilidades, inventario y solvencia de locales.</td>
+                  <td><span style="color: var(--amber); font-weight: 700;">Solo Lectura:</span> No puede alterar contratos ni finanzas (evita conflictos de sucesión).</td>
+                  <td><code>heredero@ccmariosanchez.com</code></td>
+                </tr>
+                <tr>
+                  <td><strong style="color: var(--txt-primary);"><i class="fa-solid fa-store"></i> Inquilino Comercial</strong></td>
+                  <td>Consignación de transferencias/pagos y carga de comprobantes.</td>
+                  <td>Exclusivamente su propio local, cuotas vencidas y recibos emitidos.</td>
+                  <td><span style="color: var(--rose);">Aislamiento total:</span> Ningún inquilino ve información de otros locales ni de la directiva.</td>
+                  <td><code>J-30987123-4</code></td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -1786,20 +2068,145 @@
 
       <div class="form-group">
         <label><i class="fa-solid fa-landmark" style="color: var(--cyan);"></i> Tasa Oficial Banco Central de Venezuela (Bs/USD)</label>
-        <input type="number" step="0.01" class="form-control" id="rate-edit-bcv" placeholder="Ej: 807.39" required>
+        <input type="number" step="0.01" class="form-control" id="rate-edit-bcv" placeholder="Ej: 814.69" required>
         <span style="font-size: 10.5px; color: var(--txt-muted);">Referencia legal conforme al Artículo 32 de la G.O. 40.418.</span>
       </div>
 
       <div class="form-group">
+        <label><i class="fa-solid fa-euro-sign" style="color: var(--cyan);"></i> Tasa Oficial BCV Euro (Bs/EUR)</label>
+        <input type="number" step="0.01" class="form-control" id="rate-edit-eur" placeholder="Ej: 947.30" required>
+        <span style="font-size: 10.5px; color: var(--txt-muted);">Tasa fijada por el Banco Central de Venezuela para el Euro.</span>
+      </div>
+
+      <div class="form-group">
         <label><i class="fa-solid fa-coins" style="color: var(--emerald);"></i> Tasa Binance P2P USDT/VES (Bs/USDT)</label>
-        <input type="number" step="0.01" class="form-control" id="rate-edit-usdt" placeholder="Ej: 943.18" required>
-        <span style="font-size: 10.5px; color: var(--txt-muted);">Referencia de mercado para liquidaciones cripto USDT.</span>
+        <input type="number" step="0.01" class="form-control" id="rate-edit-usdt" placeholder="Ej: 965.40" required>
+        <span style="font-size: 10.5px; color: var(--txt-muted);">Referencia de mercado real para liquidaciones cripto USDT.</span>
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px;">
         <button type="button" class="btn-currency-toggle" data-click="closeRatesEditorModal()">Cancelar</button>
         <button type="submit" class="btn-onboarding-cta" style="background: var(--amber); border-color: var(--amber); color: #000; font-weight: 800;">
           <i class="fa-solid fa-floppy-disk"></i> Guardar Tasas
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL 12: GESTIÓN DE INVENTARIO, CONSUMIBLES Y MOVIMIENTO DE KARDEX -->
+<div class="modal-overlay" id="modal-inventory-item">
+  <div class="modal-window" style="max-width: 520px;">
+    <div class="modal-header">
+      <h3 class="modal-title">
+        <i class="fa-solid fa-boxes-stacked" style="color: var(--amber);"></i> <span id="inv-modal-title">Gestión de Inventario & Kardex</span>
+      </h3>
+      <button class="modal-close" data-click="closeInventoryModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <!-- TABS INTERNOS DEL MODAL: NUEVO CONSUMIBLE vs REGISTRO DE MOVIMIENTO KARDEX -->
+    <div style="display: flex; border-bottom: 1px solid var(--border-subtle); padding: 0 20px; background: rgba(0,0,0,0.15);">
+      <button type="button" id="tab-btn-modal-consumible" data-click="switchInvModalMode('consumible')" style="padding: 10px 16px; font-size: 12px; font-weight: 700; border: none; background: transparent; color: var(--amber); border-bottom: 2px solid var(--amber); cursor: pointer;">
+        <i class="fa-solid fa-dolly"></i> Registrar Insumo
+      </button>
+      <button type="button" id="tab-btn-modal-kardex" data-click="switchInvModalMode('kardex')" style="padding: 10px 16px; font-size: 12px; font-weight: 700; border: none; background: transparent; color: var(--txt-muted); border-bottom: 2px solid transparent; cursor: pointer;">
+        <i class="fa-solid fa-right-left"></i> Asentar Entrada / Salida
+      </button>
+    </div>
+
+    <!-- FORMULARIO 1: REGISTRAR O ACTUALIZAR CONSUMIBLE -->
+    <form id="form-inv-consumible" data-submit="handleSaveConsumable(event)" class="modal-body" style="display: flex; flex-direction: column; gap: 14px; padding: 20px;">
+      <input type="hidden" id="inv-con-id">
+      
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Código *</label>
+          <input type="text" id="inv-con-code" class="form-control" required placeholder="Ej: MAT-01">
+        </div>
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Categoría *</label>
+          <select id="inv-con-cat" class="form-control" required>
+            <option value="Iluminación">Iluminación</option>
+            <option value="Hidráulico">Hidráulico / Plomería</option>
+            <option value="Limpieza">Limpieza & Desinfección</option>
+            <option value="Seguridad">Seguridad & EPP</option>
+            <option value="Mantenimiento">Mantenimiento General</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Descripción del Insumo *</label>
+        <input type="text" id="inv-con-desc" class="form-control" required placeholder="Ej: Tubo LED T8 18W 120cm Luz Blanca">
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+        <div class="form-group">
+          <label style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Stock Actual *</label>
+          <input type="number" id="inv-con-stock" class="form-control" min="0" required placeholder="0">
+        </div>
+        <div class="form-group">
+          <label style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Stock Mínimo *</label>
+          <input type="number" id="inv-con-min" class="form-control" min="0" required placeholder="5">
+        </div>
+        <div class="form-group">
+          <label style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Costo USD *</label>
+          <input type="number" step="0.01" id="inv-con-cost" class="form-control" min="0" required placeholder="3.50">
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
+        <button type="button" class="btn-currency-toggle" data-click="closeInventoryModal()">Cancelar</button>
+        <button type="submit" class="btn-onboarding-cta" style="background: var(--amber); border-color: var(--amber); color: #000; font-weight: 800;">
+          <i class="fa-solid fa-floppy-disk"></i> Guardar Insumo
+        </button>
+      </div>
+    </form>
+
+    <!-- FORMULARIO 2: REGISTRO DE MOVIMIENTO KARDEX -->
+    <form id="form-inv-kardex" data-submit="handleSaveKardex(event)" class="modal-body" style="display: none; flex-direction: column; gap: 14px; padding: 20px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Tipo de Operación *</label>
+          <select id="inv-kdx-type" class="form-control" required>
+            <option value="SALIDA">SALIDA (Consumo / Despacho)</option>
+            <option value="ENTRADA">ENTRADA (Compra / Ingreso)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Insumo / Ítem *</label>
+          <select id="inv-kdx-item" class="form-control" required>
+            <!-- Injected via JS -->
+          </select>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Cantidad *</label>
+          <input type="number" id="inv-kdx-qty" class="form-control" min="1" required placeholder="1">
+        </div>
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Destino / Local / Área *</label>
+          <input type="text" id="inv-kdx-dest" class="form-control" required placeholder="Ej: Pasillo Central / Baños PB / Local L-04">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Responsable / Técnico *</label>
+          <input type="text" id="inv-kdx-resp" class="form-control" required placeholder="Ej: Carlos Silva (Mantenimiento)">
+        </div>
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Comprobante / N° OT *</label>
+          <input type="text" id="inv-kdx-doc" class="form-control" required placeholder="Ej: OT-2026-089">
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
+        <button type="button" class="btn-currency-toggle" data-click="closeInventoryModal()">Cancelar</button>
+        <button type="submit" class="btn-onboarding-cta" style="background: var(--amber); border-color: var(--amber); color: #000; font-weight: 800;">
+          <i class="fa-solid fa-check"></i> Asentar en Kardex
         </button>
       </div>
     </form>
@@ -1816,7 +2223,8 @@
 <script src="js/bank-reconciliation.js?v=2.7.2" defer></script>
 <script src="js/google-workspace.js?v=2.7.2" defer></script>
 <script src="js/notifications.js?v=2.7.2" defer></script>
-<script src="js/supabase-client.js?v=2.7.2" defer></script>
+<script src="js/seed-data-39.js?v=2.8.0" defer></script>
+<script src="js/supabase-client.js?v=2.8.0" defer></script>
 <script src="js/ayuda-content.js?v=2.8.0" defer></script>
 <script src="js/app.js?v=2.8.0" defer></script>
 </body>

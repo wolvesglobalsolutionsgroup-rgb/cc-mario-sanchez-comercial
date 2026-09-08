@@ -37,8 +37,19 @@ class DatabaseService {
   }
 
   initDatabase() {
-    if (!localStorage.getItem(this.storageKey)) {
+    const raw = localStorage.getItem(this.storageKey);
+    if (!raw) {
       this.seedInitialData();
+    } else {
+      try {
+        const parsed = JSON.parse(raw);
+        if (!parsed.units || parsed.units.length < 39 || !parsed.activos_fijos || !parsed.consumibles) {
+          console.info('[CCMS DB] Migrando base de datos a Maestro 39 Unidades e Inventarios...');
+          this.seedInitialData();
+        }
+      } catch (e) {
+        this.seedInitialData();
+      }
     }
   }
 
@@ -50,6 +61,11 @@ class DatabaseService {
   }
 
   seedInitialData() {
+    if (typeof window !== 'undefined' && window.CCMS_SEED_DATA) {
+      const copy = JSON.parse(JSON.stringify(window.CCMS_SEED_DATA));
+      localStorage.setItem(this.storageKey, JSON.stringify(copy));
+      return copy;
+    }
     const initialData = {
       units: [
         { id: 'u-1', code: 'LOT-C01', name: 'Macro-Lote C01 (Norte - Acceso Principal)', category: 'macro-lotes', area_m2: 1730, base_rent_usd: 3800, condo_aliquot: 0.2315, status: 'arrendado', tenant_id: 't-1' },
@@ -560,6 +576,18 @@ class DatabaseService {
         data.condo_expenses = this.getDefaultCondoExpenses();
         dirty = true;
       }
+      if ((!data.activos_fijos || !data.activos_fijos.length) && typeof window !== 'undefined' && window.CCMS_SEED_DATA && window.CCMS_SEED_DATA.activos_fijos) {
+        data.activos_fijos = JSON.parse(JSON.stringify(window.CCMS_SEED_DATA.activos_fijos));
+        dirty = true;
+      }
+      if ((!data.consumibles || !data.consumibles.length) && typeof window !== 'undefined' && window.CCMS_SEED_DATA && window.CCMS_SEED_DATA.consumibles) {
+        data.consumibles = JSON.parse(JSON.stringify(window.CCMS_SEED_DATA.consumibles));
+        dirty = true;
+      }
+      if ((!data.kardex_movimientos || !data.kardex_movimientos.length) && typeof window !== 'undefined' && window.CCMS_SEED_DATA && window.CCMS_SEED_DATA.kardex_movimientos) {
+        data.kardex_movimientos = JSON.parse(JSON.stringify(window.CCMS_SEED_DATA.kardex_movimientos));
+        dirty = true;
+      }
       if (data.invoices && Array.isArray(data.invoices)) {
         const inv4 = data.invoices.find(i => i.id === 'inv-4');
         if (inv4 && inv4.status === 'verificando' && (!data.payments || !data.payments.some(p => p.invoice_id === 'inv-4' && p.status === 'pendiente'))) {
@@ -591,6 +619,111 @@ class DatabaseService {
       console.error("Error reading localStorage DB:", e);
       return null;
     }
+  }
+
+  // --- MÓDULO DE ACTIVOS FIJOS / BIENES PROPIOS ---
+  getActivosFijos() {
+    const data = this.getData();
+    return (data && Array.isArray(data.activos_fijos)) ? data.activos_fijos : [];
+  }
+
+  saveActivoFijo(item) {
+    const data = this.getData();
+    if (!data.activos_fijos) data.activos_fijos = [];
+    if (item.id) {
+      const idx = data.activos_fijos.findIndex(a => a.id === item.id);
+      if (idx >= 0) {
+        data.activos_fijos[idx] = { ...data.activos_fijos[idx], ...item };
+      } else {
+        data.activos_fijos.push(item);
+      }
+    } else {
+      const newItem = {
+        ...item,
+        id: 'act-' + Date.now(),
+        created_at: new Date().toISOString()
+      };
+      data.activos_fijos.push(newItem);
+    }
+    this.saveData(data);
+    return data.activos_fijos;
+  }
+
+  deleteActivoFijo(id) {
+    const data = this.getData();
+    if (!data.activos_fijos) return [];
+    data.activos_fijos = data.activos_fijos.filter(a => a.id !== id);
+    this.saveData(data);
+    return data.activos_fijos;
+  }
+
+  // --- MÓDULO DE CONSUMIBLES & STOCK ---
+  getConsumibles() {
+    const data = this.getData();
+    return (data && Array.isArray(data.consumibles)) ? data.consumibles : [];
+  }
+
+  saveConsumible(item) {
+    const data = this.getData();
+    if (!data.consumibles) data.consumibles = [];
+    if (item.id) {
+      const idx = data.consumibles.findIndex(c => c.id === item.id);
+      if (idx >= 0) {
+        data.consumibles[idx] = { ...data.consumibles[idx], ...item };
+      } else {
+        data.consumibles.push(item);
+      }
+    } else {
+      const newItem = {
+        ...item,
+        id: 'cns-' + Date.now(),
+        created_at: new Date().toISOString()
+      };
+      data.consumibles.push(newItem);
+    }
+    this.saveData(data);
+    return data.consumibles;
+  }
+
+  deleteConsumible(id) {
+    const data = this.getData();
+    if (!data.consumibles) return [];
+    data.consumibles = data.consumibles.filter(c => c.id !== id);
+    this.saveData(data);
+    return data.consumibles;
+  }
+
+  // --- MÓDULO DE KARDEX DE ENTRADAS Y SALIDAS ---
+  getKardex() {
+    const data = this.getData();
+    return (data && Array.isArray(data.kardex_movimientos)) ? data.kardex_movimientos : [];
+  }
+
+  addKardexMovimiento(mov) {
+    const data = this.getData();
+    if (!data.kardex_movimientos) data.kardex_movimientos = [];
+    const newMov = {
+      ...mov,
+      id: 'kdx-' + Date.now(),
+      timestamp: mov.timestamp || new Date().toISOString()
+    };
+    data.kardex_movimientos.unshift(newMov);
+
+    if (data.consumibles && mov.item_code) {
+      const item = data.consumibles.find(c => c.code === mov.item_code);
+      if (item) {
+        const qty = parseFloat(mov.quantity) || 0;
+        if (mov.type === 'ENTRADA') {
+          item.stock_current = (parseFloat(item.stock_current) || 0) + qty;
+        } else if (mov.type === 'SALIDA') {
+          item.stock_current = Math.max(0, (parseFloat(item.stock_current) || 0) - qty);
+        }
+        item.status = (item.stock_current <= item.stock_min) ? 'alerta' : 'ok';
+      }
+    }
+
+    this.saveData(data);
+    return newMov;
   }
 
   saveData(data) {
@@ -843,6 +976,10 @@ class DatabaseService {
       : this.getDefaultCondoExpenses();
   }
 
+  getExpenses() {
+    return this.getCondoExpenses();
+  }
+
   saveCondoExpense(expenseData) {
     const data = this.getData();
     if (!data.condo_expenses) data.condo_expenses = this.getDefaultCondoExpenses();
@@ -1072,11 +1209,13 @@ class DatabaseService {
       condo_fee_aliquot_base: 8.0, // 8% sobre canon base
       // Configuración de Alertas & Vencimientos
       cutoff_day: 5,               // Día 5 de cada mes
-      alert_days_before: 3,        // Aviso preventivo 3 días antes
-      grace_days: 5,               // 5 días de gracia antes de marcar en mora
+      alert_days_before: 5,        // Aviso preventivo 5 días antes
+      grace_days: 5,               // 5 días de gracia antes de liquidar mora
+      mora_monthly_rate: 3.0,      // 3.0% de mora mensual (Art. 30 G.O. 40.418 y Art. 108 Código de Comercio)
+      mora_recurrence_days: 3,     // Recordatorios recurrentes cada 3 días hasta liquidación efectiva
       // Plantillas de Mensajes
-      msg_preventive_template: `Estimados *{inquilino}* ({unidad}):\nLe remitimos su aviso de cobro del período *{periodo}* por un total de *{monto_usd}* (Bs. {monto_bs} a tasa BCV {tasa_bcv}).\nFecha límite de pago: *{fecha_limite}*.\nPor favor remitir comprobante a este canal para conciliación.`,
-      msg_mora_template: `⚠️ *AVISO DE RETRASO — CC MARIO SÁNCHEZ*\nEstimados *{inquilino}* ({unidad}):\nLe informamos que su cuota del período *{periodo}* se encuentra en estado de MORA por un saldo de *{monto_usd}* (Bs. {monto_bs}).\nConforme a la Gaceta Oficial 40.418, agradecemos regularizar el pago a la brevedad para evitar recargos o suspensión de servicios comunes.`
+      msg_preventive_template: `Estimados *{inquilino}* ({unidad}):\nLe remitimos su aviso de cobro preventivo del período *{periodo}* por un total de *{monto_usd}* (Bs. {monto_bs} a tasa BCV {tasa_bcv}).\nFecha límite oportuna de pago: *{fecha_limite}*.\nPor favor remitir comprobante a este canal oficial para conciliación y emisión de su recibo fiscal.`,
+      msg_mora_template: `⚠️ *AVISO FORMAL DE MORA — CC MARIO SÁNCHEZ*\nEstimados *{inquilino}* ({unidad}):\nLe notificamos que su cuota del período *{periodo}* (vencida el *{fecha_limite}*) presenta *{dias_mora} días de retraso*.\n• Canon & Gastos Base: *{monto_usd}*\n• Recargo Moratorio Legal (Art. 30 G.O. 40.418): *{recargo_mora_usd}* (Bs. {recargo_mora_bs})\n• *TOTAL EXIGIBLE AL DÍA*: *{total_con_mora_usd}* (Bs. {total_con_mora_bs} a tasa BCV {tasa_bcv})\nPor favor consignar su comprobante a este canal para suspender las alertas automáticas y registrar su solvencia.`
     };
     return (data && data.app_settings) ? { ...defaults, ...data.app_settings } : defaults;
   }

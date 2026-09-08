@@ -109,28 +109,34 @@ function fillDemo(role, autoSubmit = false) {
     showError('El acceso demo está deshabilitado en producción. Configure Supabase Auth para ingresar.');
     return;
   }
-  const btnDemoA = document.getElementById('btn-demo-admin');
-  const btnDemoT = document.getElementById('btn-demo-tenant');
-  const btnDemoP = document.getElementById('btn-demo-pending');
+
   const userIn = document.getElementById('login-user');
   const passIn = document.getElementById('login-pass');
 
-  if (role === 'pending') {
-    switchRole('tenant', false);
-    if (btnDemoP) btnDemoP.classList.add('active');
-    if (btnDemoT) btnDemoT.classList.remove('active');
-    if (btnDemoA) btnDemoA.classList.remove('active');
-    if (userIn) userIn.value = 'J-40129845-0';
-    if (passIn) passIn.value = 'Demo2026*';
-  } else if (role === 'tenant') {
-    switchRole('tenant', false);
-    if (userIn) userIn.value = 'J-30987123-4';
-    if (passIn) passIn.value = 'Demo2026*';
-  } else {
-    switchRole('admin', false);
-    if (userIn) userIn.value = 'administracion@ccmariosanchez.com';
-    if (passIn) passIn.value = 'Admin2026*';
-  }
+  const ROLE_CREDENTIALS = {
+    superadmin: { user: 'superadmin@ccmariosanchez.com', pass: 'Admin2026*', type: 'admin' },
+    admin: { user: 'administracion@ccmariosanchez.com', pass: 'Admin2026*', type: 'admin' },
+    finanzas: { user: 'finanzas@ccmariosanchez.com', pass: 'Admin2026*', type: 'admin' },
+    legal: { user: 'legal@ccmariosanchez.com', pass: 'Admin2026*', type: 'admin' },
+    mantenimiento: { user: 'mantenimiento@ccmariosanchez.com', pass: 'Admin2026*', type: 'admin' },
+    heredero: { user: 'heredero@ccmariosanchez.com', pass: 'Admin2026*', type: 'admin' },
+    tenant: { user: 'J-30987123-4', pass: 'Demo2026*', type: 'tenant' },
+    pending: { user: 'J-40129845-0', pass: 'Demo2026*', type: 'tenant' }
+  };
+
+  const cred = ROLE_CREDENTIALS[role] || ROLE_CREDENTIALS.admin;
+  switchRole(cred.type, false);
+
+  if (userIn) userIn.value = cred.user;
+  if (passIn) passIn.value = cred.pass;
+
+  document.querySelectorAll('[data-demo-login]').forEach(b => {
+    if (b.getAttribute('data-role') === role || (role === 'admin' && b.id === 'btn-demo-admin')) {
+      b.classList.add('active');
+    } else {
+      b.classList.remove('active');
+    }
+  });
 
   if (autoSubmit) {
     handleLogin();
@@ -192,15 +198,17 @@ document.addEventListener('DOMContentLoaded', () => {
   // Enlazar listeners programáticos directos (Multi-navegador / Cero dependencia de inline)
   const btnAdmin = document.getElementById('btn-role-admin');
   const btnTenant = document.getElementById('btn-role-tenant');
-  const btnDemoA = document.getElementById('btn-demo-admin');
-  const btnDemoT = document.getElementById('btn-demo-tenant');
-  const btnDemoP = document.getElementById('btn-demo-pending');
 
   if (btnAdmin) btnAdmin.addEventListener('click', (e) => { e.preventDefault(); switchRole('admin', true); });
   if (btnTenant) btnTenant.addEventListener('click', (e) => { e.preventDefault(); switchRole('tenant', true); });
-  if (btnDemoA) btnDemoA.addEventListener('click', (e) => { e.preventDefault(); fillDemo('admin', true); });
-  if (btnDemoT) btnDemoT.addEventListener('click', (e) => { e.preventDefault(); fillDemo('tenant', true); });
-  if (btnDemoP) btnDemoP.addEventListener('click', (e) => { e.preventDefault(); fillDemo('pending', true); });
+
+  document.querySelectorAll('[data-demo-login]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const role = btn.getAttribute('data-role') || 'superadmin';
+      fillDemo(role, true);
+    });
+  });
 
   const form = document.getElementById('login-form');
   if (form) form.addEventListener('submit', handleLogin);

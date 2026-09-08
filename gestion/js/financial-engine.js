@@ -25,12 +25,13 @@ class FinancialEngine {
     return {
       USD: 1.00,
       EUR: 0.92,          // 1 USD = 0.92 EUR
-      VES: 807.38,        // Tasa Oficial BCV de referencia (Bs. por USD)
+      EUR_VES: 947.30,    // Tasa Oficial BCV Euro (Bs. por EUR)
+      VES: 814.69,        // Tasa Oficial BCV Dólar (Bs. por USD)
       USDT: 1.00,         // Paridad cripto 1:1 con USD
-      USDT_VES: 955.98,   // Tasa de mercado USDT frente a Bolívares (Binance P2P)
+      USDT_VES: 965.40,   // Tasa de mercado USDT frente a Bolívares (Binance P2P)
       lastUpdated: new Date().toISOString(),
       source: 'BCV Oficial (Referencial)',
-      usdtSource: 'Binance P2P (vía Yadio)'
+      usdtSource: 'Binance P2P Real'
     };
   }
 
@@ -103,9 +104,12 @@ class FinancialEngine {
       const respEur = await fetch('https://ve.dolarapi.com/v1/euros/oficial');
       if (respEur.ok) {
         const dataEur = await respEur.json();
-        if (dataEur && dataEur.promedio && !isNaN(dataEur.promedio) && this.rates.VES > 0) {
+        if (dataEur && dataEur.promedio && !isNaN(dataEur.promedio)) {
           const eurBs = parseFloat(dataEur.promedio);
-          this.rates.EUR = Math.round((this.rates.VES / eurBs) * 10000) / 10000;
+          this.rates.EUR_VES = eurBs;
+          if (this.rates.VES > 0) {
+            this.rates.EUR = Math.round((this.rates.VES / eurBs) * 10000) / 10000;
+          }
           eurUpdated = true;
         }
       }
@@ -113,33 +117,33 @@ class FinancialEngine {
       errors.push(`EUR: ${err.message}`);
     }
 
-    // 3. Obtener Tasa USDT/VES (Binance P2P en tiempo real)
-    // Intento primario: Yadio API (Order book real de Binance P2P para VES)
+    // 3. Obtener Tasa USDT/VES (Binance P2P / Cripto en tiempo real)
+    // Intento 1: DolarApi Paralelo/Cripto (mediana comprobada de transacciones P2P)
     try {
-      const respYadio = await fetch('https://api.yadio.io/json');
-      if (respYadio.ok) {
-        const dataYadio = await respYadio.json();
-        const p2pRate = dataYadio?.USD?.other?.p2p_usdt?.rate || dataYadio?.USD?.rate;
-        if (p2pRate && !isNaN(p2pRate)) {
-          this.rates.USDT_VES = parseFloat(p2pRate);
-          this.rates.usdtSource = 'Binance P2P (vía Yadio)';
+      const respParalelo = await fetch('https://ve.dolarapi.com/v1/dolares/paralelo');
+      if (respParalelo.ok) {
+        const dataParalelo = await respParalelo.json();
+        if (dataParalelo && dataParalelo.promedio && !isNaN(dataParalelo.promedio)) {
+          this.rates.USDT_VES = parseFloat(dataParalelo.promedio);
+          this.rates.usdtSource = 'Binance P2P / Cripto Mercado';
           usdtUpdated = true;
         }
       }
-    } catch (errYadio) {
-      // Fallback secundario: DolarApi mercado paralelo/cripto
+    } catch (errParalelo) {
+      // Intento 2: Yadio API (Order book de respaldo)
       try {
-        const respParalelo = await fetch('https://ve.dolarapi.com/v1/dolares/paralelo');
-        if (respParalelo.ok) {
-          const dataParalelo = await respParalelo.json();
-          if (dataParalelo && dataParalelo.promedio && !isNaN(dataParalelo.promedio)) {
-            this.rates.USDT_VES = parseFloat(dataParalelo.promedio);
-            this.rates.usdtSource = 'Binance P2P / Cripto (vía DolarApi)';
+        const respYadio = await fetch('https://api.yadio.io/json');
+        if (respYadio.ok) {
+          const dataYadio = await respYadio.json();
+          const p2pRate = dataYadio?.USD?.other?.p2p_usdt?.rate || dataYadio?.USD?.rate;
+          if (p2pRate && !isNaN(p2pRate)) {
+            this.rates.USDT_VES = parseFloat(p2pRate);
+            this.rates.usdtSource = 'Binance P2P (vía Yadio)';
             usdtUpdated = true;
           }
         }
-      } catch (errFallback) {
-        errors.push(`USDT_VES: ${errFallback.message}`);
+      } catch (errYadio) {
+        errors.push(`USDT_VES: ${errYadio.message}`);
       }
     }
 
@@ -285,7 +289,119 @@ class FinancialEngine {
       };
     });
   }
+
+  /**
+   * Cálculo de Mora Legal e Intereses Moratorios (G.O. 40.418, Art. 30 y Código de Comercio Art. 108)
+   * - Cesa automáticamente en cuanto la factura pasa a 'pagado' o 'verificando'.
+   * - Respeta el período de gracia configurable antes de liquidar penalidad.
+   * - Desglose transparente en USD, VES BCV, EUR y USDT.
+   */
+  calculateMora(invoice, asOfDate = null, customSettings = null) {
+    if (!invoice) {
+      return { inMora: false, daysOverdue: 0, moraRatePct: 0, moraUsd: 0, moraVes: 0, totalDueUsd: 0, totalDueVes: 0 };
+    }
+
+    const baseAmountUsd = parseFloat(invoice.total_usd) || (parseFloat(invoice.rent_usd || 0) + parseFloat(invoice.condo_usd || 0));
+
+    // Si la cuota ya fue pagada o el inquilino consignó comprobante en verificación, la mora se detiene
+    if (invoice.status === 'pagado' || invoice.status === 'verificando') {
+      return {
+        inMora: false,
+        isSettled: true,
+        statusText: invoice.status === 'pagado' ? 'Solvente / Cancelado' : 'Pago Consignado (En Verificación)',
+        daysOverdue: 0,
+        moraRatePct: 0,
+        baseAmountUsd: baseAmountUsd,
+        moraUsd: 0,
+        moraVes: 0,
+        totalDueUsd: baseAmountUsd,
+        totalDueVes: Math.round(this.convert(baseAmountUsd, 'USD', 'VES') * 100) / 100
+      };
+    }
+
+    const cfg = customSettings || (window.dbService ? window.dbService.getSettings() : {
+      grace_days: 5,
+      mora_monthly_rate: 3.0
+    });
+
+    const graceDays = parseInt(cfg.grace_days) !== undefined && !isNaN(parseInt(cfg.grace_days)) ? parseInt(cfg.grace_days) : 5;
+    const monthlyRate = parseFloat(cfg.mora_monthly_rate) || 3.0; // 3% mensual
+    const dailyRate = (monthlyRate / 30) / 100; // Tasa diaria decimal (ej. 0.001 = 0.1% diario)
+
+    const now = asOfDate ? new Date(asOfDate) : new Date();
+
+    if (!invoice.due_date) {
+      return {
+        inMora: false,
+        daysOverdue: 0,
+        moraRatePct: 0,
+        baseAmountUsd: baseAmountUsd,
+        moraUsd: 0,
+        moraVes: 0,
+        totalDueUsd: baseAmountUsd,
+        totalDueVes: Math.round(this.convert(baseAmountUsd, 'USD', 'VES') * 100) / 100
+      };
+    }
+
+    const parseLocalDate = (val) => {
+      if (!val) return new Date();
+      if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}/.test(val)) {
+        const [y, m, d] = val.split('T')[0].split('-').map(Number);
+        return new Date(y, m - 1, d);
+      }
+      const dt = new Date(val);
+      return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+    };
+
+    const dueDate = parseLocalDate(invoice.due_date);
+    const asOfDateOnly = parseLocalDate(asOfDate);
+
+    const diffTime = asOfDateOnly.getTime() - dueDate.getTime();
+    const daysSinceDue = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+    if (daysSinceDue <= graceDays) {
+      const isWithinGrace = (daysSinceDue > 0);
+      const graceRemaining = Math.max(0, graceDays - daysSinceDue);
+
+      return {
+        inMora: false,
+        isWithinGrace: isWithinGrace,
+        graceDaysRemaining: graceRemaining,
+        daysOverdue: Math.max(0, daysSinceDue),
+        moraRatePct: 0,
+        baseAmountUsd: baseAmountUsd,
+        moraUsd: 0,
+        moraVes: 0,
+        totalDueUsd: baseAmountUsd,
+        totalDueVes: Math.round(this.convert(baseAmountUsd, 'USD', 'VES') * 100) / 100
+      };
+    }
+
+    // Excedió el período de gracia: mora acumulada desde el vencimiento
+    const daysOverdue = daysSinceDue;
+    const accumulatedRatePct = Math.round((dailyRate * daysOverdue * 100) * 100) / 100;
+    const moraUsd = Math.round((baseAmountUsd * (dailyRate * daysOverdue)) * 100) / 100;
+    const moraVes = Math.round(this.convert(moraUsd, 'USD', 'VES') * 100) / 100;
+    const totalDueUsd = Math.round((baseAmountUsd + moraUsd) * 100) / 100;
+    const totalDueVes = Math.round(this.convert(totalDueUsd, 'USD', 'VES') * 100) / 100;
+
+    return {
+      inMora: true,
+      isWithinGrace: false,
+      graceDaysRemaining: 0,
+      daysOverdue: daysOverdue,
+      monthlyRatePct: monthlyRate,
+      moraRatePct: accumulatedRatePct,
+      baseAmountUsd: baseAmountUsd,
+      moraUsd: moraUsd,
+      moraVes: moraVes,
+      totalDueUsd: totalDueUsd,
+      totalDueVes: totalDueVes,
+      legalBasis: 'Cláusula Penal Moratoria conforme a G.O. 40.418 y Art. 108 Código de Comercio'
+    };
+  }
 }
 
 // Instancia global del motor financiero
 window.financialEngine = new FinancialEngine();
+

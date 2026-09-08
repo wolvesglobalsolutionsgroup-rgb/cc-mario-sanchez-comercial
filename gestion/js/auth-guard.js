@@ -24,12 +24,21 @@
 
   const DEFAULT_USERS = [
     {
+      id: 'u-superadmin-1',
+      role: 'superadmin',
+      display_name: 'SuperAdministrador Principal (Bypass Total)',
+      identifier: 'superadmin@ccmariosanchez.com',
+      password_sha256: '43434d535f323032365f53414c545f56:f1f52c83808596560eb7cd953f5f3a98a0e4f998bb685eb6d0fa920bbc8557ff',
+      tenant_id: null,
+      status: 'active',
+      created_at: '2026-01-01T00:00:00.000Z',
+      unit: 'Presidencia & Junta Directiva'
+    },
+    {
       id: 'u-admin-1',
       role: 'admin',
-      display_name: 'Administración CCMS',
+      display_name: 'Administración General CCMS',
       identifier: 'administracion@ccmariosanchez.com',
-      // PBKDF2-SHA256 de "Admin2026*" con salt fija determinista para usuarios por defecto
-      // (los usuarios nuevos en producción usarán salts aleatorias)
       password_sha256: '43434d535f323032365f53414c545f56:f1f52c83808596560eb7cd953f5f3a98a0e4f998bb685eb6d0fa920bbc8557ff',
       tenant_id: null,
       status: 'active',
@@ -37,11 +46,54 @@
       unit: 'Oficina Administrativa 01'
     },
     {
+      id: 'u-finanzas-1',
+      role: 'admin_finanzas',
+      display_name: 'Director de Finanzas & Cobranzas',
+      identifier: 'finanzas@ccmariosanchez.com',
+      password_sha256: '43434d535f323032365f53414c545f56:f1f52c83808596560eb7cd953f5f3a98a0e4f998bb685eb6d0fa920bbc8557ff',
+      tenant_id: null,
+      status: 'active',
+      created_at: '2026-01-01T00:00:00.000Z',
+      unit: 'Gerencia de Finanzas'
+    },
+    {
+      id: 'u-legal-1',
+      role: 'admin_legal',
+      display_name: 'Consultoría Jurídica & Contratos',
+      identifier: 'legal@ccmariosanchez.com',
+      password_sha256: '43434d535f323032365f53414c545f56:f1f52c83808596560eb7cd953f5f3a98a0e4f998bb685eb6d0fa920bbc8557ff',
+      tenant_id: null,
+      status: 'active',
+      created_at: '2026-01-01T00:00:00.000Z',
+      unit: 'Departamento Legal'
+    },
+    {
+      id: 'u-mantenimiento-1',
+      role: 'admin_mantenimiento',
+      display_name: 'Jefe de Infraestructura & Mantenimiento',
+      identifier: 'mantenimiento@ccmariosanchez.com',
+      password_sha256: '43434d535f323032365f53414c545f56:f1f52c83808596560eb7cd953f5f3a98a0e4f998bb685eb6d0fa920bbc8557ff',
+      tenant_id: null,
+      status: 'active',
+      created_at: '2026-01-01T00:00:00.000Z',
+      unit: 'Taller & Almacén de Bienes'
+    },
+    {
+      id: 'u-heredero-1',
+      role: 'heredero',
+      display_name: 'Copropietario Sucesión Mario Sánchez (Heredero)',
+      identifier: 'heredero@ccmariosanchez.com',
+      password_sha256: '43434d535f323032365f53414c545f56:f1f52c83808596560eb7cd953f5f3a98a0e4f998bb685eb6d0fa920bbc8557ff',
+      tenant_id: null,
+      status: 'active',
+      created_at: '2026-01-01T00:00:00.000Z',
+      unit: 'Junta de Sucesores (1/14 Cuota)'
+    },
+    {
       id: 'u-tenant-1',
       role: 'tenant',
       display_name: 'Distribuidora Oriente Marino (Demo)',
       identifier: 'J-30987123-4',
-      // PBKDF2-SHA256 de "Demo2026*"
       password_sha256: '43434d535f323032365f53414c545f56:206fa3bb6f04293dd6435c310e77367036027ea99750d5f5eee39f60bbd68ad0',
       tenant_id: 't-1',
       status: 'active',
@@ -85,9 +137,11 @@
           modified = true;
         } else {
           // Si el hash o status del default user está corrupto o incompatible, restaurar
-          if (parsed[idx].password_sha256 !== defUser.password_sha256 && defUser.role === 'admin') {
+          if (parsed[idx].password_sha256 !== defUser.password_sha256 && defUser.role !== 'tenant') {
             parsed[idx].password_sha256 = defUser.password_sha256;
             parsed[idx].status = 'active';
+            parsed[idx].role = defUser.role;
+            parsed[idx].display_name = defUser.display_name;
             modified = true;
           }
         }
@@ -446,7 +500,11 @@
       return null;
     }
     if (requiredRole && requiredRole !== 'any' && sess.role !== requiredRole) {
-      if (sess.role !== 'admin') {
+      const isBoardOrAdmin = ['superadmin', 'admin', 'admin_finanzas', 'admin_legal', 'admin_mantenimiento', 'heredero'].includes(sess.role);
+      if (requiredRole === 'admin' && isBoardOrAdmin) {
+        return sess;
+      }
+      if (sess.role !== 'superadmin' && sess.role !== 'admin') {
         redirectToLogin('forbidden_role');
         return null;
       }
@@ -456,29 +514,87 @@
 
   // --- 4. UI HELPERS -----------------------------------------------------------
 
+  const ROLE_MAP = {
+    superadmin: {
+      name: 'SuperAdministrador Maestro',
+      badge: '👑 SUPERADMIN',
+      icon: 'fa-crown',
+      color: 'var(--amber)',
+      glow: 'var(--amber-glow)',
+      isMaster: true
+    },
+    admin: {
+      name: 'Administración General CCMS',
+      badge: 'ADMINISTRACIÓN',
+      icon: 'fa-user-shield',
+      color: 'var(--amber)',
+      glow: 'var(--amber-glow)',
+      isMaster: true
+    },
+    admin_finanzas: {
+      name: 'Finanzas & Cobranzas',
+      badge: 'DIRECTOR FINANZAS',
+      icon: 'fa-coins',
+      color: 'var(--emerald)',
+      glow: 'var(--emerald-glow)'
+    },
+    admin_legal: {
+      name: 'Legal & Contratos',
+      badge: 'CONSULTOR JURÍDICO',
+      icon: 'fa-scale-balanced',
+      color: 'var(--cyan)',
+      glow: 'rgba(6, 182, 212, 0.2)'
+    },
+    admin_mantenimiento: {
+      name: 'Mantenimiento & Operaciones',
+      badge: 'JEFE DE INFRAESTRUCTURA',
+      icon: 'fa-wrench',
+      color: '#f97316',
+      glow: 'rgba(249, 115, 22, 0.2)'
+    },
+    heredero: {
+      name: 'Copropietario Sucesión Mario Sánchez',
+      badge: 'HEREDERO (1/14 CUOTA - SOLO LECTURA)',
+      icon: 'fa-landmark',
+      color: 'var(--purple)',
+      glow: 'rgba(168, 85, 247, 0.2)',
+      isReadOnly: true
+    },
+    tenant: {
+      name: 'Arrendatario Comercial',
+      badge: 'INQUILINO COMERCIAL',
+      icon: 'fa-store',
+      color: 'var(--emerald)',
+      glow: 'var(--emerald-glow)',
+      isTenant: true
+    }
+  };
+
   function mountUserChip(containerEl) {
     const sess = getSession();
     if (!sess) return;
 
+    const roleInfo = ROLE_MAP[sess.role] || {
+      name: sess.role || 'Usuario',
+      badge: (sess.role || 'USUARIO').toUpperCase(),
+      icon: 'fa-user',
+      color: 'var(--amber)',
+      glow: 'var(--amber-glow)'
+    };
+
     const sidebarTarget = document.getElementById('sidebar-user-area');
     if (sidebarTarget && !document.getElementById('ccms-sidebar-user-card')) {
-      const isAdm = sess.role === 'admin';
-      const roleName = isAdm ? 'Administrador' : 'Inquilino';
-      const icon = isAdm ? 'fa-user-shield' : 'fa-store';
-      const themeColor = isAdm ? 'var(--amber)' : 'var(--emerald)';
-      const themeGlow = isAdm ? 'var(--amber-glow)' : 'var(--emerald-glow)';
-
       const card = document.createElement('div');
       card.id = 'ccms-sidebar-user-card';
       card.className = 'sidebar-user-card';
       card.innerHTML = `
         <div class="sidebar-user-header">
-          <div class="sidebar-user-avatar" style="background:${themeGlow}; border:1px solid ${themeColor}; color:${themeColor};">
-            <i class="fa-solid ${icon}"></i>
+          <div class="sidebar-user-avatar" style="background:${roleInfo.glow}; border:1px solid ${roleInfo.color}; color:${roleInfo.color};">
+            <i class="fa-solid ${roleInfo.icon}"></i>
           </div>
           <div class="sidebar-user-details">
             <span class="sidebar-user-name" title="${escapeHtml(sess.display_name)}">${escapeHtml(sess.display_name)}</span>
-            <span class="sidebar-user-role">${roleName}</span>
+            <span class="sidebar-user-role" style="color:${roleInfo.color}; font-weight:800; font-size:9.5px; letter-spacing:0.3px;">${roleInfo.badge}</span>
           </div>
         </div>
         <button id="ccms-sidebar-logout-btn" type="button" class="sidebar-logout-btn" title="Cerrar sesión y salir del sistema">
@@ -509,12 +625,12 @@
       chip.id = 'ccms-user-chip';
       chip.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 8px 4px 4px;border:1px solid var(--border-subtle);border-radius:24px;background:var(--bg-card);';
       chip.innerHTML = `
-        <div style="width:30px;height:30px;border-radius:50%;background:${sess.role === 'admin' ? 'var(--amber-glow)' : 'var(--emerald-glow)'};border:1px solid ${sess.role === 'admin' ? 'var(--amber)' : 'var(--emerald)'};display:flex;align-items:center;justify-content:center;color:${sess.role === 'admin' ? 'var(--amber)' : 'var(--emerald)'};font-weight:800;font-size:11px;">
-          <i class="fa-solid ${sess.role === 'admin' ? 'fa-user-shield' : 'fa-store'}"></i>
+        <div style="width:30px;height:30px;border-radius:50%;background:${roleInfo.glow};border:1px solid ${roleInfo.color};display:flex;align-items:center;justify-content:center;color:${roleInfo.color};font-weight:800;font-size:11px;">
+          <i class="fa-solid ${roleInfo.icon}"></i>
         </div>
         <div style="display:flex;flex-direction:column;line-height:1.1;max-width:160px;">
           <span style="font-size:11px;font-weight:700;color:var(--txt-primary);font-family:var(--font-heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(sess.display_name)}</span>
-          <span style="font-size:9.5px;color:var(--txt-muted);text-transform:uppercase;letter-spacing:0.5px;">${sess.role === 'admin' ? 'Administrador' : 'Inquilino'}</span>
+          <span style="font-size:9.5px;color:${roleInfo.color};text-transform:uppercase;letter-spacing:0.5px;font-weight:800;">${roleInfo.badge}</span>
         </div>
         <button id="ccms-logout-btn" type="button" title="Cerrar sesión" style="background:transparent;border:none;color:var(--rose);cursor:pointer;padding:4px 6px;font-size:13px;border-radius:50%;">
           <i class="fa-solid fa-right-from-bracket"></i>
@@ -542,12 +658,61 @@
     if (!sess) return;
     const root = rootEl || document;
 
+    const isBoardOrAdmin = ['superadmin', 'admin', 'admin_finanzas', 'admin_legal', 'admin_mantenimiento', 'heredero'].includes(sess.role);
+    const isSuperAdmin = (sess.role === 'superadmin');
+    const isReadOnlyHeredero = (sess.role === 'heredero');
+
+    // Visibilidad de pestañas administrativas
     root.querySelectorAll('[data-roles="admin"]').forEach(el => {
-      el.style.display = (sess.role === 'admin') ? '' : 'none';
+      el.style.display = isBoardOrAdmin ? '' : 'none';
     });
     root.querySelectorAll('[data-roles="tenant"]').forEach(el => {
       el.style.display = (sess.role === 'tenant') ? '' : 'none';
     });
+    root.querySelectorAll('[data-roles="superadmin"]').forEach(el => {
+      el.style.display = isSuperAdmin ? '' : 'none';
+    });
+
+    // Control departamental por atributo data-permission
+    root.querySelectorAll('[data-permission="finances"]').forEach(el => {
+      const can = isSuperAdmin || sess.role === 'admin' || sess.role === 'admin_finanzas';
+      el.style.display = can ? '' : 'none';
+    });
+    root.querySelectorAll('[data-permission="legal"]').forEach(el => {
+      const can = isSuperAdmin || sess.role === 'admin' || sess.role === 'admin_legal';
+      el.style.display = can ? '' : 'none';
+    });
+    root.querySelectorAll('[data-permission="maintenance"]').forEach(el => {
+      const can = isSuperAdmin || sess.role === 'admin' || sess.role === 'admin_mantenimiento';
+      el.style.display = can ? '' : 'none';
+    });
+    root.querySelectorAll('[data-permission="superadmin"]').forEach(el => {
+      el.style.display = isSuperAdmin ? '' : 'none';
+    });
+
+    // Si es HEREDERO, ocultar botones de acción o mutación para garantizar el modo SOLO LECTURA
+    if (isReadOnlyHeredero) {
+      root.querySelectorAll('.btn-onboarding-cta, .btn-action-delete, .btn-sync-bcv, .btn-edit-bcv, [data-roles="admin"][data-click*="openAdd"], [data-roles="admin"][data-click*="openNew"]').forEach(btn => {
+        if (!btn.closest('#sidebar-user-area') && !btn.classList.contains('sidebar-logout-btn') && !btn.id.includes('logout')) {
+          btn.style.display = 'none';
+        }
+      });
+      let readOnlyBanner = document.getElementById('ccms-heredero-readonly-banner');
+      if (!readOnlyBanner) {
+        const topBar = document.querySelector('.top-navbar');
+        if (topBar) {
+          readOnlyBanner = document.createElement('div');
+          readOnlyBanner.id = 'ccms-heredero-readonly-banner';
+          readOnlyBanner.style.cssText = 'background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.4);color:#c084fc;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px;margin:0 10px;';
+          readOnlyBanner.innerHTML = '<i class="fa-solid fa-eye"></i> <span>Modo Copropietario (1/14 Sucesión) — Solo Lectura Transparente</span>';
+          topBar.insertBefore(readOnlyBanner, topBar.children[1] || topBar.firstChild);
+        }
+      }
+    } else {
+      const readOnlyBanner = document.getElementById('ccms-heredero-readonly-banner');
+      if (readOnlyBanner) readOnlyBanner.remove();
+    }
+
     root.querySelectorAll('[data-tenant-name]').forEach(el => {
       el.textContent = sess.display_name || '';
     });

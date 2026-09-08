@@ -130,6 +130,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const session = (window.AuthGuard && window.AuthGuard.currentUser) ? window.AuthGuard.currentUser() : null;
   const currentRole = session ? session.role : 'admin'; // fallback si guard no está cargado
   const currentTenantId = session ? session.tenant_id : null;
+  const isSuperAdmin = (currentRole === 'superadmin');
+  const isDirectiva = ['superadmin', 'admin', 'admin_finanzas', 'admin_legal', 'admin_mantenimiento', 'heredero'].includes(currentRole);
+  const isMasterAdmin = (currentRole === 'superadmin' || currentRole === 'admin');
   let currentCurrency = localStorage.getItem('ccms_active_currency') || 'USD'; // 'USD', 'EUR', 'VES', 'USDT'
   let currentTheme = localStorage.getItem('ccms_theme') || 'dark'; // 'dark' o 'light'
 
@@ -191,8 +194,9 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.onclick = () => setActiveCurrency(btn.getAttribute('data-cur'));
   });
 
-  // 4. TICKER DINÁMICO: BCV OFICIAL + BINANCE P2P USDT/VES
+  // 4. TICKER DINÁMICO: USD BCV + EUR BCV + BINANCE P2P USDT
   const bcvTickerVal = document.getElementById('bcv-rate-val');
+  const eurTickerVal = document.getElementById('eur-rate-val');
   const usdtTickerVal = document.getElementById('usdt-rate-val');
   const bcvSyncIcon = document.getElementById('bcv-sync-icon');
   const bcvSyncTimeStr = document.getElementById('bcv-sync-time-str');
@@ -200,11 +204,15 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateBcvDisplay() {
     const rates = financialEngine.getRates();
     if (bcvTickerVal) {
-      bcvTickerVal.innerText = `${rates.VES.toFixed(2)} Bs/USD`;
+      bcvTickerVal.innerText = `${rates.VES.toFixed(2)} Bs.`;
+    }
+    if (eurTickerVal) {
+      const eurBs = rates.EUR_VES || (rates.VES / (rates.EUR || 0.86));
+      eurTickerVal.innerText = `${eurBs.toFixed(2)} Bs.`;
     }
     if (usdtTickerVal) {
       const usdtVes = rates.USDT_VES || rates.VES;
-      usdtTickerVal.innerText = `${usdtVes.toFixed(2)} Bs/USDT`;
+      usdtTickerVal.innerText = `${usdtVes.toFixed(2)} Bs.`;
     }
     if (bcvSyncTimeStr) {
       const now = new Date();
@@ -219,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   updateBcvDisplay();
 
-  // Función asíncrona para sincronizar en vivo con las APIs gratuitas (DolarApi y Binance P2P vía Yadio)
+  // Función asíncrona para sincronizar en vivo con las APIs oficiales y de mercado
   window.syncBcvRate = async function() {
     if (bcvSyncIcon) bcvSyncIcon.classList.add('fa-spin');
     try {
@@ -231,6 +239,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (bcvTickerVal) {
           bcvTickerVal.style.color = 'var(--emerald)';
           setTimeout(() => { bcvTickerVal.style.color = ''; }, 2000);
+        }
+        if (eurTickerVal) {
+          eurTickerVal.style.color = 'var(--cyan)';
+          setTimeout(() => { eurTickerVal.style.color = ''; }, 2000);
         }
         if (usdtTickerVal) {
           usdtTickerVal.style.color = 'var(--emerald)';
@@ -264,8 +276,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!modal) return;
     const rates = financialEngine.getRates();
     const bcvInput = document.getElementById('rate-edit-bcv');
+    const eurInput = document.getElementById('rate-edit-eur');
     const usdtInput = document.getElementById('rate-edit-usdt');
     if (bcvInput) bcvInput.value = rates.VES.toFixed(2);
+    if (eurInput) eurInput.value = (rates.EUR_VES || (rates.VES / (rates.EUR || 0.86))).toFixed(2);
     if (usdtInput) usdtInput.value = (rates.USDT_VES || rates.VES).toFixed(2);
     window.openModal(modal);
   };
@@ -277,10 +291,22 @@ document.addEventListener('DOMContentLoaded', () => {
   window.handleSaveManualRates = function(e) {
     e.preventDefault();
     const bcvVal = document.getElementById('rate-edit-bcv').value;
+    const eurVal = document.getElementById('rate-edit-eur')?.value;
     const usdtVal = document.getElementById('rate-edit-usdt').value;
 
     try {
       if (bcvVal) financialEngine.setBcvRate(bcvVal);
+      if (eurVal && financialEngine.setEurRate) {
+        const eurBs = parseFloat(eurVal);
+        if (eurBs > 0) {
+          financialEngine.rates.EUR_VES = eurBs;
+          const currentVes = parseFloat(bcvVal) || financialEngine.rates.VES;
+          if (currentVes > 0) {
+            financialEngine.rates.EUR = Math.round((currentVes / eurBs) * 10000) / 10000;
+          }
+          financialEngine.saveRates();
+        }
+      }
       if (usdtVal) financialEngine.setUsdtRate(usdtVal);
       updateBcvDisplay();
       renderAll();
@@ -387,17 +413,20 @@ document.addEventListener('DOMContentLoaded', () => {
   // 6. RENDERIZACIÓN GLOBAL RESILIENTE (PROTECCIÓN AISLADA POR MÓDULO)
   function renderAll() {
     try { renderKPIsAndBalances(); } catch (e) { console.error('[RenderError] KPIs:', e); }
-    if (currentRole === 'admin') {
+    if (isDirectiva) {
       try { renderTenantsTable(); } catch (e) { console.error('[RenderError] TenantsTable:', e); }
       try { renderCondoExpenses(); } catch (e) { console.error('[RenderError] CondoExpenses:', e); }
+      try { renderInventory(); } catch (e) { console.error('[RenderError] Inventory:', e); }
     }
     try { renderReceivingAccounts(); } catch (e) { console.error('[RenderError] ReceivingAccounts:', e); }
     try { renderInvoicesTable(); } catch (e) { console.error('[RenderError] InvoicesTable:', e); }
     try { renderCalendarView(); } catch (e) { console.error('[RenderError] CalendarView:', e); }
     try { renderAlertsCenter(); } catch (e) { console.error('[RenderError] AlertsCenter:', e); }
-    if (currentRole === 'admin') {
+    if (isMasterAdmin) {
       try { renderAdminBankAccounts(); } catch (e) { console.error('[RenderError] AdminBankAccounts:', e); }
       try { renderUserApprovalsTable(); } catch (e) { console.error('[RenderError] UserApprovals:', e); }
+    }
+    if (isDirectiva) {
       try { initReportsTab(); } catch (e) { console.error('[RenderError] ReportsTab:', e); }
     }
     if (window.HelpContent && typeof window.HelpContent.render === 'function') {
@@ -1461,6 +1490,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const tenants = visibleTenants(dbService.getTenants());
     const invoices = visibleInvoices(dbService.getInvoices());
+    const appSettings = dbService.getSettings();
 
     // Ajustar título de la sección
     const sectionTitle = document.querySelector('#tab-alertas .section-title');
@@ -1472,15 +1502,18 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    const pending = invoices.filter(i => i.status !== 'pagado');
+    // CESE INMEDIATO DE ALERTAS: Si la cuota está 'pagado' o 'verificando', cesan las notificaciones
+    const pending = invoices.filter(i => i.status !== 'pagado' && i.status !== 'verificando');
     if (pending.length === 0) {
-      alertsContainer.innerHTML = `<div class="data-card" style="padding:32px;text-align:center;color:var(--txt-muted);font-style:italic;">${currentRole === 'tenant' ? 'No tiene cuotas pendientes. ¡Está al día!' : 'No hay alertas pendientes.'}</div>`;
+      alertsContainer.innerHTML = `<div class="data-card" style="padding:32px;text-align:center;color:var(--txt-muted);font-style:italic;">${currentRole === 'tenant' ? 'No tiene cuotas pendientes ni en mora. ¡Está al día!' : 'No hay alertas pendientes. Todas las cuotas están solventes o con comprobante en verificación.'}</div>`;
       return;
     }
 
     pending.forEach(inv => {
       const tenant = tenants.find(t => t.id === inv.tenant_id);
       if (!tenant) return;
+
+      const moraInfo = financialEngine.calculateMora(inv, null, appSettings);
 
       const card = document.createElement('div');
       card.className = 'data-card';
@@ -1491,17 +1524,25 @@ document.addEventListener('DOMContentLoaded', () => {
       const waUrl = GoogleWorkspace.createWhatsAppUrl(tenant.whatsapp, waMsg);
       const gmailUrl = GoogleWorkspace.createGmailUrl(tenant.email, `Aviso de Cobro Cuota ${inv.period_month}/${inv.period_year} — CC Mario Sánchez`, waMsg);
 
+      const statusBadge = moraInfo.inMora
+        ? `<span class="status-pill pill-overdue"><i class="fa-solid fa-triangle-exclamation"></i> En Mora (${moraInfo.daysOverdue} días)</span>`
+        : (moraInfo.isWithinGrace
+            ? `<span class="status-pill pill-warning"><i class="fa-solid fa-hourglass-half"></i> Período de Gracia (${moraInfo.graceDaysRemaining}d restantes)</span>`
+            : `<span class="status-pill pill-warning"><i class="fa-solid fa-clock"></i> Aviso Preventivo</span>`);
+
+      const breakdownText = moraInfo.inMora
+        ? `Base: $ ${moraInfo.baseAmountUsd.toFixed(2)} • <strong style="color: var(--rose);">Recargo Mora (${moraInfo.moraRatePct}%): +$ ${moraInfo.moraUsd.toFixed(2)}</strong> • <strong>Total: $ ${moraInfo.totalDueUsd.toFixed(2)} USD (Bs. ${moraInfo.totalDueVes.toLocaleString('es-VE', { minimumFractionDigits: 2 })})</strong>`
+        : `Cuota Base: $ ${inv.total_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })} • Bs. ${financialEngine.convert(inv.total_usd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 })} • USDT ${inv.total_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
       card.innerHTML = `
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
           <div>
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="status-pill ${inv.status === 'en_mora' ? 'pill-overdue' : 'pill-warning'}">
-                ${inv.status === 'en_mora' ? 'Alerta de Retraso' : 'Aviso Preventivo'}
-              </span>
+              ${statusBadge}
               <strong style="font-size: 14px; color: var(--txt-primary);">${escapeHtml(tenant.business_name)} (${escapeHtml(inv.unit_code)})</strong>
             </div>
             <p style="font-size: 12px; color: var(--txt-secondary); margin-top: 4px;">
-              Cuota: $ ${inv.total_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })} • Bs. ${financialEngine.convert(inv.total_usd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 })} • USDT ${inv.total_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              ${breakdownText}
             </p>
           </div>
           <div style="display: flex; gap: 10px;">
@@ -1521,41 +1562,50 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- GENERADOR DE MENSAJE MULTIMONEDA PARA WHATSAPP ---
   function buildMultiCurrencyWhatsAppMessage(tenant, invoice) {
     const totalUsd = invoice.total_usd;
-    const totalBs = financialEngine.convert(totalUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
-    const totalEur = financialEngine.convert(totalUsd, 'USD', 'EUR').toLocaleString('de-DE', { minimumFractionDigits: 2 });
-    const totalUsdt = totalUsd.toLocaleString('en-US', { minimumFractionDigits: 2 });
-    const bcvRate = financialEngine.getRates().VES.toFixed(2);
     const settings = dbService.getSettings();
+    const moraInfo = financialEngine.calculateMora(invoice, null, settings);
 
-    // Seleccionar plantilla según el estado
-    let template = (invoice.status === 'en_mora') ? settings.msg_mora_template : settings.msg_preventive_template;
+    const baseUsd = moraInfo.baseAmountUsd;
+    const finalTotalUsd = moraInfo.totalDueUsd;
+    const finalTotalBs = moraInfo.totalDueVes.toLocaleString('es-VE', { minimumFractionDigits: 2 });
+    const finalTotalEur = financialEngine.convert(finalTotalUsd, 'USD', 'EUR').toLocaleString('de-DE', { minimumFractionDigits: 2 });
+    const finalTotalUsdt = finalTotalUsd.toLocaleString('en-US', { minimumFractionDigits: 2 });
+    const bcvRate = financialEngine.getRates().VES.toFixed(2);
 
-    // Remplazo de variables
+    // Seleccionar plantilla según el estado de mora
+    let template = (moraInfo.inMora || invoice.status === 'en_mora') ? settings.msg_mora_template : settings.msg_preventive_template;
+
+    // Remplazo de variables dinámicas ampliadas
     let body = template
       .replace(/{inquilino}/g, tenant.business_name)
       .replace(/{unidad}/g, invoice.unit_code)
       .replace(/{periodo}/g, `${invoice.period_month}/${invoice.period_year}`)
-      .replace(/{monto_usd}/g, `$ ${totalUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD`)
-      .replace(/{monto_bs}/g, `${totalBs}`)
+      .replace(/{monto_usd}/g, `$ ${baseUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD`)
+      .replace(/{monto_bs}/g, `${financialEngine.convert(baseUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 })}`)
       .replace(/{tasa_bcv}/g, `${bcvRate} Bs/USD`)
-      .replace(/{fecha_limite}/g, invoice.due_date);
+      .replace(/{fecha_limite}/g, invoice.due_date)
+      .replace(/{dias_mora}/g, `${moraInfo.daysOverdue}`)
+      .replace(/{recargo_mora_usd}/g, `$ ${moraInfo.moraUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD`)
+      .replace(/{recargo_mora_bs}/g, `Bs. ${moraInfo.moraVes.toLocaleString('es-VE', { minimumFractionDigits: 2 })}`)
+      .replace(/{total_con_mora_usd}/g, `$ ${finalTotalUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD`)
+      .replace(/{total_con_mora_bs}/g, `Bs. ${finalTotalBs}`);
 
     return `🏛️ *CENTRO COMERCIAL MARIO SÁNCHEZ*\n` +
       `*Departamento de Administración & Cobranzas*\n` +
       `Av. Municipal, Puerto La Cruz, Venezuela\n\n` +
       `${body}\n\n` +
       `💰 *RESUMEN DE EQUIVALENCIAS:*\n` +
-      `• *Dólares:* $ ${totalUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD\n` +
-      `• *Bolívares (Tasa Oficial BCV ${bcvRate}):* Bs. ${totalBs}\n` +
-      `• *Euros:* € ${totalEur} EUR\n` +
-      `• *Cripto USDT (TRC20):* USDT ${totalUsdt}\n\n` +
+      `• *Total a Pagar:* $ ${finalTotalUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD\n` +
+      `• *Bolívares (Tasa Oficial BCV ${bcvRate}):* Bs. ${finalTotalBs}\n` +
+      `• *Euros:* € ${finalTotalEur} EUR\n` +
+      `• *Cripto USDT (TRC20):* USDT ${finalTotalUsdt}\n\n` +
       `🏦 *CUENTAS BANCARIAS AUTORIZADAS:*\n` +
       `• *Banesco Corriente:* 0134-0982-12-0987654321\n` +
       `• *Pago Móvil:* Banesco (0134) | RIF: J-40899123-1 | Telf: 0424-7380002\n` +
       `• *Zelle / Custodia USD:* administracion@ccmariosanchez.com\n` +
       `• *Billetera USDT (TRC20):* TXz9y8W7v6U5t4S3r2Q1p0OnMlKjIhGfEd\n\n` +
       `⚖️ *Base Legal:* Ley de Arrendamiento Inmobiliario para Uso Comercial (Gaceta Oficial N° 40.418).\n` +
-      `Agradecemos remitir el comprobante adjunto a este canal para su conciliación inmediata.`;
+      `Agradecemos remitir el comprobante adjunto a este canal para suspender notificaciones y conciliar de inmediato.`;
   }
 
   // --- MODAL CONTROLLERS ---
@@ -2177,6 +2227,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('cfg-cutoff-day')) document.getElementById('cfg-cutoff-day').value = cfg.cutoff_day || 5;
     if (document.getElementById('cfg-alert-before')) document.getElementById('cfg-alert-before').value = cfg.alert_days_before || 3;
     if (document.getElementById('cfg-grace-days')) document.getElementById('cfg-grace-days').value = cfg.grace_days || 5;
+    if (document.getElementById('cfg-mora-rate')) document.getElementById('cfg-mora-rate').value = cfg.mora_monthly_rate !== undefined ? cfg.mora_monthly_rate : 3.0;
+    if (document.getElementById('cfg-mora-recurrence')) document.getElementById('cfg-mora-recurrence').value = cfg.mora_recurrence_days || 3;
 
     if (document.getElementById('cfg-msg-preventive')) document.getElementById('cfg-msg-preventive').value = cfg.msg_preventive_template;
     if (document.getElementById('cfg-msg-mora')) document.getElementById('cfg-msg-mora').value = cfg.msg_mora_template;
@@ -2211,7 +2263,12 @@ document.addEventListener('DOMContentLoaded', () => {
       '{monto_usd}': '$420.00 USD',
       '{monto_bs}': 'Bs. 17,220.00',
       '{tasa_bcv}': '41.00 Bs/USD',
-      '{fecha_limite}': '05/09/2026'
+      '{fecha_limite}': '05/09/2026',
+      '{dias_mora}': '8',
+      '{recargo_mora_usd}': '$ 3.36 USD',
+      '{recargo_mora_bs}': 'Bs. 137.76',
+      '{total_con_mora_usd}': '$ 423.36 USD',
+      '{total_con_mora_bs}': 'Bs. 17,357.76'
     };
 
     const renderSample = (tpl) => {
@@ -2256,10 +2313,13 @@ document.addEventListener('DOMContentLoaded', () => {
     dbService.saveSettings({
       cutoff_day: parseInt(document.getElementById('cfg-cutoff-day').value) || 5,
       alert_days_before: parseInt(document.getElementById('cfg-alert-before').value) || 3,
-      grace_days: parseInt(document.getElementById('cfg-grace-days').value) || 5
+      grace_days: parseInt(document.getElementById('cfg-grace-days').value) || 5,
+      mora_monthly_rate: parseFloat(document.getElementById('cfg-mora-rate').value) || 3.0,
+      mora_recurrence_days: parseInt(document.getElementById('cfg-mora-recurrence').value) || 3
     });
+    renderAlertsCenter();
     if (window.SecuritySuite && window.SecuritySuite.toast) {
-      window.SecuritySuite.toast('Días de corte, plazos de gracia y avisos preventivos guardados.', 'success', 'Alertas Actualizadas');
+      window.SecuritySuite.toast('Días de corte, plazos de gracia, tasa de mora legal y recurrencia guardados.', 'success', 'Alertas Actualizadas');
     } else {
       alert("¡Configuración de Alertas & Vencimientos guardada!");
     }
@@ -2287,7 +2347,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!proceed) return;
 
     document.getElementById('cfg-msg-preventive').value = `Estimados *{inquilino}* ({unidad}):\nLe remitimos su aviso de cobro del período *{periodo}* por un total de *{monto_usd}* (Bs. {monto_bs} a tasa BCV {tasa_bcv}).\nFecha límite de pago: *{fecha_limite}*.\nPor favor remitir comprobante a este canal para conciliación.`;
-    document.getElementById('cfg-msg-mora').value = `⚠️ *AVISO DE RETRASO — CC MARIO SÁNCHEZ*\nEstimados *{inquilino}* ({unidad}):\nLe informamos que su cuota del período *{periodo}* se encuentra en estado de MORA por un saldo de *{monto_usd}* (Bs. {monto_bs}).\nConforme a la Gaceta Oficial 40.418, agradecemos regularizar el pago a la brevedad para evitar recargos o suspensión de servicios comunes.`;
+    document.getElementById('cfg-msg-mora').value = `⚠️ *AVISO FORMAL DE MORA — CC MARIO SÁNCHEZ*\nEstimados *{inquilino}* ({unidad}):\nLe notificamos que su cuota del período *{periodo}* (vencida el *{fecha_limite}*) presenta *{dias_mora} días de retraso*.\n• Canon & Gastos Base: *{monto_usd}*\n• Recargo Moratorio Legal (Art. 30 G.O. 40.418): *{recargo_mora_usd}* (Bs. {recargo_mora_bs})\n• *TOTAL EXIGIBLE AL DÍA*: *{total_con_mora_usd}* (Bs. {total_con_mora_bs} a tasa BCV {tasa_bcv})\nPor favor consignar su comprobante a este canal para suspender las alertas automáticas y registrar su solvencia.`;
     window.saveMensajesConfig(new Event('submit'));
     window.updateTemplateLivePreview();
   };
@@ -4365,6 +4425,315 @@ document.addEventListener('DOMContentLoaded', () => {
 
   setupCustomDropzones();
 
+  // ==============================================================================
+  // MÓDULO DE INVENTARIO: ACTIVOS FIJOS, CONSUMIBLES & KARDEX
+  // ==============================================================================
+  let currentInvSubtab = 'activos';
+
+  window.switchInventorySubtab = function(subtabName) {
+    currentInvSubtab = subtabName;
+    const subtabs = ['activos', 'consumibles', 'kardex'];
+    subtabs.forEach(t => {
+      const btn = document.getElementById(`btn-subtab-${t}`);
+      const panel = document.getElementById(`subtab-panel-${t}`);
+      if (btn) {
+        if (t === subtabName) {
+          btn.style.background = 'var(--amber-glow)';
+          btn.style.color = 'var(--amber)';
+          btn.style.borderColor = 'var(--amber)';
+          btn.style.fontWeight = '700';
+        } else {
+          btn.style.background = '';
+          btn.style.color = '';
+          btn.style.borderColor = '';
+          btn.style.fontWeight = 'normal';
+        }
+      }
+      if (panel) {
+        panel.style.display = (t === subtabName) ? 'block' : 'none';
+      }
+    });
+
+    if (subtabName === 'activos') renderInventoryActivos();
+    else if (subtabName === 'consumibles') renderInventoryConsumibles();
+    else if (subtabName === 'kardex') renderInventoryKardex();
+  };
+
+  function renderInventory() {
+    renderInventoryActivos();
+    renderInventoryConsumibles();
+    renderInventoryKardex();
+  }
+
+  function renderInventoryActivos() {
+    const tbody = document.getElementById('inventory-activos-table-body');
+    const totalEl = document.getElementById('inv-total-activos');
+    if (!tbody) return;
+
+    const activos = dbService.getActivosFijos ? dbService.getActivosFijos() : [];
+    if (totalEl) totalEl.innerText = `${activos.length} Equipos`;
+
+    if (activos.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--txt-muted);padding:24px;">No hay activos fijos registrados en el inventario maestro.</td></tr>`;
+      return;
+    }
+
+    const canEdit = isSuperAdmin || currentRole === 'admin' || currentRole === 'admin_mantenimiento';
+
+    tbody.innerHTML = activos.map(a => `
+      <tr>
+        <td>
+          <strong style="color:var(--amber);font-family:monospace;font-size:11.5px;">${escapeHtml(a.code)}</strong><br>
+          <span style="font-weight:700;color:var(--txt-primary);">${escapeHtml(a.name)}</span>
+        </td>
+        <td><i class="fa-solid fa-location-dot" style="color:var(--cyan);font-size:10px;margin-right:4px;"></i>${escapeHtml(a.location)}</td>
+        <td style="max-width:280px;font-size:11px;color:var(--txt-secondary);">${escapeHtml(a.technical_spec || 'N/A')}</td>
+        <td style="font-family:monospace;font-size:11px;">${escapeHtml(a.serial_number || 'S/N')}</td>
+        <td>
+          <span class="status-pill pill-success" style="font-size:10.5px;padding:3px 8px;">
+            <i class="fa-solid fa-circle-check"></i> ${escapeHtml(a.status || 'operativo').toUpperCase()}
+          </span>
+        </td>
+        <td>
+          <span style="font-size:11px;font-weight:700;color:var(--txt-primary);">${escapeHtml(a.maintenance_frequency || 'Trimestral')}</span><br>
+          <small style="color:var(--txt-muted);font-size:10px;">Próx: ${escapeHtml(a.next_maintenance || 'Pendiente')}</small>
+        </td>
+        <td>
+          ${canEdit ? `
+            <button type="button" class="btn-action-icon" data-click="window.deleteActivoFijoItem('${a.id}')" title="Dar de baja activo" style="color:var(--rose);">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          ` : `<span style="color:var(--txt-muted);font-size:10px;"><i class="fa-solid fa-eye"></i> Protegido</span>`}
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function renderInventoryConsumibles() {
+    const tbody = document.getElementById('inventory-consumibles-table-body');
+    if (!tbody) return;
+
+    const consumibles = dbService.getConsumibles ? dbService.getConsumibles() : [];
+    if (consumibles.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--txt-muted);padding:24px;">No hay consumibles registrados en el stock del centro comercial.</td></tr>`;
+      return;
+    }
+
+    const canEdit = isSuperAdmin || currentRole === 'admin' || currentRole === 'admin_mantenimiento';
+
+    tbody.innerHTML = consumibles.map(c => {
+      const isAlerta = (parseFloat(c.stock_current) <= parseFloat(c.stock_min));
+      const statusBadge = isAlerta 
+        ? `<span class="status-pill pill-overdue" style="font-size:10.5px;"><i class="fa-solid fa-triangle-exclamation"></i> BAJO STOCK</span>`
+        : `<span class="status-pill pill-success" style="font-size:10.5px;"><i class="fa-solid fa-check"></i> DISPONIBLE</span>`;
+
+      return `
+        <tr>
+          <td><strong style="color:var(--cyan);font-family:monospace;font-size:11.5px;">${escapeHtml(c.code)}</strong></td>
+          <td><strong style="color:var(--txt-primary);">${escapeHtml(c.name)}</strong></td>
+          <td><span style="font-size:11px;color:var(--txt-secondary);">${escapeHtml(c.category || 'General')}</span></td>
+          <td><span style="font-size:13px;font-weight:800;color:${isAlerta ? 'var(--rose)' : 'var(--emerald)'};">${c.stock_current} ${escapeHtml(c.unit || 'uds')}</span></td>
+          <td style="font-size:11.5px;color:var(--txt-muted);">${c.stock_min} ${escapeHtml(c.unit || 'uds')}</td>
+          <td style="font-size:12px;font-weight:700;color:var(--txt-primary);">$ ${(parseFloat(c.cost_usd) || 0).toFixed(2)}</td>
+          <td>${statusBadge}</td>
+          <td>
+            ${canEdit ? `
+              <button type="button" class="btn-action-icon" data-click="window.openEditConsumableModal('${c.id}')" title="Editar stock o costo" style="color:var(--amber);margin-right:4px;">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+              <button type="button" class="btn-action-icon" data-click="window.deleteConsumableItem('${c.id}')" title="Eliminar ítem" style="color:var(--rose);">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            ` : `<span style="color:var(--txt-muted);font-size:10px;"><i class="fa-solid fa-eye"></i> Consulta</span>`}
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function renderInventoryKardex() {
+    const tbody = document.getElementById('inventory-kardex-table-body');
+    if (!tbody) return;
+
+    const kardex = dbService.getKardex ? dbService.getKardex() : [];
+    if (kardex.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--txt-muted);padding:24px;">No se han asentado movimientos de Kardex en el período.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = kardex.map(k => {
+      const isEntrada = (k.type === 'ENTRADA');
+      const badge = isEntrada
+        ? `<span class="status-pill pill-success" style="font-size:10px;padding:2px 7px;"><i class="fa-solid fa-arrow-down"></i> ENTRADA</span>`
+        : `<span class="status-pill pill-overdue" style="font-size:10px;padding:2px 7px;"><i class="fa-solid fa-arrow-up"></i> SALIDA</span>`;
+
+      const formattedDate = k.timestamp ? new Date(k.timestamp).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : 'N/A';
+
+      return `
+        <tr>
+          <td style="font-size:11px;color:var(--txt-secondary);">${formattedDate}</td>
+          <td>${badge}</td>
+          <td>
+            <strong style="color:var(--txt-primary);font-size:12px;">${escapeHtml(k.item_name || k.item_code)}</strong><br>
+            <small style="color:var(--txt-muted);font-family:monospace;font-size:10px;">${escapeHtml(k.item_code || '')}</small>
+          </td>
+          <td><strong style="font-size:12.5px;color:${isEntrada ? 'var(--emerald)' : 'var(--rose)'};">${isEntrada ? '+' : '-'}${k.quantity}</strong></td>
+          <td style="font-size:11.5px;color:var(--txt-secondary);">${escapeHtml(k.destination || 'Uso General')}</td>
+          <td style="font-size:11.5px;color:var(--txt-primary);"><i class="fa-solid fa-user-gear" style="color:var(--amber);font-size:10px;margin-right:4px;"></i>${escapeHtml(k.responsible || 'N/A')}</td>
+          <td><span style="font-family:monospace;font-size:11px;background:rgba(255,255,255,0.04);padding:2px 6px;border-radius:4px;">${escapeHtml(k.reference_document || 'N/A')}</span></td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // --- MODAL 12: GESTIÓN DE INVENTARIO & KARDEX ---
+  window.openNewInventoryItemModal = function() {
+    const modal = document.getElementById('modal-inventory-item');
+    if (!modal) return;
+    window.switchInvModalMode('consumible');
+    const formCon = document.getElementById('form-inv-consumible');
+    if (formCon) formCon.reset();
+    document.getElementById('inv-con-id').value = '';
+    document.getElementById('inv-modal-title').innerText = 'Registrar Nuevo Insumo / Consumible';
+    window.openModal(modal);
+  };
+
+  window.openEditConsumableModal = function(id) {
+    const consumibles = dbService.getConsumibles();
+    const item = consumibles.find(c => c.id === id);
+    if (!item) return;
+
+    window.switchInvModalMode('consumible');
+    document.getElementById('inv-con-id').value = item.id;
+    document.getElementById('inv-con-code').value = item.code;
+    document.getElementById('inv-con-desc').value = item.name;
+    document.getElementById('inv-con-cat').value = item.category || 'Mantenimiento';
+    document.getElementById('inv-con-stock').value = item.stock_current;
+    document.getElementById('inv-con-min').value = item.stock_min;
+    document.getElementById('inv-con-cost').value = item.cost_usd;
+    document.getElementById('inv-modal-title').innerText = `Editar Insumo: ${item.code}`;
+
+    const modal = document.getElementById('modal-inventory-item');
+    if (modal) window.openModal(modal);
+  };
+
+  window.closeInventoryModal = function() {
+    window.closeModal('modal-inventory-item');
+  };
+
+  window.switchInvModalMode = function(mode) {
+    const tabCon = document.getElementById('tab-btn-modal-consumible');
+    const tabKdx = document.getElementById('tab-btn-modal-kardex');
+    const formCon = document.getElementById('form-inv-consumible');
+    const formKdx = document.getElementById('form-inv-kardex');
+
+    if (mode === 'consumible') {
+      if (tabCon) { tabCon.style.color = 'var(--amber)'; tabCon.style.borderBottom = '2px solid var(--amber)'; }
+      if (tabKdx) { tabKdx.style.color = 'var(--txt-muted)'; tabKdx.style.borderBottom = '2px solid transparent'; }
+      if (formCon) formCon.style.display = 'flex';
+      if (formKdx) formKdx.style.display = 'none';
+      document.getElementById('inv-modal-title').innerText = 'Gestión de Insumo / Consumible';
+    } else {
+      if (tabKdx) { tabKdx.style.color = 'var(--amber)'; tabKdx.style.borderBottom = '2px solid var(--amber)'; }
+      if (tabCon) { tabCon.style.color = 'var(--txt-muted)'; tabCon.style.borderBottom = '2px solid transparent'; }
+      if (formCon) formCon.style.display = 'none';
+      if (formKdx) formKdx.style.display = 'flex';
+      document.getElementById('inv-modal-title').innerText = 'Asentar Movimiento en Kardex';
+      populateKardexItemSelect();
+    }
+  };
+
+  function populateKardexItemSelect() {
+    const select = document.getElementById('inv-kdx-item');
+    if (!select) return;
+    const consumibles = dbService.getConsumibles();
+    select.innerHTML = consumibles.map(c => `
+      <option value="${c.code}" data-name="${escapeHtml(c.name)}">${c.code} — ${escapeHtml(c.name)} (Stock: ${c.stock_current})</option>
+    `).join('');
+  }
+
+  window.handleSaveConsumable = function(e) {
+    e.preventDefault();
+    const id = document.getElementById('inv-con-id').value;
+    const itemData = {
+      code: document.getElementById('inv-con-code').value.trim().toUpperCase(),
+      name: document.getElementById('inv-con-desc').value.trim(),
+      category: document.getElementById('inv-con-cat').value,
+      stock_current: parseFloat(document.getElementById('inv-con-stock').value) || 0,
+      stock_min: parseFloat(document.getElementById('inv-con-min').value) || 0,
+      cost_usd: parseFloat(document.getElementById('inv-con-cost').value) || 0,
+      unit: 'Unidad',
+      status: 'ok'
+    };
+    if (id) itemData.id = id;
+
+    dbService.saveConsumible(itemData);
+    renderInventoryConsumibles();
+    closeInventoryModal();
+
+    if (window.SecuritySuite && window.SecuritySuite.toast) {
+      window.SecuritySuite.toast('Insumo registrado y actualizado en el inventario.', 'success', 'Inventario Guardado');
+    } else {
+      alert('¡Insumo guardado con éxito!');
+    }
+  };
+
+  window.deleteConsumableItem = async function(id) {
+    const proceed = window.SecuritySuite && window.SecuritySuite.confirm
+      ? await window.SecuritySuite.confirm('¿Desea eliminar este insumo del stock maestro de mantenimiento?', 'Eliminar Insumo', 'Eliminar', 'Cancelar')
+      : confirm('¿Eliminar este insumo del inventario?');
+    if (!proceed) return;
+
+    dbService.deleteConsumible(id);
+    renderInventoryConsumibles();
+    if (window.SecuritySuite && window.SecuritySuite.toast) {
+      window.SecuritySuite.toast('Insumo removido del inventario.', 'info', 'Inventario');
+    }
+  };
+
+  window.deleteActivoFijoItem = async function(id) {
+    const proceed = window.SecuritySuite && window.SecuritySuite.confirm
+      ? await window.SecuritySuite.confirm('¿Confirma la baja definitiva de este activo fijo de la Sucesión Mario Sánchez?', 'Baja de Activo', 'Confirmar Baja', 'Cancelar')
+      : confirm('¿Dar de baja este activo fijo?');
+    if (!proceed) return;
+
+    dbService.deleteActivoFijo(id);
+    renderInventoryActivos();
+    if (window.SecuritySuite && window.SecuritySuite.toast) {
+      window.SecuritySuite.toast('Activo fijo dado de baja del inventario patrimonial.', 'info', 'Activo Removido');
+    }
+  };
+
+  window.handleSaveKardex = function(e) {
+    e.preventDefault();
+    const select = document.getElementById('inv-kdx-item');
+    const selectedOpt = select.options[select.selectedIndex];
+    const itemCode = select.value;
+    const itemName = selectedOpt ? selectedOpt.getAttribute('data-name') : itemCode;
+
+    const mov = {
+      type: document.getElementById('inv-kdx-type').value,
+      item_code: itemCode,
+      item_name: itemName,
+      quantity: parseFloat(document.getElementById('inv-kdx-qty').value) || 1,
+      destination: document.getElementById('inv-kdx-dest').value.trim(),
+      responsible: document.getElementById('inv-kdx-resp').value.trim(),
+      reference_document: document.getElementById('inv-kdx-doc').value.trim().toUpperCase(),
+      timestamp: new Date().toISOString()
+    };
+
+    dbService.addKardexMovimiento(mov);
+    renderInventory();
+    closeInventoryModal();
+
+    if (window.SecuritySuite && window.SecuritySuite.toast) {
+      window.SecuritySuite.toast(`Movimiento de ${mov.type} asentado y stock recalculado automáticamente.`, 'success', 'Kardex Actualizado');
+    } else {
+      alert(`Movimiento de ${mov.type} registrado en Kardex.`);
+    }
+  };
+
   // Render inicial
   renderAll();
 });
+
