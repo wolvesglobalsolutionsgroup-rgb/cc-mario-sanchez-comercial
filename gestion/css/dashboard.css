@@ -1731,3 +1731,220 @@ select.form-control optgroup {
 .pay-origin-pill:active {
   transform: scale(0.98);
 }
+
+/* ==============================================================================
+ * NUEVOS ESTILOS: FICHA INTEGRAL DE INQUILINO & DRAWER EJECUTIVO
+ * ============================================================================== */
+.dossier-window {
+  max-width: 900px !important;
+  width: 95% !important;
+  border: 1px solid var(--border-subtle) !important;
+  background: var(--modal-bg) !important;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.75), 0 0 35px var(--border-subtle) !important;
+  border-radius: var(--radius-lg) !important;
+  overflow: hidden;
+}
+
+.dossier-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(245, 158, 11, 0.04) 100%);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+}
+
+.dossier-avatar {
+  width: 58px;
+  height: 58px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #04070d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 900;
+  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.35);
+  flex-shrink: 0;
+}
+
+.dossier-quick-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  padding: 16px 24px;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.dossier-stat-chip {
+  padding: 10px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.dossier-stat-chip:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-focus);
+}
+
+.dossier-stat-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--txt-muted);
+}
+
+.dossier-stat-val {
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--txt-primary);
+}
+
+.dossier-tabs-nav {
+  display: flex;
+  gap: 4px;
+  padding: 0 24px;
+  background: rgba(0, 0, 0, 0.15);
+  border-bottom: 1px solid var(--border-subtle);
+  overflow-x: auto;
+}
+
+.dossier-tab-btn {
+  padding: 12px 18px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--txt-secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.dossier-tab-btn:hover {
+  color: var(--txt-primary);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.dossier-tab-btn.active {
+  color: var(--amber);
+  border-bottom-color: var(--amber);
+  background: rgba(245, 158, 11, 0.05);
+  font-weight: 700;
+}
+
+.dossier-tab-panel {
+  display: none;
+  padding: 20px 24px;
+  animation: fadeInPanel 0.25s ease-out;
+}
+
+.dossier-tab-panel.active {
+  display: block;
+}
+
+@keyframes fadeInPanel {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dossier-footer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: rgba(0, 0, 0, 0.25);
+  border-top: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* ==============================================================================
+ * AGING REPORT (ANTIGÜEDAD DE DEUDA 30 / 60 / 90+ DÍAS)
+ * ============================================================================== */
+.aging-report-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 18px 22px;
+  margin-top: 18px;
+  box-shadow: var(--shadow-card);
+  transition: border-color 0.2s;
+}
+
+.aging-report-card:hover {
+  border-color: var(--border-focus);
+}
+
+.aging-bar-track {
+  width: 100%;
+  height: 14px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  display: flex;
+  margin: 14px 0 16px;
+  border: 1px solid var(--border-subtle);
+}
+
+.aging-bar-segment {
+  height: 100%;
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.aging-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.aging-stat-card {
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.aging-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+}
+
+.aging-stat-current::before { background: var(--emerald); }
+.aging-stat-30::before { background: var(--amber); }
+.aging-stat-60::before { background: #f97316; }
+.aging-stat-90::before { background: var(--rose); }
+
+.aging-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+

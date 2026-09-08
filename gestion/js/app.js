@@ -684,6 +684,89 @@ document.addEventListener('DOMContentLoaded', () => {
         netCard.style.display = 'none';
       }
     }
+
+    // 7. Aging Report (Antigüedad de Cuentas por Cobrar - 30/60/90+ días)
+    renderAgingReport(invoices, currentRole);
+  }
+
+  // C. AGING REPORT (ANTIGÜEDAD DE DEUDA EJECUTIVA - ESTILO TIME TO PROGRAM)
+  function renderAgingReport(invoices, currentRole) {
+    const reportCard = document.getElementById('aging-report-section');
+    if (!reportCard) return;
+    if (currentRole !== 'admin') {
+      reportCard.style.display = 'none';
+      return;
+    }
+    reportCard.style.display = '';
+
+    const pendingInvoices = invoices.filter(i => i.status !== 'pagado');
+    const now = new Date();
+
+    let bucketCurrent = { count: 0, usd: 0 }; // Al día / corriente
+    let bucket30 = { count: 0, usd: 0 };      // 1 a 30 días
+    let bucket60 = { count: 0, usd: 0 };      // 31 a 60 días
+    let bucket90 = { count: 0, usd: 0 };      // Más de 60 días (Mora Crítica)
+
+    pendingInvoices.forEach(inv => {
+      const dueDate = new Date(inv.due_date || now);
+      const diffTime = now.getTime() - dueDate.getTime();
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      const amount = inv.total_usd || 0;
+
+      if (diffDays <= 0) {
+        bucketCurrent.count++;
+        bucketCurrent.usd += amount;
+      } else if (diffDays <= 30) {
+        bucket30.count++;
+        bucket30.usd += amount;
+      } else if (diffDays <= 60) {
+        bucket60.count++;
+        bucket60.usd += amount;
+      } else {
+        bucket90.count++;
+        bucket90.usd += amount;
+      }
+    });
+
+    const totalOverdueSum = bucketCurrent.usd + bucket30.usd + bucket60.usd + bucket90.usd;
+
+    // Distribución porcentual en la barra visual
+    const pctCurrent = totalOverdueSum > 0 ? Math.max(3, (bucketCurrent.usd / totalOverdueSum) * 100) : 25;
+    const pct30 = totalOverdueSum > 0 ? Math.max(3, (bucket30.usd / totalOverdueSum) * 100) : 25;
+    const pct60 = totalOverdueSum > 0 ? Math.max(3, (bucket60.usd / totalOverdueSum) * 100) : 25;
+    const pct90 = totalOverdueSum > 0 ? Math.max(3, (bucket90.usd / totalOverdueSum) * 100) : 25;
+
+    const barCurrent = document.getElementById('aging-bar-current');
+    const bar30 = document.getElementById('aging-bar-30');
+    const bar60 = document.getElementById('aging-bar-60');
+    const bar90 = document.getElementById('aging-bar-90');
+
+    if (barCurrent) barCurrent.style.width = `${pctCurrent}%`;
+    if (bar30) bar30.style.width = `${pct30}%`;
+    if (bar60) bar60.style.width = `${pct60}%`;
+    if (bar90) bar90.style.width = `${pct90}%`;
+
+    const formatBs = (usd) => {
+      try {
+        return 'Bs. ' + financialEngine.convert(usd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      } catch (e) {
+        return 'Bs. 0,00';
+      }
+    };
+
+    const updateAgingBucket = (suffix, bucket) => {
+      const elVal = document.getElementById(`aging-val-${suffix}`);
+      const elVes = document.getElementById(`aging-ves-${suffix}`);
+      const elCount = document.getElementById(`aging-count-${suffix}`);
+      if (elVal) elVal.innerText = formatMoney(bucket.usd);
+      if (elVes) elVes.innerText = formatBs(bucket.usd);
+      if (elCount) elCount.innerText = `${bucket.count} ${bucket.count === 1 ? 'cuota' : 'cuotas'}`;
+    };
+
+    updateAgingBucket('current', bucketCurrent);
+    updateAgingBucket('30', bucket30);
+    updateAgingBucket('60', bucket60);
+    updateAgingBucket('90', bucket90);
   }
 
   // B. DIRECTORIO DE INQUILINOS & LOCALES
@@ -2211,40 +2294,141 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadConfigFields();
 
-  // 4. Expediente de Inquilino
+  let currentDossierTenantId = null;
+
+  window.switchDossierTab = function(tabName) {
+    const tabs = ['overview', 'contract', 'history'];
+    tabs.forEach(t => {
+      const btn = document.getElementById(`tab-btn-dossier-${t}`);
+      const panel = document.getElementById(`panel-dossier-${t}`);
+      if (btn) btn.classList.toggle('active', t === tabName);
+      if (panel) panel.classList.toggle('active', t === tabName);
+    });
+  };
+
+  window.closeDossierModal = function() {
+    window.closeModal('modal-dossier');
+  };
+
+  window.openDossierQuickPay = function() {
+    if (!currentDossierTenantId) return;
+    const invoices = dbService.getInvoices().filter(i => i.tenant_id === currentDossierTenantId && i.status !== 'pagado');
+    window.closeDossierModal();
+    if (invoices.length > 0) {
+      window.openPaymentModal(invoices[0].id);
+    } else {
+      window.openPaymentModal();
+    }
+  };
+
+  window.openDossierWhatsApp = function() {
+    if (!currentDossierTenantId) return;
+    window.closeDossierModal();
+    window.openWhatsAppModal(currentDossierTenantId);
+  };
+
+  // 4. Ficha Integral y Expediente Ejecutivo de Inquilino (Estilo Time To Program)
   window.openTenantDossier = function(tenantId) {
+    currentDossierTenantId = tenantId;
     const tenant = dbService.getTenants().find(t => t.id === tenantId);
     if (!tenant) return;
     const contract = dbService.getContracts().find(c => c.tenant_id === tenantId);
+    const unit = dbService.getUnits().find(u => u.code === tenant.unit_code);
     const ext = VenezuelaLegal.calculateLegalExtension(1);
 
-    document.getElementById('dossier-company').innerText = tenant.business_name;
-    document.getElementById('dossier-trade').innerText = tenant.trade_name || 'N/A';
-    document.getElementById('dossier-rif').innerText = tenant.rif;
-    document.getElementById('dossier-rep').innerText = `${tenant.legal_rep_name} (C.I. ${tenant.legal_rep_dni})`;
-    document.getElementById('dossier-unit').innerText = tenant.unit_code;
-    document.getElementById('dossier-activity').innerText = tenant.commercial_activity;
-    document.getElementById('dossier-contact').innerText = `${tenant.phone} | WA: ${tenant.whatsapp} | ${tenant.email}`;
+    // Monograma Avatar (iniciales de la razón social)
+    const words = (tenant.business_name || 'CC').trim().split(/\s+/);
+    const monogram = words.length > 1 
+      ? (words[0][0] + words[1][0]).toUpperCase() 
+      : (words[0].substring(0, 2)).toUpperCase();
+    const avatarEl = document.getElementById('dossier-avatar');
+    if (avatarEl) avatarEl.innerText = monogram;
 
-    if (contract) {
-      document.getElementById('dossier-contract-num').innerText = contract.contract_number;
-      document.getElementById('dossier-contract-dates').innerText = `${contract.start_date} al ${contract.end_date}`;
-      document.getElementById('dossier-contract-rent').innerText = formatMoney(contract.rent_usd) + '/mes';
-      document.getElementById('dossier-contract-deposit').innerText = `$${contract.deposit_usd.toLocaleString()} USD (${contract.deposit_months} meses - Límite legal Art. 19)`;
-      document.getElementById('dossier-legal-extension').innerText = ext.description;
+    // Encabezado
+    const compEl = document.getElementById('dossier-company');
+    if (compEl) compEl.innerText = tenant.business_name;
+    const tradeEl = document.getElementById('dossier-trade');
+    if (tradeEl) tradeEl.innerText = tenant.trade_name ? `«${tenant.trade_name}»` : 'Sin Denominación Comercial';
+    const rifEl = document.getElementById('dossier-rif');
+    if (rifEl) rifEl.innerText = tenant.rif;
+    const unitBadgeEl = document.getElementById('dossier-unit-badge');
+    if (unitBadgeEl) unitBadgeEl.innerText = tenant.unit_code;
+    const actInlineEl = document.getElementById('dossier-activity-inline');
+    if (actInlineEl) actInlineEl.innerText = `• ${tenant.commercial_activity || 'Comercial'}`;
+
+    // Facturas del inquilino y métricas financieras
+    const tenantInvoices = dbService.getInvoices().filter(i => i.tenant_id === tenantId);
+    tenantInvoices.sort((a, b) => {
+      if (b.period_year !== a.period_year) return b.period_year - a.period_year;
+      return b.period_month - a.period_month;
+    });
+
+    const totalBilled = tenantInvoices.reduce((acc, i) => acc + (i.total_usd || 0), 0);
+    const balanceOwed = tenantInvoices.filter(i => i.status !== 'pagado').reduce((acc, i) => acc + (i.total_usd || 0), 0);
+    const rentUsd = contract ? contract.rent_usd : (unit ? unit.base_rent_usd : 0);
+    const aliquot = unit ? (unit.condo_aliquot * 100).toFixed(1) + '%' : '0.0%';
+
+    const statBilledEl = document.getElementById('dossier-stat-billed');
+    if (statBilledEl) statBilledEl.innerText = formatMoney(totalBilled);
+    
+    const statBalEl = document.getElementById('dossier-stat-balance');
+    if (statBalEl) {
+      statBalEl.innerText = formatMoney(balanceOwed);
+      statBalEl.style.color = balanceOwed > 0 ? 'var(--rose)' : 'var(--emerald)';
     }
 
-    // Poblar Historial Mensual del Cliente / Inquilino
+    const statRentEl = document.getElementById('dossier-stat-rent');
+    if (statRentEl) statRentEl.innerText = formatMoney(rentUsd);
+
+    const statAliEl = document.getElementById('dossier-stat-aliquot');
+    if (statAliEl) statAliEl.innerText = aliquot;
+
+    // Tab 1: Datos & Representante
+    const repEl = document.getElementById('dossier-rep');
+    if (repEl) repEl.innerText = `${tenant.legal_rep_name} (C.I. ${tenant.legal_rep_dni})`;
+    const actEl = document.getElementById('dossier-activity');
+    if (actEl) actEl.innerText = tenant.commercial_activity;
+    const unitEl = document.getElementById('dossier-unit');
+    if (unitEl) unitEl.innerText = tenant.unit_code;
+    const areaEl = document.getElementById('dossier-area-m2');
+    if (areaEl) areaEl.innerText = `${unit ? unit.area_m2.toLocaleString() : '0'} m²`;
+    const contEl = document.getElementById('dossier-contact');
+    if (contEl) contEl.innerHTML = `<strong>Teléfono:</strong> ${escapeHtml(tenant.phone)}<br><strong>WhatsApp:</strong> ${escapeHtml(tenant.whatsapp)}<br><strong>Correo:</strong> ${escapeHtml(tenant.email)}`;
+
+    const waLinkEl = document.getElementById('dossier-contact-wa-link');
+    if (waLinkEl) {
+      const cleanWa = (tenant.whatsapp || '').replace(/[^0-9]/g, '');
+      waLinkEl.href = cleanWa ? `https://wa.me/${cleanWa}` : '#';
+      waLinkEl.style.display = cleanWa ? 'inline-flex' : 'none';
+    }
+
+    // Tab 2: Contrato
+    if (contract) {
+      const cNum = document.getElementById('dossier-contract-num');
+      if (cNum) cNum.innerText = contract.contract_number;
+      const cDates = document.getElementById('dossier-contract-dates');
+      if (cDates) cDates.innerText = `${contract.start_date} al ${contract.end_date}`;
+      const cRent = document.getElementById('dossier-contract-rent');
+      if (cRent) cRent.innerText = formatMoney(contract.rent_usd) + ' / mes';
+      const cDep = document.getElementById('dossier-contract-deposit');
+      if (cDep) cDep.innerText = `$${contract.deposit_usd.toLocaleString()} USD (${contract.deposit_months} meses - Límite legal Art. 19)`;
+      const cExt = document.getElementById('dossier-legal-extension');
+      if (cExt) cExt.innerText = ext.description;
+    }
+
+    const dossierContractBtn = document.getElementById('btn-dossier-view-contract');
+    if (dossierContractBtn) {
+      dossierContractBtn.onclick = () => {
+        window.closeDossierModal();
+        window.viewTenantContract(tenantId);
+      };
+    }
+
+    // Tab 3: Historial
     const historyTbody = document.getElementById('dossier-history-table-body');
     const solvencyBadge = document.getElementById('dossier-solvency-badge');
     if (historyTbody) {
       historyTbody.innerHTML = '';
-      const tenantInvoices = dbService.getInvoices().filter(i => i.tenant_id === tenantId);
-      tenantInvoices.sort((a, b) => {
-        if (b.period_year !== a.period_year) return b.period_year - a.period_year;
-        return b.period_month - a.period_month;
-      });
-
       const hasOverdue = tenantInvoices.some(i => i.status === 'en_mora');
       const hasPending = tenantInvoices.some(i => i.status === 'pendiente' || i.status === 'verificando');
 
@@ -2262,7 +2446,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (tenantInvoices.length === 0) {
-        historyTbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--txt-muted);font-style:italic;">No registra historial previo.</td></tr>`;
+        historyTbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:18px;color:var(--txt-muted);font-style:italic;">No registra facturación previa.</td></tr>`;
       } else {
         tenantInvoices.forEach(inv => {
           const tr = document.createElement('tr');
@@ -2273,20 +2457,25 @@ document.addEventListener('DOMContentLoaded', () => {
           else stBadge = '<span class="status-pill pill-warning" style="font-size:10px;padding:2px 6px;"><i class="fa-solid fa-hourglass"></i> Pendiente</span>';
 
           const dateDetail = inv.paid_at ? `Pagado: ${escapeHtml(inv.paid_at)}` : `Vence: ${escapeHtml(inv.due_date)}`;
+          let equivBs = 'Bs. 0,00';
+          try {
+            equivBs = 'Bs. ' + financialEngine.convert(inv.total_usd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          } catch(e) {}
 
           tr.innerHTML = `
             <td><strong style="color:var(--amber);">${inv.period_month}/${inv.period_year}</strong></td>
-            <td><span style="font-family:monospace;">${escapeHtml(inv.invoice_number)}</span></td>
+            <td><span style="font-family:monospace;font-weight:700;">${escapeHtml(inv.invoice_number)}</span></td>
             <td><strong>${formatMoney(inv.total_usd)}</strong></td>
+            <td><span style="font-size:11px;color:var(--txt-muted);">${equivBs}</span></td>
             <td><span style="font-size:11px;color:var(--txt-secondary);">${dateDetail}</span></td>
             <td>${stBadge}</td>
             <td>
               <div style="display:flex;gap:4px;">
-                <button type="button" class="btn-action-icon" style="width:26px;height:26px;font-size:11px;" title="Imprimir Recibo" data-click="printReceipt('${inv.id}')">
-                  <i class="fa-solid fa-print"></i>
+                <button type="button" class="btn-action-icon" style="width:26px;height:26px;font-size:11px;" title="Ver Recibo Oficial" data-click="printReceipt('${inv.id}')">
+                  <i class="fa-solid fa-receipt"></i>
                 </button>
                 ${inv.receipt_proof ? `
-                  <button type="button" class="btn-action-icon" style="width:26px;height:26px;font-size:11px;color:var(--cyan);border-color:var(--cyan);" title="Ver Comprobante" data-click="viewReceiptProof('${inv.id}')">
+                  <button type="button" class="btn-action-icon" style="width:26px;height:26px;font-size:11px;color:var(--cyan);border-color:var(--cyan);" title="Ver Comprobante Bancario" data-click="viewReceiptProof('${inv.id}')">
                     <i class="fa-solid fa-paperclip"></i>
                   </button>
                 ` : ''}
@@ -2298,92 +2487,44 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    const dossierContractBtn = document.getElementById('btn-dossier-view-contract');
-    if (dossierContractBtn) {
-      dossierContractBtn.onclick = () => {
-        window.viewTenantContract(tenantId);
-      };
-    }
-
+    // Restablecer a la primera pestaña
+    window.switchDossierTab('overview');
     window.openModal('modal-dossier');
   };
 
-  // 5. Imprimir Recibo Cuatrimoneda
+  // 5. Visor de Recibo Oficial / Impresión Editorial (Estilo Time To Program)
   window.printReceipt = function(invoiceId) {
     const inv = dbService.getInvoices().find(i => i.id === invoiceId);
     if (!inv) return;
     const tenant = dbService.getTenants().find(t => t.id === inv.tenant_id);
 
-    const bcvRate = financialEngine.getRates().VES.toFixed(2);
-    const totalBs = financialEngine.convert(inv.total_usd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
-    const totalEur = financialEngine.convert(inv.total_usd, 'USD', 'EUR').toLocaleString('de-DE', { minimumFractionDigits: 2 });
+    const receiptObj = {
+      receipt_number: inv.receipt_number || `REC-${inv.invoice_number}`,
+      invoice_number: inv.invoice_number,
+      tenant_name: tenant ? tenant.business_name : 'Inquilino Comercial',
+      tenant_rif: tenant ? tenant.rif : 'N/A',
+      unit_code: inv.unit_code,
+      period_month: inv.period_month,
+      period_year: inv.period_year,
+      rent_usd: inv.rent_usd || 0,
+      condo_usd: inv.condo_usd || 0,
+      total_usd: inv.total_usd || 0,
+      payment_method: inv.payment_method || (inv.status === 'pagado' ? 'Transferencia Bancaria Nacional' : 'Pendiente de Conciliación'),
+      reference_number: inv.reference_number || (inv.status === 'pagado' ? 'REF-CONCILIADA' : 'PENDIENTE-PAGO'),
+      approved_at: inv.paid_at || inv.due_date || new Date().toISOString(),
+      issuing_bank: inv.issuing_bank || 'Banesco / BDV / Mercantil',
+      origin_phone: tenant ? tenant.phone : '',
+      origin_doc: tenant ? tenant.legal_rep_dni : '',
+      approved_by: 'Administración CCMS',
+      status: inv.status,
+      snapshot: {
+        bcv_rate_applied: financialEngine.getRates().VES
+      }
+    };
 
-    const content = `
-      <div style="font-family: Arial, sans-serif; padding: 25px; color: #000; max-width: 680px; margin: 0 auto;">
-        <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 16px;">
-          <h2 style="margin: 0; font-size: 18px;">CENTRO COMERCIAL MARIO SÁNCHEZ</h2>
-          <p style="margin: 3px 0; font-size: 12px;">Av. Municipal, Puerto La Cruz, Estado Anzoátegui, Venezuela</p>
-          <h3 style="margin: 8px 0 0; font-size: 14px; color: #b45309;">RECIBO OFICIAL DE COBRANZA — N° ${inv.invoice_number}</h3>
-        </div>
-
-        <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 16px;">
-          <div>
-            <strong>ARRENDATARIO:</strong> ${tenant ? tenant.business_name : 'N/A'}<br>
-            <strong>RIF:</strong> ${tenant ? tenant.rif : 'N/A'}<br>
-            <strong>UNIDAD COMERCIAL:</strong> ${inv.unit_code}
-          </div>
-          <div style="text-align: right;">
-            <strong>PERÍODO:</strong> ${inv.period_month}/${inv.period_year}<br>
-            <strong>FECHA VALOR:</strong> ${inv.due_date}<br>
-            <strong>ESTADO:</strong> ${inv.status.toUpperCase()}
-          </div>
-        </div>
-
-        <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px;">
-          <thead>
-            <tr style="background: #f1f5f9; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1;">
-              <th style="padding: 8px; text-align: left;">Concepto</th>
-              <th style="padding: 8px; text-align: right;">Monto USD</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">Canon Fijo de Arrendamiento Comercial (Art. 32 G.O. 40.418)</td>
-              <td style="padding: 8px; text-align: right; border-bottom: 1px solid #e2e8f0;">$${inv.rent_usd.toFixed(2)}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">Alícuota Gastos Comunes / Condominio</td>
-              <td style="padding: 8px; text-align: right; border-bottom: 1px solid #e2e8f0;">$${inv.condo_usd.toFixed(2)}</td>
-            </tr>
-            <tr style="font-weight: bold; background: #f8fafc;">
-              <td style="padding: 10px 8px;">TOTAL USD PACTADO:</td>
-              <td style="padding: 10px 8px; text-align: right;">$${inv.total_usd.toFixed(2)} USD</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; font-size: 11.5px; margin-bottom: 16px;">
-          <strong>Equivalencias Cuatrimoneda a la Fecha Valor:</strong>
-          <div style="margin-top: 4px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
-            <div>• Bolívares (Tasa Oficial BCV ${bcvRate}): <strong>Bs. ${totalBs}</strong></div>
-            <div>• Euros (€): <strong>€ ${totalEur} EUR</strong></div>
-            <div>• Criptoactivos (USDT TRC20): <strong>USDT ${inv.total_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong></div>
-            <div>• Dólares ($): <strong>$ ${inv.total_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD</strong></div>
-          </div>
-        </div>
-
-        <div style="font-size: 10px; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 10px; text-align: center;">
-          Documento emitido de conformidad con la Ley de Regulación del Arrendamiento Inmobiliario para el Uso Comercial.<br>
-          Administración del Centro Comercial Mario Sánchez — Puerto La Cruz, Venezuela.
-        </div>
-      </div>
-    `;
-
-    const printWin = window.open('', '_blank', 'width=750,height=650');
-    printWin.document.write(content);
-    printWin.document.close();
-    printWin.focus();
-    setTimeout(() => { printWin.print(); }, 250);
+    if (window.openReceiptPreview) {
+      window.openReceiptPreview(receiptObj);
+    }
   };
 
   // =========================================================================

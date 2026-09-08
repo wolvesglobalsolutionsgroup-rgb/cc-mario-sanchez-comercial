@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Dashboard Stylesheet (Light & Dark Dual Mode) -->
-  <link rel="stylesheet" href="css/dashboard.css?v=2.7.0">
+  <link rel="stylesheet" href="css/dashboard.css?v=2.8.0">
 
   <!-- Script Inmediato Anti-FOUC (Cero parpadeo entre Dark y Light Mode) -->
   <script src="js/theme-init.js?v=2.7.0"></script>
@@ -233,6 +233,68 @@
           </div>
           <div class="kpi-val" id="kpi-netprofit">$0.00</div>
           <div class="kpi-sub">Recaudado - Egresos</div>
+        </div>
+      </section>
+
+      <!-- AGING REPORT: ANTIGÜEDAD DE CUENTAS POR COBRAR (ESTILO TIME TO PROGRAM) -->
+      <section class="aging-report-card" id="aging-report-section" data-roles="admin">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <div style="font-family: var(--font-heading); font-size: 15px; font-weight: 800; color: var(--txt-primary); display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-chart-simple" style="color: var(--amber);"></i> Aging Report — Antigüedad de Cuentas por Cobrar
+            </div>
+            <div style="font-size: 12px; color: var(--txt-secondary);">Segmentación de facturación pendiente por tramos de vencimiento</div>
+          </div>
+          <div style="font-size: 11px; color: var(--txt-muted); display: flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-shield-halved" style="color: var(--emerald);"></i> Cumplimiento G.O. 40.418
+          </div>
+        </div>
+
+        <!-- Barra visual segmentada proporcional -->
+        <div class="aging-bar-track" id="aging-progress-bar">
+          <div class="aging-bar-segment" id="aging-bar-current" style="width: 50%; background: var(--emerald);" title="Al día"></div>
+          <div class="aging-bar-segment" id="aging-bar-30" style="width: 25%; background: var(--amber);" title="1-30 días"></div>
+          <div class="aging-bar-segment" id="aging-bar-60" style="width: 15%; background: #f97316;" title="31-60 días"></div>
+          <div class="aging-bar-segment" id="aging-bar-90" style="width: 10%; background: var(--rose);" title="+60 días"></div>
+        </div>
+
+        <!-- 4 Tarjetas de desglose -->
+        <div class="aging-grid">
+          <div class="aging-stat-card aging-stat-current">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span class="dossier-stat-label"><span class="aging-legend-dot" style="background: var(--emerald);"></span>Al Día / Corriente</span>
+              <span class="status-pill pill-active" style="font-size: 9.5px; padding: 1px 6px;" id="aging-count-current">0 cuotas</span>
+            </div>
+            <div class="dossier-stat-val" id="aging-val-current" style="color: var(--emerald);">$0.00</div>
+            <div style="font-size: 10.5px; color: var(--txt-muted);" id="aging-ves-current">Bs. 0,00</div>
+          </div>
+
+          <div class="aging-stat-card aging-stat-30">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span class="dossier-stat-label"><span class="aging-legend-dot" style="background: var(--amber);"></span>1 a 30 Días</span>
+              <span class="status-pill pill-warning" style="font-size: 9.5px; padding: 1px 6px;" id="aging-count-30">0 cuotas</span>
+            </div>
+            <div class="dossier-stat-val" id="aging-val-30" style="color: var(--amber);">$0.00</div>
+            <div style="font-size: 10.5px; color: var(--txt-muted);" id="aging-ves-30">Bs. 0,00</div>
+          </div>
+
+          <div class="aging-stat-card aging-stat-60">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span class="dossier-stat-label"><span class="aging-legend-dot" style="background: #f97316;"></span>31 a 60 Días</span>
+              <span class="status-pill" style="font-size: 9.5px; padding: 1px 6px; background: rgba(249,115,22,0.15); color: #f97316;" id="aging-count-60">0 cuotas</span>
+            </div>
+            <div class="dossier-stat-val" id="aging-val-60" style="color: #f97316;">$0.00</div>
+            <div style="font-size: 10.5px; color: var(--txt-muted);" id="aging-ves-60">Bs. 0,00</div>
+          </div>
+
+          <div class="aging-stat-card aging-stat-90">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span class="dossier-stat-label"><span class="aging-legend-dot" style="background: var(--rose);"></span>+60 Días (Mora Crítica)</span>
+              <span class="status-pill pill-overdue" style="font-size: 9.5px; padding: 1px 6px;" id="aging-count-90">0 cuotas</span>
+            </div>
+            <div class="dossier-stat-val" id="aging-val-90" style="color: var(--rose);">$0.00</div>
+            <div style="font-size: 10.5px; color: var(--txt-muted);" id="aging-ves-90">Bs. 0,00</div>
+          </div>
         </div>
       </section>
 
@@ -1081,67 +1143,157 @@
   </div>
 </div>
 
-<!-- MODAL 2: EXPEDIENTE DE INQUILINO -->
+<!-- MODAL 2: FICHA INTEGRAL DE INQUILINO & EXPEDIENTE EJECUTIVO (ESTILO TIME TO PROGRAM) -->
 <div class="modal-overlay" id="modal-dossier">
-  <div class="modal-window">
-    <div class="modal-header">
-      <h3 class="modal-title"><i class="fa-solid fa-folder-open" style="color: var(--amber);"></i> Expediente Jurídico del Arrendatario</h3>
-      <button class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+  <div class="modal-window dossier-window">
+    <div class="modal-header" style="border-bottom: none; padding-bottom: 0;">
+      <h3 class="modal-title"><i class="fa-solid fa-id-card-clip" style="color: var(--amber);"></i> Ficha Integral del Arrendatario</h3>
+      <button class="modal-close" data-click="closeDossierModal()"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <div class="modal-body" style="font-size: 13px;">
-      <div style="display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px;">
-        <h4 id="dossier-company" style="font-family: var(--font-heading); font-size: 16px; color: var(--txt-primary);"></h4>
-        <span style="color: var(--amber); font-size: 12px;" id="dossier-trade"></span>
-        <div style="color: var(--txt-secondary);">RIF: <strong id="dossier-rif" style="color: var(--txt-primary);"></strong></div>
-        <div style="color: var(--txt-secondary);">Representante: <strong id="dossier-rep" style="color: var(--txt-primary);"></strong></div>
-        <div style="color: var(--txt-secondary);">Espacio Asignado: <strong id="dossier-unit" style="color: var(--amber);"></strong></div>
-        <div style="color: var(--txt-secondary);">Actividad Comercial: <span id="dossier-activity"></span></div>
-        <div style="color: var(--txt-secondary); margin-top: 4px;" id="dossier-contact"></div>
-      </div>
 
-      <div style="background: var(--bg-card); border: 1px solid var(--border-focus); border-radius: 8px; padding: 12px;">
-        <h5 style="font-family: var(--font-heading); color: var(--amber); font-size: 12px; text-transform: uppercase; margin-bottom: 6px;">
-          <i class="fa-solid fa-scale-balanced"></i> Condiciones Contractuales (G.O. 40.418)
-        </h5>
-        <div>Contrato N°: <strong id="dossier-contract-num" style="color: var(--txt-primary);"></strong></div>
-        <div>Vigencia: <span id="dossier-contract-dates"></span></div>
-        <div>Canon Mensual: <strong id="dossier-contract-rent" style="color: var(--emerald);"></strong></div>
-        <div>Depósito en Garantía: <span id="dossier-contract-deposit"></span></div>
-        <div style="margin-top: 6px; font-size: 11.5px; color: var(--txt-secondary); border-top: 1px dashed var(--border-subtle); padding-top: 6px;">
-          Prórroga Legal: <span id="dossier-legal-extension" style="color: var(--amber); font-weight: 600;"></span>
+    <!-- HERO PROFILE HEADER -->
+    <div class="dossier-hero">
+      <div class="dossier-avatar" id="dossier-avatar">MS</div>
+      <div style="flex: 1; min-width: 200px;">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <h4 id="dossier-company" style="font-family: var(--font-heading); font-size: 18px; font-weight: 800; color: var(--txt-primary); margin: 0;"></h4>
+          <span id="dossier-solvency-badge" class="status-pill pill-active"><i class="fa-solid fa-check"></i> Solvente</span>
         </div>
-        <div style="margin-top: 10px; display: flex; justify-content: flex-end;">
-          <button type="button" id="btn-dossier-view-contract" class="btn-currency-toggle" style="color: var(--cyan); border-color: var(--cyan); font-size: 11.5px; padding: 5px 10px;">
-            <i class="fa-solid fa-file-signature"></i> Ver Contrato Legal de Arrendamiento
+        <div style="font-size: 12px; color: var(--amber); margin-top: 2px;" id="dossier-trade"></div>
+        <div style="font-size: 11.5px; color: var(--txt-secondary); margin-top: 4px; display: flex; gap: 14px; flex-wrap: wrap;">
+          <span>RIF: <strong id="dossier-rif" style="color: var(--txt-primary);"></strong></span>
+          <span>Local: <strong id="dossier-unit-badge" style="color: var(--amber); font-family: monospace;"></strong></span>
+          <span id="dossier-activity-inline" style="color: var(--txt-muted);"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUICK STATS BAR -->
+    <div class="dossier-quick-stats">
+      <div class="dossier-stat-chip">
+        <span class="dossier-stat-label">Total Facturado</span>
+        <span class="dossier-stat-val" id="dossier-stat-billed" style="color: var(--txt-primary);">$0.00</span>
+      </div>
+      <div class="dossier-stat-chip">
+        <span class="dossier-stat-label">Saldo Pendiente</span>
+        <span class="dossier-stat-val" id="dossier-stat-balance" style="color: var(--emerald);">$0.00</span>
+      </div>
+      <div class="dossier-stat-chip">
+        <span class="dossier-stat-label">Canon Mensual</span>
+        <span class="dossier-stat-val" id="dossier-stat-rent" style="color: var(--amber);">$0.00</span>
+      </div>
+      <div class="dossier-stat-chip">
+        <span class="dossier-stat-label">Alícuota Condominio</span>
+        <span class="dossier-stat-val" id="dossier-stat-aliquot" style="color: var(--cyan);">0.0%</span>
+      </div>
+    </div>
+
+    <!-- TABS NAVIGATION -->
+    <div class="dossier-tabs-nav">
+      <button type="button" class="dossier-tab-btn active" id="tab-btn-dossier-overview" data-click="switchDossierTab('overview')">
+        <i class="fa-solid fa-user-tie"></i> <span>Datos & Representante</span>
+      </button>
+      <button type="button" class="dossier-tab-btn" id="tab-btn-dossier-contract" data-click="switchDossierTab('contract')">
+        <i class="fa-solid fa-file-contract"></i> <span>Contrato Legal (G.O. 40.418)</span>
+      </button>
+      <button type="button" class="dossier-tab-btn" id="tab-btn-dossier-history" data-click="switchDossierTab('history')">
+        <i class="fa-solid fa-clock-rotate-left"></i> <span>Historial de Facturas & Pagos</span>
+      </button>
+    </div>
+
+    <!-- TAB 1: OVERVIEW & CONTACT -->
+    <div class="dossier-tab-panel active" id="panel-dossier-overview">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 14px;">
+          <div style="font-size: 11px; font-weight: 700; color: var(--amber); text-transform: uppercase; margin-bottom: 8px;">
+            <i class="fa-solid fa-signature"></i> Representación Legal
+          </div>
+          <div style="font-size: 13px; color: var(--txt-primary); font-weight: 700;" id="dossier-rep"></div>
+          <div style="font-size: 12px; color: var(--txt-secondary); margin-top: 4px;">Actividad: <span id="dossier-activity" style="color: var(--txt-primary);"></span></div>
+          <div style="font-size: 12px; color: var(--txt-secondary); margin-top: 4px;">Espacio: <strong id="dossier-unit" style="color: var(--amber);"></strong> (<span id="dossier-area-m2"></span>)</div>
+        </div>
+
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 14px;">
+          <div style="font-size: 11px; font-weight: 700; color: var(--emerald); text-transform: uppercase; margin-bottom: 8px;">
+            <i class="fa-solid fa-address-book"></i> Canales de Contacto Directo
+          </div>
+          <div style="font-size: 12.5px; color: var(--txt-primary);" id="dossier-contact"></div>
+          <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
+            <a id="dossier-contact-wa-link" href="#" target="_blank" class="btn-onboarding-cta" style="background: #25D366; border-color: #25D366; color: #fff; font-size: 11px; padding: 5px 12px; text-decoration: none;">
+              <i class="fa-brands fa-whatsapp"></i> Chat WhatsApp
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: CONTRACT CONDITIONS -->
+    <div class="dossier-tab-panel" id="panel-dossier-contract">
+      <div style="background: var(--bg-card); border: 1px solid var(--border-focus); border-radius: 8px; padding: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <h5 style="font-family: var(--font-heading); color: var(--amber); font-size: 13px; font-weight: 800; text-transform: uppercase; margin: 0;">
+            <i class="fa-solid fa-scale-balanced"></i> Condiciones Contractuales Conforme a G.O. 40.418
+          </h5>
+          <span class="status-pill pill-info" style="font-size: 10px;">Ley de Arrendamiento Comercial</span>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-size: 12.5px;">
+          <div>Contrato N°: <strong id="dossier-contract-num" style="color: var(--txt-primary); font-family: monospace;"></strong></div>
+          <div>Vigencia: <span id="dossier-contract-dates" style="color: var(--txt-primary);"></span></div>
+          <div>Canon Mensual: <strong id="dossier-contract-rent" style="color: var(--emerald);"></strong></div>
+          <div>Depósito en Garantía: <span id="dossier-contract-deposit" style="color: var(--txt-primary);"></span></div>
+        </div>
+
+        <div style="margin-top: 12px; font-size: 12px; color: var(--txt-secondary); border-top: 1px dashed var(--border-subtle); padding-top: 10px;">
+          <i class="fa-solid fa-clock-rotate-left" style="color: var(--amber);"></i> Prórroga Legal Asignada (Art. 25): 
+          <span id="dossier-legal-extension" style="color: var(--amber); font-weight: 700;"></span>
+        </div>
+
+        <div style="margin-top: 14px; display: flex; justify-content: flex-end; gap: 8px;">
+          <button type="button" id="btn-dossier-view-contract" class="btn-currency-toggle" style="color: var(--cyan); border-color: var(--cyan); font-size: 12px; padding: 7px 14px; font-weight: 700;">
+            <i class="fa-solid fa-file-signature"></i> Ver Contrato Legal Completo
           </button>
         </div>
       </div>
+    </div>
 
-      <!-- HISTORIAL MENSUAL COMPLETO DE CUOTAS Y PAGOS (SOCIEDAD ADMINISTRADORA) -->
-      <div style="margin-top: 10px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-          <h5 style="font-family: var(--font-heading); font-size: 12.5px; font-weight: 800; color: var(--txt-primary); text-transform: uppercase;">
-            <i class="fa-solid fa-clock-rotate-left" style="color: var(--cyan);"></i> Historial Mensual de Facturación & Cobranzas
-          </h5>
-          <span id="dossier-solvency-badge" class="status-pill pill-active"><i class="fa-solid fa-check"></i> Solvente</span>
-        </div>
-        <div class="table-responsive" style="max-height: 220px; overflow-y: auto; border: 1px solid var(--border-subtle); border-radius: 8px;">
-          <table class="modern-table" style="font-size: 11.5px;">
-            <thead>
-              <tr>
-                <th>Período</th>
-                <th>N° Recibo</th>
-                <th>Monto USD</th>
-                <th>Vencimiento / Pago</th>
-                <th>Estado</th>
-                <th>Acción</th>
-              </tr>
-            </thead>
-            <tbody id="dossier-history-table-body">
-              <!-- Injected via JS -->
-            </tbody>
-          </table>
-        </div>
+    <!-- TAB 3: INVOICES & PAYMENTS HISTORY -->
+    <div class="dossier-tab-panel" id="panel-dossier-history">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+        <span style="font-size: 12px; color: var(--txt-secondary);">Registro correlativo inmutable de cuotas, cobranzas y pagos</span>
+      </div>
+      <div class="table-responsive" style="max-height: 280px; overflow-y: auto; border: 1px solid var(--border-subtle); border-radius: 8px;">
+        <table class="modern-table" style="font-size: 12px;">
+          <thead>
+            <tr>
+              <th>Período</th>
+              <th>N° Recibo</th>
+              <th>Monto USD</th>
+              <th>Equiv. Bs. BCV</th>
+              <th>Vencimiento / Pago</th>
+              <th>Estado</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="dossier-history-table-body">
+            <!-- Injected via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- FOOTER ACTIONS -->
+    <div class="dossier-footer-actions">
+      <div style="display: flex; gap: 8px;">
+        <button type="button" class="btn-currency-toggle" data-click="closeDossierModal()">Cerrar Ficha</button>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button type="button" class="btn-onboarding-cta" id="dossier-btn-quick-pay" data-click="openDossierQuickPay()" style="background: var(--emerald); border-color: var(--emerald); color: #fff; font-weight: 700;">
+          <i class="fa-solid fa-file-invoice-dollar"></i> Registrar / Conciliar Pago
+        </button>
+        <button type="button" class="btn-onboarding-cta" id="dossier-btn-wa" data-click="openDossierWhatsApp()" style="background: #25D366; border-color: #25D366; color: #fff; font-weight: 700;">
+          <i class="fa-brands fa-whatsapp"></i> Notificar Cobranza
+        </button>
       </div>
     </div>
   </div>
@@ -1665,7 +1817,7 @@
 <script src="js/google-workspace.js?v=2.7.2" defer></script>
 <script src="js/notifications.js?v=2.7.2" defer></script>
 <script src="js/supabase-client.js?v=2.7.2" defer></script>
-<script src="js/ayuda-content.js?v=2.7.2" defer></script>
-<script src="js/app.js?v=2.7.2" defer></script>
+<script src="js/ayuda-content.js?v=2.8.0" defer></script>
+<script src="js/app.js?v=2.8.0" defer></script>
 </body>
 </html>
