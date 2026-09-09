@@ -1379,6 +1379,71 @@ class DatabaseService {
     this.saveData(data);
     return data.receiving_accounts;
   }
+
+  // ==============================================================================
+  // MÓDULO DE AUDITORÍA & TRAZABILIDAD DE MODIFICACIONES (AUDIT TRAIL)
+  // Registra quién realizó el cambio, cuándo, qué entidad y qué valores cambiaron
+  // ==============================================================================
+  logAuditAction({ action, entity, entity_id, entity_name, details, previous_state = null, new_state = null, user = null }) {
+    const data = this.getData();
+    if (!data.audit_trail) data.audit_trail = [];
+
+    let authorName = 'Sistema Automático';
+    let authorEmail = 'sistema@ccmariosanchez.com';
+    let authorRole = 'system';
+
+    if (user) {
+      authorName = user.display_name || user.name || authorName;
+      authorEmail = user.identifier || user.email || authorEmail;
+      authorRole = user.role || authorRole;
+    } else if (typeof window !== 'undefined' && window.AuthGuard && typeof window.AuthGuard.currentUser === 'function') {
+      const current = window.AuthGuard.currentUser();
+      if (current) {
+        authorName = current.display_name || authorName;
+        authorEmail = current.identifier || authorEmail;
+        authorRole = current.role || authorRole;
+      }
+    }
+
+    const logEntry = {
+      id: 'audit-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+      timestamp: new Date().toISOString(),
+      action: action || 'EDIT', // CREATE, UPDATE, DELETE, RECONCILE, DISPATCH
+      entity: entity || 'GENERAL', // TENANT, CONTRACT, EXPENSE, INVENTORY, KARDEX, SETTINGS
+      entity_id: entity_id || 'N/A',
+      entity_name: entity_name || entity_id || 'Registro',
+      details: details || `Modificación realizada en ${entity}`,
+      author_name: authorName,
+      author_email: authorEmail,
+      author_role: authorRole,
+      previous_state: previous_state ? JSON.parse(JSON.stringify(previous_state)) : null,
+      new_state: new_state ? JSON.parse(JSON.stringify(new_state)) : null
+    };
+
+    data.audit_trail.unshift(logEntry);
+    // Limitar historial a los últimos 500 eventos para optimizar espacio
+    if (data.audit_trail.length > 500) {
+      data.audit_trail = data.audit_trail.slice(0, 500);
+    }
+
+    this.saveData(data);
+    return logEntry;
+  }
+
+  getAuditLogs(limit = 100) {
+    const data = this.getData();
+    if (!data || !Array.isArray(data.audit_trail)) return [];
+    return data.audit_trail.slice(0, limit);
+  }
+
+  getAuditLogsForEntity(entity, entity_id = null) {
+    const logs = this.getAuditLogs(300);
+    return logs.filter(l => {
+      const matchEntity = (!entity || l.entity === entity);
+      const matchId = (!entity_id || l.entity_id === entity_id);
+      return matchEntity && matchId;
+    });
+  }
 }
 
 // Instancia global

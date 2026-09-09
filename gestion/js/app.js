@@ -3021,7 +3021,10 @@ document.addEventListener('DOMContentLoaded', () => {
       seniatTxtBtn.style.display = (type === 'seniat_compras') ? 'inline-flex' : 'none';
     }
 
-    if (type === 'solvencia') {
+    // Los informes que requieren seleccionar inquilino específico:
+    const requiresTenant = ['solvencia', 'finiquito_entrega', 'notificacion_mora'].includes(type);
+
+    if (requiresTenant) {
       if (periodGroup) periodGroup.style.display = 'none';
       if (tenantWrapper) tenantWrapper.style.display = 'block';
     } else {
@@ -3059,6 +3062,14 @@ document.addEventListener('DOMContentLoaded', () => {
           container.innerHTML = renderSeniatComprasReportHTML(month, year);
         } else if (type === 'conciliacion') {
           container.innerHTML = renderConciliacionReportHTML(month, year);
+        } else if (type === 'finiquito_entrega') {
+          container.innerHTML = renderFiniquitoEntregaReportHTML(tenantId);
+        } else if (type === 'retencion_iva') {
+          container.innerHTML = renderRetencionIvaReportHTML(month, year);
+        } else if (type === 'retencion_islr') {
+          container.innerHTML = renderRetencionIslrReportHTML(month, year);
+        } else if (type === 'notificacion_mora') {
+          container.innerHTML = renderNotificacionMoraReportHTML(tenantId);
         }
       } catch (err) {
         console.error('[REPORT ERROR]', err);
@@ -3087,9 +3098,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const rows = invoices.map((inv, idx) => {
       const t = tenants.find(item => item.id === inv.tenant_id) || { business_name: 'Inquilino', rif: 'N/A' };
-      totalFacturadoUsd += inv.total_usd;
-      if (inv.status === 'pagado') totalCobradoUsd += inv.total_usd;
-      else totalPendienteUsd += inv.total_usd;
+      const rentUsd = parseFloat(inv.rent_usd !== undefined ? inv.rent_usd : (inv.base_rent_usd || 0)) || 0;
+      const condoUsd = parseFloat(inv.condo_usd || 0) || 0;
+      const totalUsd = parseFloat(inv.total_usd !== undefined ? inv.total_usd : (rentUsd + condoUsd)) || 0;
+
+      totalFacturadoUsd += totalUsd;
+      if (inv.status === 'pagado') totalCobradoUsd += totalUsd;
+      else totalPendienteUsd += totalUsd;
 
       let stText = 'Pendiente';
       let stColor = '#d97706';
@@ -3097,7 +3112,7 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (inv.status === 'en_mora') { stText = 'En Mora'; stColor = '#dc2626'; }
       else if (inv.status === 'verificando') { stText = 'En Revisión'; stColor = '#2563eb'; }
 
-      const totalBs = financialEngine.convert(inv.total_usd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
+      const totalBs = financialEngine.convert(totalUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
 
       return `
         <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11.5px;">
@@ -3107,9 +3122,9 @@ document.addEventListener('DOMContentLoaded', () => {
             <div style="font-size: 10px; color: #64748b;">RIF: ${escapeHtml(t.rif)}</div>
           </td>
           <td style="padding: 8px 10px; font-weight: 700; color: #b45309;">${escapeHtml(inv.unit_code)}</td>
-          <td style="padding: 8px 10px; text-align: right;">$${inv.rent_usd.toFixed(2)}</td>
-          <td style="padding: 8px 10px; text-align: right;">$${inv.condo_usd.toFixed(2)}</td>
-          <td style="padding: 8px 10px; text-align: right; font-weight: 700;">$${inv.total_usd.toFixed(2)}</td>
+          <td style="padding: 8px 10px; text-align: right;">$${rentUsd.toFixed(2)}</td>
+          <td style="padding: 8px 10px; text-align: right;">$${condoUsd.toFixed(2)}</td>
+          <td style="padding: 8px 10px; text-align: right; font-weight: 700;">$${totalUsd.toFixed(2)}</td>
           <td style="padding: 8px 10px; text-align: right; color: #475569;">Bs. ${totalBs}</td>
           <td style="padding: 8px 10px; text-align: center; font-weight: 700; color: ${stColor};">${stText}</td>
         </tr>
@@ -3326,19 +3341,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const hasPending = invoices.some(i => i.status === 'pendiente' || i.status === 'verificando');
     const isSolvente = !hasOverdue && !hasPending;
 
-    const invoiceRows = invoices.map(inv => `
-      <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11px;">
-        <td style="padding: 6px 8px; font-weight: 600;">${inv.period_month}/${inv.period_year}</td>
-        <td style="padding: 6px 8px; font-family: monospace;">${escapeHtml(inv.invoice_number)}</td>
-        <td style="padding: 6px 8px; text-align: right;">$${inv.rent_usd.toFixed(2)}</td>
-        <td style="padding: 6px 8px; text-align: right;">$${inv.condo_usd.toFixed(2)}</td>
-        <td style="padding: 6px 8px; text-align: right; font-weight: 700;">$${inv.total_usd.toFixed(2)}</td>
-        <td style="padding: 6px 8px; text-align: center;">${inv.paid_at || 'Pendiente'}</td>
-        <td style="padding: 6px 8px; text-align: center; font-weight: 700; color: ${inv.status === 'pagado' ? '#059669' : '#d97706'};">
-          ${inv.status === 'pagado' ? 'SOLVENTE' : 'PENDIENTE'}
-        </td>
-      </tr>
-    `).join('');
+    const invoiceRows = invoices.length === 0
+      ? `<tr><td colspan="7" style="text-align: center; padding: 14px; color: #64748b;">No hay facturas emitidas para este local.</td></tr>`
+      : invoices.map(inv => {
+        const rentUsd = parseFloat(inv.rent_usd !== undefined ? inv.rent_usd : (inv.base_rent_usd || 0)) || 0;
+        const condoUsd = parseFloat(inv.condo_usd || 0) || 0;
+        const totalUsd = parseFloat(inv.total_usd !== undefined ? inv.total_usd : (rentUsd + condoUsd)) || 0;
+        return `
+          <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11px;">
+            <td style="padding: 6px 8px; font-weight: 600;">${inv.period_month || 1}/${inv.period_year || 2026}</td>
+            <td style="padding: 6px 8px; font-family: monospace;">${escapeHtml(inv.invoice_number || 'S/N')}</td>
+            <td style="padding: 6px 8px; text-align: right;">$${rentUsd.toFixed(2)}</td>
+            <td style="padding: 6px 8px; text-align: right;">$${condoUsd.toFixed(2)}</td>
+            <td style="padding: 6px 8px; text-align: right; font-weight: 700;">$${totalUsd.toFixed(2)}</td>
+            <td style="padding: 6px 8px; text-align: center;">${inv.paid_at || 'Pendiente'}</td>
+            <td style="padding: 6px 8px; text-align: center; font-weight: 700; color: ${inv.status === 'pagado' ? '#059669' : '#d97706'};">
+              ${inv.status === 'pagado' ? 'SOLVENTE' : 'PENDIENTE'}
+            </td>
+          </tr>
+        `;
+      }).join('');
 
     return `
       <div class="printable-report" style="background: white; color: #0f172a; padding: 32px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 0 auto;">
@@ -3663,6 +3685,340 @@ document.addEventListener('DOMContentLoaded', () => {
               `).join('')}
             </tbody>
           </table>
+        </div>
+      </div>
+    `;
+  }
+
+  // --- REPORTE 7: ACTA DE ENTREGA / DESOCUPACIÓN Y FINIQUITO (G.O. 40.418) ---
+  function renderFiniquitoEntregaReportHTML(tenantId) {
+    const tenants = dbService.getTenants();
+    const tenant = tenants.find(t => t.id === tenantId) || tenants[0];
+    if (!tenant) return '<div style="padding:24px;text-align:center;">No hay arrendatario seleccionado.</div>';
+
+    const unit = dbService.getUnits().find(u => u.code === tenant.unit_code) || { code: tenant.unit_code, area_m2: 0 };
+    const contract = dbService.getContracts().find(c => c.tenant_id === tenant.id);
+    const invoices = dbService.getInvoices().filter(i => i.tenant_id === tenant.id);
+    const pendingInvoices = invoices.filter(i => i.status !== 'pagado');
+    const isSolventeTotal = pendingInvoices.length === 0;
+
+    return `
+      <div class="printable-report" style="background: white; color: #0f172a; padding: 32px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif; max-width: 820px; margin: 0 auto; line-height: 1.6;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 20px;">
+          <div>
+            <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: #0f172a;">CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</h2>
+            <div style="font-size: 11px; color: #475569;">RIF: J-29881234-0 • Av. Municipal, Puerto La Cruz, Edo. Anzoátegui</div>
+            <div style="font-size: 11px; color: #475569;">Consultoría Jurídica & Administración Inmobiliaria</div>
+          </div>
+          <div style="text-align: right; font-size: 11px; color: #334155;">
+            <div>DOCUMENTO LEGAL N°: <strong>FIN-${new Date().getFullYear()}-${tenant.unit_code}</strong></div>
+            <div>Fecha: <strong>${new Date().toLocaleDateString('es-VE')}</strong></div>
+          </div>
+        </div>
+
+        <div style="text-align: center; margin-bottom: 22px;">
+          <h3 style="margin: 0; font-size: 16px; font-weight: 900; text-transform: uppercase; color: #0f172a;">
+            ACTA FORMAL DE RECEPCIÓN, DESOCUPACIÓN & FINIQUITO DE CONTRATO COMERCIAL
+          </h3>
+          <span style="font-size: 11px; color: #64748b;">Conforme al Artículo 12, 13, 24 y 25 del Decreto con Rango, Valor y Fuerza de Ley de Regulación del Arrendamiento Inmobiliario para el Uso Comercial (G.O. N° 40.418)</span>
+        </div>
+
+        <div style="font-size: 12px; color: #1e293b; text-align: justify; margin-bottom: 18px;">
+          En la ciudad de Puerto La Cruz, a la fecha de emisión del presente documento, comparecen por una parte la <strong>SOCIEDAD ADMINISTRADORA DEL CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</strong>, y por la otra el Arrendatario <strong>${escapeHtml(tenant.business_name)}</strong> (RIF: <strong>${escapeHtml(tenant.rif)}</strong>), debidamente representado por el ciudadano <strong>${escapeHtml(tenant.legal_rep_name)}</strong>, portador de la Cédula de Identidad N° <strong>${escapeHtml(tenant.legal_rep_dni)}</strong>, para dejar formal constancia de la entrega material y desocupación del inmueble identificado como <strong>Local ${escapeHtml(tenant.unit_code)}</strong> con un área aproximada de <strong>${unit.area_m2} m²</strong>, bajo las siguientes cláusulas de inspección y finiquito:
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 14px; font-size: 11.5px; margin-bottom: 18px;">
+          <div style="font-weight: 800; margin-bottom: 6px; text-transform: uppercase; color: #0f172a;">1. Estado Físico del Inmueble y Bienhechurías:</div>
+          <div>• <strong>Paredes, friso y pintura:</strong> Entregado en perfecto estado de conservación y aseo.</div>
+          <div>• <strong>Instalaciones eléctricas y luminarias:</strong> Tablero operativo, cableado intacto, breaker principal verificado.</div>
+          <div>• <strong>Piezas sanitarias / hidráulicas:</strong> Llaves de paso, tuberías y desagües operativos y sin filtraciones.</div>
+          <div>• <strong>Santa María / Cerraduras:</strong> Mecanismo de cortina metálica y llaves maestras recibidas a entera conformidad de la Administradora.</div>
+        </div>
+
+        <div style="background: ${isSolventeTotal ? '#f0fdf4' : '#fffbeb'}; border: 1px solid ${isSolventeTotal ? '#bbf7d0' : '#fde68a'}; border-radius: 6px; padding: 14px; font-size: 11.5px; margin-bottom: 24px;">
+          <div style="font-weight: 800; margin-bottom: 6px; text-transform: uppercase; color: ${isSolventeTotal ? '#166534' : '#92400e'};">2. Estado de Cuentas, Cánones y Cuotas Condominales:</div>
+          <div>
+            ${isSolventeTotal
+              ? `El Arrendatario ha cancelado la totalidad de los cánones de arrendamiento, alícuotas condominales y servicios comunes hasta la presente fecha. Las partes se otorgan <strong>MUTUO, PLENO Y DEFINITIVO FINIQUITO</strong>, declarando que nada se adeudan por concepto de contrato mercantil, depósitos ni lucro cesante.`
+              : `Se deja constancia expresa de que el Arrendatario mantiene un saldo deudor pendiente de liquidación por un monto total de <strong>$${pendingInvoices.reduce((s, i) => s + (parseFloat(i.total_usd) || 0), 0).toFixed(2)} USD</strong> correspondientes a ${pendingInvoices.length} recibo(s), acordándose un plazo improrrogable de conciliación de cinco (5) días hábiles.`
+            }
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 50px;">
+          <div style="text-align: center;">
+            <div style="border-top: 1px solid #0f172a; padding-top: 6px; font-size: 11.5px;">
+              <strong>POR LA SOCIEDAD ADMINISTRADORA</strong><br>
+              Centro Comercial Mario Sánchez, C.A.<br>
+              <span style="font-size: 10px; color: #64748b;">Administrador General / Consultor Jurídico</span>
+            </div>
+          </div>
+          <div style="text-align: center;">
+            <div style="border-top: 1px solid #0f172a; padding-top: 6px; font-size: 11.5px;">
+              <strong>POR EL ARRENDATARIO (ENTREGANTE)</strong><br>
+              ${escapeHtml(tenant.business_name)}<br>
+              <span style="font-size: 10px; color: #64748b;">C.I. ${escapeHtml(tenant.legal_rep_dni)} • Firma y Huella</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // --- REPORTE 8: COMPROBANTE DE RETENCIÓN DE IVA (PROVIDENCIA SNAT/2015/0049) ---
+  function renderRetencionIvaReportHTML(month, year) {
+    const expenses = (dbService.getCondoExpenses ? dbService.getCondoExpenses() : []).filter(e => e.period_month === month && e.period_year === year && e.withhold_iva);
+    const bcvRate = financialEngine.getRates().VES;
+    const monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+    const rows = expenses.length === 0
+      ? `<tr><td colspan="7" style="text-align:center;padding:16px;color:#64748b;">No existen comprobantes de retención de IVA para este período fiscal.</td></tr>`
+      : expenses.map((e, idx) => {
+        const baseUsd = parseFloat(e.amount_usd) || 0;
+        const ivaUsd = baseUsd * 0.16;
+        const retUsd = ivaUsd * 0.75; // 75% Prov. 0049
+        const retBs = financialEngine.convert(retUsd, 'USD', 'VES');
+        return `
+          <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11px;">
+            <td style="padding: 6px 8px;">${idx + 1}</td>
+            <td style="padding: 6px 8px;">${escapeHtml(e.provider_name || 'Proveedor')} <br><small style="color:#64748b;">RIF: ${escapeHtml(e.provider_rif || 'N/A')}</small></td>
+            <td style="padding: 6px 8px; font-family: monospace;">${escapeHtml(e.invoice_number || 'S/N')}</td>
+            <td style="padding: 6px 8px; font-family: monospace;">${escapeHtml(e.control_number || 'S/N')}</td>
+            <td style="padding: 6px 8px; text-align: right;">$${baseUsd.toFixed(2)}</td>
+            <td style="padding: 6px 8px; text-align: right; color:#0284c7;">$${ivaUsd.toFixed(2)}</td>
+            <td style="padding: 6px 8px; text-align: right; font-weight: 700; color:#16a34a;">Bs. ${retBs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}<br><small style="color:#64748b;">($${retUsd.toFixed(2)})</small></td>
+          </tr>
+        `;
+      }).join('');
+
+    return `
+      <div class="printable-report" style="background: white; color: #0f172a; padding: 28px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif; max-width: 850px; margin: 0 auto;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 16px;">
+          <div>
+            <h2 style="margin: 0; font-size: 17px; font-weight: 800;">CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</h2>
+            <div style="font-size: 11px; color: #475569;">RIF: J-29881234-0 • Agente de Retención de Impuesto al Valor Agregado</div>
+            <div style="font-size: 11px; color: #475569;">Providencia Administrativa SENIAT N° SNAT/2015/0049</div>
+          </div>
+          <div style="text-align: right; font-size: 11px;">
+            <div>COMPROBANTE GENERAL DE RETENCIÓN IVA</div>
+            <div>Período Fiscal: <strong>${monthNames[month]} ${year}</strong></div>
+            <div>Tasa BCV Oficial: <strong>${bcvRate.toFixed(2)} Bs/USD</strong></div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 14px; font-size: 11.5px; color: #334155; line-height: 1.5;">
+          Relación certificada de retenciones del Impuesto al Valor Agregado (75%) practicadas a proveedores de bienes y servicios comunes durante las operaciones del centro comercial.
+        </div>
+
+        <div class="table-responsive" style="margin-bottom: 25px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 10.5px; text-transform: uppercase;">
+                <th style="padding: 6px 8px; text-align: left;">N°</th>
+                <th style="padding: 6px 8px; text-align: left;">Sujeto Retenido / Proveedor</th>
+                <th style="padding: 6px 8px; text-align: left;">N° Factura</th>
+                <th style="padding: 6px 8px; text-align: left;">N° Control</th>
+                <th style="padding: 6px 8px; text-align: right;">Base Imponible</th>
+                <th style="padding: 6px 8px; text-align: right;">IVA (16%)</th>
+                <th style="padding: 6px 8px; text-align: right;">IVA Retenido (75%)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows}
+            </tbody>
+          </table>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px;">
+          <div style="display: inline-block; width: 280px; border-top: 1px solid #475569; padding-top: 6px; font-size: 11px;">
+            <strong>AGENTE DE RETENCIÓN AUTORIZADO</strong><br>
+            <span style="font-size: 10px; color: #64748b;">Firma y Sello Oficial • Departamento de Impuestos y Tributos</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // --- REPORTE 9: COMPROBANTE DE RETENCIÓN DE ISLR (ART. 9 DECRETO 1808) ---
+  function renderRetencionIslrReportHTML(month, year) {
+    const expenses = (dbService.getCondoExpenses ? dbService.getCondoExpenses() : []).filter(e => e.period_month === month && e.period_year === year && e.withhold_islr);
+    const bcvRate = financialEngine.getRates().VES;
+    const monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+    const rows = expenses.length === 0
+      ? `<tr><td colspan="6" style="text-align:center;padding:16px;color:#64748b;">No existen comprobantes de retención de ISLR para este período.</td></tr>`
+      : expenses.map((e, idx) => {
+        const baseUsd = parseFloat(e.amount_usd) || 0;
+        const retUsd = baseUsd * 0.02; // 2% Art. 9 Nral. 11 Dec. 1808
+        const retBs = financialEngine.convert(retUsd, 'USD', 'VES');
+        return `
+          <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11px;">
+            <td style="padding: 6px 8px;">${idx + 1}</td>
+            <td style="padding: 6px 8px;">${escapeHtml(e.provider_name || 'Proveedor')} <br><small style="color:#64748b;">RIF: ${escapeHtml(e.provider_rif || 'N/A')}</small></td>
+            <td style="padding: 6px 8px; font-family: monospace;">${escapeHtml(e.invoice_number || 'S/N')}</td>
+            <td style="padding: 6px 8px; text-align: right;">$${baseUsd.toFixed(2)}</td>
+            <td style="padding: 6px 8px; text-align: center; color:#b45309; font-weight:700;">2.00%</td>
+            <td style="padding: 6px 8px; text-align: right; font-weight: 700; color:#16a34a;">Bs. ${retBs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}<br><small style="color:#64748b;">($${retUsd.toFixed(2)})</small></td>
+          </tr>
+        `;
+      }).join('');
+
+    return `
+      <div class="printable-report" style="background: white; color: #0f172a; padding: 28px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif; max-width: 850px; margin: 0 auto;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 16px;">
+          <div>
+            <h2 style="margin: 0; font-size: 17px; font-weight: 800;">CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</h2>
+            <div style="font-size: 11px; color: #475569;">RIF: J-29881234-0 • Agente de Retención de Impuesto sobre la Renta (ISLR)</div>
+            <div style="font-size: 11px; color: #475569;">Reglamento Parcial en Materia de Retenciones (Decreto N° 1.808)</div>
+          </div>
+          <div style="text-align: right; font-size: 11px;">
+            <div>COMPROBANTE GENERAL DE RETENCIÓN ISLR (ARC)</div>
+            <div>Período Fiscal: <strong>${monthNames[month]} ${year}</strong></div>
+            <div>Tasa BCV Oficial: <strong>${bcvRate.toFixed(2)} Bs/USD</strong></div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 14px; font-size: 11.5px; color: #334155; line-height: 1.5;">
+          Certificado de retenciones de ISLR practicadas a prestadores de servicios y proveedores comerciales (Concepto: Honorarios y Servicios a Personas Jurídicas Domicialiadas - 2%).
+        </div>
+
+        <div class="table-responsive" style="margin-bottom: 25px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 10.5px; text-transform: uppercase;">
+                <th style="padding: 6px 8px; text-align: left;">N°</th>
+                <th style="padding: 6px 8px; text-align: left;">Beneficiario del Pago / Proveedor</th>
+                <th style="padding: 6px 8px; text-align: left;">N° Factura</th>
+                <th style="padding: 6px 8px; text-align: right;">Monto Objeto de Retención</th>
+                <th style="padding: 6px 8px; text-align: center;">% Retención</th>
+                <th style="padding: 6px 8px; text-align: right;">Total ISLR Retenido</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows}
+            </tbody>
+          </table>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px;">
+          <div style="display: inline-block; width: 280px; border-top: 1px solid #475569; padding-top: 6px; font-size: 11px;">
+            <strong>DPTO. DE CONTABILIDAD TRIBUTARIA</strong><br>
+            <span style="font-size: 10px; color: #64748b;">Firma y Sello Oficial • Centro Comercial Mario Sánchez</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // --- REPORTE 10: ACTA DE NOTIFICACIÓN FORMAL DE MORA Y CITACIÓN ADMINISTRATIVA ---
+  function renderNotificacionMoraReportHTML(tenantId) {
+    const tenants = dbService.getTenants();
+    const tenant = tenants.find(t => t.id === tenantId) || tenants[0];
+    if (!tenant) return '<div style="padding:24px;text-align:center;">No hay arrendatario seleccionado.</div>';
+
+    const unit = dbService.getUnits().find(u => u.code === tenant.unit_code) || { code: tenant.unit_code, area_m2: 0 };
+    const contract = dbService.getContracts().find(c => c.tenant_id === tenant.id);
+    const invoices = dbService.getInvoices().filter(i => i.tenant_id === tenant.id);
+    const overdueInvoices = invoices.filter(i => i.status === 'en_mora' || i.status === 'pendiente');
+    const bcvRate = financialEngine.getRates().VES.toFixed(2);
+
+    const totalDeudaUsd = overdueInvoices.reduce((s, i) => {
+      const rent = parseFloat(i.rent_usd !== undefined ? i.rent_usd : (i.base_rent_usd || 0)) || 0;
+      const condo = parseFloat(i.condo_usd || 0) || 0;
+      return s + (parseFloat(i.total_usd !== undefined ? i.total_usd : (rent + condo)) || 0);
+    }, 0);
+
+    const totalDeudaBs = financialEngine.convert(totalDeudaUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
+
+    const rows = overdueInvoices.length === 0
+      ? `<tr><td colspan="5" style="text-align:center;padding:12px;color:#15803d;font-weight:700;">✓ El arrendatario se encuentra al día. No registra cuotas vencidas.</td></tr>`
+      : overdueInvoices.map((inv, idx) => {
+        const rent = parseFloat(inv.rent_usd !== undefined ? inv.rent_usd : (inv.base_rent_usd || 0)) || 0;
+        const condo = parseFloat(inv.condo_usd || 0) || 0;
+        const tot = parseFloat(inv.total_usd !== undefined ? inv.total_usd : (rent + condo)) || 0;
+        return `
+          <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11px;">
+            <td style="padding: 6px 8px;">${idx + 1}</td>
+            <td style="padding: 6px 8px; font-weight: 600;">${inv.period_month || 1}/${inv.period_year || 2026}</td>
+            <td style="padding: 6px 8px; font-family: monospace;">${escapeHtml(inv.invoice_number || 'S/N')}</td>
+            <td style="padding: 6px 8px; text-align: right; font-weight: 700; color: #dc2626;">$${tot.toFixed(2)}</td>
+            <td style="padding: 6px 8px; text-align: center;"><span style="background:#fee2e2;color:#b91c1c;padding:2px 6px;border-radius:4px;font-weight:700;font-size:9.5px;">VENCIDO</span></td>
+          </tr>
+        `;
+      }).join('');
+
+    return `
+      <div class="printable-report" style="background: white; color: #0f172a; padding: 32px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 0 auto; line-height: 1.6;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #b91c1c; padding-bottom: 14px; margin-bottom: 20px;">
+          <div>
+            <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: #0f172a;">CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</h2>
+            <div style="font-size: 11px; color: #475569;">RIF: J-29881234-0 • Dpto. de Cobranzas, Auditoría & Asuntos Legales</div>
+          </div>
+          <div style="text-align: right; font-size: 11px; color: #334155;">
+            <div>NOTIFICACIÓN N°: <strong>NOT-${new Date().getFullYear()}-${tenant.unit_code}</strong></div>
+            <div>Fecha de Emisión: <strong>${new Date().toLocaleDateString('es-VE')}</strong></div>
+          </div>
+        </div>
+
+        <div style="text-align: center; margin-bottom: 22px;">
+          <h3 style="margin: 0; font-size: 15px; font-weight: 900; text-transform: uppercase; color: #b91c1c;">
+            NOTIFICACIÓN EXTRAJUDICIAL DE COBRO EN MORA & CITACIÓN CONCILIATORIA
+          </h3>
+          <span style="font-size: 11px; color: #64748b;">Procedimiento Administrativo Preventivo — Ley de Regulación del Arrendamiento Inmobiliario para el Uso Comercial (G.O. 40.418)</span>
+        </div>
+
+        <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 12px; margin-bottom: 18px; font-size: 12px;">
+          <strong>DIRIGIDO A:</strong> ${escapeHtml(tenant.business_name)} (RIF: ${escapeHtml(tenant.rif)})<br>
+          <strong>ATENCIÓN:</strong> ${escapeHtml(tenant.legal_rep_name)} (C.I. ${escapeHtml(tenant.legal_rep_dni)})<br>
+          <strong>LOCAL ARRENDADO:</strong> ${escapeHtml(tenant.unit_code)} (${unit.area_m2} m²)<br>
+          <strong>CONTRATO VINCULANTE:</strong> ${contract ? contract.contract_number : 'Contrato Vigente'}
+        </div>
+
+        <div style="font-size: 12px; color: #1e293b; text-align: justify; margin-bottom: 18px;">
+          Por medio de la presente, se le intima formalmente al pago de las obligaciones pecuniarias vencidas y causadas por concepto de cánones de arrendamiento y alícuotas condominales comunes, las cuales se detallan en el siguiente estado cronológico de cuenta:
+        </div>
+
+        <div class="table-responsive" style="margin-bottom: 20px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 10.5px; text-transform: uppercase;">
+                <th style="padding: 6px 8px; text-align: left;">N°</th>
+                <th style="padding: 6px 8px; text-align: left;">Período Vencido</th>
+                <th style="padding: 6px 8px; text-align: left;">N° Recibo</th>
+                <th style="padding: 6px 8px; text-align: right;">Total Adeudado</th>
+                <th style="padding: 6px 8px; text-align: center;">Estatus</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows}
+              <tr style="background: #f8fafc; font-weight: 800; border-top: 2px solid #cbd5e1;">
+                <td colspan="3" style="padding: 8px;">TOTAL CONSOLIDADO EN MORA:</td>
+                <td style="padding: 8px; text-align: right; color: #dc2626;">$${totalDeudaUsd.toFixed(2)} USD</td>
+                <td style="padding: 8px; text-align: center; color: #475569;">Bs. ${totalDeudaBs}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 12px; font-size: 11.5px; margin-bottom: 25px; line-height: 1.5;">
+          <strong>PLAZO DE SUBSANACIÓN Y CONCILIACIÓN:</strong> Se otorga un plazo de <strong>setenta y dos (72) horas hábiles</strong> a partir de la recepción de la presente comunicación para consignar comprobante de liquidación total o apersonarse en la Oficina de Administración del Centro Comercial para la firma de un acuerdo de conciliación extrajudicial, so pena de dar inicio a las acciones resolutorias del contrato de arrendamiento ante las instancias jurisdiccionales correspondientes.
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px;">
+          <div style="text-align: center;">
+            <div style="border-top: 1px solid #0f172a; padding-top: 6px; font-size: 11px;">
+              <strong>ADMINISTRACIÓN & COBRANZAS</strong><br>
+              Centro Comercial Mario Sánchez, C.A.<br>
+              <span style="font-size: 10px; color: #64748b;">Firma Autorizada</span>
+            </div>
+          </div>
+          <div style="text-align: center;">
+            <div style="border-top: 1px solid #0f172a; padding-top: 6px; font-size: 11px;">
+              <strong>CONSTANCIA DE RECEPCIÓN</strong><br>
+              Recibido por: _________________________<br>
+              <span style="font-size: 10px; color: #64748b;">Firma, Huella y Fecha</span>
+            </div>
+          </div>
         </div>
       </div>
     `;
@@ -4214,6 +4570,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       dbService.saveCondoExpense(payload);
+      dbService.logAuditAction({
+        action: id ? 'UPDATE' : 'CREATE',
+        entity: 'EXPENSE',
+        entity_id: id || payload.invoice_number || 'N/A',
+        entity_name: `${payload.concept} (${payload.provider_name})`,
+        details: `${id ? 'Actualización' : 'Registro'} de gasto operativo por $${payload.amount_usd.toFixed(2)} USD. Factura: ${payload.invoice_number || 'S/N'}. Con factura adjunta: ${payload.invoice_proof ? 'SÍ' : 'NO'}.`
+      });
+
       closeExpenseModal();
       renderAll();
       showToast('Gasto operativo y factura fiscal registrados y liquidados exitosamente.', 'success', 'Gasto Liquidado');
@@ -4229,7 +4593,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!proceed) return;
 
     try {
+      const expenses = dbService.getCondoExpenses ? dbService.getCondoExpenses() : [];
+      const expToDelete = expenses.find(e => e.id === expenseId);
       dbService.deleteCondoExpense(expenseId);
+      dbService.logAuditAction({
+        action: 'DELETE',
+        entity: 'EXPENSE',
+        entity_id: expenseId,
+        entity_name: expToDelete ? expToDelete.concept : expenseId,
+        details: `Eliminación de gasto operativo ${expToDelete ? expToDelete.concept : ''} ($${expToDelete ? expToDelete.amount_usd : 0} USD). Recalculadas alícuotas.`
+      });
+
       renderAll();
       showToast('Gasto operativo eliminado y cuotas condominales recalculadas.', 'warning', 'Gasto Eliminado');
     } catch (err) {
@@ -4396,7 +4770,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function setupCustomDropzones() {
     [
       { zoneId: 'pay-receipt-dropzone', handler: window.handleReceiptFileChange },
-      { zoneId: 'exp-proof-dropzone', handler: window.handleExpenseFileChange }
+      { zoneId: 'exp-proof-dropzone', handler: window.handleExpenseFileChange },
+      { zoneId: 'inv-kdx-photo-dropzone', handler: window.handleKardexPhotoChange }
     ].forEach(item => {
       const zone = document.getElementById(item.zoneId);
       if (!zone) return;
@@ -4569,6 +4944,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const formattedDate = k.timestamp ? new Date(k.timestamp).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : 'N/A';
 
+      const photoBtn = k.photo_proof
+        ? `<button type="button" class="btn-action-icon" data-click="window.viewKardexPhoto('${k.id}')" title="Ver comprobante fotográfico" style="color:var(--amber);border-color:rgba(245,158,11,0.3);background:rgba(245,158,11,0.1);">
+             <i class="fa-solid fa-image"></i> Ver Foto
+           </button>`
+        : `<span style="color:var(--txt-muted);font-size:10.5px;">-</span>`;
+
       return `
         <tr>
           <td style="font-size:11px;color:var(--txt-secondary);">${formattedDate}</td>
@@ -4581,6 +4962,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <td style="font-size:11.5px;color:var(--txt-secondary);">${escapeHtml(k.destination || 'Uso General')}</td>
           <td style="font-size:11.5px;color:var(--txt-primary);"><i class="fa-solid fa-user-gear" style="color:var(--amber);font-size:10px;margin-right:4px;"></i>${escapeHtml(k.responsible || 'N/A')}</td>
           <td><span style="font-family:monospace;font-size:11px;background:rgba(255,255,255,0.04);padding:2px 6px;border-radius:4px;">${escapeHtml(k.reference_document || 'N/A')}</span></td>
+          <td style="text-align:center;">${photoBtn}</td>
         </tr>
       `;
     }).join('');
@@ -4704,6 +5086,97 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  let currentKardexPhoto = null;
+
+  window.handleKardexPhotoChange = function(e) {
+    const file = (e.target && e.target.files && e.target.files[0])
+      ? e.target.files[0]
+      : (e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files[0] : null);
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      showToast("La foto o soporte excede el límite de 10MB.", "warning", "Archivo Excedido");
+      const input = document.getElementById('inv-kdx-photo-file');
+      if (input) input.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      currentKardexPhoto = {
+        name: file.name,
+        type: file.type || 'image/jpeg',
+        size: file.size,
+        data: evt.target.result,
+        uploaded_at: new Date().toISOString()
+      };
+
+      const container = document.getElementById('inv-kdx-photo-preview-container');
+      const dropzone = document.getElementById('inv-kdx-photo-dropzone');
+      const nameEl = document.getElementById('inv-kdx-photo-name');
+      const sizeEl = document.getElementById('inv-kdx-photo-size');
+      const iconEl = document.getElementById('inv-kdx-photo-icon');
+
+      if (container) container.style.display = 'flex';
+      if (dropzone) dropzone.style.display = 'none';
+      if (nameEl) nameEl.textContent = file.name;
+      if (sizeEl) sizeEl.textContent = `${(file.size / 1024).toFixed(1)} KB • ${(file.type || 'Imagen').split('/')[1] || 'archivo'}`;
+      if (iconEl) {
+        iconEl.className = file.type && file.type.includes('pdf') ? 'fa-solid fa-file-pdf' : 'fa-solid fa-file-image';
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.removeKardexPhoto = function(e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    currentKardexPhoto = null;
+    const input = document.getElementById('inv-kdx-photo-file');
+    if (input) input.value = '';
+    const container = document.getElementById('inv-kdx-photo-preview-container');
+    const dropzone = document.getElementById('inv-kdx-photo-dropzone');
+    if (container) container.style.display = 'none';
+    if (dropzone) dropzone.style.display = 'flex';
+  };
+
+  window.viewKardexPhoto = function(movId) {
+    const kardex = dbService.getKardex ? dbService.getKardex() : [];
+    const mov = kardex.find(k => k.id === movId);
+    if (!mov || !mov.photo_proof) {
+      showToast("Este movimiento no tiene comprobante fotográfico adjunto.", "info", "Sin Foto");
+      return;
+    }
+
+    const modal = document.getElementById('modal-kardex-photo-viewer');
+    const content = document.getElementById('kardex-photo-viewer-content');
+    if (!modal || !content) return;
+
+    const photo = mov.photo_proof;
+    const isDataUrl = typeof photo.data === 'string' && photo.data.startsWith('data:');
+    const isPdf = (photo.type && photo.type.includes('pdf')) || (photo.name && photo.name.toLowerCase().endsWith('.pdf'));
+
+    if (isDataUrl && isPdf) {
+      content.innerHTML = `
+        <div style="margin-bottom:12px;font-size:12.5px;color:var(--txt-secondary);">
+          <strong>${escapeHtml(photo.name)}</strong> • Ítem: <strong>${escapeHtml(mov.item_name)}</strong> (${mov.type})
+        </div>
+        <embed src="${photo.data}" type="application/pdf" width="100%" height="480px" style="border:1px solid var(--border-subtle);border-radius:8px;" />
+      `;
+    } else if (isDataUrl) {
+      content.innerHTML = `
+        <div style="margin-bottom:12px;font-size:12.5px;color:var(--txt-secondary);">
+          <strong>${escapeHtml(photo.name)}</strong> • Ítem: <strong>${escapeHtml(mov.item_name)}</strong> (${mov.type})
+        </div>
+        <img src="${photo.data}" alt="Comprobante Kardex" style="max-width:100%;max-height:500px;border-radius:8px;border:1px solid var(--border-subtle);" />
+      `;
+    }
+    window.openModal(modal);
+  };
+
+  window.closeKardexPhotoModal = function() {
+    window.closeModal('modal-kardex-photo-viewer');
+  };
+
   window.handleSaveKardex = function(e) {
     e.preventDefault();
     const select = document.getElementById('inv-kdx-item');
@@ -4719,10 +5192,20 @@ document.addEventListener('DOMContentLoaded', () => {
       destination: document.getElementById('inv-kdx-dest').value.trim(),
       responsible: document.getElementById('inv-kdx-resp').value.trim(),
       reference_document: document.getElementById('inv-kdx-doc').value.trim().toUpperCase(),
+      photo_proof: currentKardexPhoto,
       timestamp: new Date().toISOString()
     };
 
     dbService.addKardexMovimiento(mov);
+    dbService.logAuditAction({
+      action: 'DISPATCH',
+      entity: 'KARDEX',
+      entity_id: mov.reference_document,
+      entity_name: `${mov.type} - ${mov.item_code} (${mov.quantity} uds)`,
+      details: `${mov.type} de ${mov.quantity} unidades para ${mov.destination}. Responsable: ${mov.responsible}. Comprobante: ${mov.reference_document}.`
+    });
+
+    removeKardexPhoto();
     renderInventory();
     closeInventoryModal();
 
@@ -4731,6 +5214,70 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       alert(`Movimiento de ${mov.type} registrado en Kardex.`);
     }
+  };
+
+  // ==============================================================================
+  // MODAL 14: HISTORIAL DE AUDITORÍA & TRAZABILIDAD (AUDIT TRAIL)
+  // ==============================================================================
+  window.openAuditTrailModal = function() {
+    const modal = document.getElementById('modal-audit-trail');
+    if (!modal) return;
+    renderAuditLogsList();
+    window.openModal(modal);
+  };
+
+  window.closeAuditTrailModal = function() {
+    window.closeModal('modal-audit-trail');
+  };
+
+  window.renderAuditLogsList = function() {
+    const tbody = document.getElementById('audit-logs-table-body');
+    const filterSelect = document.getElementById('audit-filter-entity');
+    if (!tbody) return;
+
+    const filterVal = filterSelect ? filterSelect.value : 'ALL';
+    const logs = dbService.getAuditLogs ? dbService.getAuditLogs(150) : [];
+    const filtered = (filterVal === 'ALL') ? logs : logs.filter(l => l.entity === filterVal);
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--txt-muted);">No hay eventos de auditoría registrados para esta categoría.</td></tr>`;
+      return;
+    }
+
+    const actionColors = {
+      CREATE: 'var(--emerald)',
+      UPDATE: 'var(--amber)',
+      DELETE: 'var(--rose)',
+      DISPATCH: 'var(--cyan)',
+      RECONCILE: 'var(--purple)'
+    };
+
+    tbody.innerHTML = filtered.map(log => {
+      const dateStr = log.timestamp ? new Date(log.timestamp).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : 'N/A';
+      const color = actionColors[log.action] || 'var(--txt-primary)';
+
+      return `
+        <tr style="border-bottom: 1px solid var(--border-subtle);">
+          <td style="padding: 7px 10px; color: var(--txt-secondary); white-space: nowrap;">${dateStr}</td>
+          <td style="padding: 7px 10px;">
+            <span style="font-weight: 800; font-size: 10px; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.05); color: ${color}; border: 1px solid ${color};">
+              ${escapeHtml(log.action)}
+            </span>
+          </td>
+          <td style="padding: 7px 10px;">
+            <strong style="color: var(--txt-primary);">${escapeHtml(log.entity)}</strong><br>
+            <small style="color: var(--txt-muted); font-family: monospace;">${escapeHtml(log.entity_name || log.entity_id)}</small>
+          </td>
+          <td style="padding: 7px 10px; color: var(--txt-secondary); font-size: 11px; max-width: 320px;">
+            ${escapeHtml(log.details)}
+          </td>
+          <td style="padding: 7px 10px;">
+            <strong style="color: var(--amber); font-size: 11px;"><i class="fa-solid fa-user-shield"></i> ${escapeHtml(log.author_name || 'Admin')}</strong><br>
+            <small style="color: var(--txt-muted); font-size: 10px;">${escapeHtml(log.author_email || '')}</small>
+          </td>
+        </tr>
+      `;
+    }).join('');
   };
 
   // Render inicial

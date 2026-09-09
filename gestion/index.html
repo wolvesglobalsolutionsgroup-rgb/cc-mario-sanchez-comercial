@@ -80,10 +80,6 @@
         <i class="fa-solid fa-file-contract" style="color: var(--cyan);"></i>
         <span>Informes & Contabilidad</span>
       </a>
-      <a href="#" class="nav-item" data-tab="configuracion" data-roles="admin" id="nav-tab-configuracion">
-        <i class="fa-solid fa-gear" style="color: var(--amber);"></i>
-        <span>Configuración del Sistema</span>
-      </a>
       <a href="#" class="nav-item" data-tab="ayuda" data-roles="any" id="nav-tab-ayuda">
         <i class="fa-solid fa-circle-question" style="color: var(--cyan);"></i>
         <span>Ayuda & Marco Legal</span>
@@ -107,6 +103,19 @@
       <a href="/alquiler.html" target="_blank" class="nav-item">
         <i class="fa-solid fa-shop" style="color: var(--emerald);"></i>
         <span>Portal de Alquiler</span>
+      </a>
+
+      <!-- PIE DE NAVEGACIÓN: CONFIGURACIÓN Y AUDITORÍA AL FONDO (ERGONOMÍA ESTÁNDAR) -->
+      <div style="margin: 12px 16px 6px; padding-top: 10px; border-top: 1px solid var(--border-subtle); font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--txt-muted); letter-spacing: 0.05em;" data-roles="admin">
+        Administración
+      </div>
+      <a href="#" class="nav-item" data-tab="configuracion" data-roles="admin" id="nav-tab-configuracion">
+        <i class="fa-solid fa-gear" style="color: var(--amber);"></i>
+        <span>Configuración del Sistema</span>
+      </a>
+      <a href="#" class="nav-item" data-roles="admin" data-click="window.openAuditTrailModal()" id="nav-tab-auditoria" title="Consultar bitácora de auditoría y trazabilidad de cambios">
+        <i class="fa-solid fa-clock-rotate-left" style="color: var(--cyan);"></i>
+        <span>Historial de Auditoría</span>
       </a>
     </nav>
 
@@ -644,6 +653,7 @@
                     <th>Destino / Local / Área</th>
                     <th>Responsable / Técnico</th>
                     <th>Comprobante / OT</th>
+                    <th>Soporte / Foto</th>
                   </tr>
                 </thead>
                 <tbody id="inventory-kardex-table-body">
@@ -1159,6 +1169,10 @@
                 <option value="seniat_ventas">4. Libro de Ventas Fiscal SENIAT (Prov. SNAT/2014/0032)</option>
                 <option value="seniat_compras">5. Libro de Compras & Retenciones IVA/ISLR (SENIAT TXT)</option>
                 <option value="conciliacion">6. Conciliación Bancaria Automática Multi-Entidad</option>
+                <option value="finiquito_entrega">7. Acta de Entrega / Desocupación y Finiquito (G.O. 40.418)</option>
+                <option value="retencion_iva">8. Comprobante de Retención de IVA (SNAT/2015/0049)</option>
+                <option value="retencion_islr">9. Comprobante de Retención de ISLR (Art. 9 Dec. 1808)</option>
+                <option value="notificacion_mora">10. Notificación Formal de Mora & Citación Conciliatoria</option>
               </select>
             </div>
 
@@ -2203,6 +2217,33 @@
         </div>
       </div>
 
+      <!-- FOTOGRAFÍA O COMPROBANTE DE ENTREGA/RECEPCIÓN (KARDEX) -->
+      <div class="form-group">
+        <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">
+          <i class="fa-solid fa-camera" style="color: var(--amber);"></i> Fotografía / Soporte del Ítem o Entrega (Opcional)
+        </label>
+        <input type="file" id="inv-kdx-photo-file" accept="image/*,.pdf" data-change="handleKardexPhotoChange(event)" style="display: none;">
+        
+        <div class="custom-file-dropzone amber-zone" id="inv-kdx-photo-dropzone" data-click="document.getElementById('inv-kdx-photo-file').click()" style="padding: 12px; min-height: auto;">
+          <i class="fa-solid fa-camera-retro dropzone-icon" style="font-size: 20px;"></i>
+          <span class="dropzone-main-text" style="font-size: 12px;">Arrastra una foto o haz clic para tomarla con la cámara</span>
+          <span class="dropzone-sub-text" style="font-size: 10.5px;">Soporta JPG, PNG o PDF (Máx. 10 MB)</span>
+        </div>
+
+        <div id="inv-kdx-photo-preview-container" class="file-preview-card" style="display: none;">
+          <div class="file-preview-info">
+            <i class="fa-solid fa-file-circle-check" id="inv-kdx-photo-icon" style="color: var(--amber); font-size: 20px;"></i>
+            <div style="min-width: 0;">
+              <div id="inv-kdx-photo-name" class="file-preview-name"></div>
+              <div id="inv-kdx-photo-size" class="file-preview-size"></div>
+            </div>
+          </div>
+          <button type="button" class="file-preview-remove" data-click="removeKardexPhoto(event)" title="Eliminar foto adjunta">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+      </div>
+
       <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
         <button type="button" class="btn-currency-toggle" data-click="closeInventoryModal()">Cancelar</button>
         <button type="submit" class="btn-onboarding-cta" style="background: var(--amber); border-color: var(--amber); color: #000; font-weight: 800;">
@@ -2210,6 +2251,69 @@
         </button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- MODAL 13: VISOR DE FOTO / SOPORTE DE KARDEX -->
+<div class="modal-overlay" id="modal-kardex-photo-viewer">
+  <div class="modal-window" style="max-width: 650px;">
+    <div class="modal-header">
+      <h3 class="modal-title">
+        <i class="fa-solid fa-camera" style="color: var(--amber);"></i> Comprobante Fotográfico de Kardex
+      </h3>
+      <button class="modal-close" data-click="closeKardexPhotoModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body" style="text-align: center; max-height: 75vh; overflow-y: auto; padding: 16px;">
+      <div id="kardex-photo-viewer-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 14: HISTORIAL DE AUDITORÍA & TRAZABILIDAD (AUDIT TRAIL) -->
+<div class="modal-overlay" id="modal-audit-trail">
+  <div class="modal-window" style="max-width: 900px; width: 95%;">
+    <div class="modal-header">
+      <h3 class="modal-title">
+        <i class="fa-solid fa-clock-rotate-left" style="color: var(--cyan);"></i> Bitácora de Auditoría & Trazabilidad de Modificaciones
+      </h3>
+      <button class="modal-close" data-click="closeAuditTrailModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body" style="padding: 18px; max-height: 75vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+        <div style="font-size: 12px; color: var(--txt-secondary);">
+          Registro inmutable de quién modificó datos, fecha/hora y detalle del cambio (Zero-Trust & Compliance).
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <select id="audit-filter-entity" class="form-control" data-change="renderAuditLogsList()" style="font-size: 11.5px; padding: 5px 8px; width: auto;">
+            <option value="ALL">Todas las Entidades</option>
+            <option value="EXPENSE">Gastos Comunes</option>
+            <option value="KARDEX">Kardex / Insumos</option>
+            <option value="TENANT">Inquilinos</option>
+            <option value="CONTRACT">Contratos</option>
+            <option value="CONFIG">Configuración</option>
+          </select>
+          <button type="button" class="btn-action-icon" data-click="renderAuditLogsList()" title="Refrescar auditoría">
+            <i class="fa-solid fa-arrows-rotate"></i>
+          </button>
+        </div>
+      </div>
+      <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+        <table style="width: 100%; min-width: 650px; font-size: 11.5px; border-collapse: collapse;">
+          <thead>
+            <tr style="background: rgba(255, 255, 255, 0.03); border-bottom: 2px solid var(--border-subtle); color: var(--txt-muted); text-transform: uppercase; font-size: 10px;">
+              <th style="padding: 8px 10px; text-align: left;">Fecha & Hora</th>
+              <th style="padding: 8px 10px; text-align: left;">Acción</th>
+              <th style="padding: 8px 10px; text-align: left;">Entidad / Recurso</th>
+              <th style="padding: 8px 10px; text-align: left;">Detalle del Cambio</th>
+              <th style="padding: 8px 10px; text-align: left;">Usuario Responsable</th>
+            </tr>
+          </thead>
+          <tbody id="audit-logs-table-body">
+            <!-- Rellenado dinámicamente -->
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
 
