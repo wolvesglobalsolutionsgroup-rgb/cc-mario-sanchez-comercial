@@ -36,6 +36,19 @@ if ('serviceWorker' in navigator) {
 
 document.addEventListener('DOMContentLoaded', () => {
   /**
+   * Helper universal para sanitización anti-XSS y renderizado seguro de HTML
+   */
+  function escapeHtml(value) {
+    if (value === null || value === undefined) return '';
+    return String(value).replace(/[&<>"']/g, function (char) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char];
+    });
+  }
+  window.escapeHtml = escapeHtml;
+
+  let activeDocCategoryFilter = 'all';
+
+  /**
    * Helper para notificaciones tipo Toast seguras y no intrusivas
    */
   function showToast(message, type = 'info', title = null) {
@@ -1128,9 +1141,17 @@ document.addEventListener('DOMContentLoaded', () => {
       activeProfileTenantId = null;
       const mainView = document.getElementById('tenants-main-view');
       const profileSheet = document.getElementById('client-full-profile-sheet');
-      if (profileSheet) profileSheet.style.display = 'none';
-      if (mainView) mainView.style.display = 'block';
-      renderTenantsDirectory();
+      if (profileSheet) {
+        profileSheet.style.display = 'none';
+        profileSheet.innerHTML = '';
+      }
+      if (mainView) {
+        mainView.style.display = 'block';
+      }
+      if (typeof renderTenantsDirectory === 'function') {
+        renderTenantsDirectory();
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       console.error('[closeTenantFullProfile Error]', err);
     }
@@ -2182,8 +2203,6 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // FILTRO DE CATEGORÍAS DEL EXPEDIENTE
-  let activeDocCategoryFilter = 'all';
-
   window.filterTenantDocs = function(tenantId, category) {
     activeDocCategoryFilter = category;
     
