@@ -352,33 +352,55 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.reload();
   };
 
-  // 5. NAVEGACIÓN Y MENÚ MÓVIL
+  // 5. NAVEGACIÓN, COLAPSO Y MENÚ RESPONSIVE (DESKTOP, TABLET Y MÓVIL)
   const sidebarEl = document.getElementById('app-sidebar');
+  const appContainerEl = document.querySelector('.app-container');
   const mobileToggleBtn = document.getElementById('mobile-menu-toggle');
   const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+  const sidebarToggleIcon = document.getElementById('sidebar-toggle-icon');
 
-  function openMobileSidebar() {
-    if (sidebarEl) sidebarEl.classList.add('open');
-    if (sidebarBackdrop) sidebarBackdrop.classList.add('active');
-  }
+  window.toggleSidebar = function() {
+    const isMobileOrTablet = window.innerWidth <= 1024;
+    if (isMobileOrTablet) {
+      if (sidebarEl) {
+        sidebarEl.classList.toggle('open');
+        const isOpen = sidebarEl.classList.contains('open');
+        if (sidebarBackdrop) sidebarBackdrop.classList.toggle('active', isOpen);
+        document.body.style.overflow = isOpen ? 'hidden' : '';
+      }
+    } else {
+      if (appContainerEl) {
+        appContainerEl.classList.toggle('sidebar-collapsed');
+        const isCollapsed = appContainerEl.classList.contains('sidebar-collapsed');
+        try { localStorage.setItem('ccms_sidebar_collapsed', isCollapsed ? '1' : '0'); } catch(e) {}
+        if (sidebarToggleIcon) {
+          sidebarToggleIcon.className = isCollapsed ? 'fa-solid fa-angles-right' : 'fa-solid fa-angles-left';
+        }
+      }
+    }
+  };
 
-  function closeMobileSidebar() {
+  window.closeMobileSidebar = function() {
     if (sidebarEl) sidebarEl.classList.remove('open');
     if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
-  }
+    document.body.style.overflow = '';
+  };
+
+  // Restaurar preferencia en escritorio
+  try {
+    const savedCollapsed = localStorage.getItem('ccms_sidebar_collapsed');
+    if (savedCollapsed === '1' && window.innerWidth > 1024) {
+      if (appContainerEl) appContainerEl.classList.add('sidebar-collapsed');
+      if (sidebarToggleIcon) sidebarToggleIcon.className = 'fa-solid fa-angles-right';
+    }
+  } catch(e) {}
 
   if (mobileToggleBtn) {
-    mobileToggleBtn.onclick = () => {
-      if (sidebarEl && sidebarEl.classList.contains('open')) {
-        closeMobileSidebar();
-      } else {
-        openMobileSidebar();
-      }
-    };
+    mobileToggleBtn.onclick = () => window.toggleSidebar();
   }
 
   if (sidebarBackdrop) {
-    sidebarBackdrop.onclick = () => closeMobileSidebar();
+    sidebarBackdrop.onclick = () => window.closeMobileSidebar();
   }
 
   window.openConfigTab = function() {
@@ -1394,15 +1416,16 @@ document.addEventListener('DOMContentLoaded', () => {
               <!-- SELECTOR DE DOCUMENTO -->
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
                 <div>
-                  <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">
-                    <i class="fa-solid fa-file-lines" style="color: var(--amber);"></i> Tipo de Documento Oficial:
+                  <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+                    <span><i class="fa-solid fa-file-signature" style="color: var(--amber);"></i> Tipo de Documento Oficial:</span>
+                    <span id="gen-doc-icon-badge-${tenant.id}"><i class="fa-solid fa-shield-halved" style="color: var(--emerald);"></i></span>
                   </label>
                   <select id="gen-doc-type-${tenant.id}" class="form-control" onchange="window.onDocTypeChange('${tenant.id}')" style="font-size: 12.5px; padding: 8px 10px;">
-                    <option value="solvencia">🛡️ Certificado de Solvencia Condominial</option>
-                    <option value="notificacion_mora">⚠️ Notificación Formal de Cobro / Mora (72h)</option>
-                    <option value="constancia">📜 Constancia de Arrendamiento Comercial Activo</option>
-                    <option value="acta_entrega">🔑 Acta Circunstanciada de Entrega / Desocupación</option>
-                    <option value="adenda_obras">🔨 Adenda de Obras & Deducción de Canon (Art. 13 & 32)</option>
+                    <option value="solvencia">1. Certificado de Solvencia Condominial</option>
+                    <option value="notificacion_mora">2. Notificación Formal de Mora & Citación Conciliatoria (72h)</option>
+                    <option value="constancia">3. Constancia de Arrendamiento Comercial Activo</option>
+                    <option value="acta_entrega">4. Acta Circunstanciada de Entrega / Desocupación (G.O. 40.418)</option>
+                    <option value="adenda_obras">5. Adenda de Obras & Deducción de Canon (Art. 13 & 32)</option>
                   </select>
                 </div>
 
@@ -1669,14 +1692,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // CAMBIO DINÁMICO DE OBSERVACIONES POR DEFECTO SEGÚN EL TIPO DE DOCUMENTO
+  // CAMBIO DINÁMICO DE OBSERVACIONES POR DEFECTO E ÍCONO FONTAWESOME SEGÚN EL TIPO DE DOCUMENTO
   window.onDocTypeChange = function(tenantId) {
     const docTypeEl = document.getElementById(`gen-doc-type-${tenantId}`);
     const notesEl = document.getElementById(`gen-doc-notes-${tenantId}`);
     const destEl = document.getElementById(`gen-doc-dest-${tenantId}`);
+    const badge = document.getElementById(`gen-doc-icon-badge-${tenantId}`);
     if (!docTypeEl || !notesEl) return;
 
     const val = docTypeEl.value;
+    const icons = {
+      solvencia: '<i class="fa-solid fa-shield-halved" style="color: var(--emerald);"></i>',
+      notificacion_mora: '<i class="fa-solid fa-triangle-exclamation" style="color: var(--rose);"></i>',
+      constancia: '<i class="fa-solid fa-file-contract" style="color: var(--cyan);"></i>',
+      acta_entrega: '<i class="fa-solid fa-key" style="color: var(--amber);"></i>',
+      adenda_obras: '<i class="fa-solid fa-hammer" style="color: #a855f7;"></i>'
+    };
+    if (badge && icons[val]) badge.innerHTML = icons[val];
+
     if (val === 'solvencia') {
       notesEl.value = 'El arrendatario se encuentra al corriente en el pago de cánones de arrendamiento, cuotas de gastos comunes y alícuotas condominiales.';
       if (destEl) destEl.value = 'A QUIEN PUEDA INTERESAR';
@@ -1735,19 +1768,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (docType === 'solvencia') {
         docTitle = `Certificado de Solvencia - Local ${tenant.unit_code}`;
-        generatedHtml = await window.VenezuelaLegal.generateSolvenciaHTML(tenant, unit, allInvoices, options);
+        generatedHtml = renderSolvenciaReportHTML(tenant.id);
       } else if (docType === 'notificacion_mora') {
         docTitle = `Notificación Formal de Mora (72h) - Local ${tenant.unit_code}`;
-        generatedHtml = await window.VenezuelaLegal.generateNotificacionMoraHTML(tenant, unit, unpaidInvoices, options);
+        generatedHtml = renderNotificacionMoraReportHTML(tenant.id);
       } else if (docType === 'constancia') {
         docTitle = `Constancia de Arrendamiento - Local ${tenant.unit_code}`;
-        generatedHtml = await window.VenezuelaLegal.generateConstanciaArrendatarioHTML(tenant, unit, contract, options);
+        generatedHtml = renderConstanciaReportHTML(tenant.id);
       } else if (docType === 'acta_entrega') {
         docTitle = `Acta Circunstanciada de Entrega - Local ${tenant.unit_code}`;
-        generatedHtml = await window.VenezuelaLegal.generateActaEntregaHTML(tenant, unit, contract, options);
+        generatedHtml = renderFiniquitoEntregaReportHTML(tenant.id);
       } else if (docType === 'adenda_obras') {
         docTitle = `Adenda de Obras & Deducción - Local ${tenant.unit_code}`;
-        generatedHtml = await window.VenezuelaLegal.generateAdendaObrasHTML(tenant, unit, agreements[0] || {}, options);
+        generatedHtml = renderAdendaObrasReportHTML(tenant.id);
       }
 
       const docItem = {
@@ -1827,19 +1860,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (docType === 'solvencia') {
         docTitle = `Certificado de Solvencia - Local ${tenant.unit_code}`;
-        generatedHtml = await window.VenezuelaLegal.generateSolvenciaHTML(tenant, unit, allInvoices, options);
+        generatedHtml = renderSolvenciaReportHTML(tenant.id);
       } else if (docType === 'notificacion_mora') {
         docTitle = `Notificación Formal de Mora (72h) - Local ${tenant.unit_code}`;
-        generatedHtml = await window.VenezuelaLegal.generateNotificacionMoraHTML(tenant, unit, unpaidInvoices, options);
+        generatedHtml = renderNotificacionMoraReportHTML(tenant.id);
       } else if (docType === 'constancia') {
         docTitle = `Constancia de Arrendamiento - Local ${tenant.unit_code}`;
-        generatedHtml = await window.VenezuelaLegal.generateConstanciaArrendatarioHTML(tenant, unit, contract, options);
+        generatedHtml = renderConstanciaReportHTML(tenant.id);
       } else if (docType === 'acta_entrega') {
         docTitle = `Acta Circunstanciada de Entrega - Local ${tenant.unit_code}`;
-        generatedHtml = await window.VenezuelaLegal.generateActaEntregaHTML(tenant, unit, contract, options);
+        generatedHtml = renderFiniquitoEntregaReportHTML(tenant.id);
       } else if (docType === 'adenda_obras') {
         docTitle = `Adenda de Obras & Deducción - Local ${tenant.unit_code}`;
-        generatedHtml = await window.VenezuelaLegal.generateAdendaObrasHTML(tenant, unit, agreements[0] || {}, options);
+        generatedHtml = renderAdendaObrasReportHTML(tenant.id);
       }
 
       window._activePreviewDoc = {
@@ -5021,6 +5054,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 120);
   };
 
+  // =========================================================================
+  // MEMBRETE OFICIAL UNIFICADO PARA TODOS LOS INFORMES Y DOCUMENTOS LEGALES
+  // Logotipo 2K + RIF J-30211544-2 + Dirección + Gaceta Oficial 40.418
+  // =========================================================================
+  function renderOfficialReportHeaderHTML(title, docNumber = null, subtitle = 'Departamento de Administración, Finanzas & Cobranzas') {
+    const bcvRate = financialEngine && financialEngine.getRates ? financialEngine.getRates().VES.toFixed(2) : '814.69';
+    return `
+      <div class="report-official-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 18px; gap: 16px;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <img src="logo_cc_mario_sanchez_2k.svg?v=20260904" alt="CC Mario Sánchez Logo" style="width: 48px; height: 48px; max-width: 48px; max-height: 48px; object-fit: contain; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); flex-shrink: 0;" onerror="this.style.display='none';">
+          <div>
+            <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: #0f172a; letter-spacing: -0.2px;">CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</h2>
+            <div style="font-size: 11px; color: #475569; font-weight: 600;">RIF: J-30211544-2 • Av. Municipal c/c Calle Juncal, Puerto La Cruz, Estado Anzoátegui</div>
+            <div style="font-size: 10.5px; color: #64748b;">${subtitle} • Gaceta Oficial N° 40.418</div>
+          </div>
+        </div>
+        <div style="text-align: right; font-size: 11px; color: #334155; flex-shrink: 0;">
+          <div><strong>${title}</strong></div>
+          ${docNumber ? `<div>N°: <strong style="font-family: monospace;">${docNumber}</strong></div>` : ''}
+          <div>Fecha Emisión: <strong>${new Date().toLocaleDateString('es-VE')}</strong></div>
+          <div>Tasa BCV: <strong>${bcvRate} Bs/USD</strong></div>
+        </div>
+      </div>
+    `;
+  }
+
   function renderRecaudacionReportHTML(month, year) {
     const monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     const invoices = dbService.getInvoices().filter(i => i.period_month === month && i.period_year === year);
@@ -5071,19 +5130,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     return `
       <div class="printable-report" style="background: white; color: #0f172a; padding: 28px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif;">
-        <!-- MEMBRETE OFICIAL -->
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 18px;">
-          <div>
-            <h2 style="margin: 0; font-size: 19px; font-weight: 800; color: #0f172a; letter-spacing: 0.5px;">CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</h2>
-            <div style="font-size: 11.5px; color: #475569;">RIF: J-29881234-0 • Av. Municipal, Puerto La Cruz, Estado Anzoátegui, Venezuela</div>
-            <div style="font-size: 11.5px; color: #475569;">Departamento de Administración, Finanzas & Cobranzas</div>
-          </div>
-          <div style="text-align: right; font-size: 11.5px; color: #334155;">
-            <div><strong>INFORME EJECUTIVO</strong></div>
-            <div>Fecha Emisión: ${new Date().toLocaleDateString('es-VE')}</div>
-            <div>Tasa BCV Aplicada: <strong>${bcvRate} Bs/USD</strong></div>
-          </div>
-        </div>
+        ${renderOfficialReportHeaderHTML('INFORME EJECUTIVO', `REC-${year}-${String(month).padStart(2, '0')}`, 'Departamento de Administración, Finanzas & Cobranzas')}
 
         <div style="text-align: center; margin-bottom: 18px;">
           <h3 style="margin: 0; font-size: 15px; font-weight: 800; text-transform: uppercase; color: #1e293b;">
@@ -5196,18 +5243,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     return `
       <div class="printable-report" style="background: white; color: #0f172a; padding: 28px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 18px;">
-          <div>
-            <h2 style="margin: 0; font-size: 19px; font-weight: 800; color: #0f172a;">CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</h2>
-            <div style="font-size: 11.5px; color: #475569;">RIF: J-29881234-0 • Junta de Condominio & Sociedad Administradora</div>
-            <div style="font-size: 11.5px; color: #475569;">Liquidación de Gastos Comunes Inmobiliarios (Art. 32-34 G.O. 40.418)</div>
-          </div>
-          <div style="text-align: right; font-size: 11.5px; color: #334155;">
-            <div><strong>ESTADO DE CONDOMINIO</strong></div>
-            <div>Período: <strong>${monthNames[month]} ${year}</strong></div>
-            <div>Tasa BCV: <strong>${bcvRate} Bs/USD</strong></div>
-          </div>
-        </div>
+        ${renderOfficialReportHeaderHTML('ESTADO DE CONDOMINIO', `COND-${year}-${String(month).padStart(2, '0')}`, 'Junta de Condominio & Sociedad Administradora')}
 
         <div style="margin-bottom: 18px;">
           <h4 style="margin: 0 0 8px 0; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #1e293b;">
@@ -5298,18 +5334,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }).join('');
 
     return `
-      <div class="printable-report" style="background: white; color: #0f172a; padding: 32px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 0 auto;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 20px;">
-          <div>
-            <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: #0f172a;">CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</h2>
-            <div style="font-size: 11px; color: #475569;">RIF: J-29881234-0 • Av. Municipal, Puerto La Cruz, Venezuela</div>
-            <div style="font-size: 11px; color: #475569;">Oficina de Administración Inmobiliaria</div>
-          </div>
-          <div style="text-align: right; font-size: 11px; color: #334155;">
-            <div>CONSTANCIA N°: <strong>SOLV-${new Date().getFullYear()}-${tenant.unit_code}</strong></div>
-            <div>Fecha: <strong>${new Date().toLocaleDateString('es-VE')}</strong></div>
-          </div>
-        </div>
+      <div class="printable-report" style="background: white; color: #0f172a; padding: 32px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif; max-width: 820px; margin: 0 auto;">
+        ${renderOfficialReportHeaderHTML('CERTIFICADO DE SOLVENCIA', `SOLV-${new Date().getFullYear()}-${tenant.unit_code}`, 'Oficina de Administración Inmobiliaria')}
 
         <div style="text-align: center; margin-bottom: 24px;">
           <h3 style="margin: 0; font-size: 16px; font-weight: 900; text-transform: uppercase; color: #0f172a;">
@@ -5393,18 +5419,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     return `
       <div class="printable-report" style="background: white; color: #0f172a; padding: 28px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 18px;">
-          <div>
-            <h2 style="margin: 0; font-size: 19px; font-weight: 800; color: #0f172a;">CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</h2>
-            <div style="font-size: 11.5px; color: #475569;">RIF: J-29881234-0 • Contribuyente Ordinario del IVA</div>
-            <div style="font-size: 11.5px; color: #0284c7; font-weight: 700;">LIBRO FISCAL DE VENTAS — PROVIDENCIA SNAT/2014/0032</div>
-          </div>
-          <div style="text-align: right; font-size: 11.5px; color: #334155;">
-            <div>Período: <strong>${monthNames[month]} ${year}</strong></div>
-            <div>Fecha Emisión: ${new Date().toLocaleDateString('es-VE')}</div>
-            <div>Tasa Oficial BCV: <strong>${bcvRate.toFixed(2)} Bs/USD</strong></div>
-          </div>
-        </div>
+        ${renderOfficialReportHeaderHTML('LIBRO FISCAL DE VENTAS (SENIAT)', `SENIAT-V-${year}-${String(month).padStart(2, '0')}`, 'Contribuyente Ordinario del IVA • Providencia SNAT/2014/0032')}
 
         <div class="report-summary-grid" style="gap: 10px; margin-bottom: 20px;">
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; text-align: center;">
@@ -5479,18 +5494,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     return `
       <div class="printable-report" style="background: white; color: #0f172a; padding: 28px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 18px;">
-          <div>
-            <h2 style="margin: 0; font-size: 19px; font-weight: 800; color: #0f172a;">CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</h2>
-            <div style="font-size: 11.5px; color: #475569;">RIF: J-29881234-0 • Agente de Retención de IVA e ISLR</div>
-            <div style="font-size: 11.5px; color: #16a34a; font-weight: 700;">LIBRO DE COMPRAS & RELACIÓN DE RETENCIONES — SENIAT</div>
-          </div>
-          <div style="text-align: right; font-size: 11.5px; color: #334155;">
-            <div>Período: <strong>${monthNames[month]} ${year}</strong></div>
-            <div>Fecha Emisión: ${new Date().toLocaleDateString('es-VE')}</div>
-            <div>Tasa BCV: <strong>${bcvRate.toFixed(2)} Bs/USD</strong></div>
-          </div>
-        </div>
+        ${renderOfficialReportHeaderHTML('LIBRO DE COMPRAS & GASTOS (SENIAT)', `SENIAT-C-${year}-${String(month).padStart(2, '0')}`, 'Agente de Retención SENIAT • Providencia SNAT/2014/0032')}
 
         <div class="report-summary-grid" style="gap: 10px; margin-bottom: 20px;">
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; text-align: center;">
@@ -5556,17 +5560,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     return `
       <div class="printable-report" style="background: white; color: #0f172a; padding: 28px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 18px;">
-          <div>
-            <h2 style="margin: 0; font-size: 19px; font-weight: 800; color: #0f172a;">CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</h2>
-            <div style="font-size: 11.5px; color: #475569;">Departamento de Tesorería & Conciliación Bancaria</div>
-            <div style="font-size: 11.5px; color: #6366f1; font-weight: 700;">AUDITORÍA Y CONCILIACIÓN AUTOMÁTICA MULTIENTIDAD</div>
-          </div>
-          <div style="text-align: right; font-size: 11.5px; color: #334155;">
-            <div>Fecha Conciliación: <strong>${new Date().toLocaleDateString('es-VE')}</strong></div>
-            <div>Tasa BCV: <strong>${bcvRate.toFixed(2)} Bs/USD</strong></div>
-          </div>
-        </div>
+        ${renderOfficialReportHeaderHTML('AUDITORÍA & CONCILIACIÓN BANCARIA', `CONC-${year}-${String(month).padStart(2, '0')}`, 'Departamento de Tesorería & Conciliación Multientidad')}
 
         <div class="report-summary-grid" style="gap: 10px; margin-bottom: 20px;">
           <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 10px; text-align: center;">
@@ -5639,17 +5633,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     return `
       <div class="printable-report" style="background: white; color: #0f172a; padding: 32px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif; max-width: 820px; margin: 0 auto; line-height: 1.6;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 20px;">
-          <div>
-            <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: #0f172a;">CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</h2>
-            <div style="font-size: 11px; color: #475569;">RIF: J-29881234-0 • Av. Municipal, Puerto La Cruz, Edo. Anzoátegui</div>
-            <div style="font-size: 11px; color: #475569;">Consultoría Jurídica & Administración Inmobiliaria</div>
-          </div>
-          <div style="text-align: right; font-size: 11px; color: #334155;">
-            <div>DOCUMENTO LEGAL N°: <strong>FIN-${new Date().getFullYear()}-${tenant.unit_code}</strong></div>
-            <div>Fecha: <strong>${new Date().toLocaleDateString('es-VE')}</strong></div>
-          </div>
-        </div>
+        ${renderOfficialReportHeaderHTML('ACTA DE FINIQUITO & DESOCUPACIÓN', `FIN-${new Date().getFullYear()}-${tenant.unit_code}`, 'Consultoría Jurídica & Administración Inmobiliaria')}
 
         <div style="text-align: center; margin-bottom: 22px;">
           <h3 style="margin: 0; font-size: 16px; font-weight: 900; text-transform: uppercase; color: #0f172a;">
@@ -5728,18 +5712,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     return `
       <div class="printable-report" style="background: white; color: #0f172a; padding: 28px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif; max-width: 850px; margin: 0 auto;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 16px;">
-          <div>
-            <h2 style="margin: 0; font-size: 17px; font-weight: 800;">CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</h2>
-            <div style="font-size: 11px; color: #475569;">RIF: J-29881234-0 • Agente de Retención de Impuesto al Valor Agregado</div>
-            <div style="font-size: 11px; color: #475569;">Providencia Administrativa SENIAT N° SNAT/2015/0049</div>
-          </div>
-          <div style="text-align: right; font-size: 11px;">
-            <div>COMPROBANTE GENERAL DE RETENCIÓN IVA</div>
-            <div>Período Fiscal: <strong>${monthNames[month]} ${year}</strong></div>
-            <div>Tasa BCV Oficial: <strong>${bcvRate.toFixed(2)} Bs/USD</strong></div>
-          </div>
-        </div>
+        ${renderOfficialReportHeaderHTML('COMPROBANTE GENERAL DE RETENCIÓN IVA', `IVA-${year}-${String(month).padStart(2, '0')}`, 'Agente de Retención SENIAT • Providencia SNAT/2015/0049')}
 
         <div style="margin-bottom: 14px; font-size: 11.5px; color: #334155; line-height: 1.5;">
           Relación certificada de retenciones del Impuesto al Valor Agregado (75%) practicadas a proveedores de bienes y servicios comunes durante las operaciones del centro comercial.
@@ -5800,18 +5773,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     return `
       <div class="printable-report" style="background: white; color: #0f172a; padding: 28px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif; max-width: 850px; margin: 0 auto;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 16px;">
-          <div>
-            <h2 style="margin: 0; font-size: 17px; font-weight: 800;">CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</h2>
-            <div style="font-size: 11px; color: #475569;">RIF: J-29881234-0 • Agente de Retención de Impuesto sobre la Renta (ISLR)</div>
-            <div style="font-size: 11px; color: #475569;">Reglamento Parcial en Materia de Retenciones (Decreto N° 1.808)</div>
-          </div>
-          <div style="text-align: right; font-size: 11px;">
-            <div>COMPROBANTE GENERAL DE RETENCIÓN ISLR (ARC)</div>
-            <div>Período Fiscal: <strong>${monthNames[month]} ${year}</strong></div>
-            <div>Tasa BCV Oficial: <strong>${bcvRate.toFixed(2)} Bs/USD</strong></div>
-          </div>
-        </div>
+        ${renderOfficialReportHeaderHTML('COMPROBANTE GENERAL DE RETENCIÓN ISLR', `ISLR-${year}-${String(month).padStart(2, '0')}`, 'Agente de Retención ISLR • Decreto N° 1.808')}
 
         <div style="margin-bottom: 14px; font-size: 11.5px; color: #334155; line-height: 1.5;">
           Certificado de retenciones de ISLR practicadas a prestadores de servicios y proveedores comerciales (Concepto: Honorarios y Servicios a Personas Jurídicas Domicialiadas - 2%).
@@ -5883,17 +5845,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }).join('');
 
     return `
-      <div class="printable-report" style="background: white; color: #0f172a; padding: 32px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 0 auto; line-height: 1.6;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #b91c1c; padding-bottom: 14px; margin-bottom: 20px;">
-          <div>
-            <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: #0f172a;">CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</h2>
-            <div style="font-size: 11px; color: #475569;">RIF: J-29881234-0 • Dpto. de Cobranzas, Auditoría & Asuntos Legales</div>
-          </div>
-          <div style="text-align: right; font-size: 11px; color: #334155;">
-            <div>NOTIFICACIÓN N°: <strong>NOT-${new Date().getFullYear()}-${tenant.unit_code}</strong></div>
-            <div>Fecha de Emisión: <strong>${new Date().toLocaleDateString('es-VE')}</strong></div>
-          </div>
-        </div>
+      <div class="printable-report" style="background: white; color: #0f172a; padding: 32px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif; max-width: 820px; margin: 0 auto; line-height: 1.6;">
+        ${renderOfficialReportHeaderHTML('NOTIFICACIÓN DE MORA (72H)', `NOT-${new Date().getFullYear()}-${tenant.unit_code}`, 'Dpto. de Cobranzas, Auditoría & Asuntos Legales')}
 
         <div style="text-align: center; margin-bottom: 22px;">
           <h3 style="margin: 0; font-size: 15px; font-weight: 900; text-transform: uppercase; color: #b91c1c;">
@@ -6051,20 +6004,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     return `
       <div class="printable-report" style="background: white; color: #0f172a; padding: 28px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif;">
-        <!-- MEMBRETE OFICIAL SUCESORAL -->
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 18px;">
-          <div>
-            <h2 style="margin: 0; font-size: 19px; font-weight: 900; letter-spacing: -0.5px; color: #0f172a;">CENTRO COMERCIAL MARIO SÁNCHEZ</h2>
-            <div style="font-size: 12px; font-weight: 700; color: #7c3aed;">SUCESIÓN MARIO SÁNCHEZ — RIF: J-30211544-2</div>
-            <div style="font-size: 11px; color: #64748b;">Av. 5 de Julio c/c Calle Concordia, Puerto La Cruz, Edo. Anzoátegui</div>
-            <div style="font-size: 10.5px; color: #64748b; margin-top: 2px;">Régimen de Comunidad Hereditaria Indivisa — Código Civil Venezolano Arts. 552 y 768</div>
-          </div>
-          <div style="text-align: right;">
-            <div style="font-size: 13px; font-weight: 800; color: #0f172a;">LIQUIDACIÓN DE FRUTOS CIVILES</div>
-            <div style="font-size: 12px; color: #64748b;">Período: <strong>${monthNames[month]} ${year}</strong></div>
-            <div style="font-size: 11px; color: #059669; font-weight: 700; margin-top: 4px;">Tasa Oficial BCV: Bs. ${bcvRate} / USD</div>
-          </div>
-        </div>
+        ${renderOfficialReportHeaderHTML('LIQUIDACIÓN DE FRUTOS CIVILES SUCESORALES', `SUC-${year}-${String(month).padStart(2, '0')}`, 'Sucesión Mario Sánchez (RIF: J-30211544-2) • Arts. 552 y 768 Código Civil')}
 
         <!-- KPI CARDS SUCESORALES -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 22px;">
@@ -6153,6 +6093,195 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
   }
 
+  // --- REPORTE COMPLEMENTARIO: CONSTANCIA FORMAL DE ARRENDAMIENTO ---
+  function renderConstanciaReportHTML(tenantId) {
+    const tenants = dbService.getTenants();
+    const tenant = tenants.find(t => t.id === tenantId) || tenants[0];
+    if (!tenant) return '<div style="padding:24px;text-align:center;">No hay arrendatario seleccionado.</div>';
+
+    const unit = dbService.getUnits().find(u => u.code === tenant.unit_code) || { code: tenant.unit_code, area_m2: 0, condo_aliquot: 0.05, base_rent_usd: 500 };
+    const contract = dbService.getContracts().find(c => c.tenant_id === tenant.id) || {};
+    const bcvRate = financialEngine.getRates().VES.toFixed(2);
+    const rentUsd = parseFloat(tenant.base_rent_usd || unit.base_rent_usd || 500);
+    const rentBs = financialEngine.convert(rentUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
+    const aliquotPct = ((unit.condo_aliquot || 0.05) * 100).toFixed(2);
+
+    return `
+      <div class="printable-report" style="background: white; color: #0f172a; padding: 32px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif; max-width: 820px; margin: 0 auto; line-height: 1.6;">
+        ${renderOfficialReportHeaderHTML('CONSTANCIA DE ARRENDAMIENTO', `CONST-${new Date().getFullYear()}-${tenant.unit_code}`, 'Consultoría Jurídica & Administración Inmobiliaria')}
+
+        <div style="text-align: center; margin-bottom: 22px;">
+          <h3 style="margin: 0; font-size: 16px; font-weight: 900; text-transform: uppercase; color: #0f172a;">
+            CONSTANCIA FORMAL DE ARRENDAMIENTO COMERCIAL & ESTADO CONTRACTUAL
+          </h3>
+          <span style="font-size: 11px; color: #64748b;">Decreto con Rango, Valor y Fuerza de Ley de Regulación del Arrendamiento Inmobiliario para el Uso Comercial (Gaceta Oficial N° 40.418)</span>
+        </div>
+
+        <div style="font-size: 12px; color: #1e293b; text-align: justify; margin-bottom: 18px;">
+          Por medio de la presente, la <strong>SOCIEDAD ADMINISTRADORA DEL CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</strong> (RIF: <strong>J-30211544-2</strong>), hace constar formalmente que la entidad mercantil cuyos datos se especifican a continuación mantiene una relación de arrendamiento comercial plenamente reconocida, vigente y regulada bajo el marco de la normativa venezolana:
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 14px; font-size: 12px; margin-bottom: 20px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div><strong>Razón Social:</strong> ${escapeHtml(tenant.business_name)}</div>
+            <div><strong>R.I.F.:</strong> <span style="font-family: monospace; font-weight: 700;">${escapeHtml(tenant.rif)}</span></div>
+            <div><strong>Nombre Comercial:</strong> ${escapeHtml(tenant.trade_name || tenant.business_name)}</div>
+            <div><strong>Representante Legal:</strong> ${escapeHtml(tenant.legal_rep_name || 'N/A')}</div>
+            <div><strong>Cédula de Identidad:</strong> ${escapeHtml(tenant.legal_rep_dni || 'N/A')}</div>
+            <div><strong>Actividad Comercial:</strong> ${escapeHtml(tenant.activity || 'Comercio y Servicios')}</div>
+          </div>
+        </div>
+
+        <h4 style="margin: 0 0 8px 0; font-size: 12px; font-weight: 800; text-transform: uppercase; color: #1e293b;">
+          Términos y Condiciones del Inmueble Arrendado
+        </h4>
+        <div class="table-responsive" style="margin-bottom: 22px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 10.5px; text-transform: uppercase;">
+                <th style="padding: 7px 10px; text-align: left;">Local / Unidad</th>
+                <th style="padding: 7px 10px; text-align: right;">Área M²</th>
+                <th style="padding: 7px 10px; text-align: right;">Alícuota Condominio</th>
+                <th style="padding: 7px 10px; text-align: right;">Canon Fijo Mensual</th>
+                <th style="padding: 7px 10px; text-align: right;">Equivalente Bs. BCV</th>
+                <th style="padding: 7px 10px; text-align: center;">Contrato</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11.5px;">
+                <td style="padding: 8px 10px; font-weight: 700; color: #b45309;">Local ${escapeHtml(tenant.unit_code)}</td>
+                <td style="padding: 8px 10px; text-align: right;">${unit.area_m2 || 0} m²</td>
+                <td style="padding: 8px 10px; text-align: right;">${aliquotPct}%</td>
+                <td style="padding: 8px 10px; text-align: right; font-weight: 700;">$${rentUsd.toFixed(2)} USD</td>
+                <td style="padding: 8px 10px; text-align: right; color: #475569;">Bs. ${rentBs}</td>
+                <td style="padding: 8px 10px; text-align: center; font-family: monospace;">${escapeHtml(contract.contract_number || 'CON-2026-ACT')}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="font-size: 11.5px; color: #475569; margin-bottom: 24px;">
+          Constancia que se expide a solicitud de la parte interesada en la ciudad de Puerto La Cruz, a los fines que estime pertinentes.
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px;">
+          <div style="text-align: center;">
+            <div style="border-top: 1px solid #0f172a; padding-top: 6px; font-size: 11px;">
+              <strong>ADMINISTRACIÓN CC MARIO SÁNCHEZ</strong><br>
+              Sociedad Administradora C.C. Mario Sánchez, C.A.<br>
+              <span style="font-size: 10px; color: #64748b;">Firma Autorizada y Sello Húmedo</span>
+            </div>
+          </div>
+          <div style="text-align: center;">
+            <div style="border-top: 1px solid #0f172a; padding-top: 6px; font-size: 11px;">
+              <strong>CONSULTORÍA JURÍDICA</strong><br>
+              Abogado Inmobiliario Responsable<br>
+              <span style="font-size: 10px; color: #64748b;">I.P.S.A. N° Conforme • Gaceta Oficial 40.418</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // --- REPORTE COMPLEMENTARIO: ADENDA DE OBRAS Y ACUERDOS ESPECIALES ---
+  function renderAdendaObrasReportHTML(tenantId) {
+    const tenants = dbService.getTenants();
+    const tenant = tenants.find(t => t.id === tenantId) || tenants[0];
+    if (!tenant) return '<div style="padding:24px;text-align:center;">No hay arrendatario seleccionado.</div>';
+
+    const unit = dbService.getUnits().find(u => u.code === tenant.unit_code) || { code: tenant.unit_code, area_m2: 0 };
+    const agreements = (dbService.getSpecialAgreements ? dbService.getSpecialAgreements(tenant.id) : []) || [];
+    const agr = agreements[0] || {
+      agreement_type: 'Deducción por Obras / Reparaciones Asumidas',
+      discount_monthly_usd: 150.00,
+      total_investment_usd: 900.00,
+      start_date: new Date().toISOString().split('T')[0],
+      end_date: new Date(Date.now() + 180*86400000).toISOString().split('T')[0],
+      description: 'Acuerdo especial de compensación por reparaciones de infraestructura y mejoras locativas autorizadas.'
+    };
+
+    const bcvRate = financialEngine.getRates().VES.toFixed(2);
+    const discUsd = parseFloat(agr.discount_monthly_usd) || 0;
+    const invUsd = parseFloat(agr.total_investment_usd) || 0;
+    const discBs = financialEngine.convert(discUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
+    const invBs = financialEngine.convert(invUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
+
+    return `
+      <div class="printable-report" style="background: white; color: #0f172a; padding: 32px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif; max-width: 820px; margin: 0 auto; line-height: 1.6;">
+        ${renderOfficialReportHeaderHTML('ADENDA DE ACUERDO ESPECIAL', `ADEN-${new Date().getFullYear()}-${tenant.unit_code}`, 'Dirección de Obras & Infraestructura')}
+
+        <div style="text-align: center; margin-bottom: 22px;">
+          <h3 style="margin: 0; font-size: 16px; font-weight: 900; text-transform: uppercase; color: #0f172a;">
+            ADENDA DE CONTRATO POR RECONOCIMIENTO DE OBRAS & DEDUCCIÓN DE CANON
+          </h3>
+          <span style="font-size: 11px; color: #64748b;">Conforme a los Artículos 13, 24 y 32 de la Ley de Regulación del Arrendamiento Inmobiliario para el Uso Comercial (G.O. 40.418)</span>
+        </div>
+
+        <div style="font-size: 12px; color: #1e293b; text-align: justify; margin-bottom: 18px;">
+          Entre la <strong>SOCIEDAD ADMINISTRADORA DEL CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</strong> (RIF: <strong>J-30211544-2</strong>) en su carácter de Arrendadora, y el Arrendatario <strong>${escapeHtml(tenant.business_name)}</strong> (RIF: <strong>${escapeHtml(tenant.rif)}</strong>), ocupante del <strong>Local ${escapeHtml(tenant.unit_code)}</strong>, se conviene en celebrar la presente ADENDA vinculante sujeta a las siguientes estipulaciones:
+        </div>
+
+        <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 14px; font-size: 12px; margin-bottom: 20px;">
+          <div style="font-weight: 800; color: #92400e; margin-bottom: 6px; text-transform: uppercase;">
+            Términos Financieros del Convenio de Obras:
+          </div>
+          <div><strong>Tipo de Acuerdo:</strong> ${escapeHtml(agr.agreement_type || 'Deducción por Obras')}</div>
+          <div><strong>Inversión Total Reconocida:</strong> <strong>$${invUsd.toFixed(2)} USD</strong> (Bs. ${invBs})</div>
+          <div><strong>Deducción Mensual Autorizada:</strong> <strong style="color: #059669;">-$${discUsd.toFixed(2)} USD/mes</strong> (Bs. ${discBs})</div>
+          <div><strong>Período de Aplicación:</strong> Desde <strong>${escapeHtml(agr.start_date || 'N/A')}</strong> hasta <strong>${escapeHtml(agr.end_date || 'N/A')}</strong></div>
+          <div style="margin-top: 6px;"><strong>Descripción / Memoria Descriptiva:</strong> ${escapeHtml(agr.description || 'Mejoras locativas autorizadas.')}</div>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; font-size: 11.5px; margin-bottom: 24px;">
+          <strong>Soporte Documental:</strong> Se deja constancia de que los presupuestos, comprobantes de compra de materiales o anexo suscrito ${agr.proof_file ? `se encuentran <strong>digitalizados y archivados en el expediente digital del local (${escapeHtml(agr.proof_file.name)})</strong>` : 'reposan archivados en el legajo físico del expediente administrativo'}.
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px;">
+          <div style="text-align: center;">
+            <div style="border-top: 1px solid #0f172a; padding-top: 6px; font-size: 11px;">
+              <strong>POR LA ARRENDADORA</strong><br>
+              Centro Comercial Mario Sánchez, C.A.<br>
+              <span style="font-size: 10px; color: #64748b;">Administración & Gerencia de Operaciones</span>
+            </div>
+          </div>
+          <div style="text-align: center;">
+            <div style="border-top: 1px solid #0f172a; padding-top: 6px; font-size: 11px;">
+              <strong>POR EL ARRENDATARIO</strong><br>
+              ${escapeHtml(tenant.business_name)}<br>
+              <span style="font-size: 10px; color: #64748b;">Representante Legal • Firma y Huella</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // EXPORTACIÓN GLOBAL UNIFICADA DE GENERADORES DE INFORMES
+  window.renderOfficialReportHeaderHTML = renderOfficialReportHeaderHTML;
+  window.renderRecaudacionReportHTML = renderRecaudacionReportHTML;
+  window.renderCondominioReportHTML = renderCondominioReportHTML;
+  window.renderSolvenciaReportHTML = renderSolvenciaReportHTML;
+  window.renderSeniatVentasReportHTML = renderSeniatVentasReportHTML;
+  window.renderSeniatComprasReportHTML = renderSeniatComprasReportHTML;
+  window.renderConciliacionReportHTML = renderConciliacionReportHTML;
+  window.renderFiniquitoEntregaReportHTML = renderFiniquitoEntregaReportHTML;
+  window.renderRetencionIvaReportHTML = renderRetencionIvaReportHTML;
+  window.renderRetencionIslrReportHTML = renderRetencionIslrReportHTML;
+  window.renderNotificacionMoraReportHTML = renderNotificacionMoraReportHTML;
+  window.renderHerederosReportHTML = renderHerederosReportHTML;
+  window.renderConstanciaReportHTML = renderConstanciaReportHTML;
+  window.renderAdendaObrasReportHTML = renderAdendaObrasReportHTML;
+
+  // Unificación directa con VenezuelaLegal para que use el mismo template .printable-report
+  if (window.VenezuelaLegal) {
+    window.VenezuelaLegal.generateSolvenciaHTML = async (t, u, inv, opt) => renderSolvenciaReportHTML(t.id);
+    window.VenezuelaLegal.generateNotificacionMoraHTML = async (t, u, inv, opt) => renderNotificacionMoraReportHTML(t.id);
+    window.VenezuelaLegal.generateConstanciaArrendatarioHTML = async (t, u, c, opt) => renderConstanciaReportHTML(t.id);
+    window.VenezuelaLegal.generateActaEntregaHTML = async (t, u, c, opt) => renderFiniquitoEntregaReportHTML(t.id);
+    window.VenezuelaLegal.generateAdendaObrasHTML = async (t, u, a, opt) => renderAdendaObrasReportHTML(t.id);
+  }
+
   window.downloadSeniatTxtReport = function() {
     const month = parseInt(document.getElementById('report-param-month') ? document.getElementById('report-param-month').value : 3);
     const year = parseInt(document.getElementById('report-param-year') ? document.getElementById('report-param-year').value : 2026);
@@ -6165,7 +6294,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     const purchasesBook = window.SeniatEngine.generatePurchasesBook(expenses, { month, year, bcvRate });
-    const txtContent = window.SeniatEngine.generateSeniatTxtRetention(purchasesBook, 'J-29881234-0');
+    const txtContent = window.SeniatEngine.generateSeniatTxtRetention(purchasesBook, 'J-30211544-2');
     
     if (!txtContent || txtContent.trim() === '') {
       if (window.SecuritySuite && window.SecuritySuite.toast) {

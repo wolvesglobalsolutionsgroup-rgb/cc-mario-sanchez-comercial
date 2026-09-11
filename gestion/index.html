@@ -38,12 +38,17 @@
   
   <!-- APP SIDEBAR -->
   <aside class="app-sidebar" id="app-sidebar">
-    <div class="sidebar-header">
-      <img src="logo_cc_mario_sanchez_2k.svg?v=20260904" alt="Logo" class="sidebar-brand-img" data-tenant-logo style="width: 42px; height: 42px; max-width: 42px; max-height: 42px; object-fit: contain; flex-shrink: 0; border-radius: 9px; box-shadow: 0 2px 10px rgba(0,0,0,0.5);">
-      <div>
-        <h2 class="sidebar-brand-title" data-tenant-short>CC Mario Sánchez</h2>
-        <span class="sidebar-brand-sub">ERP Inmobiliario</span>
+    <div class="sidebar-header" style="display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+        <img src="logo_cc_mario_sanchez_2k.svg?v=20260904" alt="Logo" class="sidebar-brand-img" data-tenant-logo style="width: 40px; height: 40px; max-width: 40px; max-height: 40px; object-fit: contain; flex-shrink: 0; border-radius: 9px; box-shadow: 0 2px 10px rgba(0,0,0,0.5);">
+        <div class="sidebar-brand-text" style="min-width: 0;">
+          <h2 class="sidebar-brand-title" data-tenant-short style="margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">CC Mario Sánchez</h2>
+          <span class="sidebar-brand-sub" style="display: block;">ERP Inmobiliario</span>
+        </div>
       </div>
+      <button type="button" class="sidebar-toggle-btn" id="sidebar-toggle-btn" onclick="window.toggleSidebar()" title="Ocultar menú lateral" aria-label="Ocultar menú lateral">
+        <i class="fa-solid fa-angles-left" id="sidebar-toggle-icon"></i>
+      </button>
     </div>
 
     <nav class="sidebar-nav">
@@ -135,7 +140,7 @@
     <!-- TOP NAVBAR -->
     <header class="top-navbar">
       <div style="display: flex; align-items: center; gap: 12px;">
-        <button class="mobile-menu-toggle" id="mobile-menu-toggle" title="Abrir Menú">
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle" onclick="window.toggleSidebar()" title="Mostrar / Ocultar Menú Lateral" aria-label="Menú Lateral">
           <i class="fa-solid fa-bars"></i>
         </button>
 
@@ -1839,7 +1844,7 @@
           <h5 style="font-size: 12px; font-weight: 700; color: var(--amber); text-transform: uppercase; margin: 0 0 10px 0;">
             <i class="fa-solid fa-plus-circle"></i> Registrar Nuevo Acuerdo o Deducción
           </h5>
-          <form id="form-dossier-agreement" data-submit="handleSaveSpecialAgreement(event)" style="display: flex; flex-direction: column; gap: 10px;">
+          <form id="form-dossier-agreement" onsubmit="window.handleSaveSpecialAgreement(event)" style="display: flex; flex-direction: column; gap: 10px;">
             <input type="hidden" id="agr-id">
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -1878,34 +1883,39 @@
               <textarea id="agr-description" class="form-control" rows="2" style="font-size: 12px;" required placeholder="Ej: Reparación del sistema de aire acondicionado central y pintura de fachada frontal realizada por el arrendatario, amortizable a razón de $150/mes por 6 meses..."></textarea>
             </div>
 
-            <!-- COMPROBANTE DE ACUERDO / FACTURA DE OBRA -->
-            <div>
-              <label style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">
+            <!-- COMPROBANTE DE ACUERDO / FACTURA DE OBRA / SOPORTE -->
+            <div style="margin-top: 4px;">
+              <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">
                 <i class="fa-solid fa-paperclip" style="color: var(--amber);"></i> Soporte de la Obra o Anexo Firmado (Opcional)
               </label>
-              <input type="file" id="agr-proof-file" accept="image/*,.pdf" data-change="handleAgreementProofChange(event)" style="display: none;">
+              <input type="file" id="agr-proof-file" accept="image/*,.pdf" onchange="window.handleAgreementProofChange(event)" style="display: none;">
               
-              <div class="custom-file-dropzone amber-zone" id="agr-proof-dropzone" data-click="document.getElementById('agr-proof-file').click()" style="padding: 10px; min-height: auto;">
-                <i class="fa-solid fa-file-invoice-dollar dropzone-icon" style="font-size: 18px;"></i>
-                <span class="dropzone-main-text" style="font-size: 11.5px;">Arrastra el soporte de la obra/anexo o haz clic para subir</span>
-                <span class="dropzone-sub-text" style="font-size: 10px;">PDF, JPG o PNG (Máx. 10 MB)</span>
+              <div class="custom-file-dropzone amber-zone" id="agr-proof-dropzone" onclick="document.getElementById('agr-proof-file').click()" style="padding: 16px 14px; text-align: center; border: 2px dashed rgba(245,158,11,0.55); border-radius: 8px; cursor: pointer; background: rgba(245,158,11,0.04); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; transition: all 0.2s ease;">
+                <i class="fa-solid fa-cloud-arrow-up dropzone-icon" style="font-size: 24px; color: var(--amber); margin-bottom: 2px;"></i>
+                <span class="dropzone-main-text" style="font-size: 12px; font-weight: 700; color: var(--txt-primary);">Haz clic para seleccionar o arrastra el soporte de la obra aquí</span>
+                <span class="dropzone-sub-text" style="font-size: 10.5px; color: var(--txt-muted);">Facturas de materiales, presupuesto sellado, fotos de remodelación o PDF del anexo (Máx. 10 MB)</span>
+                <button type="button" class="btn-file-select dropzone-mobile-btn" style="margin-top: 4px; font-size: 11px; padding: 5px 14px; background: rgba(245,158,11,0.15); border: 1px solid var(--amber); color: var(--amber); border-radius: 6px; font-weight: 700; cursor: pointer; pointer-events: none;">
+                  <i class="fa-solid fa-folder-open"></i> Explorar Archivo...
+                </button>
               </div>
 
-              <div id="agr-proof-preview-container" class="file-preview-card" style="display: none; margin-top: 6px;">
-                <div class="file-preview-info">
-                  <i class="fa-solid fa-file-circle-check" id="agr-proof-icon" style="color: var(--amber); font-size: 18px;"></i>
+              <div id="agr-proof-preview-container" class="file-preview-card" style="display: none; margin-top: 8px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 10px 14px; align-items: center; justify-content: space-between;">
+                <div class="file-preview-info" style="display: flex; align-items: center; gap: 10px;">
+                  <i class="fa-solid fa-file-circle-check" id="agr-proof-icon" style="color: var(--emerald); font-size: 22px;"></i>
                   <div style="min-width: 0;">
-                    <div id="agr-proof-name" class="file-preview-name" style="font-size: 11.5px;"></div>
-                    <div id="agr-proof-size" class="file-preview-size" style="font-size: 10px;"></div>
+                    <div id="agr-proof-name" class="file-preview-name" style="font-size: 12px; font-weight: 700; color: var(--txt-primary);"></div>
+                    <div id="agr-proof-size" class="file-preview-size" style="font-size: 10.5px; color: var(--txt-muted);"></div>
                   </div>
                 </div>
-                <button type="button" class="btn-remove-file" data-click="removeAgreementProof(event)" title="Remover archivo"><i class="fa-solid fa-xmark"></i></button>
+                <button type="button" class="btn-remove-file" onclick="window.removeAgreementProof(event)" title="Remover archivo" style="background: rgba(244,63,94,0.1); border: 1px solid rgba(244,63,94,0.3); color: var(--rose); padding: 4px 8px; border-radius: 6px; cursor: pointer;">
+                  <i class="fa-solid fa-xmark"></i> Remover
+                </button>
               </div>
             </div>
 
-            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px;">
-              <button type="button" class="btn-currency-toggle" data-click="resetAgreementForm()" style="font-size: 11.5px; padding: 5px 12px;">Limpiar</button>
-              <button type="submit" class="btn-onboarding-cta" style="background: var(--amber); border-color: var(--amber); color: #000; font-weight: 800; font-size: 11.5px; padding: 5px 14px;">
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-subtle);">
+              <button type="button" class="btn-currency-toggle" onclick="window.resetAgreementForm()" style="font-size: 11.5px; padding: 6px 14px;">Limpiar</button>
+              <button type="submit" class="btn-onboarding-cta" style="background: var(--amber); border-color: var(--amber); color: #000; font-weight: 800; font-size: 12px; padding: 6px 16px;">
                 <i class="fa-solid fa-check-double"></i> Registrar Acuerdo
               </button>
             </div>
