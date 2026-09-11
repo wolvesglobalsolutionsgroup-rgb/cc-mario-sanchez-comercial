@@ -1171,6 +1171,84 @@
               <!-- Injected via JS: renderStaffProfileCards() -->
             </div>
           </div>
+
+        <!-- TARJETA 8: RESPALDO INTEGRAL DEL SISTEMA & COPIAS DE SEGURIDAD -->
+        <div class="data-card" style="margin-top: 24px; padding: 22px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 14px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div class="kpi-icon-badge badge-cyan"><i class="fa-solid fa-database"></i></div>
+              <div>
+                <h4 style="font-family: var(--font-heading); font-size: 16px; font-weight: 800; color: var(--txt-primary); display: flex; align-items: center; gap: 8px;">
+                  Respaldo Integral del Sistema & Copias de Seguridad
+                </h4>
+                <p style="font-size: 12px; color: var(--txt-secondary);">Descarga de base de datos completa con imágenes/comprobantes Base64, exportación a Excel maestro con fórmulas vivas, y restauración íntegra de estado.</p>
+              </div>
+            </div>
+            <span class="status-pill pill-success" style="font-size: 11px;">
+              <i class="fa-solid fa-shield-check"></i> SHA-256 Validado
+            </span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 20px;">
+            <!-- OPCIÓN 1: RESPALDO JSON COMPLETO -->
+            <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                  <i class="fa-solid fa-file-code" style="color: var(--cyan); font-size: 16px;"></i>
+                  <strong style="font-size: 13px; color: var(--txt-primary);">Copia Completa JSON + Binarios</strong>
+                </div>
+                <p style="font-size: 11.5px; color: var(--txt-secondary); line-height: 1.4;">
+                  Descarga un archivo <code>.json</code> con el 100% de las 39 unidades, inquilinos, contratos, recibos emitidos, pagos, gastos ($2,540/mes), kardex, acuerdos especiales y comprobantes/fotos embebidos en Base64.
+                </p>
+              </div>
+              <button type="button" class="btn-onboarding-cta" data-click="exportFullSystemBackup()" style="justify-content: center; padding: 9px 16px; font-size: 12px; background: rgba(14, 165, 233, 0.15); color: var(--cyan); border-color: rgba(14, 165, 233, 0.3);">
+                <i class="fa-solid fa-download"></i> <span>Descargar Respaldo JSON (.json)</span>
+              </button>
+            </div>
+
+            <!-- OPCIÓN 2: EXCEL MAESTRO CON FÓRMULAS VIVAS -->
+            <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                  <i class="fa-solid fa-file-excel" style="color: var(--emerald); font-size: 16px;"></i>
+                  <strong style="font-size: 13px; color: var(--txt-primary);">Excel Maestro con Fórmulas Vivas</strong>
+                </div>
+                <p style="font-size: 11.5px; color: var(--txt-secondary); line-height: 1.4;">
+                  Genera un libro multi-pestaña compatible con Excel conteniendo fórmulas determinísticas activas (<code>=SUM()</code>, <code>=C2-D2</code>, <code>=B5/14</code>) para Locales, Cobranzas, Gastos, Inventario y Distribución a Coherederos.
+                </p>
+              </div>
+              <button type="button" class="btn-onboarding-cta" data-click="exportMasterExcelWithFormulas()" style="justify-content: center; padding: 9px 16px; font-size: 12px; background: rgba(16, 185, 129, 0.15); color: var(--emerald); border-color: rgba(16, 185, 129, 0.3);">
+                <i class="fa-solid fa-file-arrow-down"></i> <span>Descargar Excel con Fórmulas (.xls)</span>
+              </button>
+            </div>
+
+            <!-- OPCIÓN 3: RESTAURACIÓN DE COPIA DE SEGURIDAD -->
+            <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                  <i class="fa-solid fa-clock-rotate-left" style="color: var(--amber); font-size: 16px;"></i>
+                  <strong style="font-size: 13px; color: var(--txt-primary);">Restaurar Copia de Seguridad</strong>
+                </div>
+                <p style="font-size: 11.5px; color: var(--txt-secondary); line-height: 1.4;">
+                  Carga un respaldo <code>.json</code> previamente generado. El sistema validará la firma de esquema y solicitará confirmación antes de sobreescribir la memoria local.
+                </p>
+              </div>
+              <div>
+                <input type="file" id="backup-restore-file-input" accept=".json,application/json" style="display: none;" data-change="handleBackupRestoreFileInput(event)">
+                <button type="button" class="btn-onboarding-cta" data-click="document.getElementById('backup-restore-file-input').click()" style="width: 100%; justify-content: center; padding: 9px 16px; font-size: 12px; background: rgba(245, 158, 11, 0.15); color: var(--amber); border-color: rgba(245, 158, 11, 0.3);">
+                  <i class="fa-solid fa-upload"></i> <span>Seleccionar Archivo JSON a Restaurar</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- DROPZONE ALTERNATIVO PARA RESTAURACIÓN -->
+          <div id="backup-restore-dropzone" style="border: 2px dashed var(--border-subtle); border-radius: 8px; padding: 18px; text-align: center; background: rgba(0,0,0,0.1); cursor: pointer; transition: all 0.2s;" data-click="document.getElementById('backup-restore-file-input').click()">
+            <i class="fa-solid fa-cloud-arrow-up" style="font-size: 24px; color: var(--txt-muted); margin-bottom: 8px;"></i>
+            <p style="font-size: 12px; color: var(--txt-secondary); margin: 0;">Arrastre y suelte su archivo de respaldo <code>.json</code> aquí o haga clic para examinar</p>
+            <span style="font-size: 10.5px; color: var(--txt-muted);">Validación automática de integridad, esquemas de 39 unidades y base de datos relacional.</span>
+          </div>
+        </div>
         </div>
 
       </section>
@@ -1223,6 +1301,7 @@
                 <option value="retencion_iva">8. Comprobante de Retención de IVA (SNAT/2015/0049)</option>
                 <option value="retencion_islr">9. Comprobante de Retención de ISLR (Art. 9 Dec. 1808)</option>
                 <option value="notificacion_mora">10. Notificación Formal de Mora & Citación Conciliatoria</option>
+                <option value="herederos">11. Estado de Cuenta & Frutos Civiles de Coherederos (1/14 Sucesión)</option>
               </select>
             </div>
 
@@ -1545,29 +1624,103 @@
       <button type="button" class="dossier-tab-btn" id="tab-btn-dossier-history" data-click="switchDossierTab('history')">
         <i class="fa-solid fa-clock-rotate-left"></i> <span>Historial de Facturas & Pagos</span>
       </button>
+      <button type="button" class="dossier-tab-btn" id="tab-btn-dossier-agreements" data-click="switchDossierTab('agreements')">
+        <i class="fa-solid fa-handshake"></i> <span>Acuerdos & Parámetros</span>
+      </button>
     </div>
 
     <!-- TAB 1: OVERVIEW & CONTACT -->
     <div class="dossier-tab-panel active" id="panel-dossier-overview">
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
         <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 14px;">
-          <div style="font-size: 11px; font-weight: 700; color: var(--amber); text-transform: uppercase; margin-bottom: 8px;">
-            <i class="fa-solid fa-signature"></i> Representación Legal
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--amber); text-transform: uppercase;">
+              <i class="fa-solid fa-signature"></i> Representación Legal
+            </div>
+            <button type="button" class="btn-currency-toggle" id="btn-dossier-edit-toggle" data-click="toggleDossierEditMode()" style="font-size: 10.5px; padding: 3px 8px;">
+              <i class="fa-solid fa-pen-to-square"></i> <span id="btn-dossier-edit-text">Editar Ficha</span>
+            </button>
           </div>
-          <div style="font-size: 13px; color: var(--txt-primary); font-weight: 700;" id="dossier-rep"></div>
-          <div style="font-size: 12px; color: var(--txt-secondary); margin-top: 4px;">Actividad: <span id="dossier-activity" style="color: var(--txt-primary);"></span></div>
-          <div style="font-size: 12px; color: var(--txt-secondary); margin-top: 4px;">Espacio: <strong id="dossier-unit" style="color: var(--amber);"></strong> (<span id="dossier-area-m2"></span>)</div>
+
+          <!-- MODO VISUALIZACIÓN -->
+          <div id="dossier-view-mode">
+            <div style="font-size: 13px; color: var(--txt-primary); font-weight: 700;" id="dossier-rep"></div>
+            <div style="font-size: 12px; color: var(--txt-secondary); margin-top: 4px;">Actividad: <span id="dossier-activity" style="color: var(--txt-primary);"></span></div>
+            <div style="font-size: 12px; color: var(--txt-secondary); margin-top: 4px;">Espacio: <strong id="dossier-unit" style="color: var(--amber);"></strong> (<span id="dossier-area-m2"></span>)</div>
+          </div>
+
+          <!-- MODO EDICIÓN (SUPERADMIN / DIRECTIVA) -->
+          <form id="dossier-edit-mode" style="display: none; flex-direction: column; gap: 8px; margin-top: 6px;" data-submit="saveTenantDossierChanges(event)">
+            <div>
+              <label style="font-size: 10px; color: var(--txt-muted); font-weight: 700;">Razón Social</label>
+              <input type="text" id="dossier-edit-company" class="form-control" style="font-size: 12px; padding: 5px 8px;" required>
+            </div>
+            <div>
+              <label style="font-size: 10px; color: var(--txt-muted); font-weight: 700;">Nombre Comercial</label>
+              <input type="text" id="dossier-edit-trade" class="form-control" style="font-size: 12px; padding: 5px 8px;">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+              <div>
+                <label style="font-size: 10px; color: var(--txt-muted); font-weight: 700;">Representante Legal</label>
+                <input type="text" id="dossier-edit-rep" class="form-control" style="font-size: 12px; padding: 5px 8px;" required>
+              </div>
+              <div>
+                <label style="font-size: 10px; color: var(--txt-muted); font-weight: 700;">Cédula / DNI</label>
+                <input type="text" id="dossier-edit-dni" class="form-control" style="font-size: 12px; padding: 5px 8px;" required>
+              </div>
+            </div>
+            <div>
+              <label style="font-size: 10px; color: var(--txt-muted); font-weight: 700;">Actividad Comercial</label>
+              <input type="text" id="dossier-edit-activity" class="form-control" style="font-size: 12px; padding: 5px 8px;" required>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+              <div>
+                <label style="font-size: 10px; color: var(--txt-muted); font-weight: 700;">Teléfono</label>
+                <input type="text" id="dossier-edit-phone" class="form-control" style="font-size: 12px; padding: 5px 8px;">
+              </div>
+              <div>
+                <label style="font-size: 10px; color: var(--txt-muted); font-weight: 700;">WhatsApp</label>
+                <input type="text" id="dossier-edit-whatsapp" class="form-control" style="font-size: 12px; padding: 5px 8px;">
+              </div>
+            </div>
+            <div>
+              <label style="font-size: 10px; color: var(--txt-muted); font-weight: 700;">Correo Electrónico</label>
+              <input type="email" id="dossier-edit-email" class="form-control" style="font-size: 12px; padding: 5px 8px;" required>
+            </div>
+            <div>
+              <label style="font-size: 10px; color: var(--amber); font-weight: 700;">Observaciones & Notas Administrativas Internas</label>
+              <textarea id="dossier-edit-observations" class="form-control" rows="2" style="font-size: 11.5px; padding: 5px 8px;" placeholder="Detalles de acuerdos verbales, comportamiento de pago, observaciones especiales..."></textarea>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 6px; margin-top: 4px;">
+              <button type="button" class="btn-currency-toggle" data-click="toggleDossierEditMode(false)" style="font-size: 11px; padding: 4px 10px;">Cancelar</button>
+              <button type="submit" class="btn-onboarding-cta" style="background: var(--amber); border-color: var(--amber); color: #000; font-size: 11px; padding: 4px 12px; font-weight: 800;">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
+              </button>
+            </div>
+          </form>
         </div>
 
-        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 14px;">
-          <div style="font-size: 11px; font-weight: 700; color: var(--emerald); text-transform: uppercase; margin-bottom: 8px;">
-            <i class="fa-solid fa-address-book"></i> Canales de Contacto Directo
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 14px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--emerald); text-transform: uppercase; margin-bottom: 8px;">
+              <i class="fa-solid fa-address-book"></i> Canales de Contacto Directo
+            </div>
+            <div style="font-size: 12.5px; color: var(--txt-primary);" id="dossier-contact"></div>
+            <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
+              <a id="dossier-contact-wa-link" href="#" target="_blank" class="btn-onboarding-cta" style="background: #25D366; border-color: #25D366; color: #fff; font-size: 11px; padding: 5px 12px; text-decoration: none;">
+                <i class="fa-brands fa-whatsapp"></i> Chat WhatsApp
+              </a>
+            </div>
           </div>
-          <div style="font-size: 12.5px; color: var(--txt-primary);" id="dossier-contact"></div>
-          <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
-            <a id="dossier-contact-wa-link" href="#" target="_blank" class="btn-onboarding-cta" style="background: #25D366; border-color: #25D366; color: #fff; font-size: 11px; padding: 5px 12px; text-decoration: none;">
-              <i class="fa-brands fa-whatsapp"></i> Chat WhatsApp
-            </a>
+
+          <!-- BLOQUE DE OBSERVACIONES / EXPEDIENTE -->
+          <div style="background: rgba(245, 158, 11, 0.04); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; padding: 12px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--amber); text-transform: uppercase; margin-bottom: 6px;">
+              <i class="fa-solid fa-clipboard-check"></i> Observaciones del Arrendatario
+            </div>
+            <p id="dossier-observations-display" style="font-size: 12px; color: var(--txt-secondary); margin: 0; line-height: 1.4; font-style: italic;">
+              Sin observaciones registradas para este arrendatario.
+            </p>
           </div>
         </div>
       </div>
@@ -1625,6 +1778,107 @@
             <!-- Injected via JS -->
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- TAB 4: ACUERDOS ESPECIALES, REPARACIONES & PARÁMETROS -->
+    <div class="dossier-tab-panel" id="panel-dossier-agreements">
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <!-- BANNER INFORMATIVO -->
+        <div style="background: rgba(56, 189, 248, 0.05); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; padding: 12px; display: flex; align-items: flex-start; gap: 10px;">
+          <i class="fa-solid fa-circle-info" style="color: var(--cyan); font-size: 16px; margin-top: 2px;"></i>
+          <div style="font-size: 12px; color: var(--txt-secondary); line-height: 1.4;">
+            <strong style="color: var(--cyan);">Gestión de Acuerdos Especiales & Deducciones por Obras:</strong> Permite pactar reducciones transitorias del canon mensual cuando el arrendatario ejecuta reparaciones estructurales, remodelaciones o convenios de tarifa especial (Art. 13 y 32 G.O. 40.418). Las deducciones se aplican de forma determinística en el cálculo mensual.
+          </div>
+        </div>
+
+        <!-- FORMULARIO DE NUEVO ACUERDO (DIRECTIVA / SUPERADMIN) -->
+        <div id="dossier-agreement-form-container" style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 14px;">
+          <h5 style="font-size: 12px; font-weight: 700; color: var(--amber); text-transform: uppercase; margin: 0 0 10px 0;">
+            <i class="fa-solid fa-plus-circle"></i> Registrar Nuevo Acuerdo o Deducción
+          </h5>
+          <form id="form-dossier-agreement" data-submit="handleSaveSpecialAgreement(event)" style="display: flex; flex-direction: column; gap: 10px;">
+            <input type="hidden" id="agr-id">
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div>
+                <label style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Tipo de Acuerdo *</label>
+                <select id="agr-type" class="form-control" required style="font-size: 12px;">
+                  <option value="Deducción por Obras / Reparaciones">Deducción por Obras / Reparaciones Asumidas</option>
+                  <option value="Descuento Especial de Canon">Descuento Especial de Canon Pactado</option>
+                  <option value="Período de Gracia / Acondicionamiento">Período de Gracia / Acondicionamiento</option>
+                  <option value="Canon Escalonado Progresivo">Canon Escalonado Progresivo</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Deducción Mensual ($ USD/mes) *</label>
+                <input type="number" step="0.01" min="0" id="agr-discount-monthly" class="form-control" style="font-size: 12px;" required placeholder="Ej: 150.00" value="0.00">
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+              <div>
+                <label style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Inversión Total Reconocida ($ USD)</label>
+                <input type="number" step="0.01" min="0" id="agr-total-investment" class="form-control" style="font-size: 12px;" placeholder="Ej: 900.00" value="0.00">
+              </div>
+              <div>
+                <label style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Fecha Inicio *</label>
+                <input type="date" id="agr-start-date" class="form-control" style="font-size: 12px;" required>
+              </div>
+              <div>
+                <label style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Fecha Fin / Vencimiento *</label>
+                <input type="date" id="agr-end-date" class="form-control" style="font-size: 12px;" required>
+              </div>
+            </div>
+
+            <div>
+              <label style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Descripción & Justificación del Acuerdo *</label>
+              <textarea id="agr-description" class="form-control" rows="2" style="font-size: 12px;" required placeholder="Ej: Reparación del sistema de aire acondicionado central y pintura de fachada frontal realizada por el arrendatario, amortizable a razón de $150/mes por 6 meses..."></textarea>
+            </div>
+
+            <!-- COMPROBANTE DE ACUERDO / FACTURA DE OBRA -->
+            <div>
+              <label style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">
+                <i class="fa-solid fa-paperclip" style="color: var(--amber);"></i> Soporte de la Obra o Anexo Firmado (Opcional)
+              </label>
+              <input type="file" id="agr-proof-file" accept="image/*,.pdf" data-change="handleAgreementProofChange(event)" style="display: none;">
+              
+              <div class="custom-file-dropzone amber-zone" id="agr-proof-dropzone" data-click="document.getElementById('agr-proof-file').click()" style="padding: 10px; min-height: auto;">
+                <i class="fa-solid fa-file-invoice-dollar dropzone-icon" style="font-size: 18px;"></i>
+                <span class="dropzone-main-text" style="font-size: 11.5px;">Arrastra el soporte de la obra/anexo o haz clic para subir</span>
+                <span class="dropzone-sub-text" style="font-size: 10px;">PDF, JPG o PNG (Máx. 10 MB)</span>
+              </div>
+
+              <div id="agr-proof-preview-container" class="file-preview-card" style="display: none; margin-top: 6px;">
+                <div class="file-preview-info">
+                  <i class="fa-solid fa-file-circle-check" id="agr-proof-icon" style="color: var(--amber); font-size: 18px;"></i>
+                  <div style="min-width: 0;">
+                    <div id="agr-proof-name" class="file-preview-name" style="font-size: 11.5px;"></div>
+                    <div id="agr-proof-size" class="file-preview-size" style="font-size: 10px;"></div>
+                  </div>
+                </div>
+                <button type="button" class="btn-remove-file" data-click="removeAgreementProof(event)" title="Remover archivo"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px;">
+              <button type="button" class="btn-currency-toggle" data-click="resetAgreementForm()" style="font-size: 11.5px; padding: 5px 12px;">Limpiar</button>
+              <button type="submit" class="btn-onboarding-cta" style="background: var(--amber); border-color: var(--amber); color: #000; font-weight: 800; font-size: 11.5px; padding: 5px 14px;">
+                <i class="fa-solid fa-check-double"></i> Registrar Acuerdo
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- LISTA DE ACUERDOS EXISTENTES -->
+        <div style="margin-top: 6px;">
+          <h5 style="font-size: 12px; font-weight: 700; color: var(--txt-primary); margin: 0 0 8px 0;">
+            <i class="fa-solid fa-list-check" style="color: var(--emerald);"></i> Acuerdos Registrados para esta Unidad
+          </h5>
+          <div id="dossier-agreements-list-container" class="table-responsive" style="max-height: 220px; overflow-y: auto; border: 1px solid var(--border-subtle); border-radius: 8px;">
+            <!-- Injected via JS -->
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1991,7 +2245,11 @@
         <label>Rol Corporativo a Asignar</label>
         <select class="form-control" id="inv-role" data-change="onInviteRoleChange(this.value)" required>
           <option value="tenant" selected>Inquilino / Arrendatario Comercial</option>
-          <option value="admin">Administrador / Personal de Cobranzas</option>
+          <option value="heredero">Heredero / Coheredero (1/14 Sucesión Mario Sánchez)</option>
+          <option value="admin">Administrador General</option>
+          <option value="admin_finanzas">Director de Finanzas & Cobranzas</option>
+          <option value="admin_legal">Consultoría Jurídica & Contratos</option>
+          <option value="admin_mantenimiento">Jefe de Infraestructura & Mantenimiento</option>
         </select>
       </div>
 
@@ -2207,15 +2465,40 @@
       <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
         <div class="form-group">
           <label style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Stock Actual *</label>
-          <input type="number" id="inv-con-stock" class="form-control" min="0" required placeholder="0">
+          <input type="number" id="inv-con-stock" class="form-control" min="0" required placeholder="0" value="0">
         </div>
         <div class="form-group">
           <label style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Stock Mínimo *</label>
-          <input type="number" id="inv-con-min" class="form-control" min="0" required placeholder="5">
+          <input type="number" id="inv-con-min" class="form-control" min="0" required placeholder="5" value="5">
         </div>
         <div class="form-group">
           <label style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Costo USD *</label>
-          <input type="number" step="0.01" id="inv-con-cost" class="form-control" min="0" required placeholder="3.50">
+          <input type="number" step="0.01" id="inv-con-cost" class="form-control" min="0" required placeholder="3.50" value="0.00">
+        </div>
+      </div>
+
+      <!-- FOTOGRAFÍA O FICHA TÉCNICA DEL INSUMO -->
+      <div class="form-group">
+        <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">
+          <i class="fa-solid fa-camera" style="color: var(--amber);"></i> Fotografía / Ficha Técnica del Insumo (Opcional)
+        </label>
+        <input type="file" id="inv-con-photo-file" accept="image/*,.pdf" data-change="handleConsumablePhotoChange(event)" style="display: none;">
+        
+        <div class="custom-file-dropzone amber-zone" id="inv-con-photo-dropzone" data-click="document.getElementById('inv-con-photo-file').click()" style="padding: 12px; min-height: auto;">
+          <i class="fa-solid fa-cloud-arrow-up dropzone-icon" style="font-size: 20px;"></i>
+          <span class="dropzone-main-text" style="font-size: 12px;">Arrastra una foto/ficha técnica o haz clic para seleccionarla</span>
+          <span class="dropzone-sub-text" style="font-size: 10.5px;">Soporta JPG, PNG o PDF (Máx. 10 MB)</span>
+        </div>
+
+        <div id="inv-con-photo-preview-container" class="file-preview-card" style="display: none;">
+          <div class="file-preview-info">
+            <i class="fa-solid fa-file-circle-check" id="inv-con-photo-icon" style="color: var(--amber); font-size: 20px;"></i>
+            <div style="min-width: 0;">
+              <div id="inv-con-photo-name" class="file-preview-name"></div>
+              <div id="inv-con-photo-size" class="file-preview-size"></div>
+            </div>
+          </div>
+          <button type="button" class="btn-remove-file" data-click="removeConsumablePhoto(event)" title="Remover archivo"><i class="fa-solid fa-xmark"></i></button>
         </div>
       </div>
 

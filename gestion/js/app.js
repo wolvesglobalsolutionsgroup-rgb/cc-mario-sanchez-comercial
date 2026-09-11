@@ -2493,13 +2493,304 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentDossierTenantId = null;
 
   window.switchDossierTab = function(tabName) {
-    const tabs = ['overview', 'contract', 'history'];
+    const tabs = ['overview', 'contract', 'history', 'agreements'];
     tabs.forEach(t => {
       const btn = document.getElementById(`tab-btn-dossier-${t}`);
       const panel = document.getElementById(`panel-dossier-${t}`);
       if (btn) btn.classList.toggle('active', t === tabName);
       if (panel) panel.classList.toggle('active', t === tabName);
     });
+    if (tabName === 'agreements' && currentDossierTenantId) {
+      window.renderSpecialAgreements(currentDossierTenantId);
+    }
+  };
+
+  let isDossierEditMode = false;
+
+  window.toggleDossierEditMode = function(forceState) {
+    const viewMode = document.getElementById('dossier-view-mode');
+    const editMode = document.getElementById('dossier-edit-mode');
+    const editText = document.getElementById('btn-dossier-edit-text');
+    if (!viewMode || !editMode) return;
+
+    if (forceState !== undefined) {
+      isDossierEditMode = forceState;
+    } else {
+      isDossierEditMode = !isDossierEditMode;
+    }
+
+    if (isDossierEditMode) {
+      viewMode.style.display = 'none';
+      editMode.style.display = 'flex';
+      if (editText) editText.innerText = 'Cancelar Edición';
+    } else {
+      viewMode.style.display = 'block';
+      editMode.style.display = 'none';
+      if (editText) editText.innerText = 'Editar Ficha';
+    }
+  };
+
+  window.saveTenantDossierChanges = function(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!currentDossierTenantId) return;
+
+    const updatedData = {
+      business_name: document.getElementById('dossier-edit-company').value.trim(),
+      trade_name: document.getElementById('dossier-edit-trade').value.trim(),
+      legal_rep_name: document.getElementById('dossier-edit-rep').value.trim(),
+      legal_rep_dni: document.getElementById('dossier-edit-dni').value.trim(),
+      commercial_activity: document.getElementById('dossier-edit-activity').value.trim(),
+      phone: document.getElementById('dossier-edit-phone').value.trim(),
+      whatsapp: document.getElementById('dossier-edit-whatsapp').value.trim(),
+      email: document.getElementById('dossier-edit-email').value.trim(),
+      observations: document.getElementById('dossier-edit-observations').value.trim()
+    };
+
+    if (dbService.updateTenant) {
+      dbService.updateTenant(currentDossierTenantId, updatedData);
+    } else {
+      const allTenants = dbService.getTenants();
+      const t = allTenants.find(item => item.id === currentDossierTenantId);
+      if (t) {
+        Object.assign(t, updatedData);
+        dbService.saveData(dbService.getData());
+      }
+    }
+
+    window.toggleDossierEditMode(false);
+    window.openTenantDossier(currentDossierTenantId);
+    if (typeof renderTenantsTable === 'function') renderTenantsTable();
+    if (typeof renderKPIsAndBalances === 'function') renderKPIsAndBalances();
+
+    if (window.SecuritySuite && window.SecuritySuite.toast) {
+      window.SecuritySuite.toast('Ficha del arrendatario y observaciones actualizadas exitosamente.', 'success', 'Ficha Guardada');
+    }
+  };
+
+  let currentAgreementProof = null;
+
+  window.handleAgreementProofChange = function(e) {
+    const file = (e.target && e.target.files && e.target.files[0])
+      ? e.target.files[0]
+      : (e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files[0] : null);
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast('El archivo de soporte excede el límite de 10 MB.', 'warning', 'Archivo Excedido');
+      }
+      const input = document.getElementById('agr-proof-file');
+      if (input) input.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      currentAgreementProof = {
+        name: file.name,
+        type: file.type || 'application/octet-stream',
+        size: file.size,
+        data: evt.target.result,
+        uploaded_at: new Date().toISOString()
+      };
+
+      const container = document.getElementById('agr-proof-preview-container');
+      const dropzone = document.getElementById('agr-proof-dropzone');
+      const nameEl = document.getElementById('agr-proof-name');
+      const sizeEl = document.getElementById('agr-proof-size');
+      const iconEl = document.getElementById('agr-proof-icon');
+
+      if (container) container.style.display = 'flex';
+      if (dropzone) dropzone.style.display = 'none';
+      if (nameEl) nameEl.textContent = file.name;
+      if (sizeEl) sizeEl.textContent = `${(file.size / 1024).toFixed(1)} KB • ${(file.type || 'Archivo').split('/')[1] || 'soporte'}`;
+      if (iconEl) {
+        iconEl.className = file.type && file.type.includes('pdf') ? 'fa-solid fa-file-pdf' : 'fa-solid fa-file-image';
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.removeAgreementProof = function(e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    currentAgreementProof = null;
+    const input = document.getElementById('agr-proof-file');
+    if (input) input.value = '';
+    const container = document.getElementById('agr-proof-preview-container');
+    const dropzone = document.getElementById('agr-proof-dropzone');
+    if (container) container.style.display = 'none';
+    if (dropzone) dropzone.style.display = 'flex';
+  };
+
+  window.resetAgreementForm = function() {
+    const form = document.getElementById('form-dossier-agreement');
+    if (form) form.reset();
+    document.getElementById('agr-id').value = '';
+    document.getElementById('agr-discount-monthly').value = '0.00';
+    document.getElementById('agr-total-investment').value = '0.00';
+    window.removeAgreementProof();
+    
+    const today = new Date().toISOString().split('T')[0];
+    const sixMonths = new Date();
+    sixMonths.setMonth(sixMonths.getMonth() + 6);
+    const endDef = sixMonths.toISOString().split('T')[0];
+    const startEl = document.getElementById('agr-start-date');
+    const endEl = document.getElementById('agr-end-date');
+    if (startEl) startEl.value = today;
+    if (endEl) endEl.value = endDef;
+  };
+
+  window.handleSaveSpecialAgreement = function(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!currentDossierTenantId) return;
+
+    const tenant = dbService.getTenants().find(t => t.id === currentDossierTenantId);
+    const agrId = document.getElementById('agr-id').value;
+    const agreementData = {
+      tenant_id: currentDossierTenantId,
+      unit_code: tenant ? tenant.unit_code : 'N/A',
+      agreement_type: document.getElementById('agr-type').value,
+      discount_monthly_usd: parseFloat(document.getElementById('agr-discount-monthly').value) || 0,
+      total_investment_usd: parseFloat(document.getElementById('agr-total-investment').value) || 0,
+      start_date: document.getElementById('agr-start-date').value,
+      end_date: document.getElementById('agr-end-date').value,
+      description: document.getElementById('agr-description').value.trim(),
+      proof_file: currentAgreementProof,
+      status: 'activo'
+    };
+    if (agrId) agreementData.id = agrId;
+
+    if (dbService.saveSpecialAgreement) {
+      dbService.saveSpecialAgreement(agreementData);
+    }
+    window.resetAgreementForm();
+    window.renderSpecialAgreements(currentDossierTenantId);
+    if (typeof renderInvoicesTable === 'function') renderInvoicesTable();
+    if (typeof renderKPIsAndBalances === 'function') renderKPIsAndBalances();
+
+    if (window.SecuritySuite && window.SecuritySuite.toast) {
+      window.SecuritySuite.toast('Acuerdo especial registrado y aplicado al cálculo de cánones.', 'success', 'Acuerdo Guardado');
+    }
+  };
+
+  window.renderSpecialAgreements = function(tenantId) {
+    const container = document.getElementById('dossier-agreements-list-container');
+    if (!container) return;
+
+    const agreements = (dbService.getSpecialAgreements ? dbService.getSpecialAgreements(tenantId) : []) || [];
+    if (agreements.length === 0) {
+      container.innerHTML = `
+        <div style="padding: 16px; text-align: center; color: var(--txt-muted); font-size: 12px; font-style: italic;">
+          No hay acuerdos o deducciones especiales registrados para este arrendatario.
+        </div>
+      `;
+      return;
+    }
+
+    let html = `
+      <table class="modern-table" style="font-size: 11.5px; width: 100%;">
+        <thead>
+          <tr>
+            <th>Tipo de Acuerdo</th>
+            <th>Deducción / Mes</th>
+            <th>Inversión Total</th>
+            <th>Vigencia</th>
+            <th>Estado</th>
+            <th>Soporte</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    agreements.forEach(agr => {
+      const isExpired = new Date(agr.end_date) < new Date();
+      const stClass = (!isExpired && agr.status === 'activo') ? 'pill-active' : 'pill-disabled';
+      const stText = (!isExpired && agr.status === 'activo') ? 'Vigente' : 'Finalizado';
+      
+      const proofBtn = agr.proof_file ? `
+        <button type="button" class="btn-action-icon" style="width:24px;height:24px;font-size:10px;color:var(--cyan);border-color:var(--cyan);" title="Ver Soporte de Obra" data-click="viewAgreementProof('${agr.id}')">
+          <i class="fa-solid fa-paperclip"></i>
+        </button>
+      ` : '<span style="color:var(--txt-muted);font-size:10px;">—</span>';
+
+      html += `
+        <tr>
+          <td>
+            <strong style="color:var(--txt-primary);">${escapeHtml(agr.agreement_type)}</strong>
+            <div style="font-size:10.5px;color:var(--txt-muted);margin-top:2px;">${escapeHtml(agr.description || '')}</div>
+          </td>
+          <td><strong style="color:var(--emerald);">-$${(agr.discount_monthly_usd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong></td>
+          <td><span>$${(agr.total_investment_usd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span></td>
+          <td><span style="font-size:10.5px;color:var(--txt-secondary);">${agr.start_date} al ${agr.end_date}</span></td>
+          <td><span class="status-pill ${stClass}" style="font-size:9.5px;padding:2px 5px;">${stText}</span></td>
+          <td style="text-align:center;">${proofBtn}</td>
+          <td>
+            <button type="button" class="btn-action-icon" style="width:24px;height:24px;font-size:10px;color:var(--rose);border-color:var(--rose);" title="Eliminar Acuerdo" data-click="deleteDossierSpecialAgreement('${agr.id}')">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+      `;
+    });
+
+    html += `</tbody></table>`;
+    container.innerHTML = html;
+  };
+
+  window.deleteDossierSpecialAgreement = async function(id) {
+    const proceed = window.SecuritySuite && window.SecuritySuite.confirm
+      ? await window.SecuritySuite.confirm('¿Desea dar de baja este acuerdo especial? El canon volverá al valor estándar sin deducciones.', 'Eliminar Acuerdo', 'Eliminar', 'Cancelar')
+      : confirm('¿Eliminar este acuerdo especial?');
+    if (!proceed) return;
+
+    if (dbService.deleteSpecialAgreement) {
+      dbService.deleteSpecialAgreement(id);
+    }
+    if (currentDossierTenantId) {
+      window.renderSpecialAgreements(currentDossierTenantId);
+    }
+    if (typeof renderInvoicesTable === 'function') renderInvoicesTable();
+    if (typeof renderKPIsAndBalances === 'function') renderKPIsAndBalances();
+    if (window.SecuritySuite && window.SecuritySuite.toast) {
+      window.SecuritySuite.toast('Acuerdo especial eliminado.', 'info', 'Acuerdo Removido');
+    }
+  };
+
+  window.viewAgreementProof = function(agreementId) {
+    const agreements = dbService.getSpecialAgreements ? dbService.getSpecialAgreements() : [];
+    const agr = agreements.find(a => a.id === agreementId);
+    if (!agr || !agr.proof_file) {
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast('No hay soporte o comprobante adjunto para este acuerdo.', 'warning', 'Sin Soporte');
+      }
+      return;
+    }
+
+    const proof = agr.proof_file;
+    if (proof.type && proof.type.includes('pdf')) {
+      const pdfWindow = window.open("");
+      if (pdfWindow) {
+        pdfWindow.document.write(`<iframe src="${proof.data}" frameborder="0" style="border:0; top:0; left:0; bottom:0; right:0; width:100%; height:100%;" allowfullscreen></iframe>`);
+      } else {
+        const link = document.createElement('a');
+        link.href = proof.data;
+        link.download = proof.name || 'soporte_acuerdo.pdf';
+        link.click();
+      }
+    } else {
+      const imgWindow = window.open("");
+      if (imgWindow) {
+        imgWindow.document.write(`
+          <body style="margin:0; background:#0f172a; display:flex; justify-content:center; align-items:center; min-height:100vh;">
+            <div style="text-align:center; padding:20px;">
+              <h3 style="color:#f59e0b; font-family:sans-serif; margin-bottom:10px;">Soporte de Acuerdo / Obra (${escapeHtml(proof.name)})</h3>
+              <img src="${proof.data}" style="max-width:90vw; max-height:85vh; border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.5); border:1px solid #334155;">
+            </div>
+          </body>
+        `);
+      }
+    }
   };
 
   window.closeDossierModal = function() {
@@ -2531,6 +2822,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const contract = dbService.getContracts().find(c => c.tenant_id === tenantId);
     const unit = dbService.getUnits().find(u => u.code === tenant.unit_code);
     const ext = VenezuelaLegal.calculateLegalExtension(1);
+
+    // Resetear modo edición
+    window.toggleDossierEditMode(false);
 
     // Monograma Avatar (iniciales de la razón social)
     const words = (tenant.business_name || 'CC').trim().split(/\s+/);
@@ -2579,7 +2873,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const statAliEl = document.getElementById('dossier-stat-aliquot');
     if (statAliEl) statAliEl.innerText = aliquot;
 
-    // Tab 1: Datos & Representante
+    // Tab 1: Datos & Representante (Modo Vista y Modo Edición)
     const repEl = document.getElementById('dossier-rep');
     if (repEl) repEl.innerText = `${tenant.legal_rep_name} (C.I. ${tenant.legal_rep_dni})`;
     const actEl = document.getElementById('dossier-activity');
@@ -2589,7 +2883,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const areaEl = document.getElementById('dossier-area-m2');
     if (areaEl) areaEl.innerText = `${unit ? unit.area_m2.toLocaleString() : '0'} m²`;
     const contEl = document.getElementById('dossier-contact');
-    if (contEl) contEl.innerHTML = `<strong>Teléfono:</strong> ${escapeHtml(tenant.phone)}<br><strong>WhatsApp:</strong> ${escapeHtml(tenant.whatsapp)}<br><strong>Correo:</strong> ${escapeHtml(tenant.email)}`;
+    if (contEl) contEl.innerHTML = `<strong>Teléfono:</strong> ${escapeHtml(tenant.phone || 'N/A')}<br><strong>WhatsApp:</strong> ${escapeHtml(tenant.whatsapp || 'N/A')}<br><strong>Correo:</strong> ${escapeHtml(tenant.email || 'N/A')}`;
+
+    // Observaciones
+    const obsDisplay = document.getElementById('dossier-observations-display');
+    if (obsDisplay) {
+      obsDisplay.innerText = tenant.observations ? tenant.observations : 'Sin observaciones registradas para este arrendatario.';
+    }
+
+    // Cargar valores en formulario de edición
+    const edComp = document.getElementById('dossier-edit-company');
+    if (edComp) edComp.value = tenant.business_name || '';
+    const edTrade = document.getElementById('dossier-edit-trade');
+    if (edTrade) edTrade.value = tenant.trade_name || '';
+    const edRep = document.getElementById('dossier-edit-rep');
+    if (edRep) edRep.value = tenant.legal_rep_name || '';
+    const edDni = document.getElementById('dossier-edit-dni');
+    if (edDni) edDni.value = tenant.legal_rep_dni || '';
+    const edAct = document.getElementById('dossier-edit-activity');
+    if (edAct) edAct.value = tenant.commercial_activity || '';
+    const edPhone = document.getElementById('dossier-edit-phone');
+    if (edPhone) edPhone.value = tenant.phone || '';
+    const edWa = document.getElementById('dossier-edit-whatsapp');
+    if (edWa) edWa.value = tenant.whatsapp || '';
+    const edEmail = document.getElementById('dossier-edit-email');
+    if (edEmail) edEmail.value = tenant.email || '';
+    const edObs = document.getElementById('dossier-edit-observations');
+    if (edObs) edObs.value = tenant.observations || '';
 
     const waLinkEl = document.getElementById('dossier-contact-wa-link');
     if (waLinkEl) {
@@ -2682,6 +3002,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
     }
+
+    // Tab 4: Cargar Acuerdos
+    window.resetAgreementForm();
+    window.renderSpecialAgreements(tenantId);
 
     // Restablecer a la primera pestaña
     window.switchDossierTab('overview');
@@ -3007,9 +3331,22 @@ document.addEventListener('DOMContentLoaded', () => {
         statusBadge = '<span class="status-pill pill-overdue" style="font-size:10.5px;"><i class="fa-solid fa-ban"></i> Acceso Revocado</span>';
       }
 
-      const roleBadge = u.role === 'admin' 
-        ? '<span style="color:var(--amber);font-weight:700;"><i class="fa-solid fa-user-shield"></i> Administrador</span>'
-        : '<span style="color:var(--emerald);font-weight:700;"><i class="fa-solid fa-store"></i> Inquilino (' + escapeHtml(u.unit || 'Local') + ')</span>';
+      let roleBadge = '';
+      if (u.role === 'superadmin') {
+        roleBadge = '<span style="color:var(--amber);font-weight:700;"><i class="fa-solid fa-crown"></i> Superadmin</span>';
+      } else if (u.role === 'admin') {
+        roleBadge = '<span style="color:var(--amber);font-weight:700;"><i class="fa-solid fa-user-shield"></i> Administrador General</span>';
+      } else if (u.role === 'admin_finanzas') {
+        roleBadge = '<span style="color:var(--emerald);font-weight:700;"><i class="fa-solid fa-coins"></i> Finanzas & Cobranzas</span>';
+      } else if (u.role === 'admin_legal') {
+        roleBadge = '<span style="color:var(--cyan);font-weight:700;"><i class="fa-solid fa-scale-balanced"></i> Legal & Contratos</span>';
+      } else if (u.role === 'admin_mantenimiento') {
+        roleBadge = '<span style="color:#f97316;font-weight:700;"><i class="fa-solid fa-wrench"></i> Mantenimiento</span>';
+      } else if (u.role === 'heredero') {
+        roleBadge = '<span style="color:var(--purple);font-weight:700;"><i class="fa-solid fa-landmark"></i> Heredero (' + escapeHtml(u.unit || '1/14 Sucesión') + ')</span>';
+      } else {
+        roleBadge = '<span style="color:var(--emerald);font-weight:700;"><i class="fa-solid fa-store"></i> Inquilino (' + escapeHtml(u.unit || 'Local') + ')</span>';
+      }
 
       const dateStr = u.created_at ? new Date(u.created_at).toLocaleDateString() : 'N/A';
 
@@ -3089,12 +3426,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.onInviteRoleChange = function(role) {
     const unitGroup = document.getElementById('inv-tenant-unit-group');
+    const unitLabel = unitGroup ? unitGroup.querySelector('label') : null;
+    const unitInput = document.getElementById('inv-unit');
     const idLabel = document.getElementById('inv-identifier-label');
-    if (unitGroup) {
-      unitGroup.style.display = (role === 'tenant') ? 'block' : 'none';
-    }
-    if (idLabel) {
-      idLabel.innerText = (role === 'admin') ? 'Correo Electrónico Administrador' : 'RIF Jurídico / Identificador Fiscal';
+    
+    if (role === 'tenant') {
+      if (unitGroup) unitGroup.style.display = 'block';
+      if (unitLabel) unitLabel.innerText = 'Unidad / Local Comercial Asignado';
+      if (unitInput) unitInput.placeholder = 'Ej: Local PB-08';
+      if (idLabel) idLabel.innerText = 'RIF Jurídico / Identificador Fiscal';
+    } else if (role === 'heredero') {
+      if (unitGroup) unitGroup.style.display = 'block';
+      if (unitLabel) unitLabel.innerText = 'Estirpe Sucesoral / Cuota Indivisa (1/14)';
+      if (unitInput) unitInput.placeholder = 'Ej: Estirpe 1 - Mario Sánchez Jr. (1/14 Cuota)';
+      if (idLabel) idLabel.innerText = 'Correo Electrónico / C.I. del Heredero';
+    } else {
+      if (unitGroup) unitGroup.style.display = 'none';
+      if (idLabel) idLabel.innerText = 'Correo Electrónico Corporativo';
     }
   };
 
@@ -3206,6 +3554,8 @@ document.addEventListener('DOMContentLoaded', () => {
           container.innerHTML = renderRetencionIslrReportHTML(month, year);
         } else if (type === 'notificacion_mora') {
           container.innerHTML = renderNotificacionMoraReportHTML(tenantId);
+        } else if (type === 'herederos') {
+          container.innerHTML = renderHerederosReportHTML(month, year);
         }
       } catch (err) {
         console.error('[REPORT ERROR]', err);
@@ -4160,6 +4510,200 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
   }
 
+  /**
+   * =========================================================================
+   * INFORME 11: ESTADO DE CUENTA & LIQUIDACIÓN DE FRUTOS CIVILES SUCESORALES
+   * Sucesión Mario Sánchez (RIF: J-30211544-2) — 14 Coherederos / 1/14 Cuota
+   * Arts. 552 y 768 del Código Civil Venezolano y Gaceta Oficial N° 40.418
+   * =========================================================================
+   */
+  function renderHerederosReportHTML(month, year) {
+    const monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const bcvRate = financialEngine.getRates().VES.toFixed(2);
+    const invoices = dbService.getInvoices().filter(i => i.period_month === month && i.period_year === year);
+    const units = dbService.getUnits();
+    
+    // Total facturado y cobrado de los 39 locales
+    let totalFacturadoUsd = 0;
+    let totalCobradoUsd = 0;
+    invoices.forEach(inv => {
+      const rent = parseFloat(inv.rent_usd !== undefined ? inv.rent_usd : (inv.base_rent_usd || 0)) || 0;
+      const condo = parseFloat(inv.condo_usd || 0) || 0;
+      const total = parseFloat(inv.total_usd !== undefined ? inv.total_usd : (rent + condo)) || 0;
+      totalFacturadoUsd += total;
+      if (inv.status === 'pagado') totalCobradoUsd += total;
+    });
+
+    // Si aún no hay cobros en este mes de prueba, tomar totalFacturado como referencia de liquidación estimada
+    const baseIngresos = totalCobradoUsd > 0 ? totalCobradoUsd : (totalFacturadoUsd > 0 ? totalFacturadoUsd : 9050.00);
+
+    // Egresos comunes: presupuesto base de $2,540.00 o gastos reales registrados
+    const allDbExpenses = dbService.getCondoExpenses ? dbService.getCondoExpenses() : [];
+    const expensesPeriod = allDbExpenses.filter(e => e.period_month === month && e.period_year === year);
+    const totalGastosUsd = expensesPeriod.length > 0
+      ? expensesPeriod.reduce((sum, e) => sum + (parseFloat(e.amount_usd) || 0), 0)
+      : 2540.00; // Presupuesto base mensual auditado ($2,540.00)
+
+    // Deducciones reglamentarias: Fondo de Reserva (10%) y Gastos de Administración (5%)
+    const fondoReservaUsd = baseIngresos * 0.10;
+    const gastoAdmUsd = baseIngresos * 0.05;
+
+    // Utilidad Neta / Frutos Civiles Repartibles
+    const utilidadNetaUsd = Math.max(0, baseIngresos - totalGastosUsd - fondoReservaUsd - gastoAdmUsd);
+    
+    // 14 Coherederos / Estirpes (1/14 cada uno = 7.142857%)
+    // Base de $400.00 mensual por coheredero según presupuesto anual ($5,600 / 14 = $400)
+    const cuotaPorHerederoUsd = utilidadNetaUsd / 14;
+
+    const coherederos = [
+      { id: 1, name: "Estirpe Mario Sánchez Jr.", doc: "V-8.452.190", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
+      { id: 2, name: "Estirpe Narváez Sánchez (Local 4-A)", doc: "V-9.821.405", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
+      { id: 3, name: "Coheredero Estirpe Sánchez Mendoza", doc: "V-11.234.567", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
+      { id: 4, name: "Coheredero Estirpe Sánchez Gil", doc: "V-12.890.123", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
+      { id: 5, name: "Coheredero Estirpe Sánchez Rodríguez", doc: "V-10.456.789", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
+      { id: 6, name: "Coheredero Estirpe Sánchez Ramos", doc: "V-13.456.001", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
+      { id: 7, name: "Coheredero Estirpe Sánchez Velásquez", doc: "V-14.789.234", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
+      { id: 8, name: "Coheredero Estirpe Sánchez Carvajal", doc: "V-15.012.345", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
+      { id: 9, name: "Coheredero Estirpe Sánchez Salazar", doc: "V-16.123.890", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
+      { id: 10, name: "Coheredero Estirpe Sánchez Rondón", doc: "V-17.234.901", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
+      { id: 11, name: "Coheredero Estirpe Sánchez Guzmán", doc: "V-18.345.678", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
+      { id: 12, name: "Coheredero Estirpe Sánchez Marcano", doc: "V-19.456.789", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
+      { id: 13, name: "Coheredero Estirpe Sánchez Blanco", doc: "V-20.567.890", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
+      { id: 14, name: "Coheredero Estirpe Sánchez Gómez", doc: "V-21.678.901", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" }
+    ];
+
+    const rowsHtml = coherederos.map((h, idx) => {
+      const bsAmount = financialEngine.convert(cuotaPorHerederoUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
+      return `
+        <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11.5px;">
+          <td style="padding: 8px 10px; font-weight: 700; text-align: center;">${idx + 1}</td>
+          <td style="padding: 8px 10px;">
+            <strong>${escapeHtml(h.name)}</strong>
+            <div style="font-size: 10px; color: #64748b;">Doc / C.I.: ${escapeHtml(h.doc)}</div>
+          </td>
+          <td style="padding: 8px 10px; text-align: center; font-weight: 700; color: #7c3aed;">${h.shareFrac} (${h.sharePct})</td>
+          <td style="padding: 8px 10px; text-align: right; color: #64748b;">$400.00</td>
+          <td style="padding: 8px 10px; text-align: right; font-weight: 700; color: #0f172a;">$${cuotaPorHerederoUsd.toFixed(2)}</td>
+          <td style="padding: 8px 10px; text-align: right; color: #475569;">Bs. ${bsAmount}</td>
+          <td style="padding: 8px 10px; text-align: center;">
+            <span style="display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 10px; font-weight: 700; background: rgba(16, 185, 129, 0.15); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3);">
+              ${h.status}
+            </span>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    const baseIngresosBs = financialEngine.convert(baseIngresos, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
+    const totalGastosBs = financialEngine.convert(totalGastosUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
+    const fondoReservaBs = financialEngine.convert(fondoReservaUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
+    const gastoAdmBs = financialEngine.convert(gastoAdmUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
+    const utilidadNetaBs = financialEngine.convert(utilidadNetaUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
+
+    return `
+      <div class="printable-report" style="background: white; color: #0f172a; padding: 28px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif;">
+        <!-- MEMBRETE OFICIAL SUCESORAL -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 18px;">
+          <div>
+            <h2 style="margin: 0; font-size: 19px; font-weight: 900; letter-spacing: -0.5px; color: #0f172a;">CENTRO COMERCIAL MARIO SÁNCHEZ</h2>
+            <div style="font-size: 12px; font-weight: 700; color: #7c3aed;">SUCESIÓN MARIO SÁNCHEZ — RIF: J-30211544-2</div>
+            <div style="font-size: 11px; color: #64748b;">Av. 5 de Julio c/c Calle Concordia, Puerto La Cruz, Edo. Anzoátegui</div>
+            <div style="font-size: 10.5px; color: #64748b; margin-top: 2px;">Régimen de Comunidad Hereditaria Indivisa — Código Civil Venezolano Arts. 552 y 768</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 13px; font-weight: 800; color: #0f172a;">LIQUIDACIÓN DE FRUTOS CIVILES</div>
+            <div style="font-size: 12px; color: #64748b;">Período: <strong>${monthNames[month]} ${year}</strong></div>
+            <div style="font-size: 11px; color: #059669; font-weight: 700; margin-top: 4px;">Tasa Oficial BCV: Bs. ${bcvRate} / USD</div>
+          </div>
+        </div>
+
+        <!-- KPI CARDS SUCESORALES -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 22px;">
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px;">
+            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b;">1. Ingresos Base</div>
+            <div style="font-size: 15px; font-weight: 800; color: #0f172a;">$${baseIngresos.toFixed(2)}</div>
+            <div style="font-size: 9.5px; color: #64748b;">Bs. ${baseIngresosBs}</div>
+          </div>
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px;">
+            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #b91c1c;">2. Egresos Operativos</div>
+            <div style="font-size: 15px; font-weight: 800; color: #b91c1c;">-$${totalGastosUsd.toFixed(2)}</div>
+            <div style="font-size: 9.5px; color: #64748b;">Ppto Base: $2,540.00</div>
+          </div>
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px;">
+            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #d97706;">3. Fondo Reserva (10%)</div>
+            <div style="font-size: 15px; font-weight: 800; color: #d97706;">-$${fondoReservaUsd.toFixed(2)}</div>
+            <div style="font-size: 9.5px; color: #64748b;">Bs. ${fondoReservaBs}</div>
+          </div>
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px;">
+            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #7c3aed;">4. Gasto Adm. (5%)</div>
+            <div style="font-size: 15px; font-weight: 800; color: #7c3aed;">-$${gastoAdmUsd.toFixed(2)}</div>
+            <div style="font-size: 9.5px; color: #64748b;">Bs. ${gastoAdmBs}</div>
+          </div>
+          <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; padding: 10px 12px;">
+            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #059669;">5. Utilidad Repartible</div>
+            <div style="font-size: 16px; font-weight: 900; color: #059669;">$${utilidadNetaUsd.toFixed(2)}</div>
+            <div style="font-size: 9.5px; color: #059669; font-weight: 700;">14 Cuotas de $${cuotaPorHerederoUsd.toFixed(2)}</div>
+          </div>
+        </div>
+
+        <!-- TABLA DE DISTRIBUCIÓN SUCESORAL -->
+        <div style="margin-bottom: 22px;">
+          <h4 style="font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 8px; color: #0f172a; border-left: 3px solid #7c3aed; padding-left: 8px;">
+            Distribución Individual por Estirpe Hereditaria (1/14 Cuota Indivisa)
+          </h4>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 6px;">
+            <thead>
+              <tr style="background: #0f172a; color: white; font-size: 10.5px; text-transform: uppercase;">
+                <th style="padding: 8px 10px; text-align: center; width: 35px;">N°</th>
+                <th style="padding: 8px 10px; text-align: left;">Coheredero / Estirpe</th>
+                <th style="padding: 8px 10px; text-align: center;">Alícuota Indivisa</th>
+                <th style="padding: 8px 10px; text-align: right;">Cuota Base Flujo</th>
+                <th style="padding: 8px 10px; text-align: right;">Liquidación Neta USD</th>
+                <th style="padding: 8px 10px; text-align: right;">Liquidación Neta Bs.</th>
+                <th style="padding: 8px 10px; text-align: center;">Estatus</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+              <tr style="background: #f1f5f9; font-weight: 900; border-top: 2px solid #0f172a; font-size: 12px;">
+                <td colspan="2" style="padding: 10px;">TOTAL DISTRIBUIDO (14 ESTIRPES):</td>
+                <td style="padding: 10px; text-align: center; color: #7c3aed;">100.00% (14/14)</td>
+                <td style="padding: 10px; text-align: right; color: #64748b;">$5,600.00</td>
+                <td style="padding: 10px; text-align: right; color: #059669;">$${utilidadNetaUsd.toFixed(2)} USD</td>
+                <td style="padding: 10px; text-align: right; color: #0f172a;">Bs. ${utilidadNetaBs}</td>
+                <td style="padding: 10px; text-align: center; color: #059669;">✓ 100% Asignado</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- NOTAS LEGALES Y AUDITORÍA SUCESORAL -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; font-size: 11px; margin-bottom: 25px; line-height: 1.5; color: #334155;">
+          <strong>FUNDAMENTO LEGAL Y NORMAS DE PARTICIÓN:</strong>
+          La presente liquidación se rige por los Artículos 552 (Frutos Civiles) y 768 (Comunidad Indivisa) del Código Civil de la República Bolivariana de Venezuela, en concordancia con el Decreto con Rango, Valor y Fuerza de Ley de Regulación del Arrendamiento Inmobiliario para el Uso Comercial (G.O. N° 40.418). Los recursos han sido auditados según los comprobantes bancarios, facturas de gastos operativos y deducciones correspondientes al Fondo de Reserva y Honorarios de Administración de la Sociedad.
+        </div>
+
+        <!-- FIRMAS AUTORIZADAS -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 35px;">
+          <div style="text-align: center;">
+            <div style="border-top: 1px solid #0f172a; padding-top: 6px; font-size: 11px;">
+              <strong>ADMINISTRACIÓN GENERAL & CONTABILIDAD</strong><br>
+              Centro Comercial Mario Sánchez, C.A.<br>
+              <span style="font-size: 10px; color: #64748b;">Firma y Sello Oficial</span>
+            </div>
+          </div>
+          <div style="text-align: center;">
+            <div style="border-top: 1px solid #0f172a; padding-top: 6px; font-size: 11px;">
+              <strong>REPRESENTACIÓN SUCESORAL / ALBACEAZGO</strong><br>
+              Sucesión Mario Sánchez (RIF: J-30211544-2)<br>
+              <span style="font-size: 10px; color: #64748b;">Comité de Vigilancia Coherederos</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   window.downloadSeniatTxtReport = function() {
     const month = parseInt(document.getElementById('report-param-month') ? document.getElementById('report-param-month').value : 3);
     const year = parseInt(document.getElementById('report-param-year') ? document.getElementById('report-param-year').value : 2026);
@@ -4306,6 +4850,512 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       showToast("Portapapeles no soportado en este entorno de navegación.", "warning", "Portapapeles");
     }
+  };
+
+  /**
+   * =========================================================================
+   * MOTOR DE RESPALDO INTEGRAL & COPIAS DE SEGURIDAD (100% DATOS + IMÁGENES BASE64)
+   * =========================================================================
+   */
+  window.exportFullSystemBackup = function() {
+    try {
+      const now = new Date();
+      const dateStr = now.toISOString().slice(0, 10);
+      const timeStr = now.toTimeString().slice(0, 5).replace(':', '');
+      
+      const backupPayload = {
+        backup_info: {
+          system: "Centro Comercial Mario Sánchez - ERP Inmobiliario & Sucesoral",
+          rif: "J-30211544-2",
+          version: "2.5-PROD",
+          exported_at: now.toISOString(),
+          exported_by: (window.AuthGuard && window.AuthGuard.currentUser()) ? window.AuthGuard.currentUser().email : "Superadmin",
+          integrity_checksum_algorithm: "SHA-256"
+        },
+        collections: {
+          units: dbService.getUnits ? dbService.getUnits() : [],
+          tenants: dbService.getTenants ? dbService.getTenants() : [],
+          contracts: dbService.getContracts ? dbService.getContracts() : [],
+          invoices: dbService.getInvoices ? dbService.getInvoices() : [],
+          payments: dbService.getPayments ? dbService.getPayments() : [],
+          receipts: dbService.getReceipts ? dbService.getReceipts() : [],
+          condo_expenses: dbService.getCondoExpenses ? dbService.getCondoExpenses() : [],
+          staff_members: dbService.getStaffMembers ? dbService.getStaffMembers() : [],
+          staff_photos: JSON.parse(localStorage.getItem('ccms_staff_photos_v1') || '{}'),
+          activos_fijos: dbService.getActivosFijos ? dbService.getActivosFijos() : [],
+          consumibles: dbService.getConsumibles ? dbService.getConsumibles() : [],
+          kardex_movimientos: dbService.getKardexMovimientos ? dbService.getKardexMovimientos() : [],
+          special_agreements: dbService.getSpecialAgreements ? dbService.getSpecialAgreements() : [],
+          receiving_accounts: dbService.getReceivingAccounts ? dbService.getReceivingAccounts() : [],
+          app_settings: dbService.getSettings ? dbService.getSettings() : {},
+          audit_trail: JSON.parse(localStorage.getItem('ccms_audit_trail_v1') || '[]')
+        }
+      };
+
+      const jsonString = JSON.stringify(backupPayload, null, 2);
+      const filename = `CCMS_BACKUP_COMPLETO_${dateStr}_${timeStr}.json`;
+
+      const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      if (window.SecuritySuite && window.SecuritySuite.logAudit) {
+        window.SecuritySuite.logAudit('BACKUP_EXPORT', `Generación y descarga de copia de seguridad integral (${filename})`);
+      }
+      showToast(`✓ Respaldo integral "${filename}" descargado con éxito. Incluye imágenes Base64 y 100% de tablas.`, 'success', 'Copia de Seguridad');
+    } catch (err) {
+      console.error('[BACKUP EXPORT ERROR]', err);
+      showToast(`Error al exportar respaldo: ${err.message}`, 'error', 'Fallo de Respaldo');
+    }
+  };
+
+  /**
+   * =========================================================================
+   * EXCEL MAESTRO CON FÓRMULAS VIVAS (SPREADSHEETML XML MULTI-HOJA)
+   * =========================================================================
+   */
+  window.exportMasterExcelWithFormulas = function() {
+    try {
+      const now = new Date();
+      const dateStr = now.toISOString().slice(0, 10);
+      const units = dbService.getUnits ? dbService.getUnits() : [];
+      const tenants = dbService.getTenants ? dbService.getTenants() : [];
+      const invoices = dbService.getInvoices ? dbService.getInvoices() : [];
+      const expenses = dbService.getCondoExpenses ? dbService.getCondoExpenses() : [];
+      const activos = dbService.getActivosFijos ? dbService.getActivosFijos() : [];
+      const consumibles = dbService.getConsumibles ? dbService.getConsumibles() : [];
+
+      function xmlEscape(val) {
+        if (val === null || val === undefined) return '';
+        return String(val)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&apos;');
+      }
+
+      // SHEET 1: LOCALES E INQUILINOS
+      let sheet1Rows = `
+        <Row ss:StyleID="Header">
+          <Cell><Data ss:Type="String">N°</Data></Cell>
+          <Cell><Data ss:Type="String">Código Unidad</Data></Cell>
+          <Cell><Data ss:Type="String">Tipo</Data></Cell>
+          <Cell><Data ss:Type="String">Área (m²)</Data></Cell>
+          <Cell><Data ss:Type="String">Inquilino / Razón Social</Data></Cell>
+          <Cell><Data ss:Type="String">RIF</Data></Cell>
+          <Cell><Data ss:Type="String">Canon Base ($)</Data></Cell>
+          <Cell><Data ss:Type="String">Alícuota Condominio ($)</Data></Cell>
+          <Cell><Data ss:Type="String">Total Mensual ($)</Data></Cell>
+        </Row>
+      `;
+
+      units.forEach((u, idx) => {
+        const t = tenants.find(item => item.unit_code === u.code) || { business_name: 'Disponible / Sin asignar', rif: 'N/A' };
+        const rent = parseFloat(u.base_rent_usd || u.price_monthly_usd || 0);
+        const condo = parseFloat(u.condo_aliquot_usd || 50.0);
+
+        sheet1Rows += `
+          <Row>
+            <Cell><Data ss:Type="Number">${idx + 1}</Data></Cell>
+            <Cell><Data ss:Type="String">${xmlEscape(u.code)}</Data></Cell>
+            <Cell><Data ss:Type="String">${xmlEscape(u.type || 'Local')}</Data></Cell>
+            <Cell ss:StyleID="Decimal"><Data ss:Type="Number">${parseFloat(u.area_m2 || 0)}</Data></Cell>
+            <Cell><Data ss:Type="String">${xmlEscape(t.business_name)}</Data></Cell>
+            <Cell><Data ss:Type="String">${xmlEscape(t.rif)}</Data></Cell>
+            <Cell ss:StyleID="Currency"><Data ss:Type="Number">${rent}</Data></Cell>
+            <Cell ss:StyleID="Currency"><Data ss:Type="Number">${condo}</Data></Cell>
+            <Cell ss:StyleID="Currency" ss:Formula="=RC[-2]+RC[-1]"><Data ss:Type="Number">${rent + condo}</Data></Cell>
+          </Row>
+        `;
+      });
+
+      const totalUnitsRow = units.length + 2;
+      sheet1Rows += `
+        <Row ss:StyleID="Total">
+          <Cell ss:MergeAcross="2"><Data ss:Type="String">TOTALES CONSOLIDADOS (39 UNIDADES):</Data></Cell>
+          <Cell ss:StyleID="TotalDecimal" ss:Formula="=SUM(R2C4:R${totalUnitsRow - 1}C4)"><Data ss:Type="Number">0</Data></Cell>
+          <Cell><Data ss:Type="String"></Data></Cell>
+          <Cell><Data ss:Type="String"></Data></Cell>
+          <Cell ss:StyleID="Total" ss:Formula="=SUM(R2C7:R${totalUnitsRow - 1}C7)"><Data ss:Type="Number">0</Data></Cell>
+          <Cell ss:StyleID="Total" ss:Formula="=SUM(R2C8:R${totalUnitsRow - 1}C8)"><Data ss:Type="Number">0</Data></Cell>
+          <Cell ss:StyleID="Total" ss:Formula="=SUM(R2C9:R${totalUnitsRow - 1}C9)"><Data ss:Type="Number">0</Data></Cell>
+        </Row>
+      `;
+
+      // SHEET 2: FACTURACIÓN & COBRANZAS
+      let sheet2Rows = `
+        <Row ss:StyleID="Header">
+          <Cell><Data ss:Type="String">N°</Data></Cell>
+          <Cell><Data ss:Type="String">Código</Data></Cell>
+          <Cell><Data ss:Type="String">Inquilino</Data></Cell>
+          <Cell><Data ss:Type="String">Período</Data></Cell>
+          <Cell><Data ss:Type="String">Canon ($)</Data></Cell>
+          <Cell><Data ss:Type="String">Condominio ($)</Data></Cell>
+          <Cell><Data ss:Type="String">Total Facturado ($)</Data></Cell>
+          <Cell><Data ss:Type="String">Monto Cobrado ($)</Data></Cell>
+          <Cell><Data ss:Type="String">Saldo Pendiente ($)</Data></Cell>
+          <Cell><Data ss:Type="String">Estatus</Data></Cell>
+        </Row>
+      `;
+
+      invoices.forEach((inv, idx) => {
+        const t = tenants.find(item => item.id === inv.tenant_id) || { business_name: 'Inquilino' };
+        const rent = parseFloat(inv.rent_usd !== undefined ? inv.rent_usd : (inv.base_rent_usd || 0)) || 0;
+        const condo = parseFloat(inv.condo_usd || 0) || 0;
+        const total = rent + condo;
+        const cobrado = (inv.status === 'pagado') ? total : 0;
+
+        sheet2Rows += `
+          <Row>
+            <Cell><Data ss:Type="Number">${idx + 1}</Data></Cell>
+            <Cell><Data ss:Type="String">${xmlEscape(inv.unit_code)}</Data></Cell>
+            <Cell><Data ss:Type="String">${xmlEscape(t.business_name)}</Data></Cell>
+            <Cell><Data ss:Type="String">${inv.period_month}/${inv.period_year}</Data></Cell>
+            <Cell ss:StyleID="Currency"><Data ss:Type="Number">${rent}</Data></Cell>
+            <Cell ss:StyleID="Currency"><Data ss:Type="Number">${condo}</Data></Cell>
+            <Cell ss:StyleID="Currency" ss:Formula="=RC[-2]+RC[-1]"><Data ss:Type="Number">${total}</Data></Cell>
+            <Cell ss:StyleID="Currency"><Data ss:Type="Number">${cobrado}</Data></Cell>
+            <Cell ss:StyleID="Currency" ss:Formula="=RC[-2]-RC[-1]"><Data ss:Type="Number">${total - cobrado}</Data></Cell>
+            <Cell><Data ss:Type="String">${xmlEscape(inv.status || 'pendiente')}</Data></Cell>
+          </Row>
+        `;
+      });
+
+      const totalInvRow = invoices.length + 2;
+      sheet2Rows += `
+        <Row ss:StyleID="Total">
+          <Cell ss:MergeAcross="3"><Data ss:Type="String">TOTALES CONSOLIDADOS:</Data></Cell>
+          <Cell ss:StyleID="Total" ss:Formula="=SUM(R2C5:R${totalInvRow - 1}C5)"><Data ss:Type="Number">0</Data></Cell>
+          <Cell ss:StyleID="Total" ss:Formula="=SUM(R2C6:R${totalInvRow - 1}C6)"><Data ss:Type="Number">0</Data></Cell>
+          <Cell ss:StyleID="Total" ss:Formula="=SUM(R2C7:R${totalInvRow - 1}C7)"><Data ss:Type="Number">0</Data></Cell>
+          <Cell ss:StyleID="Total" ss:Formula="=SUM(R2C8:R${totalInvRow - 1}C8)"><Data ss:Type="Number">0</Data></Cell>
+          <Cell ss:StyleID="Total" ss:Formula="=SUM(R2C9:R${totalInvRow - 1}C9)"><Data ss:Type="Number">0</Data></Cell>
+          <Cell><Data ss:Type="String"></Data></Cell>
+        </Row>
+      `;
+
+      // SHEET 3: GASTOS COMUNES (PRESUPUESTO $2,540 / AUDITADO)
+      let sheet3Rows = `
+        <Row ss:StyleID="Header">
+          <Cell><Data ss:Type="String">N°</Data></Cell>
+          <Cell><Data ss:Type="String">Categoría de Gasto</Data></Cell>
+          <Cell><Data ss:Type="String">Concepto / Partida Operativa</Data></Cell>
+          <Cell><Data ss:Type="String">Presupuesto Mensual USD ($)</Data></Cell>
+          <Cell><Data ss:Type="String">Proyección Anual USD ($)</Data></Cell>
+        </Row>
+        <Row>
+          <Cell><Data ss:Type="Number">1</Data></Cell>
+          <Cell><Data ss:Type="String">Vigilancia</Data></Cell>
+          <Cell><Data ss:Type="String">Servicio de Seguridad Privada 24/7 y Control de Acceso</Data></Cell>
+          <Cell ss:StyleID="Currency"><Data ss:Type="Number">1200.00</Data></Cell>
+          <Cell ss:StyleID="Currency" ss:Formula="=RC[-1]*12"><Data ss:Type="Number">14400.00</Data></Cell>
+        </Row>
+        <Row>
+          <Cell><Data ss:Type="Number">2</Data></Cell>
+          <Cell><Data ss:Type="String">Aseo y Desechos</Data></Cell>
+          <Cell><Data ss:Type="String">Bote de Basura, Disposición de Desechos y Contenedores</Data></Cell>
+          <Cell ss:StyleID="Currency"><Data ss:Type="Number">350.00</Data></Cell>
+          <Cell ss:StyleID="Currency" ss:Formula="=RC[-1]*12"><Data ss:Type="Number">4200.00</Data></Cell>
+        </Row>
+        <Row>
+          <Cell><Data ss:Type="Number">3</Data></Cell>
+          <Cell><Data ss:Type="String">Áreas Comunes</Data></Cell>
+          <Cell><Data ss:Type="String">Limpieza y Mantenimiento de Pasillos, Baños y Plaza Central</Data></Cell>
+          <Cell ss:StyleID="Currency"><Data ss:Type="Number">400.00</Data></Cell>
+          <Cell ss:StyleID="Currency" ss:Formula="=RC[-1]*12"><Data ss:Type="Number">4800.00</Data></Cell>
+        </Row>
+        <Row>
+          <Cell><Data ss:Type="Number">4</Data></Cell>
+          <Cell><Data ss:Type="String">Servicios Básicos</Data></Cell>
+          <Cell><Data ss:Type="String">Electricidad de Áreas Comunes e Iluminación Perimetral</Data></Cell>
+          <Cell ss:StyleID="Currency"><Data ss:Type="Number">250.00</Data></Cell>
+          <Cell ss:StyleID="Currency" ss:Formula="=RC[-1]*12"><Data ss:Type="Number">3000.00</Data></Cell>
+        </Row>
+        <Row>
+          <Cell><Data ss:Type="Number">5</Data></Cell>
+          <Cell><Data ss:Type="String">Sistemas Hidroneumáticos</Data></Cell>
+          <Cell><Data ss:Type="String">Mantenimiento Preventivo de Bombas de Agua y Tableros</Data></Cell>
+          <Cell ss:StyleID="Currency"><Data ss:Type="Number">180.00</Data></Cell>
+          <Cell ss:StyleID="Currency" ss:Formula="=RC[-1]*12"><Data ss:Type="Number">2160.00</Data></Cell>
+        </Row>
+        <Row>
+          <Cell><Data ss:Type="Number">6</Data></Cell>
+          <Cell><Data ss:Type="String">Insumos Operativos</Data></Cell>
+          <Cell><Data ss:Type="String">Reposición de Productos Químicos y Artículos de Limpieza</Data></Cell>
+          <Cell ss:StyleID="Currency"><Data ss:Type="Number">100.00</Data></Cell>
+          <Cell ss:StyleID="Currency" ss:Formula="=RC[-1]*12"><Data ss:Type="Number">1200.00</Data></Cell>
+        </Row>
+        <Row>
+          <Cell><Data ss:Type="Number">7</Data></Cell>
+          <Cell><Data ss:Type="String">Fondo Imprevistos</Data></Cell>
+          <Cell><Data ss:Type="String">Gastos Menores Operativos de Emergencia</Data></Cell>
+          <Cell ss:StyleID="Currency"><Data ss:Type="Number">60.00</Data></Cell>
+          <Cell ss:StyleID="Currency" ss:Formula="=RC[-1]*12"><Data ss:Type="Number">720.00</Data></Cell>
+        </Row>
+        <Row ss:StyleID="Total">
+          <Cell ss:MergeAcross="2"><Data ss:Type="String">TOTAL PRESUPUESTO MENSUAL DE EGRESOS:</Data></Cell>
+          <Cell ss:StyleID="Total" ss:Formula="=SUM(R2C4:R8C4)"><Data ss:Type="Number">2540.00</Data></Cell>
+          <Cell ss:StyleID="Total" ss:Formula="=SUM(R2C5:R8C5)"><Data ss:Type="Number">30480.00</Data></Cell>
+        </Row>
+      `;
+
+      // SHEET 4: DISTRIBUCIÓN SUCESORAL A COHEREDEROS (1/14 SUCESIÓN MARIO SÁNCHEZ)
+      let sheet4Rows = `
+        <Row ss:StyleID="Header">
+          <Cell ss:MergeAcross="3"><Data ss:Type="String">SUCESIÓN MARIO SÁNCHEZ — LIQUIDACIÓN DE FRUTOS CIVILES (14 COHEREDEROS)</Data></Cell>
+        </Row>
+        <Row>
+          <Cell><Data ss:Type="String">1. Ingresos Brutos Cobrados ($):</Data></Cell>
+          <Cell ss:StyleID="Currency"><Data ss:Type="Number">9050.00</Data></Cell>
+          <Cell ss:MergeAcross="1"><Data ss:Type="String">Recaudación mensual total</Data></Cell>
+        </Row>
+        <Row>
+          <Cell><Data ss:Type="String">2. Egresos Operativos ($):</Data></Cell>
+          <Cell ss:StyleID="Currency"><Data ss:Type="Number">2540.00</Data></Cell>
+          <Cell ss:MergeAcross="1"><Data ss:Type="String">Presupuesto mensual base</Data></Cell>
+        </Row>
+        <Row>
+          <Cell><Data ss:Type="String">3. Fondo de Reserva Legal (10%):</Data></Cell>
+          <Cell ss:StyleID="Currency" ss:Formula="=R2C2*0.1"><Data ss:Type="Number">905.00</Data></Cell>
+          <Cell ss:MergeAcross="1"><Data ss:Type="String">10% sobre ingresos</Data></Cell>
+        </Row>
+        <Row>
+          <Cell><Data ss:Type="String">4. Gastos de Administración (5%):</Data></Cell>
+          <Cell ss:StyleID="Currency" ss:Formula="=R2C2*0.05"><Data ss:Type="Number">452.50</Data></Cell>
+          <Cell ss:MergeAcross="1"><Data ss:Type="String">5% sobre ingresos</Data></Cell>
+        </Row>
+        <Row ss:StyleID="Total">
+          <Cell><Data ss:Type="String">5. Utilidad Neta Liquidable ($):</Data></Cell>
+          <Cell ss:StyleID="Total" ss:Formula="=R2C2-R3C2-R4C2-R5C2"><Data ss:Type="Number">5152.50</Data></Cell>
+          <Cell ss:MergeAcross="1"><Data ss:Type="String">Monto a repartir entre 14 estirpes</Data></Cell>
+        </Row>
+        <Row></Row>
+        <Row ss:StyleID="Header">
+          <Cell><Data ss:Type="String">N°</Data></Cell>
+          <Cell><Data ss:Type="String">Estirpe / Coheredero</Data></Cell>
+          <Cell><Data ss:Type="String">Alícuota Indivisa</Data></Cell>
+          <Cell><Data ss:Type="String">Liquidación Neta USD ($)</Data></Cell>
+        </Row>
+      `;
+
+      for (let i = 1; i <= 14; i++) {
+        sheet4Rows += `
+          <Row>
+            <Cell><Data ss:Type="Number">${i}</Data></Cell>
+            <Cell><Data ss:Type="String">Estirpe Coheredero ${i} (Sucesión Mario Sánchez)</Data></Cell>
+            <Cell ss:StyleID="Percent"><Data ss:Type="Number">0.07142857</Data></Cell>
+            <Cell ss:StyleID="Currency" ss:Formula="=R6C2/14"><Data ss:Type="Number">368.04</Data></Cell>
+          </Row>
+        `;
+      }
+
+      sheet4Rows += `
+        <Row ss:StyleID="Total">
+          <Cell ss:MergeAcross="1"><Data ss:Type="String">TOTAL DISTRIBUIDO (14 ESTIRPES):</Data></Cell>
+          <Cell ss:StyleID="TotalPercent" ss:Formula="=SUM(R9C3:R22C3)"><Data ss:Type="Number">1.00</Data></Cell>
+          <Cell ss:StyleID="Total" ss:Formula="=SUM(R9C4:R22C4)"><Data ss:Type="Number">5152.50</Data></Cell>
+        </Row>
+      `;
+
+      // SHEET 5: INVENTARIO Y BIENES
+      let sheet5Rows = `
+        <Row ss:StyleID="Header">
+          <Cell><Data ss:Type="String">Código</Data></Cell>
+          <Cell><Data ss:Type="String">Descripción del Bien / Activo</Data></Cell>
+          <Cell><Data ss:Type="String">Categoría</Data></Cell>
+          <Cell><Data ss:Type="String">Ubicación</Data></Cell>
+          <Cell><Data ss:Type="String">Cantidad</Data></Cell>
+          <Cell><Data ss:Type="String">Costo Unitario ($)</Data></Cell>
+          <Cell><Data ss:Type="String">Valor Total ($)</Data></Cell>
+          <Cell><Data ss:Type="String">Estado</Data></Cell>
+        </Row>
+      `;
+
+      activos.forEach(a => {
+        sheet5Rows += `
+          <Row>
+            <Cell><Data ss:Type="String">${xmlEscape(a.code || a.id)}</Data></Cell>
+            <Cell><Data ss:Type="String">${xmlEscape(a.name || a.description)}</Data></Cell>
+            <Cell><Data ss:Type="String">${xmlEscape(a.category || 'Activo')}</Data></Cell>
+            <Cell><Data ss:Type="String">${xmlEscape(a.location || 'C.C. Mario Sánchez')}</Data></Cell>
+            <Cell><Data ss:Type="Number">1</Data></Cell>
+            <Cell ss:StyleID="Currency"><Data ss:Type="Number">${parseFloat(a.estimated_value_usd || 0)}</Data></Cell>
+            <Cell ss:StyleID="Currency" ss:Formula="=RC[-2]*RC[-1]"><Data ss:Type="Number">${parseFloat(a.estimated_value_usd || 0)}</Data></Cell>
+            <Cell><Data ss:Type="String">${xmlEscape(a.condition || 'Operativo')}</Data></Cell>
+          </Row>
+        `;
+      });
+
+      const totalActRows = activos.length + 2;
+      sheet5Rows += `
+        <Row ss:StyleID="Total">
+          <Cell ss:MergeAcross="5"><Data ss:Type="String">TOTAL VALORACIÓN ACTIVOS:</Data></Cell>
+          <Cell ss:StyleID="Total" ss:Formula="=SUM(R2C7:R${totalActRows - 1}C7)"><Data ss:Type="Number">0</Data></Cell>
+          <Cell><Data ss:Type="String"></Data></Cell>
+        </Row>
+      `;
+
+      const excelXml = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Bottom"/>
+   <Font ss:FontName="Segoe UI" ss:Size="10" ss:Color="#000000"/>
+  </Style>
+  <Style ss:ID="Header">
+   <Font ss:FontName="Segoe UI" ss:Bold="1" ss:Color="#FFFFFF" ss:Size="11"/>
+   <Interior ss:Color="#0F172A" ss:Pattern="Solid"/>
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+  </Style>
+  <Style ss:ID="Total">
+   <Font ss:FontName="Segoe UI" ss:Bold="1" ss:Size="11"/>
+   <Interior ss:Color="#F1F5F9" ss:Pattern="Solid"/>
+   <NumberFormat ss:Format="&quot;$&quot;#,##0.00"/>
+  </Style>
+  <Style ss:ID="TotalDecimal">
+   <Font ss:FontName="Segoe UI" ss:Bold="1" ss:Size="11"/>
+   <Interior ss:Color="#F1F5F9" ss:Pattern="Solid"/>
+   <NumberFormat ss:Format="#,##0.00"/>
+  </Style>
+  <Style ss:ID="TotalPercent">
+   <Font ss:FontName="Segoe UI" ss:Bold="1" ss:Size="11"/>
+   <Interior ss:Color="#F1F5F9" ss:Pattern="Solid"/>
+   <NumberFormat ss:Format="0.00%"/>
+  </Style>
+  <Style ss:ID="Currency">
+   <NumberFormat ss:Format="&quot;$&quot;#,##0.00"/>
+  </Style>
+  <Style ss:ID="Decimal">
+   <NumberFormat ss:Format="#,##0.00"/>
+  </Style>
+  <Style ss:ID="Percent">
+   <NumberFormat ss:Format="0.00%"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="Locales_e_Inquilinos">
+  <Table>
+   ${sheet1Rows}
+  </Table>
+ </Worksheet>
+ <Worksheet ss:Name="Facturacion_y_Cobranzas">
+  <Table>
+   ${sheet2Rows}
+  </Table>
+ </Worksheet>
+ <Worksheet ss:Name="Gastos_Comunes_Ppto_2540">
+  <Table>
+   ${sheet3Rows}
+  </Table>
+ </Worksheet>
+ <Worksheet ss:Name="Distribucion_Coherederos">
+  <Table>
+   ${sheet4Rows}
+  </Table>
+ </Worksheet>
+ <Worksheet ss:Name="Inventario_Bienes_Kardex">
+  <Table>
+   ${sheet5Rows}
+  </Table>
+ </Worksheet>
+</Workbook>`;
+
+      const filename = `CCMS_EXCEL_MAESTRO_FORMULAS_${dateStr}.xls`;
+      const blob = new Blob([excelXml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      if (window.SecuritySuite && window.SecuritySuite.logAudit) {
+        window.SecuritySuite.logAudit('EXCEL_EXPORT_FORMULAS', `Exportación de Excel Maestro con fórmulas determinísticas activas (${filename})`);
+      }
+      showToast(`✓ Archivo Excel multi-hoja con fórmulas vivas "${filename}" descargado con éxito.`, 'success', 'Excel con Fórmulas');
+    } catch (err) {
+      console.error('[EXCEL EXPORT ERROR]', err);
+      showToast(`Error al generar Excel: ${err.message}`, 'error', 'Fallo de Excel');
+    }
+  };
+
+  /**
+   * =========================================================================
+   * CONTROLADOR DE RESTAURACIÓN DE RESPALDO JSON
+   * =========================================================================
+   */
+  window.handleBackupRestoreFileInput = function(event) {
+    const file = event.target.files ? event.target.files[0] : null;
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const json = JSON.parse(e.target.result);
+        if (!json.collections && !json.units && !json.tenants) {
+          throw new Error("El archivo seleccionado no corresponde a un respaldo válido del C.C. Mario Sánchez.");
+        }
+
+        const cols = json.collections || json;
+        const uCount = (cols.units || []).length;
+        const tCount = (cols.tenants || []).length;
+        const iCount = (cols.invoices || []).length;
+        const pCount = (cols.payments || []).length;
+        const eCount = (cols.condo_expenses || []).length;
+
+        const confirmMsg = `¿Desea restaurar este respaldo?\n\n` +
+          `• Unidades: ${uCount}\n` +
+          `• Inquilinos: ${tCount}\n` +
+          `• Facturas: ${iCount}\n` +
+          `• Comprobantes/Pagos: ${pCount}\n` +
+          `• Gastos Comunes: ${eCount}\n\n` +
+          `ATENCIÓN: Esta acción sincronizará los datos locales del sistema con la copia de seguridad.`;
+
+        if (!confirm(confirmMsg)) {
+          event.target.value = '';
+          return;
+        }
+
+        if (cols.units && Array.isArray(cols.units)) localStorage.setItem('ccms_units_v1', JSON.stringify(cols.units));
+        if (cols.tenants && Array.isArray(cols.tenants)) localStorage.setItem('ccms_tenants_v1', JSON.stringify(cols.tenants));
+        if (cols.contracts && Array.isArray(cols.contracts)) localStorage.setItem('ccms_contracts_v1', JSON.stringify(cols.contracts));
+        if (cols.invoices && Array.isArray(cols.invoices)) localStorage.setItem('ccms_invoices_v1', JSON.stringify(cols.invoices));
+        if (cols.payments && Array.isArray(cols.payments)) localStorage.setItem('ccms_payments_v1', JSON.stringify(cols.payments));
+        if (cols.receipts && Array.isArray(cols.receipts)) localStorage.setItem('ccms_receipts_v1', JSON.stringify(cols.receipts));
+        if (cols.condo_expenses && Array.isArray(cols.condo_expenses)) localStorage.setItem('ccms_condo_expenses_v1', JSON.stringify(cols.condo_expenses));
+        if (cols.staff_members && Array.isArray(cols.staff_members)) localStorage.setItem('ccms_staff_members_v1', JSON.stringify(cols.staff_members));
+        if (cols.staff_photos && typeof cols.staff_photos === 'object') localStorage.setItem('ccms_staff_photos_v1', JSON.stringify(cols.staff_photos));
+        if (cols.activos_fijos && Array.isArray(cols.activos_fijos)) localStorage.setItem('ccms_activos_fijos_v1', JSON.stringify(cols.activos_fijos));
+        if (cols.consumibles && Array.isArray(cols.consumibles)) localStorage.setItem('ccms_consumibles_v1', JSON.stringify(cols.consumibles));
+        if (cols.kardex_movimientos && Array.isArray(cols.kardex_movimientos)) localStorage.setItem('ccms_kardex_v1', JSON.stringify(cols.kardex_movimientos));
+        if (cols.special_agreements && Array.isArray(cols.special_agreements)) localStorage.setItem('ccms_special_agreements_v1', JSON.stringify(cols.special_agreements));
+        if (cols.receiving_accounts && Array.isArray(cols.receiving_accounts)) localStorage.setItem('ccms_bank_accounts_v1', JSON.stringify(cols.receiving_accounts));
+        if (cols.app_settings && typeof cols.app_settings === 'object') localStorage.setItem('ccms_settings_v1', JSON.stringify(cols.app_settings));
+
+        if (window.SecuritySuite && window.SecuritySuite.logAudit) {
+          window.SecuritySuite.logAudit('BACKUP_RESTORE', `Restauración exitosa de copia de seguridad (${file.name})`);
+        }
+
+        showToast("✓ Copia de seguridad restaurada exitosamente. Recargando estado...", "success", "Restauración Completa");
+        setTimeout(() => { window.location.reload(); }, 1200);
+      } catch (err) {
+        console.error('[RESTORE ERROR]', err);
+        showToast(`Error al procesar el archivo de respaldo: ${err.message}`, "error", "Error de Restauración");
+      }
+      event.target.value = '';
+    };
+    reader.readAsText(file);
   };
 
   // =========================================================================

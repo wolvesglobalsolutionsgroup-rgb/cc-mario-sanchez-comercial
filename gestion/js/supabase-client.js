@@ -588,6 +588,10 @@ class DatabaseService {
         data.kardex_movimientos = JSON.parse(JSON.stringify(window.CCMS_SEED_DATA.kardex_movimientos));
         dirty = true;
       }
+      if (!data.special_agreements || !Array.isArray(data.special_agreements)) {
+        data.special_agreements = [];
+        dirty = true;
+      }
       if (data.invoices && Array.isArray(data.invoices)) {
         const inv4 = data.invoices.find(i => i.id === 'inv-4');
         if (inv4 && inv4.status === 'verificando' && (!data.payments || !data.payments.some(p => p.invoice_id === 'inv-4' && p.status === 'pendiente'))) {
@@ -843,6 +847,98 @@ class DatabaseService {
 
     this.saveData(data);
     return { tenant: newTenant, contract: newContract, invoice: firstInvoice };
+  }
+
+  updateTenant(tenantId, updateData) {
+    const data = this.getData();
+    if (!data.tenants) return null;
+    const idx = data.tenants.findIndex(t => t.id === tenantId);
+    if (idx === -1) return null;
+    const oldTenant = { ...data.tenants[idx] };
+    data.tenants[idx] = { ...data.tenants[idx], ...updateData };
+    this.saveData(data);
+    this.logAuditAction({
+      action: 'UPDATE',
+      entity: 'TENANT',
+      entity_id: tenantId,
+      entity_name: data.tenants[idx].business_name,
+      details: `Actualización de ficha y datos del arrendatario ${data.tenants[idx].business_name}`,
+      previous_state: oldTenant,
+      new_state: data.tenants[idx]
+    });
+    return data.tenants[idx];
+  }
+
+  // --- MÓDULO DE ACUERDOS ESPECIALES, REPARACIONES & COMPENSACIONES ---
+  getSpecialAgreements(tenantId = null) {
+    const data = this.getData();
+    if (!data || !Array.isArray(data.special_agreements)) return [];
+    const effectiveTenantId = this._sessionTenantId(tenantId);
+    if (effectiveTenantId) {
+      return data.special_agreements.filter(a => a.tenant_id === effectiveTenantId);
+    }
+    return data.special_agreements;
+  }
+
+  saveSpecialAgreement(agreement) {
+    const data = this.getData();
+    if (!data.special_agreements) data.special_agreements = [];
+    let saved = null;
+    if (agreement.id) {
+      const idx = data.special_agreements.findIndex(a => a.id === agreement.id);
+      if (idx >= 0) {
+        const oldState = { ...data.special_agreements[idx] };
+        data.special_agreements[idx] = { ...data.special_agreements[idx], ...agreement };
+        saved = data.special_agreements[idx];
+        this.logAuditAction({
+          action: 'UPDATE',
+          entity: 'AGREEMENT',
+          entity_id: agreement.id,
+          entity_name: agreement.agreement_type || 'Acuerdo Especial',
+          details: `Modificación de acuerdo especial para inquilino ${agreement.tenant_id}`,
+          previous_state: oldState,
+          new_state: saved
+        });
+      }
+    } else {
+      const newAgr = {
+        ...agreement,
+        id: 'agr-' + Date.now(),
+        status: agreement.status || 'activo',
+        created_at: new Date().toISOString()
+      };
+      data.special_agreements.push(newAgr);
+      saved = newAgr;
+      this.logAuditAction({
+        action: 'CREATE',
+        entity: 'AGREEMENT',
+        entity_id: newAgr.id,
+        entity_name: newAgr.agreement_type || 'Acuerdo Especial',
+        details: `Registro de nuevo acuerdo especial / deducción ($${newAgr.discount_monthly_usd}/mes) para inquilino ${newAgr.tenant_id}`,
+        new_state: newAgr
+      });
+    }
+    this.saveData(data);
+    return saved;
+  }
+
+  deleteSpecialAgreement(id) {
+    const data = this.getData();
+    if (!data.special_agreements) return [];
+    const target = data.special_agreements.find(a => a.id === id);
+    data.special_agreements = data.special_agreements.filter(a => a.id !== id);
+    this.saveData(data);
+    if (target) {
+      this.logAuditAction({
+        action: 'DELETE',
+        entity: 'AGREEMENT',
+        entity_id: id,
+        entity_name: target.agreement_type || 'Acuerdo Especial',
+        details: `Eliminación de acuerdo especial ${target.agreement_type} de inquilino ${target.tenant_id}`,
+        previous_state: target
+      });
+    }
+    return data.special_agreements;
   }
 
   getDefaultCondoExpenses() {

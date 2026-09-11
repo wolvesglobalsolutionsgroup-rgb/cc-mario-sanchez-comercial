@@ -45,6 +45,9 @@ const HelpContent = {
           <button class="help-nav-btn" data-help-tab="faq_tenant" style="flex: 1; min-width: 130px; padding: 8px 12px; background: transparent; border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--txt-secondary); font-size: 11.5px; font-weight: 700; cursor: pointer;">
             <i class="fa-solid fa-circle-question"></i> Preguntas & Soporte
           </button>
+          <button class="help-nav-btn" data-help-tab="formulas" style="flex: 1; min-width: 130px; padding: 8px 12px; background: transparent; border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--txt-secondary); font-size: 11.5px; font-weight: 700; cursor: pointer;">
+            <i class="fa-solid fa-square-root-variable"></i> Fórmulas & Ley
+          </button>
         </div>
 
         <!-- CONTENEDOR DEL CONTENIDO DIDÁCTICO -->
@@ -75,6 +78,9 @@ const HelpContent = {
           </button>
           <button class="help-nav-btn" data-help-tab="informes" style="flex: 1; min-width: 110px; padding: 8px 12px; background: transparent; border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--txt-secondary); font-size: 11.5px; font-weight: 700; cursor: pointer;">
             <i class="fa-solid fa-file-contract"></i> Informes
+          </button>
+          <button class="help-nav-btn" data-help-tab="formulas" style="flex: 1; min-width: 110px; padding: 8px 12px; background: transparent; border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--txt-secondary); font-size: 11.5px; font-weight: 700; cursor: pointer;">
+            <i class="fa-solid fa-square-root-variable"></i> Fórmulas
           </button>
           <button class="help-nav-btn" data-help-tab="legal" style="flex: 1; min-width: 110px; padding: 8px 12px; background: transparent; border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--txt-secondary); font-size: 11.5px; font-weight: 700; cursor: pointer;">
             <i class="fa-solid fa-scale-balanced"></i> Marco Legal
@@ -678,6 +684,115 @@ const HelpContent = {
             <li><strong>Libro de Compras / Ventas SENIAT:</strong> Cumple con la Providencia Administrativa SNAT/2014/0032.</li>
             <li><strong>Certificados de Solvencia:</strong> Emisión de constancias de solvencia con sello de verificación.</li>
           </ul>
+        </div>
+      `,
+
+      formulas: `
+        <div class="data-card" style="padding: 28px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; border-bottom: 2px solid var(--border-subtle); padding-bottom: 14px;">
+            <div>
+              <h3 style="font-family: var(--font-heading); font-size: 22px; color: var(--txt-primary); margin: 0 0 4px;">
+                <i class="fa-solid fa-square-root-variable" style="color: var(--cyan);"></i>
+                Fórmulas Determinísticas & Transparencia de Cálculo
+              </h3>
+              <p style="font-size: 13px; color: var(--txt-secondary); margin: 0;">
+                Memoria de cálculo y marco legal vinculante para cánones, alícuotas condominales, mora, retenciones SENIAT y liquidación sucesoral.
+              </p>
+            </div>
+            <span class="status-pill pill-active" style="font-size: 11px;">
+              <i class="fa-solid fa-scale-balanced"></i> G.O. 40.418 & Cód. Civil
+            </span>
+          </div>
+
+          <!-- SECCIÓN 1: CÁNONES Y ACUERDOS -->
+          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+            <h4 style="color: var(--amber); margin: 0 0 10px; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-calculator"></i> 1. Canon de Arrendamiento con Deducción por Acuerdos Especiales
+            </h4>
+            <p style="font-size: 12.5px; color: var(--txt-secondary); line-height: 1.6; margin-bottom: 12px;">
+              Cuando un arrendatario realiza reparaciones mayores, adecuaciones estructurales o mejoras aprobadas por la administración, se suscribe un <em>Acuerdo Especial de Amortización</em>. El canon neto facturado se liquida determinísticamente:
+            </p>
+            <div style="background: #0f172a; color: #38bdf8; padding: 14px 18px; border-radius: 8px; font-family: monospace; font-size: 13px; margin-bottom: 12px; border-left: 4px solid var(--cyan);">
+              Canon Facturado = MAX(0, Canon Base - Deducción Mensual Acuerdo) + Alícuota Condominio + Recargo Mora
+            </div>
+            <div style="font-size: 11.5px; color: var(--txt-muted);">
+              <strong>Base Jurídica:</strong> Artículo 32 del Decreto con Rango, Valor y Fuerza de Ley de Regulación del Arrendamiento Inmobiliario para el Uso Comercial (G.O. N° 40.418) y Principio de Autonomía de la Voluntad (Código Civil Art. 1.159).
+            </div>
+          </div>
+
+          <!-- SECCIÓN 2: GASTOS COMUNES Y ALÍCUOTAS -->
+          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+            <h4 style="color: var(--purple); margin: 0 0 10px; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-chart-pie"></i> 2. Alícuota Condominial y Prorrateo de Gastos Comunes ($2,540.00/mes)
+            </h4>
+            <p style="font-size: 12.5px; color: var(--txt-secondary); line-height: 1.6; margin-bottom: 12px;">
+              Los egresos comunes (vigilancia $1,200, aseo $350, áreas comunes $400, servicios $250, hidroneumáticos $180, insumos $100, imprevistos $60) se prorratean en estricta proporción a la superficie de cada unidad sobre el área total arrendable:
+            </p>
+            <div style="background: #0f172a; color: #c084fc; padding: 14px 18px; border-radius: 8px; font-family: monospace; font-size: 13px; margin-bottom: 12px; border-left: 4px solid var(--purple);">
+              Alícuota Inmueble (%) = (Área Local m² / Área Total Arrendable m²) × 100<br>
+              Cuota Mensual Gastos = Presupuesto Común Mensual ($2,540.00) × Alícuota Inmueble (%)
+            </div>
+            <div style="font-size: 11.5px; color: var(--txt-muted);">
+              <strong>Base Jurídica:</strong> Artículos 13 y 19 de la Ley de Arrendamiento Comercial (Gaceta Oficial N° 40.418).
+            </div>
+          </div>
+
+          <!-- SECCIÓN 3: RECARGO MORATORIO -->
+          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+            <h4 style="color: var(--rose); margin: 0 0 10px; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-clock"></i> 3. Interés y Recargo Moratorio Legal Prorrateado por Día
+            </h4>
+            <p style="font-size: 12.5px; color: var(--txt-secondary); line-height: 1.6; margin-bottom: 12px;">
+              El recargo moratorio se causa a partir del vencimiento del día límite de pago (más días de gracia configurados) y se calcula de forma lineal diaria:
+            </p>
+            <div style="background: #0f172a; color: #fb7185; padding: 14px 18px; border-radius: 8px; font-family: monospace; font-size: 13px; margin-bottom: 12px; border-left: 4px solid var(--rose);">
+              Recargo Mora ($) = Saldo Vencido × (Tasa Mensual % / 30) × Días de Retraso Transcurridos
+            </div>
+            <div style="font-size: 11.5px; color: var(--txt-muted);">
+              <strong>Base Jurídica:</strong> Artículo 108 del Código de Comercio de Venezuela y Cláusula Penal Contractual bajo G.O. N° 40.418.
+            </div>
+          </div>
+
+          <!-- SECCIÓN 4: LIQUIDACIÓN SUCESORAL -->
+          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+            <h4 style="color: var(--emerald); margin: 0 0 10px; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-landmark"></i> 4. Liquidación Sucesoral y Frutos Civiles (1/14 Sucesión Mario Sánchez)
+            </h4>
+            <p style="font-size: 12.5px; color: var(--txt-secondary); line-height: 1.6; margin-bottom: 12px;">
+              La liquidación de dividendos / utilidades se distribuye equitativamente entre las 14 estirpes o coherederos de la sucesión (RIF: J-30211544-2) tras deducir los costos operativos y reservas legales:
+            </p>
+            <div style="background: #0f172a; color: #4ade80; padding: 14px 18px; border-radius: 8px; font-family: monospace; font-size: 13px; margin-bottom: 12px; border-left: 4px solid var(--emerald);">
+              Utilidad Neta Repartible = Ingresos Cobrados - Egresos Comunes ($2,540) - Fondo Reserva (10%) - Gasto Adm (5%)<br>
+              Cuota por Coheredero = Utilidad Neta Repartible / 14  (7.142857% por estirpe indivisa)
+            </div>
+            <div style="font-size: 11.5px; color: var(--txt-muted);">
+              <strong>Base Jurídica:</strong> Artículos 552 (Frutos Civiles de Bienes Inmuebles) y 768 (Comunidad Indivisa) del Código Civil de la República Bolivariana de Venezuela.
+            </div>
+          </div>
+
+          <!-- SECCIÓN 5: MULTIMONEDA BCV Y SENIAT -->
+          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 20px;">
+            <h4 style="color: var(--cyan); margin: 0 0 10px; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-coins"></i> 5. Conversión Multimoneda Oficial & Retenciones Tributarias SENIAT
+            </h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+              <div>
+                <div style="font-weight: 700; font-size: 12px; color: var(--txt-primary); margin-bottom: 4px;">Tasa Oficial BCV:</div>
+                <div style="background: #0f172a; color: #38bdf8; padding: 10px 12px; border-radius: 6px; font-family: monospace; font-size: 12px; margin-bottom: 6px;">
+                  Monto VES = Monto USD × Tasa Oficial BCV del día
+                </div>
+                <div style="font-size: 11px; color: var(--txt-muted);">Convenio Cambiario N° 1 y Art. 128 Ley del BCV.</div>
+              </div>
+              <div>
+                <div style="font-weight: 700; font-size: 12px; color: var(--txt-primary); margin-bottom: 4px;">Retención Fiscal SENIAT:</div>
+                <div style="background: #0f172a; color: #facc15; padding: 10px 12px; border-radius: 6px; font-family: monospace; font-size: 12px; margin-bottom: 6px;">
+                  IVA Retenido = IVA Facturado (16%) × 75%<br>
+                  ISLR Retenido = Base Imponible × 5% (Art. 9 Dec. 1808)
+                </div>
+                <div style="font-size: 11px; color: var(--txt-muted);">Providencias SNAT/2015/0049 y SNAT/2014/0032.</div>
+              </div>
+            </div>
+          </div>
         </div>
       `,
 
