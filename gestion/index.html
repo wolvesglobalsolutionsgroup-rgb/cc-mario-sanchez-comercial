@@ -2693,45 +2693,47 @@
 </div>
 
 <!-- MODAL: FOTO DE PERFIL DE PERSONAL ADMINISTRATIVO -->
-<div class="modal-backdrop" id="modal-staff-photo" style="display: none;">
-  <div class="modal-card" style="max-width: 440px; padding: 24px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px;">
-      <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 800; color: var(--txt-primary); display: flex; align-items: center; gap: 8px;">
+<div class="modal-overlay" id="modal-staff-photo" style="display: none;">
+  <div class="modal-window" style="max-width: 440px;">
+    <div class="modal-header">
+      <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
         <i class="fa-solid fa-camera" style="color: var(--amber);"></i> Foto de Perfil Administrativo
       </h3>
-      <button type="button" class="btn-action-icon" data-click="closeStaffPhotoModal()" style="font-size: 14px;">
+      <button type="button" class="modal-close" onclick="window.closeStaffPhotoModal()">
         <i class="fa-solid fa-xmark"></i>
       </button>
     </div>
 
-    <div style="display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; margin-bottom: 18px;">
-      <div id="staff-photo-current-preview" style="width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--amber); display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 800; color: var(--amber); overflow: hidden; background: rgba(245,158,11,0.08);">
-        <!-- Preview o Monograma -->
+    <div class="modal-body" style="padding: 24px;">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; margin-bottom: 18px;">
+        <div id="staff-photo-current-preview" style="width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--amber); display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 800; color: var(--amber); overflow: hidden; background: rgba(245,158,11,0.08);">
+          <!-- Preview o Monograma -->
+        </div>
+        <div>
+          <div id="staff-photo-user-name" style="font-weight: 800; font-size: 14px; color: var(--txt-primary);">Usuario</div>
+          <div id="staff-photo-user-role" style="font-size: 11.5px; color: var(--txt-muted);">Cargo</div>
+        </div>
       </div>
-      <div>
-        <div id="staff-photo-user-name" style="font-weight: 800; font-size: 14px; color: var(--txt-primary);">Usuario</div>
-        <div id="staff-photo-user-role" style="font-size: 11.5px; color: var(--txt-muted);">Cargo</div>
+
+      <!-- Dropzone de archivo -->
+      <div class="custom-file-dropzone" style="padding: 20px; border: 2px dashed var(--border-subtle); border-radius: 12px; text-align: center; cursor: pointer; background: rgba(255,255,255,0.02); margin-bottom: 18px;" onclick="document.getElementById('staff-photo-file').click()">
+        <input type="file" id="staff-photo-file" accept="image/png, image/jpeg, image/webp" style="display: none;" onchange="window.handleStaffPhotoChange(event)">
+        <i class="fa-solid fa-cloud-arrow-up" style="font-size: 26px; color: var(--amber); margin-bottom: 6px;"></i>
+        <div style="font-size: 12.5px; font-weight: 700; color: var(--txt-primary);">Seleccionar nueva foto</div>
+        <div style="font-size: 11px; color: var(--txt-muted);">Formatos PNG, JPG o WEBP (Máx. 5MB)</div>
       </div>
-    </div>
 
-    <!-- Dropzone de archivo -->
-    <div class="custom-file-dropzone" style="padding: 20px; border: 2px dashed var(--border-subtle); border-radius: 12px; text-align: center; cursor: pointer; background: rgba(255,255,255,0.02); margin-bottom: 18px;" onclick="document.getElementById('staff-photo-file').click()">
-      <input type="file" id="staff-photo-file" accept="image/png, image/jpeg, image/webp" style="display: none;" data-change="handleStaffPhotoChange(event)">
-      <i class="fa-solid fa-cloud-arrow-up" style="font-size: 26px; color: var(--amber); margin-bottom: 6px;"></i>
-      <div style="font-size: 12.5px; font-weight: 700; color: var(--txt-primary);">Seleccionar nueva foto</div>
-      <div style="font-size: 11px; color: var(--txt-muted);">Formatos PNG, JPG o WEBP (Máx. 5MB)</div>
-    </div>
-
-    <div style="display: flex; gap: 10px; justify-content: flex-end;">
-      <button type="button" class="btn-cancel" data-click="removeStaffPhoto()" style="color: var(--rose); background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); padding: 8px 14px; border-radius: 8px; font-size: 12px; cursor: pointer;">
-        <i class="fa-solid fa-trash"></i> Quitar Foto
-      </button>
-      <button type="button" class="btn-cancel" data-click="closeStaffPhotoModal()" style="padding: 8px 14px; border-radius: 8px; font-size: 12px; cursor: pointer;">
-        Cancelar
-      </button>
-      <button type="button" class="btn-onboarding-cta" data-click="saveStaffPhoto()" style="background: var(--emerald); border-color: var(--emerald); color: #fff; padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer;">
-        <i class="fa-solid fa-floppy-disk"></i> Guardar
-      </button>
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button type="button" class="btn-cancel" onclick="window.removeStaffPhoto()" style="color: var(--rose); background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); padding: 8px 14px; border-radius: 8px; font-size: 12px; cursor: pointer;">
+          <i class="fa-solid fa-trash"></i> Quitar Foto
+        </button>
+        <button type="button" class="btn-cancel" onclick="window.closeStaffPhotoModal()" style="padding: 8px 14px; border-radius: 8px; font-size: 12px; cursor: pointer;">
+          Cancelar
+        </button>
+        <button type="button" class="btn-onboarding-cta" onclick="window.saveStaffPhoto()" style="background: var(--emerald); border-color: var(--emerald); color: #fff; padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer;">
+          <i class="fa-solid fa-floppy-disk"></i> Guardar
+        </button>
+      </div>
     </div>
   </div>
 </div>
