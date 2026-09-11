@@ -662,15 +662,27 @@
     const isSuperAdmin = (sess.role === 'superadmin');
     const isReadOnlyHeredero = (sess.role === 'heredero');
 
-    // Visibilidad de pestañas administrativas
+    // Visibilidad de pestañas y elementos administrativos (respetando el estado de tab-view)
     root.querySelectorAll('[data-roles="admin"]').forEach(el => {
-      el.style.display = isBoardOrAdmin ? '' : 'none';
+      if (el.classList.contains('tab-view')) {
+        if (!isBoardOrAdmin) el.style.display = 'none';
+      } else {
+        el.style.display = isBoardOrAdmin ? '' : 'none';
+      }
     });
     root.querySelectorAll('[data-roles="tenant"]').forEach(el => {
-      el.style.display = (sess.role === 'tenant') ? '' : 'none';
+      if (el.classList.contains('tab-view')) {
+        if (sess.role !== 'tenant') el.style.display = 'none';
+      } else {
+        el.style.display = (sess.role === 'tenant') ? '' : 'none';
+      }
     });
     root.querySelectorAll('[data-roles="superadmin"]').forEach(el => {
-      el.style.display = isSuperAdmin ? '' : 'none';
+      if (el.classList.contains('tab-view')) {
+        if (!isSuperAdmin) el.style.display = 'none';
+      } else {
+        el.style.display = isSuperAdmin ? '' : 'none';
+      }
     });
 
     // Control departamental por atributo data-permission

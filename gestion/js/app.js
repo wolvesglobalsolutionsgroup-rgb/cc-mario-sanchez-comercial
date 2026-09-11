@@ -1157,7 +1157,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const contracts = dbService.getContracts ? dbService.getContracts() : [];
       const contract = contracts.find(c => c.tenant_id === tenant.id || c.unit_code === tenant.unit_code);
       const units = dbService.getUnits ? dbService.getUnits() : [];
-      const unit = units.find(u => u.code === tenant.unit_code);
+      const unit = units.find(u => u.code === tenant.unit_code) || { code: tenant.unit_code, name: `Local ${tenant.unit_code}`, area_m2: 100, condo_aliquot: 0.05, base_rent_usd: 500 };
       const allInvoices = (dbService.getInvoices ? dbService.getInvoices() : []).filter(i => i.tenant_id === tenant.id);
 
       const bcvRate = (typeof financialEngine !== 'undefined' && financialEngine.getBcvRate) ? financialEngine.getBcvRate() : 48.5;
@@ -1184,6 +1184,8 @@ document.addEventListener('DOMContentLoaded', () => {
       // Acuerdos especiales para este inquilino
       const agreements = (dbService.getAgreements ? dbService.getAgreements() : []).filter(a => a.tenant_id === tenant.id || a.unit_code === tenant.unit_code);
 
+      const todayIso = new Date().toISOString().split('T')[0];
+
       profileSheet.innerHTML = `
         <!-- TOP BAR WITH BACK BUTTON & ACTIONS -->
         <div class="ttp-sheet-topbar">
@@ -1195,9 +1197,14 @@ document.addEventListener('DOMContentLoaded', () => {
               ${monogram}
             </div>
             <div>
-              <h1 class="ttp-sheet-title">${escapeHtml(tenant.business_name)}</h1>
-              <div class="ttp-sheet-subtitle">
-                ${escapeHtml(tenant.email || 'sin-correo@ccms.com')} • RIF: ${escapeHtml(tenant.rif || 'N/A')} • <strong style="color: var(--amber);">${escapeHtml(tenant.unit_code || '')}</strong> • ${escapeHtml(tenant.commercial_activity || 'Comercial')}
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <h1 class="ttp-sheet-title" style="margin: 0;">${escapeHtml(tenant.business_name)}</h1>
+                <span class="status-pill ${balanceOwed > 0 ? 'pill-overdue' : 'pill-active'}" style="font-size: 11px;">
+                  <i class="fa-solid ${balanceOwed > 0 ? 'fa-circle-exclamation' : 'fa-circle-check'}"></i> ${balanceOwed > 0 ? 'En Mora' : 'Solvente'}
+                </span>
+              </div>
+              <div class="ttp-sheet-subtitle" style="margin-top: 4px;">
+                ${escapeHtml(tenant.email || 'sin-correo@ccms.com')} • RIF: <strong style="color: var(--amber); font-family: monospace;">${escapeHtml(tenant.rif || 'N/A')}</strong> • Unidad: <strong style="color: var(--cyan);">${escapeHtml(tenant.unit_code || '')}</strong> • ${escapeHtml(tenant.commercial_activity || 'Comercial')}
               </div>
             </div>
           </div>
@@ -1285,7 +1292,7 @@ document.addEventListener('DOMContentLoaded', () => {
               </div>
             </div>
 
-            <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px; margin-top: 4px;">
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px; margin-top: 6px;">
               <div style="font-size: 11px; font-weight: 700; color: var(--amber); text-transform: uppercase; margin-bottom: 4px;">
                 <i class="fa-solid fa-clipboard-list"></i> Observaciones del Arrendatario
               </div>
@@ -1302,7 +1309,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <i class="fa-solid fa-chart-pie" style="color: var(--emerald);"></i> Estado de Pago & Rendimiento
               </h3>
               <span class="status-pill ${pctPaid === 100 ? 'pill-active' : (pctPaid >= 70 ? 'pill-warning' : 'pill-overdue')}" style="font-size: 11px;">
-                ${pctPaid}% Pagado
+                ${pctPaid}% Cobrado
               </span>
             </div>
 
@@ -1339,7 +1346,124 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
           </div>
 
-          <!-- CARD 3: INVOICE HISTORY TABLE -->
+          <!-- CARD 3: GENERADOR DE DOCUMENTOS OFICIALES ASOCIADOS (G.O. 40.418) -->
+          <div class="ttp-panel-card" style="grid-column: 1/-1;">
+            <div class="ttp-panel-head" style="flex-wrap: wrap; gap: 10px;">
+              <div>
+                <h3 class="ttp-panel-title" style="display: flex; align-items: center; gap: 8px;">
+                  <i class="fa-solid fa-file-signature" style="color: var(--cyan);"></i> Generador de Documentos Oficiales & Certificados Legales
+                </h3>
+                <span style="font-size: 11.5px; color: var(--txt-muted);">Emisión instantánea con sello digital SHA-256, membrete fiscal y auto-archivado en la ficha</span>
+              </div>
+              <span class="status-pill pill-info" style="font-size: 10.5px;">Gaceta Oficial N° 40.418</span>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 14px;">
+              <!-- SELECTOR DE DOCUMENTO -->
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+                <div>
+                  <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">
+                    <i class="fa-solid fa-file-lines" style="color: var(--amber);"></i> Tipo de Documento Oficial:
+                  </label>
+                  <select id="gen-doc-type-${tenant.id}" class="form-control" onchange="window.onDocTypeChange('${tenant.id}')" style="font-size: 12.5px; padding: 8px 10px;">
+                    <option value="solvencia">🛡️ Certificado de Solvencia Condominial</option>
+                    <option value="notificacion_mora">⚠️ Notificación Formal de Cobro / Mora (72h)</option>
+                    <option value="constancia">📜 Constancia de Arrendamiento Comercial Activo</option>
+                    <option value="acta_entrega">🔑 Acta Circunstanciada de Entrega / Desocupación</option>
+                    <option value="adenda_obras">🔨 Adenda de Obras & Deducción de Canon (Art. 13 & 32)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">
+                    <i class="fa-solid fa-building" style="color: var(--cyan);"></i> Dirigido A / Destinatario:
+                  </label>
+                  <input type="text" id="gen-doc-dest-${tenant.id}" class="form-control" value="A QUIEN PUEDA INTERESAR" placeholder="Ej: BANCO MERCANTIL / SENIAT / TRIBUNAL" style="font-size: 12.5px; padding: 8px 10px;">
+                </div>
+
+                <div>
+                  <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">
+                    <i class="fa-solid fa-calendar-day" style="color: var(--emerald);"></i> Fecha del Documento:
+                  </label>
+                  <input type="date" id="gen-doc-date-${tenant.id}" class="form-control" value="${todayIso}" style="font-size: 12.5px; padding: 7px 10px;">
+                </div>
+              </div>
+
+              <!-- NOTAS Y DETALLES DEL DOCUMENTO -->
+              <div>
+                <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 4px; display: block;">
+                  <i class="fa-solid fa-comment-dots"></i> Observaciones / Cláusulas Específicas:
+                </label>
+                <textarea id="gen-doc-notes-${tenant.id}" class="form-control" rows="2" placeholder="Observaciones especiales a plasmar en el documento oficial..." style="font-size: 12px; resize: vertical;">El arrendatario se encuentra al corriente en el pago de cánones de arrendamiento, cuotas de gastos comunes y alícuotas condominiales.</textarea>
+              </div>
+
+              <!-- BOTONES DE ACCIÓN PARA GENERAR Y ARCHIVAR -->
+              <div style="display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; align-items: center; border-top: 1px dashed var(--border-subtle); padding-top: 12px;">
+                <button type="button" class="btn-currency-toggle" onclick="window.previewTenantGeneratedDoc('${tenant.id}')" style="font-size: 12px; padding: 8px 16px;">
+                  <i class="fa-solid fa-eye"></i> <span>Vista Previa</span>
+                </button>
+                <button type="button" class="btn-onboarding-cta" onclick="window.generateAndArchiveTenantDoc('${tenant.id}')" style="background: var(--cyan); border-color: var(--cyan); color: #000; font-weight: 800; font-size: 12px; padding: 8px 20px;">
+                  <i class="fa-solid fa-file-circle-check"></i> <span>Generar, Imprimir & Archivar en Expediente</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 4: EXPEDIENTE DIGITAL & HISTORIAL DE DOCUMENTOS (AUTO-ARCHIVADOS Y SUBIDOS) -->
+          <div class="ttp-panel-card" style="grid-column: 1/-1;">
+            <div class="ttp-panel-head" style="flex-wrap: wrap; gap: 10px;">
+              <h3 class="ttp-panel-title">
+                <i class="fa-solid fa-folder-tree" style="color: var(--amber);"></i> Expediente Digital & Documentos Archivados
+              </h3>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button type="button" class="btn-currency-toggle" id="btn-filter-all-${tenant.id}" onclick="window.filterTenantDocs('${tenant.id}', 'all')" style="font-size: 11px; padding: 4px 10px; background: var(--amber-glow); color: var(--amber); border-color: var(--amber);">
+                  Todos (<span id="count-all-docs-${tenant.id}">0</span>)
+                </button>
+                <button type="button" class="btn-currency-toggle" id="btn-filter-oficial-${tenant.id}" onclick="window.filterTenantDocs('${tenant.id}', 'oficial')" style="font-size: 11px; padding: 4px 10px;">
+                  Oficiales Generados (<span id="count-oficial-docs-${tenant.id}">0</span>)
+                </button>
+                <button type="button" class="btn-currency-toggle" id="btn-filter-soporte-${tenant.id}" onclick="window.filterTenantDocs('${tenant.id}', 'soporte')" style="font-size: 11px; padding: 4px 10px;">
+                  Soportes & Fotos (<span id="count-soporte-docs-${tenant.id}">0</span>)
+                </button>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 20px;">
+              <!-- LISTA DE DOCUMENTOS ARCHIVADOS -->
+              <div>
+                <div id="profile-uploaded-docs-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto; padding-right: 4px;">
+                  <!-- Injected via renderTenantSavedDocs -->
+                </div>
+              </div>
+
+              <!-- DROPZONE DE SUBIDA DIRECTA PARA ANEXOS -->
+              <div>
+                <h4 style="font-size: 11.5px; font-weight: 700; color: var(--cyan); text-transform: uppercase; margin: 0 0 8px 0;">
+                  <i class="fa-solid fa-cloud-arrow-up"></i> Cargar Archivo Externo
+                </h4>
+                <input type="file" id="client-profile-doc-file" accept="image/*,.pdf,.doc,.docx" style="display: none;" onchange="window.handleProfileDocFileChange(event, '${tenant.id}')">
+                
+                <div class="custom-file-dropzone amber-zone" id="client-profile-doc-dropzone" style="padding: 16px; text-align: center; border: 2px dashed var(--border-subtle); border-radius: 10px; cursor: pointer; background: rgba(255,255,255,0.02);">
+                  <i class="fa-solid fa-cloud-arrow-up dropzone-icon" style="font-size: 24px; color: var(--amber); margin-bottom: 6px;"></i>
+                  <div class="dropzone-main-text" style="font-size: 12px; font-weight: 700; color: var(--txt-primary);">Arrastra un archivo o haz clic para subir</div>
+                  <div class="dropzone-sub-text" style="font-size: 10.5px; color: var(--txt-muted);">Facturas de compras, fotos de remodelaciones o contratos escaneados (PDF, JPG, PNG)</div>
+                </div>
+
+                <div id="profile-doc-preview-container" class="file-preview-card" style="display: none; margin-top: 10px;">
+                  <div class="file-preview-info">
+                    <i class="fa-solid fa-file-circle-check" id="profile-doc-icon" style="color: var(--emerald); font-size: 20px;"></i>
+                    <div style="min-width: 0;">
+                      <div id="profile-doc-name" class="file-preview-name" style="font-size: 12px;"></div>
+                      <div id="profile-doc-size" class="file-preview-size" style="font-size: 10.5px;"></div>
+                    </div>
+                  </div>
+                  <button type="button" class="btn-remove-file" onclick="window.removeProfileDoc()" title="Remover archivo"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 5: INVOICE HISTORY TABLE -->
           <div class="ttp-panel-card" style="grid-column: 1/-1;">
             <div class="ttp-panel-head">
               <h3 class="ttp-panel-title">
@@ -1405,75 +1529,38 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
           </div>
 
-          <!-- CARD 4: ACUERDOS ESPECIALES, OBRAS & ARCHIVOS ADJUNTOS -->
+          <!-- CARD 6: ACUERDOS ESPECIALES, OBRAS & DEDUCCIONES (ART. 13 & 32 G.O. 40.418) -->
           <div class="ttp-panel-card" style="grid-column: 1/-1;">
             <div class="ttp-panel-head">
               <h3 class="ttp-panel-title">
-                <i class="fa-solid fa-handshake-angle" style="color: var(--purple);"></i> Acuerdos Especiales, Deducciones por Obras & Soporte Documental
+                <i class="fa-solid fa-handshake-angle" style="color: var(--purple);"></i> Acuerdos Especiales, Deducciones por Obras & Reparaciones
               </h3>
-              <span class="status-pill pill-info" style="font-size: 10px;">Art. 13 & 32 G.O. 40.418</span>
+              <button type="button" class="btn-currency-toggle" style="font-size: 11.5px; padding: 4px 12px;" onclick="window.openTenantDossier('${tenant.id}')">
+                <i class="fa-solid fa-plus-circle" style="color: var(--amber);"></i> Registrar Acuerdo en Modal
+              </button>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-              <!-- SUB-PANEL 1: ACUERDOS REGISTRADOS -->
-              <div>
-                <h4 style="font-size: 12px; font-weight: 700; color: var(--amber); text-transform: uppercase; margin: 0 0 10px 0;">
-                  <i class="fa-solid fa-list-check"></i> Acuerdos Vigentes
-                </h4>
-                ${agreements.length === 0 ? `
-                  <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px dashed var(--border-subtle); border-radius: 8px; font-size: 12px; color: var(--txt-muted); text-align: center;">
-                    No hay acuerdos o deducciones especiales registrados para este arrendatario.
-                  </div>
-                ` : `
-                  <div style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto;">
-                    ${agreements.map(a => `
-                      <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 10px; font-size: 12px;">
-                        <div style="display: flex; justify-content: space-between; font-weight: 700; color: var(--txt-primary);">
-                          <span>${escapeHtml(a.type || 'Deducción')}</span>
-                          <span style="color: var(--emerald);">${formatMoney(a.monthly_discount_usd)} / mes</span>
-                        </div>
-                        <div style="font-size: 11px; color: var(--txt-secondary); margin-top: 3px;">${escapeHtml(a.description || '')}</div>
-                        <div style="font-size: 10px; color: var(--txt-muted); margin-top: 4px;">Vigencia: ${a.start_date} al ${a.end_date}</div>
+            <div>
+              ${agreements.length === 0 ? `
+                <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px dashed var(--border-subtle); border-radius: 8px; font-size: 12px; color: var(--txt-muted); text-align: center;">
+                  No hay acuerdos o deducciones especiales de obras registrados para este arrendatario.
+                </div>
+              ` : `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
+                  ${agreements.map(a => `
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px; font-size: 12px;">
+                      <div style="display: flex; justify-content: space-between; font-weight: 700; color: var(--txt-primary);">
+                        <span>${escapeHtml(a.type || 'Deducción de Canon')}</span>
+                        <span style="color: var(--emerald); font-size: 13px;">${formatMoney(a.monthly_discount_usd)} / mes</span>
                       </div>
-                    `).join('')}
-                  </div>
-                `}
-                <div style="margin-top: 12px;">
-                  <button type="button" class="btn-currency-toggle" style="font-size: 11.5px; padding: 6px 12px;" onclick="window.openTenantDossier('${tenant.id}')">
-                    <i class="fa-solid fa-plus-circle" style="color: var(--amber);"></i> Registrar Nuevo Acuerdo en Modal
-                  </button>
-                </div>
-              </div>
-
-              <!-- SUB-PANEL 2: DROPZONE UNIVERSAL PARA ADJUNTAR SOPORTES / CONTRATO / FOTOS DE REPARACIONES -->
-              <div>
-                <h4 style="font-size: 12px; font-weight: 700; color: var(--cyan); text-transform: uppercase; margin: 0 0 10px 0;">
-                  <i class="fa-solid fa-paperclip"></i> Cargar Anexos & Soportes de Obras
-                </h4>
-
-                <input type="file" id="client-profile-doc-file" accept="image/*,.pdf" style="display: none;" onchange="window.handleProfileDocFileChange(event, '${tenant.id}')">
-                
-                <div class="custom-file-dropzone amber-zone" id="client-profile-doc-dropzone" style="padding: 16px; text-align: center; border: 2px dashed var(--border-subtle); border-radius: 10px; cursor: pointer; background: rgba(255,255,255,0.02);">
-                  <i class="fa-solid fa-cloud-arrow-up dropzone-icon" style="font-size: 24px; color: var(--amber); margin-bottom: 6px;"></i>
-                  <div class="dropzone-main-text" style="font-size: 12px; font-weight: 700; color: var(--txt-primary);">Arrastra un archivo o haz clic para subir</div>
-                  <div class="dropzone-sub-text" style="font-size: 10.5px; color: var(--txt-muted);">Facturas de compras, fotos de remodelaciones o contratos escaneados (PDF, JPG, PNG)</div>
-                </div>
-
-                <div id="profile-doc-preview-container" class="file-preview-card" style="display: none; margin-top: 10px;">
-                  <div class="file-preview-info">
-                    <i class="fa-solid fa-file-circle-check" id="profile-doc-icon" style="color: var(--emerald); font-size: 20px;"></i>
-                    <div style="min-width: 0;">
-                      <div id="profile-doc-name" class="file-preview-name" style="font-size: 12px;"></div>
-                      <div id="profile-doc-size" class="file-preview-size" style="font-size: 10.5px;"></div>
+                      <div style="font-size: 11.5px; color: var(--txt-secondary); margin-top: 4px;">${escapeHtml(a.description || '')}</div>
+                      <div style="font-size: 10px; color: var(--txt-muted); margin-top: 6px; border-top: 1px dashed var(--border-subtle); padding-top: 4px;">
+                        Vigencia: <strong>${a.start_date}</strong> al <strong>${a.end_date}</strong>
+                      </div>
                     </div>
-                  </div>
-                  <button type="button" class="btn-remove-file" onclick="window.removeProfileDoc()" title="Remover archivo"><i class="fa-solid fa-xmark"></i></button>
+                  `).join('')}
                 </div>
-
-                <div id="profile-uploaded-docs-list" style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;">
-                  <!-- Documentos guardados previamente -->
-                </div>
-              </div>
+              `}
             </div>
           </div>
 
@@ -1511,7 +1598,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, false);
       }
 
-      // Renderizar documentos ya adjuntos previamente si existen en localStorage
+      // Renderizar documentos archivados previamente
       renderTenantSavedDocs(tenant.id);
     } catch (err) {
       console.error('[renderClientFullProfile Critical Error]', err);
@@ -1527,7 +1614,268 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // Manejo de archivos adjuntos del perfil de inquilino
+  // CAMBIO DINÁMICO DE OBSERVACIONES POR DEFECTO SEGÚN EL TIPO DE DOCUMENTO
+  window.onDocTypeChange = function(tenantId) {
+    const docTypeEl = document.getElementById(`gen-doc-type-${tenantId}`);
+    const notesEl = document.getElementById(`gen-doc-notes-${tenantId}`);
+    const destEl = document.getElementById(`gen-doc-dest-${tenantId}`);
+    if (!docTypeEl || !notesEl) return;
+
+    const val = docTypeEl.value;
+    if (val === 'solvencia') {
+      notesEl.value = 'El arrendatario se encuentra al corriente en el pago de cánones de arrendamiento, cuotas de gastos comunes y alícuotas condominiales.';
+      if (destEl) destEl.value = 'A QUIEN PUEDA INTERESAR';
+    } else if (val === 'notificacion_mora') {
+      notesEl.value = 'Se requiere regularizar el saldo deudor pendiente dentro del lapso perentorio de 72 horas hábiles.';
+      if (destEl) destEl.value = 'REPRESENTANTE LEGAL / ARRENDATARIO';
+    } else if (val === 'constancia') {
+      notesEl.value = 'Se certifica que la empresa ocupa activamente el local comercial bajo contrato legal vigente conforme a la G.O. 40.418.';
+      if (destEl) destEl.value = 'A QUIEN PUEDA INTERESAR / ENTIDAD BANCARIA / SENIAT';
+    } else if (val === 'acta_entrega') {
+      notesEl.value = 'Constancia de inspección física y recepción conforme del local comercial con entrega de llaves.';
+      if (destEl) destEl.value = 'ADMINISTRACIÓN / ARRENDATARIO';
+    } else if (val === 'adenda_obras') {
+      notesEl.value = 'Compensación de gastos de remodelaciones mayores y mejoras estructurales autorizadas en el local comercial.';
+      if (destEl) destEl.value = 'EXPEDIENTE LEGAL ARRENDATARIO';
+    }
+  };
+
+  // GENERAR Y ARCHIVAR DOCUMENTO OFICIAL DIRECTAMENTE EN EL EXPEDIENTE DEL INQUILINO
+  window.generateAndArchiveTenantDoc = async function(tenantId) {
+    const tenants = dbService.getTenants() || [];
+    const tenant = tenants.find(t => t.id === tenantId) || tenants.find(t => t.unit_code === tenantId);
+    if (!tenant) return;
+
+    const units = dbService.getUnits ? dbService.getUnits() : [];
+    const unit = units.find(u => u.code === tenant.unit_code) || { code: tenant.unit_code, name: `Local ${tenant.unit_code}`, area_m2: 100, condo_aliquot: 0.05, base_rent_usd: 500 };
+    const contracts = dbService.getContracts ? dbService.getContracts() : [];
+    const contract = contracts.find(c => c.tenant_id === tenant.id || c.unit_code === tenant.unit_code) || {};
+    const allInvoices = (dbService.getInvoices ? dbService.getInvoices() : []).filter(i => i.tenant_id === tenant.id);
+    const unpaidInvoices = allInvoices.filter(i => i.status !== 'pagado');
+    const agreements = (dbService.getAgreements ? dbService.getAgreements() : []).filter(a => a.tenant_id === tenant.id || a.unit_code === tenant.unit_code);
+
+    const docTypeEl = document.getElementById(`gen-doc-type-${tenantId}`);
+    const destEl = document.getElementById(`gen-doc-dest-${tenantId}`);
+    const dateEl = document.getElementById(`gen-doc-date-${tenantId}`);
+    const notesEl = document.getElementById(`gen-doc-notes-${tenantId}`);
+
+    const docType = docTypeEl ? docTypeEl.value : 'solvencia';
+    const destination = destEl ? destEl.value : 'A QUIEN PUEDA INTERESAR';
+    const issueDate = dateEl ? dateEl.value : new Date().toISOString().split('T')[0];
+    const notes = notesEl ? notesEl.value : '';
+
+    const options = {
+      destination,
+      issueDate: new Date(issueDate).toLocaleDateString('es-VE', { day: '2-digit', month: 'long', year: 'numeric' }),
+      notes,
+      bcvRate: (typeof financialEngine !== 'undefined' && financialEngine.getBcvRate) ? financialEngine.getBcvRate() : 48.5
+    };
+
+    let generatedHtml = '';
+    let docTitle = 'Documento';
+
+    if (docType === 'solvencia') {
+      docTitle = `Certificado de Solvencia - ${tenant.unit_code}`;
+      generatedHtml = await window.VenezuelaLegal.generateSolvenciaHTML(tenant, unit, allInvoices, options);
+    } else if (docType === 'notificacion_mora') {
+      docTitle = `Notificación de Mora (72h) - ${tenant.unit_code}`;
+      generatedHtml = await window.VenezuelaLegal.generateNotificacionMoraHTML(tenant, unit, unpaidInvoices, options);
+    } else if (docType === 'constancia') {
+      docTitle = `Constancia de Arrendamiento - ${tenant.unit_code}`;
+      generatedHtml = await window.VenezuelaLegal.generateConstanciaArrendatarioHTML(tenant, unit, contract, options);
+    } else if (docType === 'acta_entrega') {
+      docTitle = `Acta de Entrega - ${tenant.unit_code}`;
+      generatedHtml = await window.VenezuelaLegal.generateActaEntregaHTML(tenant, unit, contract, options);
+    } else if (docType === 'adenda_obras') {
+      docTitle = `Adenda de Obras - ${tenant.unit_code}`;
+      generatedHtml = await window.VenezuelaLegal.generateAdendaObrasHTML(tenant, unit, agreements[0] || {}, options);
+    }
+
+    const docItem = {
+      id: 'doc-gen-' + Date.now(),
+      tenant_id: tenant.id,
+      name: `${docTitle}.html`,
+      title: docTitle,
+      category: 'oficial',
+      type: 'text/html',
+      size: generatedHtml.length,
+      data: 'data:text/html;charset=utf-8,' + encodeURIComponent(generatedHtml),
+      rawHtml: generatedHtml,
+      uploaded_at: new Date().toISOString()
+    };
+
+    try {
+      const storedKey = 'ccms_tenant_docs_' + tenant.id;
+      const existing = JSON.parse(localStorage.getItem(storedKey) || '[]');
+      existing.unshift(docItem);
+      localStorage.setItem(storedKey, JSON.stringify(existing));
+      showToast(`✓ Documento "${docTitle}" generado y archivado con éxito en el expediente.`, 'success', 'Documento Emitido');
+      renderTenantSavedDocs(tenant.id);
+
+      // Abrir ventana imprimible directamente
+      window.openPrintableDocument(generatedHtml, docTitle);
+    } catch (err) {
+      console.error('[Document Gen Storage Error]', err);
+      showToast('Error al archivar el documento en el expediente.', 'error');
+    }
+  };
+
+  // VISTA PREVIA DEL DOCUMENTO SIN IMPRIMIR DE INMEDIATO
+  window.previewTenantGeneratedDoc = async function(tenantId) {
+    const tenants = dbService.getTenants() || [];
+    const tenant = tenants.find(t => t.id === tenantId) || tenants.find(t => t.unit_code === tenantId);
+    if (!tenant) return;
+
+    const units = dbService.getUnits ? dbService.getUnits() : [];
+    const unit = units.find(u => u.code === tenant.unit_code) || { code: tenant.unit_code, name: `Local ${tenant.unit_code}`, area_m2: 100, condo_aliquot: 0.05, base_rent_usd: 500 };
+    const contracts = dbService.getContracts ? dbService.getContracts() : [];
+    const contract = contracts.find(c => c.tenant_id === tenant.id || c.unit_code === tenant.unit_code) || {};
+    const allInvoices = (dbService.getInvoices ? dbService.getInvoices() : []).filter(i => i.tenant_id === tenant.id);
+    const unpaidInvoices = allInvoices.filter(i => i.status !== 'pagado');
+    const agreements = (dbService.getAgreements ? dbService.getAgreements() : []).filter(a => a.tenant_id === tenant.id || a.unit_code === tenant.unit_code);
+
+    const docTypeEl = document.getElementById(`gen-doc-type-${tenantId}`);
+    const destEl = document.getElementById(`gen-doc-dest-${tenantId}`);
+    const dateEl = document.getElementById(`gen-doc-date-${tenantId}`);
+    const notesEl = document.getElementById(`gen-doc-notes-${tenantId}`);
+
+    const docType = docTypeEl ? docTypeEl.value : 'solvencia';
+    const destination = destEl ? destEl.value : 'A QUIEN PUEDA INTERESAR';
+    const issueDate = dateEl ? dateEl.value : new Date().toISOString().split('T')[0];
+    const notes = notesEl ? notesEl.value : '';
+
+    const options = {
+      destination,
+      issueDate: new Date(issueDate).toLocaleDateString('es-VE', { day: '2-digit', month: 'long', year: 'numeric' }),
+      notes,
+      bcvRate: (typeof financialEngine !== 'undefined' && financialEngine.getBcvRate) ? financialEngine.getBcvRate() : 48.5
+    };
+
+    let generatedHtml = '';
+    let docTitle = 'Vista Previa de Documento';
+
+    if (docType === 'solvencia') {
+      docTitle = `Certificado de Solvencia - ${tenant.unit_code}`;
+      generatedHtml = await window.VenezuelaLegal.generateSolvenciaHTML(tenant, unit, allInvoices, options);
+    } else if (docType === 'notificacion_mora') {
+      docTitle = `Notificación de Mora (72h) - ${tenant.unit_code}`;
+      generatedHtml = await window.VenezuelaLegal.generateNotificacionMoraHTML(tenant, unit, unpaidInvoices, options);
+    } else if (docType === 'constancia') {
+      docTitle = `Constancia de Arrendamiento - ${tenant.unit_code}`;
+      generatedHtml = await window.VenezuelaLegal.generateConstanciaArrendatarioHTML(tenant, unit, contract, options);
+    } else if (docType === 'acta_entrega') {
+      docTitle = `Acta de Entrega - ${tenant.unit_code}`;
+      generatedHtml = await window.VenezuelaLegal.generateActaEntregaHTML(tenant, unit, contract, options);
+    } else if (docType === 'adenda_obras') {
+      docTitle = `Adenda de Obras - ${tenant.unit_code}`;
+      generatedHtml = await window.VenezuelaLegal.generateAdendaObrasHTML(tenant, unit, agreements[0] || {}, options);
+    }
+
+    window.openPrintableDocument(generatedHtml, docTitle);
+  };
+
+  // HELPER PARA ABRIR VENTANA DE IMPRESIÓN Y VISTA PREVIA ELEGANTE
+  window.openPrintableDocument = function(htmlContent, title = 'Documento Oficial') {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      showToast('Por favor permita las ventanas emergentes para visualizar el documento.', 'warning', 'Pop-up Bloqueado');
+      return;
+    }
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8">
+        <title>${escapeHtml(title)} — C.C. Mario Sánchez</title>
+        <style>
+          @page { margin: 15mm; size: letter portrait; }
+          body { margin: 0; background: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+          .print-toolbar { position: sticky; top: 0; z-index: 100; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); width: 100%; padding: 12px 20px; display: flex; justify-content: center; gap: 14px; border-bottom: 1px solid #334155; box-sizing: border-box; }
+          .btn-print { background: #0284c7; color: #fff; border: none; padding: 8px 22px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+          .btn-close { background: #334155; color: #cbd5e1; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+          .doc-canvas { margin: 24px auto 40px; }
+          @media print {
+            .print-toolbar { display: none !important; }
+            body { background: #fff !important; }
+            .doc-canvas { margin: 0 !important; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="print-toolbar">
+          <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button>
+          <button class="btn-close" onclick="window.close()">Cerrar Ventana</button>
+        </div>
+        <div class="doc-canvas">
+          ${htmlContent}
+        </div>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  // VER UN DOCUMENTO DEL ARCHIVO DIGITAL
+  window.viewArchivedDoc = function(tenantId, docId) {
+    const storedKey = 'ccms_tenant_docs_' + tenantId;
+    try {
+      const docs = JSON.parse(localStorage.getItem(storedKey) || '[]');
+      const doc = docs.find(d => d.id === docId);
+      if (!doc) return;
+
+      if (doc.rawHtml) {
+        window.openPrintableDocument(doc.rawHtml, doc.title || doc.name);
+      } else if (doc.type && doc.type.includes('pdf')) {
+        const pdfWindow = window.open("");
+        if (pdfWindow) {
+          pdfWindow.document.write(`<iframe src="${doc.data}" frameborder="0" style="border:0; top:0; left:0; bottom:0; right:0; width:100%; height:100%;" allowfullscreen></iframe>`);
+        } else {
+          window.location.href = doc.data;
+        }
+      } else {
+        const imgWindow = window.open("");
+        if (imgWindow) {
+          imgWindow.document.write(`
+            <body style="margin:0; background:#0f172a; display:flex; justify-content:center; align-items:center; min-height:100vh;">
+              <div style="text-align:center; padding:20px;">
+                <h3 style="color:#f59e0b; font-family:sans-serif; margin-bottom:10px;">${escapeHtml(doc.name)}</h3>
+                <img src="${doc.data}" style="max-width:90vw; max-height:85vh; border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.5); border:1px solid #334155;">
+              </div>
+            </body>
+          `);
+        }
+      }
+    } catch (e) {
+      console.error('[ViewArchivedDoc Error]', e);
+    }
+  };
+
+  // FILTRO DE CATEGORÍAS DEL EXPEDIENTE
+  let activeDocCategoryFilter = 'all';
+
+  window.filterTenantDocs = function(tenantId, category) {
+    activeDocCategoryFilter = category;
+    
+    ['all', 'oficial', 'soporte'].forEach(cat => {
+      const btn = document.getElementById(`btn-filter-${cat}-${tenantId}`);
+      if (btn) {
+        if (cat === category) {
+          btn.style.background = 'var(--amber-glow)';
+          btn.style.color = 'var(--amber)';
+          btn.style.borderColor = 'var(--amber)';
+        } else {
+          btn.style.background = 'transparent';
+          btn.style.color = 'var(--txt-secondary)';
+          btn.style.borderColor = 'var(--border-subtle)';
+        }
+      }
+    });
+
+    renderTenantSavedDocs(tenantId);
+  };
+
+  // Manejo de archivos adjuntos del perfil de inquilino (Subida de fotos / facturas)
   window.handleProfileDocFileChange = function(e, tenantId) {
     const file = (e.target && e.target.files && e.target.files[0])
       ? e.target.files[0]
@@ -1545,6 +1893,7 @@ document.addEventListener('DOMContentLoaded', () => {
         id: 'doc-' + Date.now(),
         tenant_id: tenantId,
         name: file.name,
+        category: 'soporte',
         type: file.type || 'application/octet-stream',
         size: file.size,
         data: evt.target.result,
@@ -1554,9 +1903,9 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const storedKey = 'ccms_tenant_docs_' + tenantId;
         const existing = JSON.parse(localStorage.getItem(storedKey) || '[]');
-        existing.push(docItem);
+        existing.unshift(docItem);
         localStorage.setItem(storedKey, JSON.stringify(existing));
-        showToast('Documento o soporte de obra adjuntado exitosamente.', 'success', 'Archivo Guardado');
+        showToast('✓ Documento o soporte de obra adjuntado exitosamente.', 'success', 'Archivo Guardado');
         renderTenantSavedDocs(tenantId);
       } catch (err) {
         console.error('[ProfileDoc] Storage err:', err);
@@ -1575,36 +1924,71 @@ document.addEventListener('DOMContentLoaded', () => {
       docs = JSON.parse(localStorage.getItem(storedKey) || '[]');
     } catch (e) {}
 
-    if (docs.length === 0) {
-      listEl.innerHTML = '';
+    // Actualizar contadores
+    const countAllEl = document.getElementById(`count-all-docs-${tenantId}`);
+    const countOficialEl = document.getElementById(`count-oficial-docs-${tenantId}`);
+    const countSoporteEl = document.getElementById(`count-soporte-docs-${tenantId}`);
+    
+    const oficialDocs = docs.filter(d => d.category === 'oficial');
+    const soporteDocs = docs.filter(d => d.category !== 'oficial');
+
+    if (countAllEl) countAllEl.textContent = docs.length;
+    if (countOficialEl) countOficialEl.textContent = oficialDocs.length;
+    if (countSoporteEl) countSoporteEl.textContent = soporteDocs.length;
+
+    let filteredDocs = docs;
+    if (activeDocCategoryFilter === 'oficial') {
+      filteredDocs = oficialDocs;
+    } else if (activeDocCategoryFilter === 'soporte') {
+      filteredDocs = soporteDocs;
+    }
+
+    if (filteredDocs.length === 0) {
+      listEl.innerHTML = `
+        <div style="padding: 20px; text-align: center; background: rgba(255,255,255,0.01); border: 1px dashed var(--border-subtle); border-radius: 8px; color: var(--txt-muted); font-size: 11.5px;">
+          <i class="fa-solid fa-folder-open" style="font-size: 20px; margin-bottom: 6px; display: block; opacity: 0.5;"></i>
+          No hay documentos archivados en esta categoría (${activeDocCategoryFilter}).
+        </div>
+      `;
       return;
     }
 
-    listEl.innerHTML = docs.map(d => `
-      <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-        <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
-          <i class="${(d.type && d.type.includes('pdf')) ? 'fa-solid fa-file-pdf' : 'fa-solid fa-file-image'}" style="color: var(--amber);"></i>
-          <span style="font-size: 11.5px; font-weight: 700; color: var(--txt-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(d.name)}</span>
-          <span style="font-size: 10px; color: var(--txt-muted);">(${(d.size / 1024).toFixed(1)} KB)</span>
-        </div>
-        <div style="display: flex; gap: 6px;">
-          <a href="${d.data}" download="${escapeHtml(d.name)}" class="btn-action-icon" title="Descargar"><i class="fa-solid fa-download"></i></a>
-          <button type="button" class="btn-action-icon" style="color: var(--rose);" onclick="window.deleteTenantDoc('${tenantId}', '${d.id}')" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
-        </div>
-      </div>
-    `).join('');
-  }
+    listEl.innerHTML = filteredDocs.map(d => {
+      const isOficial = d.category === 'oficial';
+      const isPdf = d.type && d.type.includes('pdf');
+      const icon = isOficial ? 'fa-solid fa-file-shield' : (isPdf ? 'fa-solid fa-file-pdf' : 'fa-solid fa-file-image');
+      const iconColor = isOficial ? 'var(--cyan)' : (isPdf ? 'var(--rose)' : 'var(--amber)');
+      const badge = isOficial 
+        ? '<span class="status-pill pill-info" style="font-size: 9.5px; padding: 2px 6px;">OFICIAL GENERADO</span>'
+        : '<span class="status-pill pill-active" style="font-size: 9.5px; padding: 2px 6px;">SOPORTE ADJUNTO</span>';
 
-  window.deleteTenantDoc = function(tenantId, docId) {
-    const storedKey = 'ccms_tenant_docs_' + tenantId;
-    try {
-      let docs = JSON.parse(localStorage.getItem(storedKey) || '[]');
-      docs = docs.filter(d => d.id !== docId);
-      localStorage.setItem(storedKey, JSON.stringify(docs));
-      showToast('Documento eliminado.', 'info');
-      renderTenantSavedDocs(tenantId);
-    } catch (e) {}
-  };
+      const dateStr = d.uploaded_at ? new Date(d.uploaded_at).toLocaleDateString('es-VE') : 'Reciente';
+
+      return `
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
+            <i class="${icon}" style="color: ${iconColor}; font-size: 18px; flex-shrink: 0;"></i>
+            <div style="min-width: 0;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 12px; font-weight: 700; color: var(--txt-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(d.title || d.name)}</span>
+                ${badge}
+              </div>
+              <div style="font-size: 10.5px; color: var(--txt-muted); margin-top: 2px;">
+                ${dateStr} • ${(d.size / 1024).toFixed(1)} KB
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 6px; flex-shrink: 0;">
+            <button type="button" class="btn-action-icon" style="color: var(--cyan); border-color: rgba(14,165,233,0.3);" onclick="window.viewArchivedDoc('${tenantId}', '${d.id}')" title="Ver / Imprimir Documento">
+              <i class="fa-solid fa-print"></i>
+            </button>
+            <a href="${d.data}" download="${escapeHtml(d.name)}" class="btn-action-icon" title="Descargar"><i class="fa-solid fa-download"></i></a>
+            <button type="button" class="btn-action-icon" style="color: var(--rose);" onclick="window.deleteTenantDoc('${tenantId}', '${d.id}')" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
 
   window.removeProfileDoc = function() {
     const input = document.getElementById('client-profile-doc-file');

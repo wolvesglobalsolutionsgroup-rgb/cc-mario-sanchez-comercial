@@ -242,6 +242,346 @@ const VenezuelaLegal = {
 
       </div>
     `;
+  },
+
+  async generateSolvenciaHTML(tenant, unit, invoices = [], options = {}) {
+    if (!tenant || !unit) return '<div style="padding:20px;color:red;">Error: Faltan datos del arrendatario o local.</div>';
+    const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    
+    const companyLegalName = 'SUCESIÓN MARIO SÁNCHEZ / C.C. MARIO SÁNCHEZ';
+    const companyRif = 'J-30211544-2';
+    const companyAddress = 'Av. Municipal c/c Calle Juncal, Puerto La Cruz, Edo. Anzoátegui, Venezuela';
+    const issueDate = options.issueDate || new Date().toLocaleDateString('es-VE', { day: '2-digit', month: 'long', year: 'numeric' });
+    const validityDate = options.validityDate || '30 días continuos a partir de su emisión';
+    const destination = options.destination || 'A QUIEN PUEDA INTERESAR';
+    const notes = options.notes || 'El arrendatario se encuentra al corriente en el pago de cánones de arrendamiento, cuotas de gastos comunes y alícuotas condominiales.';
+
+    const sealData = await this.computeContractSeal(`SOLV-${unit.code}-${Date.now()}`, tenant.rif, issueDate, 0, companyRif);
+
+    return `
+      <div class="printable-legal-doc" style="font-family: 'Times New Roman', Times, serif; font-size: 14px; line-height: 1.6; color: #111; max-width: 800px; margin: 0 auto; background: #fff; padding: 40px 48px; border: 1px solid #ddd; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: justify;">
+        <div style="text-align: center; border-bottom: 2px solid #111; padding-bottom: 12px; margin-bottom: 24px;">
+          <h2 style="font-size: 16px; margin: 0; text-transform: uppercase; font-weight: 800;">${esc(companyLegalName)}</h2>
+          <p style="font-size: 11px; margin: 3px 0; color: #444;">R.I.F. ${esc(companyRif)} — ${esc(companyAddress)}</p>
+          <div style="margin-top: 10px; font-weight: 800; font-size: 15px; text-transform: uppercase; color: #047857; letter-spacing: 0.5px;">
+            CERTIFICADO OFICIAL DE SOLVENCIA CONDOMINIAL Y ARRENDAMIENTO
+          </div>
+          <div style="font-size: 11.5px; font-weight: 700; color: #666; margin-top: 2px;">N° REF: CCMS-SOLV-${esc(unit.code)}-${new Date().getFullYear()}</div>
+        </div>
+
+        <div style="margin-bottom: 18px; font-weight: bold; font-size: 13px;">
+          DIRIGIDO A: ${esc(destination).toUpperCase()}
+        </div>
+
+        <p>
+          La Administración del <strong>CENTRO COMERCIAL MARIO SÁNCHEZ</strong>, por medio del presente documento hace constar y certifica que la sociedad mercantil / persona jurídica:
+        </p>
+
+        <div style="background: #f8fafc; border-left: 4px solid #10b981; padding: 12px 18px; margin: 16px 0; font-size: 13.5px;">
+          <div><strong>Razón Social:</strong> ${esc(tenant.business_name)}</div>
+          <div><strong>R.I.F.:</strong> <span style="font-family: monospace; font-weight: bold;">${esc(tenant.rif)}</span></div>
+          <div><strong>Representante Legal:</strong> ${esc(tenant.legal_rep_name)} (C.I. ${esc(tenant.legal_rep_dni)})</div>
+          <div><strong>Inmueble / Unidad:</strong> Local Comercial <strong>${esc(unit.code)}</strong> ("${esc(unit.name)}")</div>
+          <div><strong>Área Total:</strong> ${Number(unit.area_m2 || 0).toFixed(2)} m² | <strong>Alícuota Condominial:</strong> ${((unit.condo_aliquot || 0) * 100).toFixed(2)}%</div>
+          <div><strong>Destino Comercial:</strong> ${esc(tenant.commercial_activity || 'Comercial')}</div>
+        </div>
+
+        <p>
+          Se encuentra <strong>SOLVENTE Y AL DÍA</strong> en todas sus obligaciones económicas derivadas del Canon de Arrendamiento y la Cuota de Participación en los Gastos Comunes de Condominio causados hasta el mes en curso (${issueDate}), no manteniendo a la presente fecha deuda patrimonial exigible con esta administración.
+        </p>
+
+        <p>
+          <strong>Observaciones de la Administración:</strong> ${esc(notes)}
+        </p>
+
+        <p>
+          Constancia que se expide a petición de la parte interesada en la ciudad de Puerto La Cruz, a los <strong>${esc(issueDate)}</strong>. Este certificado goza de una vigencia de <strong>${esc(validityDate)}</strong>.
+        </p>
+
+        <div style="margin-top: 50px; text-align: center;">
+          <div style="display: inline-block; width: 280px; border-top: 1px solid #111; padding-top: 8px;">
+            <strong>ADMINISTRACIÓN GENERAL</strong><br>
+            <span>${esc(companyLegalName)}</span><br>
+            <span style="font-size: 11px; color: #555;">R.I.F. ${esc(companyRif)}</span><br>
+            <div style="margin-top: 6px; font-size: 11px; color: #047857; font-weight: bold;">[Sello Digital y Firma Autorizada]</div>
+          </div>
+        </div>
+
+        <div style="border-top: 1px dashed #94a3b8; margin-top: 36px; padding-top: 10px; display: flex; justify-content: space-between; font-family: monospace; font-size: 9px; color: #475569;">
+          <div>
+            <strong>Hash de Verificación:</strong> ${esc(sealData.seal)}<br>
+            <span>Generado digitalmente por CCMS ERP bajo Decreto N° 929 / Gaceta Oficial 40.418</span>
+          </div>
+          <div style="text-align: right; color: #047857; font-weight: bold;">
+            ✓ SOLVENCIA VÁLIDA
+          </div>
+        </div>
+      </div>
+    `;
+  },
+
+  async generateNotificacionMoraHTML(tenant, unit, unpaidInvoices = [], options = {}) {
+    if (!tenant || !unit) return '<div style="padding:20px;color:red;">Error: Faltan datos del arrendatario.</div>';
+    const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    const bcvRate = options.bcvRate || 48.5;
+    const formatMoney = (val) => '$' + Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+    const formatBs = (val) => 'Bs. ' + Number(val || 0).toLocaleString('es-VE', { minimumFractionDigits: 2 });
+
+    const companyLegalName = 'SUCESIÓN MARIO SÁNCHEZ / C.C. MARIO SÁNCHEZ';
+    const companyRif = 'J-30211544-2';
+    const issueDate = options.issueDate || new Date().toLocaleDateString('es-VE', { day: '2-digit', month: 'long', year: 'numeric' });
+    const deadlineHours = options.deadlineHours || '72 horas';
+    const totalOwedUsd = unpaidInvoices.reduce((acc, i) => acc + (parseFloat(i.total_usd) || 0), 0);
+    const totalOwedVes = totalOwedUsd * bcvRate;
+
+    const sealData = await this.computeContractSeal(`NOTIF-${unit.code}-${Date.now()}`, tenant.rif, issueDate, totalOwedUsd, companyRif);
+
+    return `
+      <div class="printable-legal-doc" style="font-family: 'Times New Roman', Times, serif; font-size: 13.5px; line-height: 1.6; color: #111; max-width: 800px; margin: 0 auto; background: #fff; padding: 40px 48px; border: 1px solid #ddd; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: justify;">
+        <div style="text-align: center; border-bottom: 2px solid #111; padding-bottom: 12px; margin-bottom: 20px;">
+          <h2 style="font-size: 16px; margin: 0; text-transform: uppercase; font-weight: 800;">${esc(companyLegalName)}</h2>
+          <p style="font-size: 11px; margin: 3px 0; color: #444;">R.I.F. ${esc(companyRif)} — Puerto La Cruz, Edo. Anzoátegui</p>
+          <div style="margin-top: 8px; font-weight: 800; font-size: 14.5px; text-transform: uppercase; color: #b91c1c; letter-spacing: 0.5px;">
+            NOTIFICACIÓN FORMAL DE COBRO EXTRAJUDICIAL & ESTADO DE MORA
+          </div>
+          <div style="font-size: 11px; font-weight: 700; color: #666; margin-top: 2px;">EXPEDIENTE ADMINISTRATIVO N° CCMS-MORA-${esc(unit.code)}-${new Date().getFullYear()}</div>
+        </div>
+
+        <div style="margin-bottom: 14px; font-size: 13px;">
+          <strong>CIUDADANO(A):</strong> ${esc(tenant.legal_rep_name)}<br>
+          <strong>REPRESENTANTE LEGAL DE:</strong> ${esc(tenant.business_name)} (R.I.F. ${esc(tenant.rif)})<br>
+          <strong>INMUEBLE ARRENDADO:</strong> Local Comercial ${esc(unit.code)} ("${esc(unit.name)}")<br>
+          <strong>FECHA DE NOTIFICACIÓN:</strong> ${esc(issueDate)}
+        </div>
+
+        <p>
+          Por medio de la presente comunicación formal, la Administración del <strong>CENTRO COMERCIAL MARIO SÁNCHEZ</strong> le notifica que, revisados los libros contables a la fecha, su representada mantiene un saldo vencido pendiente de pago por concepto de Cánones de Arrendamiento y/o Gastos Comunes de Condominio, según el siguiente detalle:
+        </p>
+
+        <table style="width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 12px;">
+          <thead>
+            <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; text-align: left;">
+              <th style="padding: 6px 8px;">N° Recibo / Período</th>
+              <th style="padding: 6px 8px;">Concepto</th>
+              <th style="padding: 6px 8px;">Vencimiento</th>
+              <th style="padding: 6px 8px; text-align: right;">Monto USD</th>
+              <th style="padding: 6px 8px; text-align: right;">Equiv. Bs. BCV</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${unpaidInvoices.length === 0 ? `
+              <tr><td colspan="5" style="text-align: center; padding: 10px; color: #64748b;">No existen cuotas vencidas registradas.</td></tr>
+            ` : unpaidInvoices.map(i => `
+              <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 6px 8px; font-weight: bold;">${esc(i.invoice_number || i.id)}</td>
+                <td style="padding: 6px 8px;">${esc(i.concept || 'Canon + Condominio')}</td>
+                <td style="padding: 6px 8px;">${esc(i.due_date || 'Inmediato')}</td>
+                <td style="padding: 6px 8px; text-align: right; font-weight: bold; color: #b91c1c;">${formatMoney(i.total_usd)}</td>
+                <td style="padding: 6px 8px; text-align: right; color: #854d0e;">${formatBs(i.total_usd * bcvRate)}</td>
+              </tr>
+            `).join('')}
+            <tr style="background: #fef2f2; font-weight: bold; border-top: 2px solid #f87171;">
+              <td colspan="3" style="padding: 8px;">TOTAL ADEUDADO AL CORTE:</td>
+              <td style="padding: 8px; text-align: right; color: #b91c1c; font-size: 13px;">${formatMoney(totalOwedUsd)}</td>
+              <td style="padding: 8px; text-align: right; color: #854d0e; font-size: 13px;">${formatBs(totalOwedVes)}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p>
+          En atención a lo estipulado en la <strong>Ley de Regulación del Arrendamiento Inmobiliario para el Uso Comercial (Gaceta Oficial N° 40.418)</strong> y las cláusulas del contrato de arrendamiento suscrito, se le otorga un plazo perentorio y conciliatorio de <strong>${esc(deadlineHours)}</strong> para regularizar su situación contable mediante la consignación del comprobante de pago en las cuentas receptoras oficiales autorizadas.
+        </p>
+
+        <p>
+          En caso de haber realizado el pago con anterioridad a la recepción de esta carta, le solicitamos consignar la referencia o capture bancario a la brevedad ante el Departamento de Administración para su conciliación inmediata en el sistema.
+        </p>
+
+        <div style="display: flex; justify-content: space-between; margin-top: 40px;">
+          <div style="text-align: center; width: 45%; border-top: 1px solid #111; padding-top: 6px;">
+            <strong>POR LA ADMINISTRACIÓN</strong><br>
+            <span>Dpto. de Cobranzas y Consultoría Legal</span><br>
+            <span style="font-size: 11px; color: #555;">${esc(companyLegalName)}</span>
+          </div>
+
+          <div style="text-align: center; width: 45%; border-top: 1px solid #111; padding-top: 6px;">
+            <strong>RECIBIDO POR EL ARRENDATARIO</strong><br>
+            <span>Nombre / Firma / C.I.: ___________________</span><br>
+            <span>Fecha y Hora de Recepción: ____/____/________</span>
+          </div>
+        </div>
+
+        <div style="border-top: 1px dashed #94a3b8; margin-top: 30px; padding-top: 8px; font-family: monospace; font-size: 9px; color: #64748b;">
+          <strong>Sello de Notificación:</strong> ${esc(sealData.seal)} | Registro Digital Inmutable
+        </div>
+      </div>
+    `;
+  },
+
+  async generateConstanciaArrendatarioHTML(tenant, unit, contract = {}, options = {}) {
+    if (!tenant || !unit) return '<div style="padding:20px;color:red;">Error: Faltan datos del arrendatario.</div>';
+    const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+    const companyLegalName = 'SUCESIÓN MARIO SÁNCHEZ / C.C. MARIO SÁNCHEZ';
+    const companyRif = 'J-30211544-2';
+    const issueDate = options.issueDate || new Date().toLocaleDateString('es-VE', { day: '2-digit', month: 'long', year: 'numeric' });
+    const destination = options.destination || 'A QUIEN PUEDA INTERESAR / ENTIDAD BANCARIA / ORGANISMO PÚBLICO';
+
+    const sealData = await this.computeContractSeal(`CONST-${unit.code}-${Date.now()}`, tenant.rif, issueDate, 0, companyRif);
+
+    return `
+      <div class="printable-legal-doc" style="font-family: 'Times New Roman', Times, serif; font-size: 14px; line-height: 1.65; color: #111; max-width: 800px; margin: 0 auto; background: #fff; padding: 40px 48px; border: 1px solid #ddd; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: justify;">
+        <div style="text-align: center; border-bottom: 2px solid #111; padding-bottom: 12px; margin-bottom: 24px;">
+          <h2 style="font-size: 16px; margin: 0; text-transform: uppercase; font-weight: 800;">${esc(companyLegalName)}</h2>
+          <p style="font-size: 11px; margin: 3px 0; color: #444;">R.I.F. ${esc(companyRif)} — Puerto La Cruz, Estado Anzoátegui</p>
+          <div style="margin-top: 10px; font-weight: 800; font-size: 15px; text-transform: uppercase; color: #1e3a8a; letter-spacing: 0.5px;">
+            CONSTANCIA DE ARRENDATARIO COMERCIAL ACTIVO
+          </div>
+          <div style="font-size: 11px; font-weight: 700; color: #666; margin-top: 2px;">N° REF: CCMS-CONST-${esc(unit.code)}-${new Date().getFullYear()}</div>
+        </div>
+
+        <div style="margin-bottom: 20px; font-weight: bold; font-size: 13px;">
+          ATENCIÓN: ${esc(destination).toUpperCase()}
+        </div>
+
+        <p>
+          Por medio de la presente, la <strong>ADMINISTRACIÓN DEL CENTRO COMERCIAL MARIO SÁNCHEZ</strong> hace constar de manera fehaciente que la empresa:
+        </p>
+
+        <p style="text-align: center; font-size: 15px; font-weight: 800; color: #1e293b; margin: 16px 0;">
+          "${esc(tenant.business_name)}" (R.I.F. ${esc(tenant.rif)})
+        </p>
+
+        <p>
+          Es arrendataria formal y activa del inmueble comercial distinguido como: <strong>Local ${esc(unit.code)}</strong> ("${esc(unit.name)}"), ubicado en las instalaciones del Centro Comercial Mario Sánchez, Avenida Municipal cruce con Calle Juncal, Puerto La Cruz, con una superficie de <strong>${Number(unit.area_m2 || 0).toFixed(2)} m²</strong>, destinado exclusivamente a la actividad comercial de <strong>"${esc(tenant.commercial_activity || 'Comercial')}"</strong>.
+        </p>
+
+        <p>
+          La relación arrendaticia se encuentra debidamente fundamentada en contrato de arrendamiento para uso comercial conforme al <strong>Decreto N° 929 (Gaceta Oficial N° 40.418)</strong>, manteniendo a la fecha cumplimiento de la normativa interna de convivencia y seguridad del centro comercial.
+        </p>
+
+        <p>
+          Constancia que se expide a solicitud de la parte interesada a los fines consiguientes en la ciudad de Puerto La Cruz, a los <strong>${esc(issueDate)}</strong>.
+        </p>
+
+        <div style="margin-top: 60px; text-align: center;">
+          <div style="display: inline-block; width: 280px; border-top: 1px solid #111; padding-top: 8px;">
+            <strong>ADMINISTRACIÓN GENERAL</strong><br>
+            <span>${esc(companyLegalName)}</span><br>
+            <span style="font-size: 11px; color: #555;">R.I.F. ${esc(companyRif)}</span><br>
+            <div style="margin-top: 6px; font-size: 10.5px; color: #1e3a8a; font-weight: bold;">[Sello Húmedo y Firma Autorizada]</div>
+          </div>
+        </div>
+
+        <div style="border-top: 1px dashed #94a3b8; margin-top: 40px; padding-top: 8px; font-family: monospace; font-size: 9px; color: #64748b;">
+          <strong>Hash de Verificación:</strong> ${esc(sealData.seal)} | Emisión Autenticada
+        </div>
+      </div>
+    `;
+  },
+
+  async generateActaEntregaHTML(tenant, unit, contract = {}, options = {}) {
+    if (!tenant || !unit) return '<div style="padding:20px;color:red;">Error: Faltan datos del local.</div>';
+    const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    const companyLegalName = 'SUCESIÓN MARIO SÁNCHEZ / C.C. MARIO SÁNCHEZ';
+    const companyRif = 'J-30211544-2';
+    const issueDate = options.issueDate || new Date().toLocaleDateString('es-VE', { day: '2-digit', month: 'long', year: 'numeric' });
+    const isReceiving = options.mode === 'devolucion' ? 'DESOCUPACIÓN / RECEPCIÓN' : 'ENTREGA INICIAL & POSESIÓN';
+
+    return `
+      <div class="printable-legal-doc" style="font-family: 'Times New Roman', Times, serif; font-size: 13.5px; line-height: 1.6; color: #111; max-width: 800px; margin: 0 auto; background: #fff; padding: 40px 48px; border: 1px solid #ddd; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: justify;">
+        <div style="text-align: center; border-bottom: 2px solid #111; padding-bottom: 12px; margin-bottom: 20px;">
+          <h2 style="font-size: 16px; margin: 0; text-transform: uppercase; font-weight: 800;">${esc(companyLegalName)}</h2>
+          <p style="font-size: 11px; margin: 3px 0; color: #444;">R.I.F. ${esc(companyRif)} — Puerto La Cruz, Edo. Anzoátegui</p>
+          <div style="margin-top: 8px; font-weight: 800; font-size: 14.5px; text-transform: uppercase; color: #0284c7; letter-spacing: 0.5px;">
+            ACTA CIRCUNSTANCIADA DE ${esc(isReceiving)} DE LOCAL COMERCIAL
+          </div>
+          <div style="font-size: 11px; font-weight: 700; color: #666; margin-top: 2px;">LOCAL: ${esc(unit.code)} — C.C. MARIO SÁNCHEZ</div>
+        </div>
+
+        <p>
+          En la ciudad de Puerto La Cruz, a los <strong>${esc(issueDate)}</strong>, se reúnen por una parte la Administración del Centro Comercial Mario Sánchez y por la otra el ciudadano(a) <strong>${esc(tenant.legal_rep_name)}</strong> (C.I. ${esc(tenant.legal_rep_dni)}), en representación de <strong>${esc(tenant.business_name)}</strong> (R.I.F. ${esc(tenant.rif)}), a los fines de formalizar la presente Acta de ${esc(isReceiving)} del inmueble identificado como <strong>Local ${esc(unit.code)}</strong> con una superficie de <strong>${Number(unit.area_m2 || 0).toFixed(2)} m²</strong>.
+        </p>
+
+        <h4 style="font-size: 12.5px; text-transform: uppercase; margin: 12px 0 6px; font-weight: bold;">INVENTARIO & ESTADO FÍSICO DEL LOCAL:</h4>
+        <ul style="font-size: 12px; line-height: 1.6; margin: 0 0 14px 20px;">
+          <li><strong>Paredes y Pintura:</strong> En óptimas condiciones higiénicas y estructurales.</li>
+          <li><strong>Pisos y Rodapiés:</strong> Acabados cerámicos/cemento pulido limpios y sin fracturas.</li>
+          <li><strong>Tablero Eléctrico & Breakers:</strong> Operativo, con acometida trifásica/monofásica funcional.</li>
+          <li><strong>Sistema de Cerraduras y Santa María:</strong> Entregadas dos (2) llaves maestras con mecanismo operativo.</li>
+          <li><strong>Servicio de Agua & Descargas:</strong> Punto hidroneumático probado y sin fugas.</li>
+        </ul>
+
+        <p>
+          Las partes declaran su total conformidad con las condiciones físicas y legales asentadas en la presente acta, firmando dos (2) ejemplares de un mismo tenor y a un solo efecto.
+        </p>
+
+        <div style="display: flex; justify-content: space-between; margin-top: 45px;">
+          <div style="text-align: center; width: 45%; border-top: 1px solid #111; padding-top: 6px;">
+            <strong>POR LA ADMINISTRADORA</strong><br>
+            <span>Dpto. de Operaciones & Mantenimiento</span>
+          </div>
+
+          <div style="text-align: center; width: 45%; border-top: 1px solid #111; padding-top: 6px;">
+            <strong>POR EL ARRENDATARIO</strong><br>
+            <span>${esc(tenant.legal_rep_name)}</span><br>
+            <span style="font-size: 11px;">C.I. ${esc(tenant.legal_rep_dni)}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  },
+
+  async generateAdendaObrasHTML(tenant, unit, agreement = {}, options = {}) {
+    if (!tenant || !unit) return '<div style="padding:20px;color:red;">Error: Faltan datos del acuerdo.</div>';
+    const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    const companyLegalName = 'SUCESIÓN MARIO SÁNCHEZ / C.C. MARIO SÁNCHEZ';
+    const companyRif = 'J-30211544-2';
+    const issueDate = options.issueDate || new Date().toLocaleDateString('es-VE', { day: '2-digit', month: 'long', year: 'numeric' });
+    const formatMoney = (val) => '$' + Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+    const discountUsd = agreement.monthly_discount_usd || 0;
+    const desc = agreement.description || 'Reparaciones mayores y mejoras estructurales autorizadas en el local comercial.';
+    const startDate = agreement.start_date || '2026-01-01';
+    const endDate = agreement.end_date || '2026-12-31';
+
+    return `
+      <div class="printable-legal-doc" style="font-family: 'Times New Roman', Times, serif; font-size: 13.5px; line-height: 1.6; color: #111; max-width: 800px; margin: 0 auto; background: #fff; padding: 40px 48px; border: 1px solid #ddd; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: justify;">
+        <div style="text-align: center; border-bottom: 2px solid #111; padding-bottom: 12px; margin-bottom: 20px;">
+          <h2 style="font-size: 16px; margin: 0; text-transform: uppercase; font-weight: 800;">${esc(companyLegalName)}</h2>
+          <p style="font-size: 11px; margin: 3px 0; color: #444;">R.I.F. ${esc(companyRif)} — Puerto La Cruz, Edo. Anzoátegui</p>
+          <div style="margin-top: 8px; font-weight: 800; font-size: 14.5px; text-transform: uppercase; color: #7e22ce; letter-spacing: 0.5px;">
+            ADENDA DE ACUERDO DE OBRAS, MEJORAS Y DEDUCCIÓN DE CANON
+          </div>
+          <div style="font-size: 11px; font-weight: 700; color: #666; margin-top: 2px;">CONFORME AL ARTÍCULO 13 & 32 DE LA GACETA OFICIAL N° 40.418</div>
+        </div>
+
+        <p>
+          Entre <strong>${esc(companyLegalName)}</strong> (R.I.F. ${esc(companyRif)}) y la arrendataria <strong>${esc(tenant.business_name)}</strong> (R.I.F. ${esc(tenant.rif)}), ocupante del <strong>Local ${esc(unit.code)}</strong>, se suscribe la presente Adenda con el objeto de regularizar el régimen de compensación de mejoras y obras autorizadas:
+        </p>
+
+        <div style="background: #faf5ff; border-left: 4px solid #a855f7; padding: 12px 16px; margin: 16px 0; font-size: 13px;">
+          <div><strong>Descripción de la Obra:</strong> ${esc(desc)}</div>
+          <div><strong>Deducción Mensual Aprobada:</strong> <strong style="color: #7e22ce;">${formatMoney(discountUsd)} / mes</strong></div>
+          <div><strong>Período de Aplicación:</strong> Desde ${esc(startDate)} hasta ${esc(endDate)}</div>
+        </div>
+
+        <p>
+          La presente deducción se aplicará mensualmente contra la liquidación del canon de arrendamiento y/o condominio previa verificación de las facturas y soportes de obra por parte del departamento de infraestructura.
+        </p>
+
+        <div style="display: flex; justify-content: space-between; margin-top: 45px;">
+          <div style="text-align: center; width: 45%; border-top: 1px solid #111; padding-top: 6px;">
+            <strong>POR LA ARRENDADORA</strong><br>
+            <span>Dpto. de Administración</span>
+          </div>
+
+          <div style="text-align: center; width: 45%; border-top: 1px solid #111; padding-top: 6px;">
+            <strong>POR LA ARRENDATARIA</strong><br>
+            <span>${esc(tenant.legal_rep_name)}</span>
+          </div>
+        </div>
+      </div>
+    `;
   }
 };
 
