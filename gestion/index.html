@@ -321,11 +321,33 @@
 
       <!-- TAB 1: LOCALES & INQUILINOS -->
       <section class="tab-view" id="tab-inquilinos" data-roles="admin">
-        <div class="section-head">
-          <h3 class="section-title">
-            <i class="fa-solid fa-store" style="color: var(--amber);"></i> Directorio de Unidades y Arrendatarios
-          </h3>
-          <span style="font-size: 12px; color: var(--txt-secondary);">11 Unidades Comerciales e Industriales</span>
+        <div class="section-head" style="flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h3 class="section-title">
+              <i class="fa-solid fa-store" style="color: var(--amber);"></i> Directorio de Unidades y Arrendatarios
+            </h3>
+            <span id="tenants-directory-subtitle" style="font-size: 12px; color: var(--txt-secondary);">Cargando unidades...</span>
+          </div>
+
+          <!-- Mini-KPIs del Directorio de Unidades -->
+          <div id="tenant-dir-kpis" style="display: flex; gap: 10px; margin-left: auto; flex-wrap: wrap; align-items: center;">
+            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 10px; padding: 6px 12px; text-align: center;">
+              <div style="font-size: 16px; font-weight: 800; color: var(--emerald); font-family: var(--font-heading);" id="dir-kpi-solventes">—</div>
+              <div style="font-size: 9.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Solventes</div>
+            </div>
+            <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 10px; padding: 6px 12px; text-align: center;">
+              <div style="font-size: 16px; font-weight: 800; color: var(--rose); font-family: var(--font-heading);" id="dir-kpi-morosos">—</div>
+              <div style="font-size: 9.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">En Mora</div>
+            </div>
+            <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 10px; padding: 6px 12px; text-align: center;">
+              <div style="font-size: 16px; font-weight: 800; color: var(--amber); font-family: var(--font-heading);" id="dir-kpi-total-mora">—</div>
+              <div style="font-size: 9.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Total Mora ($)</div>
+            </div>
+            <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 10px; padding: 6px 12px; text-align: center;">
+              <div style="font-size: 16px; font-weight: 800; color: #818cf8; font-family: var(--font-heading);" id="dir-kpi-disponibles">—</div>
+              <div style="font-size: 9.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Disponibles</div>
+            </div>
+          </div>
         </div>
 
         <div class="data-card">
@@ -337,6 +359,8 @@
                   <th>Arrendatario / RIF</th>
                   <th>Área (m²)</th>
                   <th>Canon Mensual</th>
+                  <th>Saldo Pendiente</th>
+                  <th>Mora</th>
                   <th>Estado</th>
                   <th>Acciones</th>
                 </tr>
@@ -416,6 +440,11 @@
               <span>Exportar CSV</span>
             </button>
           </div>
+        </div>
+
+        <!-- BANNER DE ESTADO DE CUENTA Y MORA (EXCLUSIVO PARA EL INQUILINO) -->
+        <div id="tenant-statement-banner" data-roles="tenant" style="display: none; margin-bottom: 18px;">
+          <!-- Injected via JS -->
         </div>
 
         <!-- TARJETA INFORMATIVA: CUENTAS RECEPTORAS Y TASA BCV DEL DÍA (PORTAL DEL CLIENTE / INQUILINO) -->
@@ -1120,6 +1149,27 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+
+        <!-- TARJETA 7: EQUIPO ADMINISTRATIVO & PERFILES DE PERSONAL -->
+        <div class="data-card" style="margin-top: 24px; padding: 22px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 14px;">
+              <div>
+                <h4 style="font-family: var(--font-heading); font-size: 16px; font-weight: 800; color: var(--txt-primary); display: flex; align-items: center; gap: 8px;">
+                  <i class="fa-solid fa-users-gear" style="color: var(--amber);"></i> Equipo Administrativo & Perfiles de Personal
+                </h4>
+                <p style="font-size: 12px; color: var(--txt-secondary);">Gestión visual del personal administrativo y directiva del C.C. Mario Sánchez</p>
+              </div>
+              <span class="status-pill pill-active" style="font-size: 11px;">
+                <i class="fa-solid fa-user-shield"></i> Exclusivo Directiva
+              </span>
+            </div>
+
+            <!-- GRID DE PERFILES DE PERSONAL -->
+            <div id="staff-profile-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px;">
+              <!-- Injected via JS: renderStaffProfileCards() -->
+            </div>
           </div>
         </div>
 
@@ -2317,19 +2367,63 @@
   </div>
 </div>
 
+<!-- MODAL: FOTO DE PERFIL DE PERSONAL ADMINISTRATIVO -->
+<div class="modal-backdrop" id="modal-staff-photo" style="display: none;">
+  <div class="modal-card" style="max-width: 440px; padding: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px;">
+      <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 800; color: var(--txt-primary); display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-camera" style="color: var(--amber);"></i> Foto de Perfil Administrativo
+      </h3>
+      <button type="button" class="btn-action-icon" data-click="closeStaffPhotoModal()" style="font-size: 14px;">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; margin-bottom: 18px;">
+      <div id="staff-photo-current-preview" style="width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--amber); display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 800; color: var(--amber); overflow: hidden; background: rgba(245,158,11,0.08);">
+        <!-- Preview o Monograma -->
+      </div>
+      <div>
+        <div id="staff-photo-user-name" style="font-weight: 800; font-size: 14px; color: var(--txt-primary);">Usuario</div>
+        <div id="staff-photo-user-role" style="font-size: 11.5px; color: var(--txt-muted);">Cargo</div>
+      </div>
+    </div>
+
+    <!-- Dropzone de archivo -->
+    <div class="custom-file-dropzone" style="padding: 20px; border: 2px dashed var(--border-subtle); border-radius: 12px; text-align: center; cursor: pointer; background: rgba(255,255,255,0.02); margin-bottom: 18px;" onclick="document.getElementById('staff-photo-file').click()">
+      <input type="file" id="staff-photo-file" accept="image/png, image/jpeg, image/webp" style="display: none;" data-change="handleStaffPhotoChange(event)">
+      <i class="fa-solid fa-cloud-arrow-up" style="font-size: 26px; color: var(--amber); margin-bottom: 6px;"></i>
+      <div style="font-size: 12.5px; font-weight: 700; color: var(--txt-primary);">Seleccionar nueva foto</div>
+      <div style="font-size: 11px; color: var(--txt-muted);">Formatos PNG, JPG o WEBP (Máx. 5MB)</div>
+    </div>
+
+    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+      <button type="button" class="btn-cancel" data-click="removeStaffPhoto()" style="color: var(--rose); background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); padding: 8px 14px; border-radius: 8px; font-size: 12px; cursor: pointer;">
+        <i class="fa-solid fa-trash"></i> Quitar Foto
+      </button>
+      <button type="button" class="btn-cancel" data-click="closeStaffPhotoModal()" style="padding: 8px 14px; border-radius: 8px; font-size: 12px; cursor: pointer;">
+        Cancelar
+      </button>
+      <button type="button" class="btn-onboarding-cta" data-click="saveStaffPhoto()" style="background: var(--emerald); border-color: var(--emerald); color: #fff; padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer;">
+        <i class="fa-solid fa-floppy-disk"></i> Guardar
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- SCRIPTS DE ARQUITECTURA (100% GRATUITOS - DEFERRED NON-BLOCKING) -->
-<script src="js/security.js?v=20260911_v4" defer></script>
-<script src="js/auth-guard.js?v=20260911_v4" defer></script>
-<script src="js/tenant-loader.js?v=20260911_v4" defer></script>
-<script src="js/venezuela-legal.js?v=20260911_v4" defer></script>
-<script src="js/financial-engine.js?v=20260911_v4" defer></script>
-<script src="js/seniat-engine.js?v=20260911_v4" defer></script>
-<script src="js/bank-reconciliation.js?v=20260911_v4" defer></script>
-<script src="js/google-workspace.js?v=20260911_v4" defer></script>
-<script src="js/notifications.js?v=20260911_v4" defer></script>
-<script src="js/seed-data-39.js?v=20260911_v4" defer></script>
-<script src="js/supabase-client.js?v=20260911_v4" defer></script>
-<script src="js/ayuda-content.js?v=20260911_v4" defer></script>
-<script src="js/app.js?v=20260911_v4" defer></script>
+<script src="js/security.js?v=20260911_v43_release" defer></script>
+<script src="js/auth-guard.js?v=20260911_v43_release" defer></script>
+<script src="js/tenant-loader.js?v=20260911_v43_release" defer></script>
+<script src="js/venezuela-legal.js?v=20260911_v43_release" defer></script>
+<script src="js/financial-engine.js?v=20260911_v43_release" defer></script>
+<script src="js/seniat-engine.js?v=20260911_v43_release" defer></script>
+<script src="js/bank-reconciliation.js?v=20260911_v43_release" defer></script>
+<script src="js/google-workspace.js?v=20260911_v43_release" defer></script>
+<script src="js/notifications.js?v=20260911_v43_release" defer></script>
+<script src="js/seed-data-39.js?v=20260911_v43_release" defer></script>
+<script src="js/supabase-client.js?v=20260911_v43_release" defer></script>
+<script src="js/ayuda-content.js?v=20260911_v43_release" defer></script>
+<script src="js/app.js?v=20260911_v43_release" defer></script>
 </body>
 </html>

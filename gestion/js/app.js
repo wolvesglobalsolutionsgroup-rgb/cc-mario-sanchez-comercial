@@ -428,6 +428,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (isDirectiva) {
       try { initReportsTab(); } catch (e) { console.error('[RenderError] ReportsTab:', e); }
+      if (typeof window.renderStaffProfileCards === 'function') {
+        try { window.renderStaffProfileCards(); } catch (e) { console.error('[RenderError] StaffProfiles:', e); }
+      }
     }
     if (window.HelpContent && typeof window.HelpContent.render === 'function') {
       try { window.HelpContent.render(); } catch (e) { console.error('[RenderError] HelpContent:', e); }
@@ -535,34 +538,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const allInvoices = dbService.getInvoices();
     const invoices = visibleInvoices(allInvoices);
 
-    // 1. Ocupación (solo visible para admin)
+    // 1. Ocupación (visible para toda la directiva)
     const kpiOcc = document.getElementById('kpi-occupancy');
     const kpiOccSub = document.getElementById('kpi-occupancy-sub');
     const occCard = kpiOcc ? kpiOcc.closest('.kpi-card') : null;
-    if (currentRole === 'admin') {
+    if (isDirectiva) {
       const occupiedUnits = units.filter(u => u.status === 'arrendado');
-      const totalArea = units.reduce((acc, u) => acc + u.area_m2, 0);
-      const occupiedArea = occupiedUnits.reduce((acc, u) => acc + u.area_m2, 0);
-      const occupancyRate = Math.round((occupiedArea / totalArea) * 100);
-      kpiOcc.innerText = `${occupancyRate}%`;
-      kpiOccSub.innerText = `${occupiedArea.toLocaleString()} m² de 5.190 m²`;
+      const totalArea = units.reduce((acc, u) => acc + (parseFloat(u.area_m2) || 0), 0);
+      const occupiedArea = occupiedUnits.reduce((acc, u) => acc + (parseFloat(u.area_m2) || 0), 0);
+      const occupancyRate = totalArea > 0 ? Math.round((occupiedArea / totalArea) * 100) : 0;
+      if (kpiOcc) kpiOcc.innerText = `${occupancyRate}%`;
+      if (kpiOccSub) kpiOccSub.innerText = `${occupiedArea.toLocaleString()} m² de ${totalArea.toLocaleString()} m²`;
       if (occCard) occCard.style.display = '';
     } else if (occCard) {
       occCard.style.display = 'none';
     }
 
     // 2. Facturación
-    const totalBilledUsd = invoices.reduce((acc, i) => acc + i.total_usd, 0);
+    const totalBilledUsd = invoices.reduce((acc, i) => acc + (parseFloat(i.total_usd) || 0), 0);
     const billedEl = document.getElementById('kpi-billed');
     if (billedEl) {
       billedEl.innerText = formatMoney(totalBilledUsd);
       const billedTitle = billedEl.closest('.kpi-card')?.querySelector('.kpi-title');
-      if (billedTitle) billedTitle.textContent = currentRole === 'admin' ? 'Facturación Mensual' : 'Mi Facturación del Período';
+      if (billedTitle) billedTitle.textContent = isDirectiva ? 'Facturación del Período' : 'Mi Facturación del Período';
     }
 
-    // 3. Recaudado (para Admin) / Mi Estado de Solvencia y Semáforo (para Inquilino)
+    // 3. Recaudado (para Directiva) / Mi Estado de Solvencia y Semáforo (para Inquilino)
     const paidInvoices = invoices.filter(i => i.status === 'pagado');
-    const totalPaidUsd = paidInvoices.reduce((acc, i) => acc + i.total_usd, 0);
+    const totalPaidUsd = paidInvoices.reduce((acc, i) => acc + (parseFloat(i.total_usd) || 0), 0);
     const collectionPct = totalBilledUsd > 0 ? Math.round((totalPaidUsd / totalBilledUsd) * 100) : 0;
     const collEl = document.getElementById('kpi-collected');
     const collCard = collEl ? collEl.closest('.kpi-card') : null;
@@ -570,9 +573,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const collBadge = collCard?.querySelector('.kpi-icon-badge');
     const collSub = document.getElementById('kpi-collected-sub');
 
-    if (currentRole === 'admin') {
+    if (isDirectiva) {
       if (collTitle) collTitle.textContent = 'Total Recaudado';
-      if (collBadge) collBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+      if (collBadge) {
+        collBadge.className = 'kpi-icon-badge badge-emerald';
+        collBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+      }
       if (collEl) collEl.innerText = formatMoney(totalPaidUsd);
       if (collSub) collSub.innerText = `${collectionPct}% de recaudación efectiva`;
     } else {
@@ -673,39 +679,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 4. Mora
     const overdueInvoices = invoices.filter(i => i.status === 'en_mora');
-    const totalOverdueUsd = overdueInvoices.reduce((acc, i) => acc + i.total_usd, 0);
+    const totalOverdueUsd = overdueInvoices.reduce((acc, i) => acc + (parseFloat(i.total_usd) || 0), 0);
     const overEl = document.getElementById('kpi-overdue');
     if (overEl) {
       overEl.innerText = formatMoney(totalOverdueUsd);
-      document.getElementById('kpi-overdue-sub').innerText = `${overdueInvoices.length} ${currentRole === 'admin' ? 'cuentas con retraso' : 'facturas vencidas'}`;
+      const overSub = document.getElementById('kpi-overdue-sub');
+      if (overSub) {
+        overSub.innerText = `${overdueInvoices.length} ${isDirectiva ? 'cuentas con retraso' : 'facturas vencidas'}`;
+      }
     }
 
-    // 5. Egresos: solo admin
+    // 5. Egresos: solo directiva
     const expEl = document.getElementById('kpi-expenses');
     const expCard = expEl ? expEl.closest('.kpi-card') : null;
     if (expEl) {
-      if (currentRole === 'admin') {
-        const condoExpenses = [
-          { concept: 'Vigilancia 24/7', amount_usd: 1200 },
-          { concept: 'Energía Eléctrica Común (Corpoelec)', amount_usd: 350 },
-          { concept: 'Cisterna de Agua (40.000 L)', amount_usd: 220 },
-          { concept: 'Mantenimiento Preventivo Drenajes', amount_usd: 180 }
-        ];
-        const totalExpensesUsd = condoExpenses.reduce((acc, e) => acc + e.amount_usd, 0);
+      if (isDirectiva) {
+        const condoExpenses = dbService.getCondoExpenses ? dbService.getCondoExpenses() : [];
+        const totalExpensesUsd = condoExpenses.length > 0
+          ? condoExpenses.reduce((acc, e) => acc + (parseFloat(e.amount_usd) || 0), 0)
+          : 1950;
         expEl.innerText = formatMoney(totalExpensesUsd);
-        document.getElementById('kpi-expenses-sub').innerText = `4 conceptos de gastos comunes`;
+        const expSub = document.getElementById('kpi-expenses-sub');
+        if (expSub) expSub.innerText = `${condoExpenses.length || 4} conceptos de gastos comunes`;
         if (expCard) expCard.style.display = '';
       } else if (expCard) {
         expCard.style.display = 'none';
       }
     }
 
-    // 6. Utilidad: solo admin
+    // 6. Utilidad: solo directiva
     const netEl = document.getElementById('kpi-netprofit');
     const netCard = netEl ? netEl.closest('.kpi-card') : null;
     if (netEl) {
-      if (currentRole === 'admin') {
-        const netProfitUsd = totalPaidUsd - 1950;
+      if (isDirectiva) {
+        const condoExpenses = dbService.getCondoExpenses ? dbService.getCondoExpenses() : [];
+        const totalExp = condoExpenses.length > 0
+          ? condoExpenses.reduce((acc, e) => acc + (parseFloat(e.amount_usd) || 0), 0)
+          : 1950;
+        const netProfitUsd = totalPaidUsd - totalExp;
         netEl.innerText = formatMoney(netProfitUsd);
         netEl.style.color = netProfitUsd >= 0 ? 'var(--emerald)' : 'var(--rose)';
         if (netCard) netCard.style.display = '';
@@ -722,7 +733,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderAgingReport(invoices, currentRole) {
     const reportCard = document.getElementById('aging-report-section');
     if (!reportCard) return;
-    if (currentRole !== 'admin') {
+    if (!isDirectiva) {
       reportCard.style.display = 'none';
       return;
     }
@@ -807,22 +818,85 @@ document.addEventListener('DOMContentLoaded', () => {
     const units = dbService.getUnits();
     const tenants = dbService.getTenants();
     const contracts = dbService.getContracts();
+    const allInvoices = dbService.getInvoices();
+
+    // Actualizar subtítulo dinámico con el conteo real
+    const subtitle = document.getElementById('tenants-directory-subtitle');
+    if (subtitle) {
+      subtitle.textContent = `${units.length} Unidades Comerciales e Industriales`;
+    }
+
+    // Calcular métricas de resumen del directorio
+    let countSolvente = 0;
+    let countMoroso = 0;
+    let countDisponible = 0;
+    let totalMoraUsd = 0;
+
+    units.forEach(unit => {
+      if (unit.status === 'disponible') {
+        countDisponible++;
+        return;
+      }
+      const tenant = tenants.find(t => t.id === unit.tenant_id);
+      if (!tenant) return;
+      const tenantInvoices = allInvoices.filter(i => i.tenant_id === tenant.id);
+      const moraInvoices = tenantInvoices.filter(i => i.status === 'en_mora');
+      const moraAmt = moraInvoices.reduce((a, i) => a + (parseFloat(i.total_usd) || 0), 0);
+      if (moraAmt > 0 || tenant.status === 'moroso') {
+        countMoroso++;
+        totalMoraUsd += moraAmt;
+      } else {
+        countSolvente++;
+      }
+    });
+
+    const setKpiText = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val;
+    };
+    setKpiText('dir-kpi-solventes', countSolvente);
+    setKpiText('dir-kpi-morosos', countMoroso);
+    setKpiText('dir-kpi-disponibles', countDisponible);
+    setKpiText('dir-kpi-total-mora', formatMoney(totalMoraUsd));
 
     units.forEach(unit => {
       const tr = document.createElement('tr');
       const tenant = tenants.find(t => t.id === unit.tenant_id);
       const contract = contracts.find(c => c.unit_code === unit.code);
 
+      // Facturas y saldos de este inquilino
+      const tenantInvoices = tenant ? allInvoices.filter(i => i.tenant_id === tenant.id) : [];
+      const unpaidInvoices = tenantInvoices.filter(i => i.status !== 'pagado');
+      const moraInvoices = tenantInvoices.filter(i => i.status === 'en_mora');
+      const pendingSaldoUsd = unpaidInvoices.reduce((a, i) => a + (parseFloat(i.total_usd) || 0), 0);
+      const moraAmtUsd = moraInvoices.reduce((a, i) => a + (parseFloat(i.total_usd) || 0), 0);
+
       let statusBadge = '';
       if (unit.status === 'disponible') {
         statusBadge = '<span class="status-pill pill-info"><i class="fa-solid fa-circle"></i> Disponible</span>';
-      } else if (tenant && tenant.status === 'moroso') {
+      } else if (moraAmtUsd > 0 || (tenant && tenant.status === 'moroso')) {
         statusBadge = '<span class="status-pill pill-overdue"><i class="fa-solid fa-circle-exclamation"></i> En Mora</span>';
       } else if (contract && contract.status === 'por_vencer') {
         statusBadge = '<span class="status-pill pill-warning"><i class="fa-solid fa-clock"></i> Por Vencer</span>';
       } else {
         statusBadge = '<span class="status-pill pill-active"><i class="fa-solid fa-circle-check"></i> Solvente</span>';
       }
+
+      // Columna Saldo Pendiente
+      const saldoHtml = tenant
+        ? pendingSaldoUsd > 0
+          ? `<strong style="color: var(--amber); font-family: var(--font-heading);">${formatMoney(pendingSaldoUsd)}</strong>
+             <div style="font-size: 10px; color: var(--txt-muted);">${unpaidInvoices.length} ${unpaidInvoices.length === 1 ? 'cuota pendiente' : 'cuotas pendientes'}</div>`
+          : `<span style="color: var(--emerald); font-weight: 700;"><i class="fa-solid fa-circle-check" style="font-size: 10px;"></i> Al día</span>`
+        : `<span style="color: var(--txt-muted); font-style: italic;">—</span>`;
+
+      // Columna Mora
+      const moraHtml = tenant
+        ? moraAmtUsd > 0
+          ? `<strong style="color: var(--rose); font-family: var(--font-heading);">${formatMoney(moraAmtUsd)}</strong>
+             <div style="font-size: 10px; color: var(--rose);">${moraInvoices.length} ${moraInvoices.length === 1 ? 'factura vencida' : 'facturas vencidas'}</div>`
+          : `<span style="color: var(--txt-muted);">$0.00</span>`
+        : `<span style="color: var(--txt-muted); font-style: italic;">—</span>`;
 
       tr.innerHTML = `
         <td>
@@ -833,13 +907,15 @@ document.addEventListener('DOMContentLoaded', () => {
           ${tenant ? `<strong>${escapeHtml(tenant.business_name)}</strong><div style="font-size: 11px; color: var(--txt-secondary);">RIF: ${escapeHtml(tenant.rif)} • ${escapeHtml(tenant.trade_name || '')}</div>` : '<span style="color: var(--txt-muted); font-style: italic;">Sin Arrendatario</span>'}
         </td>
         <td>
-          <strong>${unit.area_m2.toLocaleString()} m²</strong>
-          <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase;">${escapeHtml(unit.category)}</div>
+          <strong>${(parseFloat(unit.area_m2) || 0).toLocaleString()} m²</strong>
+          <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase;">${escapeHtml(unit.category || '')}</div>
         </td>
         <td>
           <strong>${formatMoney(unit.base_rent_usd)}</strong>
-          <div style="font-size: 10.5px; color: var(--amber);">Alícuota: ${(unit.condo_aliquot * 100).toFixed(1)}%</div>
+          <div style="font-size: 10.5px; color: var(--amber);">Alícuota: ${((parseFloat(unit.condo_aliquot) || 0) * 100).toFixed(1)}%</div>
         </td>
+        <td>${saldoHtml}</td>
+        <td>${moraHtml}</td>
         <td>${statusBadge}</td>
         <td>
           <div style="display: flex; gap: 6px;">
@@ -917,7 +993,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminBadge = document.getElementById('admin-pending-review-badge');
     const adminCount = document.getElementById('admin-pending-count');
     if (adminBadge && adminCount) {
-      if (currentRole === 'admin' && pendingReviews > 0) {
+      if (isDirectiva && pendingReviews > 0) {
         adminBadge.style.display = 'inline-flex';
         adminCount.innerText = `${pendingReviews} ${pendingReviews === 1 ? 'comprobante por revisar' : 'comprobantes por revisar'}`;
         adminBadge.style.cursor = 'pointer';
@@ -930,6 +1006,66 @@ document.addEventListener('DOMContentLoaded', () => {
         };
       } else {
         adminBadge.style.display = 'none';
+      }
+    }
+
+    // Renderizado del banner de estado de cuenta para inquilino
+    const tenantBanner = document.getElementById('tenant-statement-banner');
+    if (tenantBanner) {
+      if (currentRole === 'tenant') {
+        const myAllInvoices = allInvoices.filter(i => i.tenant_id === currentTenantId);
+        const myUnpaid = myAllInvoices.filter(i => i.status !== 'pagado');
+        const myOverdue = myAllInvoices.filter(i => i.status === 'en_mora');
+        const mySaldoUsd = myUnpaid.reduce((a, i) => a + (parseFloat(i.total_usd) || 0), 0);
+        const myMoraUsd = myOverdue.reduce((a, i) => a + (parseFloat(i.total_usd) || 0), 0);
+        const bcvRate = 814.69;
+        const mySaldoVes = mySaldoUsd * bcvRate;
+        const recargoMoraUsd = myMoraUsd > 0 ? (myMoraUsd * 0.03) : 0;
+
+        tenantBanner.style.display = 'block';
+        tenantBanner.innerHTML = `
+          <div class="data-card" style="padding: 18px 20px; border-left: 4px solid ${mySaldoUsd > 0 ? (myOverdue.length > 0 ? 'var(--rose)' : 'var(--amber)') : 'var(--emerald)'}; background: linear-gradient(135deg, ${mySaldoUsd > 0 ? (myOverdue.length > 0 ? 'rgba(239,68,68,0.06)' : 'rgba(245,158,11,0.06)') : 'rgba(16,185,129,0.06)'} 0%, transparent 100%);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                  <span class="status-pill ${mySaldoUsd > 0 ? (myOverdue.length > 0 ? 'pill-overdue' : 'pill-warning') : 'pill-active'}" style="font-size: 11px;">
+                    <i class="fa-solid ${mySaldoUsd > 0 ? (myOverdue.length > 0 ? 'fa-triangle-exclamation' : 'fa-clock') : 'fa-circle-check'}"></i>
+                    ${mySaldoUsd > 0 ? (myOverdue.length > 0 ? 'Estado: En Mora' : 'Estado: Pendiente por Pagar') : 'Estado: Solvente y al Día'}
+                  </span>
+                  <span style="font-size: 12px; color: var(--txt-muted); font-family: var(--font-heading);">${myUnpaid.length} ${myUnpaid.length === 1 ? 'cuota pendiente' : 'cuotas pendientes'}</span>
+                </div>
+                <div style="font-size: 12px; color: var(--txt-secondary);">
+                  ${myOverdue.length > 0 ? 'Posee facturas con retraso sujetas a recargo legal según Art. 40 G.O. 40.418.' : (mySaldoUsd > 0 ? 'Sus cuotas están dentro del plazo voluntario de pago.' : 'No mantiene deudas pendientes con la administración.')}
+                </div>
+              </div>
+
+              <!-- Cifras de Saldo, Mora y Recargo -->
+              <div style="display: flex; gap: 18px; align-items: center; flex-wrap: wrap;">
+                <div style="text-align: right;">
+                  <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Saldo Total Adeudado</div>
+                  <div style="font-size: 20px; font-weight: 800; color: ${mySaldoUsd > 0 ? 'var(--amber)' : 'var(--emerald)'}; font-family: var(--font-heading);">${formatMoney(mySaldoUsd)}</div>
+                  <div style="font-size: 10px; color: var(--txt-muted);">≈ Bs. ${mySaldoVes.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                </div>
+
+                ${myMoraUsd > 0 ? `
+                  <div style="border-left: 1px solid var(--border-subtle); padding-left: 14px; text-align: right;">
+                    <div style="font-size: 10.5px; color: var(--rose); text-transform: uppercase; font-weight: 700;">Capital en Mora</div>
+                    <div style="font-size: 17px; font-weight: 800; color: var(--rose); font-family: var(--font-heading);">${formatMoney(myMoraUsd)}</div>
+                    <div style="font-size: 10px; color: var(--rose);">+ Recargo moratorio: ${formatMoney(recargoMoraUsd)}</div>
+                  </div>
+                ` : ''}
+
+                ${mySaldoUsd > 0 ? `
+                  <button type="button" class="btn-onboarding-cta" data-click="openTenantQuickPay()" style="background: var(--emerald); border-color: var(--emerald); color: #fff; padding: 8px 16px; font-size: 12.5px;">
+                    <i class="fa-solid fa-file-invoice-dollar"></i> Reportar Pago
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        tenantBanner.style.display = 'none';
       }
     }
 
@@ -5280,7 +5416,225 @@ document.addEventListener('DOMContentLoaded', () => {
     }).join('');
   };
 
+  // ==============================================================================
+  // MÓDULO 15: PERFILES DE EQUIPO & PERSONAL ADMINISTRATIVO (STAFF PROFILES)
+  // ==============================================================================
+  const STAFF_PHOTOS_KEY = 'ccms_staff_photos_v1';
+
+  function getStaffPhotos() {
+    try { return JSON.parse(localStorage.getItem(STAFF_PHOTOS_KEY) || '{}'); }
+    catch(e) { return {}; }
+  }
+
+  function saveStaffPhotos(photos) {
+    try { localStorage.setItem(STAFF_PHOTOS_KEY, JSON.stringify(photos)); }
+    catch(e) {}
+  }
+
+  function getMonogram(displayName) {
+    const words = (displayName || 'XX').trim().split(/\s+/);
+    return words.length > 1
+      ? (words[0][0] + words[1][0]).toUpperCase()
+      : (words[0].substring(0, 2)).toUpperCase();
+  }
+
+  const STAFF_ROLE_CONFIG = {
+    superadmin:        { label: 'SuperAdministrador',       color: '#f59e0b', bg: 'rgba(245,158,11,0.12)',   icon: 'fa-crown' },
+    admin:             { label: 'Administración General',   color: '#10b981', bg: 'rgba(16,185,129,0.12)',   icon: 'fa-building' },
+    admin_finanzas:    { label: 'Finanzas & Cobranzas',     color: '#10b981', bg: 'rgba(16,185,129,0.12)',   icon: 'fa-coins' },
+    admin_legal:       { label: 'Legal & Contratos',        color: '#0ea5e9', bg: 'rgba(14,165,233,0.12)',   icon: 'fa-scale-balanced' },
+    admin_mantenimiento: { label: 'Infraestructura',        color: '#f97316', bg: 'rgba(249,115,22,0.12)',   icon: 'fa-wrench' },
+    heredero:          { label: 'Copropietario Heredero',   color: '#a855f7', bg: 'rgba(168,85,247,0.12)',   icon: 'fa-landmark' }
+  };
+
+  window.renderStaffProfileCards = function() {
+    const grid = document.getElementById('staff-profile-grid');
+    if (!grid) return;
+
+    const allUsers = (window.AuthGuard && window.AuthGuard.listUsers) ? window.AuthGuard.listUsers() : [];
+    // Filtrar solo personal administrativo/directiva (los inquilinos NO llevan perfil con foto)
+    const staffUsers = allUsers.filter(u => u.role !== 'tenant');
+
+    if (staffUsers.length === 0) {
+      grid.innerHTML = '<div style="padding:20px;text-align:center;color:var(--txt-muted);font-size:12px;grid-column:1/-1;">No hay usuarios directivos registrados.</div>';
+      return;
+    }
+
+    const photos = getStaffPhotos();
+
+    grid.innerHTML = staffUsers.map(u => {
+      const rc = STAFF_ROLE_CONFIG[u.role] || STAFF_ROLE_CONFIG.admin;
+      const mono = getMonogram(u.display_name);
+      const photo = photos[u.id];
+      const avatarHtml = photo
+        ? `<img src="${photo.data || photo}" alt="${escapeHtml(u.display_name)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+        : mono;
+      
+      const statusBadge = u.status === 'active'
+        ? '<span class="status-pill pill-active" style="font-size:9.5px;padding:2px 7px;"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Activo</span>'
+        : '<span class="status-pill pill-warning" style="font-size:9.5px;padding:2px 7px;"><i class="fa-solid fa-clock" style="font-size:6px;"></i> Pendiente</span>';
+
+      return `
+        <div class="data-card" style="padding: 0; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.15s ease, box-shadow 0.15s ease;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.25)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+          <!-- Banner degradado de color de rol -->
+          <div style="height: 52px; background: linear-gradient(135deg, ${rc.bg.replace('0.12', '0.45')}, transparent); border-bottom: 1px solid ${rc.bg};"></div>
+
+          <!-- Avatar flotante -->
+          <div style="display: flex; justify-content: center; margin-top: -32px; position: relative; z-index: 1;">
+            <div class="staff-avatar-ring" data-user-id="${u.id}" data-click="openStaffPhotoModal('${u.id}')" title="Haga clic para cambiar foto de perfil" style="width: 64px; height: 64px; border-radius: 50%; background: var(--bg-card); border: 2.5px solid ${rc.color}; display: flex; align-items: center; justify-content: center; overflow: hidden; font-size: 20px; font-weight: 800; color: ${rc.color}; font-family: var(--font-heading); cursor: pointer; position: relative;">
+              ${avatarHtml}
+              <div class="cam-overlay" style="position:absolute;inset:0;background:rgba(0,0,0,0.5);border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.15s;pointer-events:none;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">
+                <i class="fa-solid fa-camera" style="color:#fff;font-size:16px;"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contenido del perfil -->
+          <div style="padding: 10px 14px 16px; flex: 1; display: flex; flex-direction: column; gap: 4px; align-items: center; text-align: center;">
+            <div style="font-size: 13px; font-weight: 800; color: var(--txt-primary); font-family: var(--font-heading); line-height: 1.2; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(u.display_name)}">
+              ${escapeHtml(u.display_name)}
+            </div>
+
+            <div style="display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 20px; background: ${rc.bg}; border: 1px solid ${rc.color}33; font-size: 10px; font-weight: 700; color: ${rc.color};">
+              <i class="fa-solid ${rc.icon}" style="font-size: 8.5px;"></i>
+              ${rc.label}
+            </div>
+
+            <div style="font-size: 10px; color: var(--txt-muted); font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;" title="${escapeHtml(u.identifier)}">
+              ${escapeHtml(u.identifier)}
+            </div>
+
+            <div style="font-size: 9.5px; color: var(--txt-muted);">
+              <i class="fa-solid fa-location-dot" style="font-size: 8.5px;"></i> ${escapeHtml(u.unit || 'Oficina Administrativa')}
+            </div>
+
+            <div style="margin-top: 4px;">
+              ${statusBadge}
+            </div>
+          </div>
+
+          <!-- Footer con botón de cambio de foto -->
+          <div style="border-top: 1px solid var(--border-subtle); padding: 8px 14px; display: flex; gap: 6px; justify-content: center; background: rgba(255,255,255,0.01);">
+            <button type="button" class="btn-action-icon" data-click="openStaffPhotoModal('${u.id}')" title="Actualizar foto de perfil" style="width: auto; padding: 4px 10px; font-size: 11px; gap: 5px; color: ${rc.color}; border-color: ${rc.color}33;">
+              <i class="fa-solid fa-camera"></i> Cambiar Foto
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  };
+
+  let _editingStaffUserId = null;
+  let _tempStaffPhotoData = null;
+
+  window.openStaffPhotoModal = function(userId) {
+    _editingStaffUserId = userId;
+    _tempStaffPhotoData = null;
+
+    const allUsers = (window.AuthGuard && window.AuthGuard.listUsers) ? window.AuthGuard.listUsers() : [];
+    const u = allUsers.find(x => x.id === userId);
+    if (!u) return;
+
+    const photos = getStaffPhotos();
+    const rc = STAFF_ROLE_CONFIG[u.role] || STAFF_ROLE_CONFIG.admin;
+
+    const previewEl = document.getElementById('staff-photo-current-preview');
+    const nameEl = document.getElementById('staff-photo-user-name');
+    const roleEl = document.getElementById('staff-photo-user-role');
+    const fileInput = document.getElementById('staff-photo-file');
+
+    if (fileInput) fileInput.value = '';
+    if (nameEl) nameEl.textContent = u.display_name;
+    if (roleEl) roleEl.textContent = rc.label + ' — ' + (u.identifier || '');
+
+    if (previewEl) {
+      previewEl.style.color = rc.color;
+      previewEl.style.background = rc.bg;
+      previewEl.style.borderColor = rc.color;
+      const photo = photos[userId];
+      if (photo) {
+        previewEl.innerHTML = `<img src="${photo.data || photo}" alt="foto" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+      } else {
+        previewEl.innerHTML = getMonogram(u.display_name);
+      }
+    }
+
+    window.openModal('modal-staff-photo');
+  };
+
+  window.closeStaffPhotoModal = function() {
+    _tempStaffPhotoData = null;
+    _editingStaffUserId = null;
+    window.closeModal('modal-staff-photo');
+  };
+
+  window.handleStaffPhotoChange = function(e) {
+    const file = e && e.target && e.target.files ? e.target.files[0] : null;
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('La imagen excede el límite máximo de 5 MB.', 'warning', 'Archivo Excedido');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      _tempStaffPhotoData = {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        data: evt.target.result,
+        updated_at: new Date().toISOString()
+      };
+      const previewEl = document.getElementById('staff-photo-current-preview');
+      if (previewEl) {
+        previewEl.innerHTML = `<img src="${evt.target.result}" alt="foto" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.removeStaffPhoto = function() {
+    if (!_editingStaffUserId) return;
+    const photos = getStaffPhotos();
+    delete photos[_editingStaffUserId];
+    saveStaffPhotos(photos);
+    _tempStaffPhotoData = null;
+    dbService.logAuditAction({
+      action: 'DELETE',
+      entity: 'CONFIG',
+      entity_id: _editingStaffUserId,
+      entity_name: 'Foto de Personal',
+      details: 'Eliminación de foto de perfil administrativo.'
+    });
+    window.closeStaffPhotoModal();
+    window.renderStaffProfileCards();
+    showToast('Foto de perfil eliminada correctamente.', 'info', 'Perfil Actualizado');
+  };
+
+  window.saveStaffPhoto = function() {
+    if (!_editingStaffUserId) return;
+    if (!_tempStaffPhotoData) {
+      showToast('Seleccione primero una imagen para guardar.', 'info', 'Sin Imagen');
+      return;
+    }
+    const photos = getStaffPhotos();
+    photos[_editingStaffUserId] = _tempStaffPhotoData;
+    saveStaffPhotos(photos);
+    dbService.logAuditAction({
+      action: 'UPDATE',
+      entity: 'CONFIG',
+      entity_id: _editingStaffUserId,
+      entity_name: 'Foto de Personal',
+      details: 'Actualización de foto de perfil administrativo.'
+    });
+    window.closeStaffPhotoModal();
+    window.renderStaffProfileCards();
+    showToast('Foto de perfil guardada con éxito.', 'success', 'Perfil Actualizado');
+  };
+
   // Render inicial
   renderAll();
+  if (isDirectiva) {
+    try { renderStaffProfileCards(); } catch(e) {}
+  }
 });
 

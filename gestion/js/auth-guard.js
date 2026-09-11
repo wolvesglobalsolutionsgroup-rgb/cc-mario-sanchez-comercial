@@ -791,6 +791,7 @@
     mountUserChip,
     applyRoleVisibility,
     listUsers,
+    getUsers: listUsers,
     approveUser,
     rejectUser,
     registerOrInviteUser,
