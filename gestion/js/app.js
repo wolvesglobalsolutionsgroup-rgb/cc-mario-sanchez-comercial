@@ -1157,6 +1157,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  // Delegación de eventos para botón volver atrás (a prueba de CSP e inline handlers)
+  document.addEventListener('click', function(e) {
+    if (e.target && (e.target.closest('.ttp-back-btn') || e.target.classList.contains('ttp-back-btn'))) {
+      e.preventDefault();
+      window.closeTenantFullProfile();
+    }
+  });
+
   window.renderClientFullProfile = function(tenantId) {
     const profileSheet = document.getElementById('client-full-profile-sheet');
     if (!profileSheet) return;
