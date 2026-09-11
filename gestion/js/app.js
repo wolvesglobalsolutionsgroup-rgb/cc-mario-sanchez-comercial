@@ -1104,353 +1104,427 @@ document.addEventListener('DOMContentLoaded', () => {
   let activeProfileTenantId = null;
 
   window.openTenantFullProfile = function(tenantId) {
-    activeProfileTenantId = tenantId;
-    const mainView = document.getElementById('tenants-main-view');
-    const profileSheet = document.getElementById('client-full-profile-sheet');
-    if (mainView) mainView.style.display = 'none';
-    if (profileSheet) {
-      profileSheet.style.display = 'flex';
-      renderClientFullProfile(tenantId);
-      profileSheet.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    try {
+      activeProfileTenantId = tenantId;
+      currentDossierTenantId = tenantId;
+      const mainView = document.getElementById('tenants-main-view');
+      const profileSheet = document.getElementById('client-full-profile-sheet');
+      if (mainView) mainView.style.display = 'none';
+      if (profileSheet) {
+        profileSheet.style.display = 'flex';
+        renderClientFullProfile(tenantId);
+        profileSheet.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    } catch (err) {
+      console.error('[openTenantFullProfile Error]', err);
     }
   };
 
   window.closeTenantFullProfile = function() {
-    const mainView = document.getElementById('tenants-main-view');
-    const profileSheet = document.getElementById('client-full-profile-sheet');
-    if (profileSheet) profileSheet.style.display = 'none';
-    if (mainView) mainView.style.display = 'block';
-    renderTenantsDirectory();
+    try {
+      activeProfileTenantId = null;
+      const mainView = document.getElementById('tenants-main-view');
+      const profileSheet = document.getElementById('client-full-profile-sheet');
+      if (profileSheet) profileSheet.style.display = 'none';
+      if (mainView) mainView.style.display = 'block';
+      renderTenantsDirectory();
+    } catch (err) {
+      console.error('[closeTenantFullProfile Error]', err);
+    }
   };
 
   window.renderClientFullProfile = function(tenantId) {
     const profileSheet = document.getElementById('client-full-profile-sheet');
     if (!profileSheet) return;
 
-    const tenant = dbService.getTenants().find(t => t.id === tenantId);
-    if (!tenant) return;
-    const contract = dbService.getContracts().find(c => c.tenant_id === tenantId);
-    const unit = dbService.getUnits().find(u => u.code === tenant.unit_code);
-    const allInvoices = dbService.getInvoices().filter(i => i.tenant_id === tenantId);
-
-    // Ordenar facturas por período descendente
-    allInvoices.sort((a, b) => {
-      if (b.period_year !== a.period_year) return b.period_year - a.period_year;
-      return b.period_month - a.period_month;
-    });
-
-    const totalBilled = allInvoices.reduce((a, i) => a + (parseFloat(i.total_usd) || 0), 0);
-    const paidInvoices = allInvoices.filter(i => i.status === 'pagado');
-    const unpaidInvoices = allInvoices.filter(i => i.status !== 'pagado');
-    const totalCollected = paidInvoices.reduce((a, i) => a + (parseFloat(i.total_usd) || 0), 0);
-    const balanceOwed = unpaidInvoices.reduce((a, i) => a + (parseFloat(i.total_usd) || 0), 0);
-    const avgInvoice = allInvoices.length ? (totalBilled / allInvoices.length) : 0;
-    const maxInvoice = allInvoices.length ? Math.max(...allInvoices.map(i => parseFloat(i.total_usd) || 0)) : 0;
-    const pctPaid = totalBilled > 0 ? Math.round((totalCollected / totalBilled) * 100) : 100;
-
-    const { monogram, gradient } = getMonogramAndGradient(tenant.business_name);
-    const cleanWa = (tenant.whatsapp || '').replace(/[^0-9]/g, '');
-
-    // Acuerdos especiales para este inquilino
-    const agreements = (dbService.getAgreements ? dbService.getAgreements() : []).filter(a => a.tenant_id === tenantId || a.unit_code === tenant.unit_code);
-
-    profileSheet.innerHTML = `
-      <!-- TOP BAR WITH BACK BUTTON & ACTIONS -->
-      <div class="ttp-sheet-topbar">
-        <div class="ttp-sheet-client-meta">
-          <button type="button" class="ttp-back-btn" onclick="window.closeTenantFullProfile()" title="Volver al Directorio de Clientes">
-            <i class="fa-solid fa-arrow-left"></i>
-          </button>
-          <div class="ttp-sheet-avatar" style="background: ${gradient};">
-            ${monogram}
-          </div>
-          <div>
-            <h1 class="ttp-sheet-title">${escapeHtml(tenant.business_name)}</h1>
-            <div class="ttp-sheet-subtitle">
-              ${escapeHtml(tenant.email || 'sin-correo@ccms.com')} • RIF: ${escapeHtml(tenant.rif)} • <strong style="color: var(--amber);">${escapeHtml(tenant.unit_code)}</strong> • ${escapeHtml(tenant.commercial_activity || 'Comercial')}
-            </div>
-          </div>
-        </div>
-
-        <div class="ttp-sheet-actions">
-          <button type="button" class="btn-currency-toggle" data-click="openTenantDossier('${tenant.id}')" style="font-size: 12px; padding: 7px 14px;">
-            <i class="fa-solid fa-folder-open" style="color: var(--amber);"></i> <span>Expediente Modal</span>
-          </button>
-          <button type="button" class="btn-currency-toggle" data-click="viewTenantContract('${tenant.id}')" style="color: var(--cyan); border-color: var(--cyan); font-size: 12px; padding: 7px 14px;">
-            <i class="fa-solid fa-file-contract"></i> <span>Ver Contrato Legal</span>
-          </button>
-          <button type="button" class="btn-onboarding-cta" data-click="openDossierQuickPay('${tenant.id}')" style="background: var(--emerald); border-color: var(--emerald); color: #fff; font-size: 12px; padding: 7px 16px;">
-            <i class="fa-solid fa-receipt"></i> <span>Registrar Pago</span>
-          </button>
-          ${cleanWa ? `
-            <a href="https://wa.me/${cleanWa}" target="_blank" rel="noopener noreferrer" class="btn-onboarding-cta" style="background: #25D366; border-color: #25D366; color: #fff; font-size: 12px; padding: 7px 14px; text-decoration: none;">
-              <i class="fa-brands fa-whatsapp"></i> <span>WhatsApp</span>
-            </a>
-          ` : ''}
-        </div>
-      </div>
-
-      <!-- TOP 3 KPIS BANNER (IMAGE 5 STYLE) -->
-      <div class="ttp-kpi-banner">
-        <div class="ttp-kpi-sheet-card">
-          <span class="ttp-kpi-sheet-label">Total Cuotas / Facturas</span>
-          <span class="ttp-kpi-sheet-val" style="color: var(--cyan);">${allInvoices.length} <span style="font-size: 14px; font-weight: 600; color: var(--txt-muted);">Emitidas</span></span>
-        </div>
-        <div class="ttp-kpi-sheet-card">
-          <span class="ttp-kpi-sheet-label">Total Facturado</span>
-          <span class="ttp-kpi-sheet-val" style="color: var(--txt-primary);">${formatMoney(totalBilled)}</span>
-        </div>
-        <div class="ttp-kpi-sheet-card" style="border-color: ${balanceOwed > 0 ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)'};">
-          <span class="ttp-kpi-sheet-label">Saldo Pendiente / Mora</span>
-          <span class="ttp-kpi-sheet-val" style="color: ${balanceOwed > 0 ? 'var(--rose)' : 'var(--emerald)'};">${formatMoney(balanceOwed)}</span>
-        </div>
-      </div>
-
-      <!-- 4-CARD PROFILE DASHBOARD GRID -->
-      <div class="ttp-profile-grid">
-        
-        <!-- CARD 1: CONTACT DETAILS -->
-        <div class="ttp-panel-card">
-          <div class="ttp-panel-head">
-            <h3 class="ttp-panel-title">
-              <i class="fa-solid fa-address-card" style="color: var(--amber);"></i> Datos del Arrendatario & Contacto
-            </h3>
-            <button type="button" class="btn-currency-toggle" style="font-size: 11px; padding: 4px 10px;" data-click="toggleDossierEditMode(true); openTenantDossier('${tenant.id}')">
-              <i class="fa-solid fa-pen-to-square"></i> Editar
+    try {
+      const tenants = dbService.getTenants() || [];
+      const tenant = tenants.find(t => t.id === tenantId) || tenants.find(t => t.unit_code === tenantId);
+      
+      if (!tenant) {
+        profileSheet.innerHTML = `
+          <div style="padding: 40px 20px; text-align: center; background: rgba(255,255,255,0.02); border: 1px dashed var(--border-subtle); border-radius: 12px;">
+            <button type="button" class="ttp-back-btn" onclick="window.closeTenantFullProfile()" style="margin-bottom: 16px;">
+              <i class="fa-solid fa-arrow-left"></i> Volver al Directorio
             </button>
+            <div style="font-weight: 700; color: var(--txt-primary); font-size: 16px;">No se encontró la ficha del arrendatario</div>
+            <div style="font-size: 12px; color: var(--txt-muted); margin-top: 6px;">El arrendatario solicitado (${escapeHtml(tenantId)}) no existe o está desocupado.</div>
           </div>
+        `;
+        return;
+      }
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: 12.5px;">
-            <div>
-              <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Razón Social</div>
-              <strong style="color: var(--txt-primary);">${escapeHtml(tenant.business_name)}</strong>
-            </div>
-            <div>
-              <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Nombre Comercial</div>
-              <span style="color: var(--txt-primary);">${escapeHtml(tenant.trade_name || 'Sin Nombre Comercial')}</span>
-            </div>
-            <div>
-              <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">RIF Jurídico</div>
-              <span style="color: var(--amber); font-family: monospace; font-weight: 700;">${escapeHtml(tenant.rif)}</span>
-            </div>
-            <div>
-              <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Representante Legal</div>
-              <span style="color: var(--txt-primary);">${escapeHtml(tenant.legal_rep_name)} (C.I. ${escapeHtml(tenant.legal_rep_dni)})</span>
-            </div>
-            <div>
-              <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Teléfono & Móvil</div>
-              <span style="color: var(--txt-primary);">${escapeHtml(tenant.phone || 'N/A')}</span>
-            </div>
-            <div>
-              <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Correo Electrónico</div>
-              <span style="color: var(--txt-primary);">${escapeHtml(tenant.email || 'N/A')}</span>
-            </div>
-            <div>
-              <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Unidad & Área</div>
-              <strong style="color: var(--amber);">${escapeHtml(tenant.unit_code)}</strong> (${unit ? (parseFloat(unit.area_m2) || 0).toLocaleString() : 0} m²)
-            </div>
-            <div>
-              <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Canon & Alícuota</div>
-              <strong style="color: var(--emerald);">${contract ? formatMoney(contract.rent_usd) : (unit ? formatMoney(unit.base_rent_usd) : '$0.00')} / mes</strong>
-            </div>
-          </div>
+      const contracts = dbService.getContracts ? dbService.getContracts() : [];
+      const contract = contracts.find(c => c.tenant_id === tenant.id || c.unit_code === tenant.unit_code);
+      const units = dbService.getUnits ? dbService.getUnits() : [];
+      const unit = units.find(u => u.code === tenant.unit_code);
+      const allInvoices = (dbService.getInvoices ? dbService.getInvoices() : []).filter(i => i.tenant_id === tenant.id);
 
-          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px; margin-top: 4px;">
-            <div style="font-size: 11px; font-weight: 700; color: var(--amber); text-transform: uppercase; margin-bottom: 4px;">
-              <i class="fa-solid fa-clipboard-list"></i> Observaciones del Arrendatario
-            </div>
-            <p style="font-size: 12px; color: var(--txt-secondary); margin: 0; line-height: 1.4; font-style: italic;">
-              ${escapeHtml(tenant.observations || 'Sin observaciones registradas.')}
-            </p>
-          </div>
-        </div>
+      const bcvRate = (typeof financialEngine !== 'undefined' && financialEngine.getBcvRate) ? financialEngine.getBcvRate() : 48.5;
+      const formatVes = (amt) => 'Bs. ' + (parseFloat(amt) || 0).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-        <!-- CARD 2: PAYMENT STATUS & SUMMARY -->
-        <div class="ttp-panel-card">
-          <div class="ttp-panel-head">
-            <h3 class="ttp-panel-title">
-              <i class="fa-solid fa-chart-pie" style="color: var(--emerald);"></i> Estado de Pago & Rendimiento
-            </h3>
-            <span class="status-pill ${pctPaid === 100 ? 'pill-active' : (pctPaid >= 70 ? 'pill-warning' : 'pill-overdue')}" style="font-size: 11px;">
-              ${pctPaid}% Pagado
-            </span>
-          </div>
+      // Ordenar facturas por período descendente
+      allInvoices.sort((a, b) => {
+        if (b.period_year !== a.period_year) return (b.period_year || 0) - (a.period_year || 0);
+        return (b.period_month || 0) - (a.period_month || 0);
+      });
 
-          <!-- Barra de Progreso Cobrado vs Pendiente -->
-          <div>
-            <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 6px;">
-              <span style="color: var(--emerald); font-weight: 700;"><i class="fa-solid fa-circle-check"></i> Pagado: ${formatMoney(totalCollected)}</span>
-              <span style="color: var(--rose); font-weight: 700;"><i class="fa-solid fa-circle-exclamation"></i> Pendiente: ${formatMoney(balanceOwed)}</span>
-            </div>
-            <div style="width: 100%; height: 12px; border-radius: 6px; background: rgba(239,68,68,0.25); overflow: hidden; display: flex;">
-              <div style="width: ${pctPaid}%; background: linear-gradient(90deg, #10b981 0%, #059669 100%); height: 100%; transition: width 0.6s ease;"></div>
-            </div>
-          </div>
+      const totalBilled = allInvoices.reduce((a, i) => a + (parseFloat(i.total_usd) || 0), 0);
+      const paidInvoices = allInvoices.filter(i => i.status === 'pagado');
+      const unpaidInvoices = allInvoices.filter(i => i.status !== 'pagado');
+      const totalCollected = paidInvoices.reduce((a, i) => a + (parseFloat(i.total_usd) || 0), 0);
+      const balanceOwed = unpaidInvoices.reduce((a, i) => a + (parseFloat(i.total_usd) || 0), 0);
+      const avgInvoice = allInvoices.length ? (totalBilled / allInvoices.length) : 0;
+      const maxInvoice = allInvoices.length ? Math.max(...allInvoices.map(i => parseFloat(i.total_usd) || 0)) : 0;
+      const pctPaid = totalBilled > 0 ? Math.round((totalCollected / totalBilled) * 100) : 100;
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; font-size: 12.5px;">
-            <div style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
-              <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Promedio Factura</div>
-              <div style="font-size: 18px; font-weight: 800; color: var(--txt-primary); font-family: var(--font-heading); margin-top: 2px;">
-                ${formatMoney(avgInvoice)}
-              </div>
-            </div>
+      const { monogram, gradient } = getMonogramAndGradient(tenant.business_name || 'Arrendatario');
+      const cleanWa = (tenant.whatsapp || '').replace(/[^0-9]/g, '');
 
-            <div style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
-              <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Factura Más Alta</div>
-              <div style="font-size: 18px; font-weight: 800; color: var(--amber); font-family: var(--font-heading); margin-top: 2px;">
-                ${formatMoney(maxInvoice)}
+      // Acuerdos especiales para este inquilino
+      const agreements = (dbService.getAgreements ? dbService.getAgreements() : []).filter(a => a.tenant_id === tenant.id || a.unit_code === tenant.unit_code);
+
+      profileSheet.innerHTML = `
+        <!-- TOP BAR WITH BACK BUTTON & ACTIONS -->
+        <div class="ttp-sheet-topbar">
+          <div class="ttp-sheet-client-meta">
+            <button type="button" class="ttp-back-btn" onclick="window.closeTenantFullProfile()" title="Volver al Directorio de Clientes">
+              <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <div class="ttp-sheet-avatar" style="background: ${gradient};">
+              ${monogram}
+            </div>
+            <div>
+              <h1 class="ttp-sheet-title">${escapeHtml(tenant.business_name)}</h1>
+              <div class="ttp-sheet-subtitle">
+                ${escapeHtml(tenant.email || 'sin-correo@ccms.com')} • RIF: ${escapeHtml(tenant.rif || 'N/A')} • <strong style="color: var(--amber);">${escapeHtml(tenant.unit_code || '')}</strong> • ${escapeHtml(tenant.commercial_activity || 'Comercial')}
               </div>
             </div>
           </div>
 
-          <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px dashed var(--border-subtle); font-size: 12px; color: var(--txt-secondary);">
-            <span>Cuotas al día: <strong style="color: var(--emerald);">${paidInvoices.length}</strong></span>
-            <span>Cuotas vencidas: <strong style="color: var(--rose);">${unpaidInvoices.length}</strong></span>
+          <div class="ttp-sheet-actions">
+            <button type="button" class="btn-currency-toggle" onclick="window.openTenantDossier('${tenant.id}')" style="font-size: 12px; padding: 7px 14px;">
+              <i class="fa-solid fa-folder-open" style="color: var(--amber);"></i> <span>Expediente Modal</span>
+            </button>
+            <button type="button" class="btn-currency-toggle" onclick="window.viewTenantContract('${tenant.id}')" style="color: var(--cyan); border-color: var(--cyan); font-size: 12px; padding: 7px 14px;">
+              <i class="fa-solid fa-file-contract"></i> <span>Ver Contrato Legal</span>
+            </button>
+            <button type="button" class="btn-onboarding-cta" onclick="window.openDossierQuickPay('${tenant.id}')" style="background: var(--emerald); border-color: var(--emerald); color: #fff; font-size: 12px; padding: 7px 16px;">
+              <i class="fa-solid fa-receipt"></i> <span>Registrar Pago</span>
+            </button>
+            ${cleanWa ? `
+              <a href="https://wa.me/${cleanWa}" target="_blank" rel="noopener noreferrer" class="btn-onboarding-cta" style="background: #25D366; border-color: #25D366; color: #fff; font-size: 12px; padding: 7px 14px; text-decoration: none;">
+                <i class="fa-brands fa-whatsapp"></i> <span>WhatsApp</span>
+              </a>
+            ` : ''}
           </div>
         </div>
 
-        <!-- CARD 3: INVOICE HISTORY TABLE -->
-        <div class="ttp-panel-card" style="grid-column: 1/-1;">
-          <div class="ttp-panel-head">
-            <h3 class="ttp-panel-title">
-              <i class="fa-solid fa-file-invoice-dollar" style="color: var(--cyan);"></i> Historial Completo de Facturas & Cuotas
-            </h3>
-            <button type="button" class="btn-currency-toggle" data-click="exportPaymentsCSV()" style="font-size: 11px; padding: 4px 10px;">
-              <i class="fa-solid fa-file-csv" style="color: var(--emerald);"></i> Exportar CSV
-            </button>
+        <!-- TOP 3 KPIS BANNER (IMAGE 5 STYLE) -->
+        <div class="ttp-kpi-banner">
+          <div class="ttp-kpi-sheet-card">
+            <span class="ttp-kpi-sheet-label">Total Cuotas / Facturas</span>
+            <span class="ttp-kpi-sheet-val" style="color: var(--cyan);">${allInvoices.length} <span style="font-size: 14px; font-weight: 600; color: var(--txt-muted);">Emitidas</span></span>
+          </div>
+          <div class="ttp-kpi-sheet-card">
+            <span class="ttp-kpi-sheet-label">Total Facturado</span>
+            <span class="ttp-kpi-sheet-val" style="color: var(--txt-primary);">${formatMoney(totalBilled)}</span>
+          </div>
+          <div class="ttp-kpi-sheet-card" style="border-color: ${balanceOwed > 0 ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)'};">
+            <span class="ttp-kpi-sheet-label">Saldo Pendiente / Mora</span>
+            <span class="ttp-kpi-sheet-val" style="color: ${balanceOwed > 0 ? 'var(--rose)' : 'var(--emerald)'};">${formatMoney(balanceOwed)}</span>
+          </div>
+        </div>
+
+        <!-- 4-CARD PROFILE DASHBOARD GRID -->
+        <div class="ttp-profile-grid">
+          
+          <!-- CARD 1: CONTACT DETAILS -->
+          <div class="ttp-panel-card">
+            <div class="ttp-panel-head">
+              <h3 class="ttp-panel-title">
+                <i class="fa-solid fa-address-card" style="color: var(--amber);"></i> Datos del Arrendatario & Contacto
+              </h3>
+              <button type="button" class="btn-currency-toggle" style="font-size: 11px; padding: 4px 10px;" onclick="window.toggleDossierEditMode && window.toggleDossierEditMode(true); window.openTenantDossier('${tenant.id}')">
+                <i class="fa-solid fa-pen-to-square"></i> Editar
+              </button>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: 12.5px;">
+              <div>
+                <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Razón Social</div>
+                <strong style="color: var(--txt-primary);">${escapeHtml(tenant.business_name)}</strong>
+              </div>
+              <div>
+                <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Nombre Comercial</div>
+                <span style="color: var(--txt-primary);">${escapeHtml(tenant.trade_name || 'Sin Nombre Comercial')}</span>
+              </div>
+              <div>
+                <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">RIF Jurídico</div>
+                <span style="color: var(--amber); font-family: monospace; font-weight: 700;">${escapeHtml(tenant.rif || 'N/A')}</span>
+              </div>
+              <div>
+                <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Representante Legal</div>
+                <span style="color: var(--txt-primary);">${escapeHtml(tenant.legal_rep_name || 'N/A')} ${tenant.legal_rep_dni ? `(C.I. ${escapeHtml(tenant.legal_rep_dni)})` : ''}</span>
+              </div>
+              <div>
+                <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Teléfono & Móvil</div>
+                <span style="color: var(--txt-primary);">${escapeHtml(tenant.phone || 'N/A')}</span>
+              </div>
+              <div>
+                <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Correo Electrónico</div>
+                <span style="color: var(--txt-primary);">${escapeHtml(tenant.email || 'N/A')}</span>
+              </div>
+              <div>
+                <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Unidad & Área</div>
+                <strong style="color: var(--amber);">${escapeHtml(tenant.unit_code || '')}</strong> (${unit ? (parseFloat(unit.area_m2) || 0).toLocaleString() : 0} m²)
+              </div>
+              <div>
+                <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Canon & Alícuota</div>
+                <strong style="color: var(--emerald);">${contract ? formatMoney(contract.rent_usd) : (unit ? formatMoney(unit.base_rent_usd) : '$0.00')} / mes</strong>
+              </div>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px; margin-top: 4px;">
+              <div style="font-size: 11px; font-weight: 700; color: var(--amber); text-transform: uppercase; margin-bottom: 4px;">
+                <i class="fa-solid fa-clipboard-list"></i> Observaciones del Arrendatario
+              </div>
+              <p style="font-size: 12px; color: var(--txt-secondary); margin: 0; line-height: 1.4; font-style: italic;">
+                ${escapeHtml(tenant.observations || 'Sin observaciones registradas.')}
+              </p>
+            </div>
           </div>
 
-          <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
-            <table class="modern-table" style="font-size: 12px;">
-              <thead>
-                <tr>
-                  <th>N° Recibo / Período</th>
-                  <th>Concepto</th>
-                  <th>Emisión</th>
-                  <th>Vencimiento</th>
-                  <th>Monto USD</th>
-                  <th>Equiv. Bs. BCV</th>
-                  <th>Estado</th>
-                  <th>Acción</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${allInvoices.length === 0 ? `
-                  <tr><td colspan="8" style="text-align:center; padding: 24px; color: var(--txt-muted);">No hay facturas emitidas aún.</td></tr>
-                ` : allInvoices.map(inv => {
-                  let pill = '<span class="status-pill pill-active"><i class="fa-solid fa-circle-check"></i> Pagado</span>';
-                  if (inv.status === 'en_mora') pill = '<span class="status-pill pill-overdue"><i class="fa-solid fa-circle-exclamation"></i> En Mora</span>';
-                  else if (inv.status === 'pendiente' || inv.status === 'verificando') pill = '<span class="status-pill pill-warning"><i class="fa-solid fa-clock"></i> Pendiente</span>';
+          <!-- CARD 2: PAYMENT STATUS & SUMMARY -->
+          <div class="ttp-panel-card">
+            <div class="ttp-panel-head">
+              <h3 class="ttp-panel-title">
+                <i class="fa-solid fa-chart-pie" style="color: var(--emerald);"></i> Estado de Pago & Rendimiento
+              </h3>
+              <span class="status-pill ${pctPaid === 100 ? 'pill-active' : (pctPaid >= 70 ? 'pill-warning' : 'pill-overdue')}" style="font-size: 11px;">
+                ${pctPaid}% Pagado
+              </span>
+            </div>
 
-                  const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-                  const periodTxt = `${monthNames[(inv.period_month || 1) - 1]} ${inv.period_year || 2026}`;
+            <!-- Barra de Progreso Cobrado vs Pendiente -->
+            <div>
+              <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 6px;">
+                <span style="color: var(--emerald); font-weight: 700;"><i class="fa-solid fa-circle-check"></i> Pagado: ${formatMoney(totalCollected)}</span>
+                <span style="color: var(--rose); font-weight: 700;"><i class="fa-solid fa-circle-exclamation"></i> Pendiente: ${formatMoney(balanceOwed)}</span>
+              </div>
+              <div style="width: 100%; height: 12px; border-radius: 6px; background: rgba(239,68,68,0.25); overflow: hidden; display: flex;">
+                <div style="width: ${pctPaid}%; background: linear-gradient(90deg, #10b981 0%, #059669 100%); height: 100%; transition: width 0.6s ease;"></div>
+              </div>
+            </div>
 
-                  return `
-                    <tr>
-                      <td><strong style="color: var(--amber);">${escapeHtml(inv.invoice_number || inv.id)}</strong><div style="font-size: 10.5px; color: var(--txt-muted);">${periodTxt}</div></td>
-                      <td>${escapeHtml(inv.concept || 'Canon de Arrendamiento + Condominio')}</td>
-                      <td>${inv.issue_date || '—'}</td>
-                      <td>${inv.due_date || '—'}</td>
-                      <td><strong style="color: var(--txt-primary);">${formatMoney(inv.total_usd)}</strong></td>
-                      <td><span style="color: var(--amber); font-weight: 700;">${formatVes(inv.total_ves || (inv.total_usd * 48.5))}</span></td>
-                      <td>${pill}</td>
-                      <td>
-                        <div style="display: flex; gap: 6px;">
-                          <button class="btn-action-icon" title="Ver Recibo Imprimible" onclick="window.viewInvoiceDetail('${inv.id}')">
-                            <i class="fa-solid fa-print"></i>
-                          </button>
-                          ${inv.status !== 'pagado' ? `
-                            <button class="btn-action-icon" title="Registrar Pago" style="color: var(--emerald);" onclick="window.openPaymentModal('${inv.id}')">
-                              <i class="fa-solid fa-cash-register"></i>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; font-size: 12.5px;">
+              <div style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Promedio Factura</div>
+                <div style="font-size: 18px; font-weight: 800; color: var(--txt-primary); font-family: var(--font-heading); margin-top: 2px;">
+                  ${formatMoney(avgInvoice)}
+                </div>
+              </div>
+
+              <div style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Factura Más Alta</div>
+                <div style="font-size: 18px; font-weight: 800; color: var(--amber); font-family: var(--font-heading); margin-top: 2px;">
+                  ${formatMoney(maxInvoice)}
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px dashed var(--border-subtle); font-size: 12px; color: var(--txt-secondary);">
+              <span>Cuotas al día: <strong style="color: var(--emerald);">${paidInvoices.length}</strong></span>
+              <span>Cuotas vencidas: <strong style="color: var(--rose);">${unpaidInvoices.length}</strong></span>
+            </div>
+          </div>
+
+          <!-- CARD 3: INVOICE HISTORY TABLE -->
+          <div class="ttp-panel-card" style="grid-column: 1/-1;">
+            <div class="ttp-panel-head">
+              <h3 class="ttp-panel-title">
+                <i class="fa-solid fa-file-invoice-dollar" style="color: var(--cyan);"></i> Historial Completo de Facturas & Cuotas
+              </h3>
+              <button type="button" class="btn-currency-toggle" onclick="window.exportPaymentsCSV && window.exportPaymentsCSV()" style="font-size: 11px; padding: 4px 10px;">
+                <i class="fa-solid fa-file-csv" style="color: var(--emerald);"></i> Exportar CSV
+              </button>
+            </div>
+
+            <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
+              <table class="modern-table" style="font-size: 12px;">
+                <thead>
+                  <tr>
+                    <th>N° Recibo / Período</th>
+                    <th>Concepto</th>
+                    <th>Emisión</th>
+                    <th>Vencimiento</th>
+                    <th>Monto USD</th>
+                    <th>Equiv. Bs. BCV</th>
+                    <th>Estado</th>
+                    <th>Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${allInvoices.length === 0 ? `
+                    <tr><td colspan="8" style="text-align:center; padding: 24px; color: var(--txt-muted);">No hay facturas emitidas aún.</td></tr>
+                  ` : allInvoices.map(inv => {
+                    let pill = '<span class="status-pill pill-active"><i class="fa-solid fa-circle-check"></i> Pagado</span>';
+                    if (inv.status === 'en_mora') pill = '<span class="status-pill pill-overdue"><i class="fa-solid fa-circle-exclamation"></i> En Mora</span>';
+                    else if (inv.status === 'pendiente' || inv.status === 'verificando') pill = '<span class="status-pill pill-warning"><i class="fa-solid fa-clock"></i> Pendiente</span>';
+
+                    const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+                    const periodTxt = `${monthNames[(inv.period_month || 1) - 1]} ${inv.period_year || 2026}`;
+                    const vesEquivalent = inv.total_ves || ((parseFloat(inv.total_usd) || 0) * bcvRate);
+
+                    return `
+                      <tr>
+                        <td><strong style="color: var(--amber);">${escapeHtml(inv.invoice_number || inv.id)}</strong><div style="font-size: 10.5px; color: var(--txt-muted);">${periodTxt}</div></td>
+                        <td>${escapeHtml(inv.concept || 'Canon de Arrendamiento + Condominio')}</td>
+                        <td>${inv.issue_date || '—'}</td>
+                        <td>${inv.due_date || '—'}</td>
+                        <td><strong style="color: var(--txt-primary);">${formatMoney(inv.total_usd)}</strong></td>
+                        <td><span style="color: var(--amber); font-weight: 700;">${formatVes(vesEquivalent)}</span></td>
+                        <td>${pill}</td>
+                        <td>
+                          <div style="display: flex; gap: 6px;">
+                            <button class="btn-action-icon" title="Imprimir Recibo Oficial" onclick="window.printReceipt('${inv.id}')">
+                              <i class="fa-solid fa-print"></i>
                             </button>
-                          ` : ''}
-                        </div>
-                      </td>
-                    </tr>
-                  `;
-                }).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- CARD 4: ACUERDOS ESPECIALES, OBRAS & ARCHIVOS ADJUNTOS -->
-        <div class="ttp-panel-card" style="grid-column: 1/-1;">
-          <div class="ttp-panel-head">
-            <h3 class="ttp-panel-title">
-              <i class="fa-solid fa-handshake-angle" style="color: var(--purple);"></i> Acuerdos Especiales, Deducciones por Obras & Soporte Documental
-            </h3>
-            <span class="status-pill pill-info" style="font-size: 10px;">Art. 13 & 32 G.O. 40.418</span>
+                            ${inv.status !== 'pagado' ? `
+                              <button class="btn-action-icon" title="Registrar Pago" style="color: var(--emerald);" onclick="window.openPaymentModal('${inv.id}')">
+                                <i class="fa-solid fa-cash-register"></i>
+                              </button>
+                            ` : ''}
+                          </div>
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-            <!-- SUB-PANEL 1: ACUERDOS REGISTRADOS -->
-            <div>
-              <h4 style="font-size: 12px; font-weight: 700; color: var(--amber); text-transform: uppercase; margin: 0 0 10px 0;">
-                <i class="fa-solid fa-list-check"></i> Acuerdos Vigentes
-              </h4>
-              ${agreements.length === 0 ? `
-                <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px dashed var(--border-subtle); border-radius: 8px; font-size: 12px; color: var(--txt-muted); text-align: center;">
-                  No hay acuerdos o deducciones especiales registrados para este arrendatario.
-                </div>
-              ` : `
-                <div style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto;">
-                  ${agreements.map(a => `
-                    <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 10px; font-size: 12px;">
-                      <div style="display: flex; justify-content: space-between; font-weight: 700; color: var(--txt-primary);">
-                        <span>${escapeHtml(a.type || 'Deducción')}</span>
-                        <span style="color: var(--emerald);">${formatMoney(a.monthly_discount_usd)} / mes</span>
-                      </div>
-                      <div style="font-size: 11px; color: var(--txt-secondary); margin-top: 3px;">${escapeHtml(a.description || '')}</div>
-                      <div style="font-size: 10px; color: var(--txt-muted); margin-top: 4px;">Vigencia: ${a.start_date} al ${a.end_date}</div>
-                    </div>
-                  `).join('')}
-                </div>
-              `}
-              <div style="margin-top: 12px;">
-                <button type="button" class="btn-currency-toggle" style="font-size: 11.5px; padding: 6px 12px;" data-click="openTenantDossier('${tenant.id}')">
-                  <i class="fa-solid fa-plus-circle" style="color: var(--amber);"></i> Registrar Nuevo Acuerdo en Modal
-                </button>
-              </div>
+          <!-- CARD 4: ACUERDOS ESPECIALES, OBRAS & ARCHIVOS ADJUNTOS -->
+          <div class="ttp-panel-card" style="grid-column: 1/-1;">
+            <div class="ttp-panel-head">
+              <h3 class="ttp-panel-title">
+                <i class="fa-solid fa-handshake-angle" style="color: var(--purple);"></i> Acuerdos Especiales, Deducciones por Obras & Soporte Documental
+              </h3>
+              <span class="status-pill pill-info" style="font-size: 10px;">Art. 13 & 32 G.O. 40.418</span>
             </div>
 
-            <!-- SUB-PANEL 2: DROPZONE UNIVERSAL PARA ADJUNTAR SOPORTES / CONTRATO / FOTOS DE REPARACIONES -->
-            <div>
-              <h4 style="font-size: 12px; font-weight: 700; color: var(--cyan); text-transform: uppercase; margin: 0 0 10px 0;">
-                <i class="fa-solid fa-paperclip"></i> Cargar Anexos & Soportes de Obras
-              </h4>
-
-              <input type="file" id="client-profile-doc-file" accept="image/*,.pdf" style="display: none;" onchange="window.handleProfileDocFileChange(event, '${tenant.id}')">
-              
-              <div class="custom-file-dropzone amber-zone" id="client-profile-doc-dropzone" onclick="document.getElementById('client-profile-doc-file').click()" style="padding: 16px; text-align: center; border: 2px dashed var(--border-subtle); border-radius: 10px; cursor: pointer; background: rgba(255,255,255,0.02);">
-                <i class="fa-solid fa-cloud-arrow-up dropzone-icon" style="font-size: 24px; color: var(--amber); margin-bottom: 6px;"></i>
-                <div class="dropzone-main-text" style="font-size: 12px; font-weight: 700; color: var(--txt-primary);">Arrastra un archivo o haz clic para subir</div>
-                <div class="dropzone-sub-text" style="font-size: 10.5px; color: var(--txt-muted);">Facturas de compras, fotos de remodelaciones o contratos escaneados (PDF, JPG, PNG)</div>
-              </div>
-
-              <div id="profile-doc-preview-container" class="file-preview-card" style="display: none; margin-top: 10px;">
-                <div class="file-preview-info">
-                  <i class="fa-solid fa-file-circle-check" id="profile-doc-icon" style="color: var(--emerald); font-size: 20px;"></i>
-                  <div style="min-width: 0;">
-                    <div id="profile-doc-name" class="file-preview-name" style="font-size: 12px;"></div>
-                    <div id="profile-doc-size" class="file-preview-size" style="font-size: 10.5px;"></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+              <!-- SUB-PANEL 1: ACUERDOS REGISTRADOS -->
+              <div>
+                <h4 style="font-size: 12px; font-weight: 700; color: var(--amber); text-transform: uppercase; margin: 0 0 10px 0;">
+                  <i class="fa-solid fa-list-check"></i> Acuerdos Vigentes
+                </h4>
+                ${agreements.length === 0 ? `
+                  <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px dashed var(--border-subtle); border-radius: 8px; font-size: 12px; color: var(--txt-muted); text-align: center;">
+                    No hay acuerdos o deducciones especiales registrados para este arrendatario.
                   </div>
+                ` : `
+                  <div style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto;">
+                    ${agreements.map(a => `
+                      <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 10px; font-size: 12px;">
+                        <div style="display: flex; justify-content: space-between; font-weight: 700; color: var(--txt-primary);">
+                          <span>${escapeHtml(a.type || 'Deducción')}</span>
+                          <span style="color: var(--emerald);">${formatMoney(a.monthly_discount_usd)} / mes</span>
+                        </div>
+                        <div style="font-size: 11px; color: var(--txt-secondary); margin-top: 3px;">${escapeHtml(a.description || '')}</div>
+                        <div style="font-size: 10px; color: var(--txt-muted); margin-top: 4px;">Vigencia: ${a.start_date} al ${a.end_date}</div>
+                      </div>
+                    `).join('')}
+                  </div>
+                `}
+                <div style="margin-top: 12px;">
+                  <button type="button" class="btn-currency-toggle" style="font-size: 11.5px; padding: 6px 12px;" onclick="window.openTenantDossier('${tenant.id}')">
+                    <i class="fa-solid fa-plus-circle" style="color: var(--amber);"></i> Registrar Nuevo Acuerdo en Modal
+                  </button>
                 </div>
-                <button type="button" class="btn-remove-file" onclick="window.removeProfileDoc()" title="Remover archivo"><i class="fa-solid fa-xmark"></i></button>
               </div>
 
-              <div id="profile-uploaded-docs-list" style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;">
-                <!-- Documentos guardados previamente -->
+              <!-- SUB-PANEL 2: DROPZONE UNIVERSAL PARA ADJUNTAR SOPORTES / CONTRATO / FOTOS DE REPARACIONES -->
+              <div>
+                <h4 style="font-size: 12px; font-weight: 700; color: var(--cyan); text-transform: uppercase; margin: 0 0 10px 0;">
+                  <i class="fa-solid fa-paperclip"></i> Cargar Anexos & Soportes de Obras
+                </h4>
+
+                <input type="file" id="client-profile-doc-file" accept="image/*,.pdf" style="display: none;" onchange="window.handleProfileDocFileChange(event, '${tenant.id}')">
+                
+                <div class="custom-file-dropzone amber-zone" id="client-profile-doc-dropzone" style="padding: 16px; text-align: center; border: 2px dashed var(--border-subtle); border-radius: 10px; cursor: pointer; background: rgba(255,255,255,0.02);">
+                  <i class="fa-solid fa-cloud-arrow-up dropzone-icon" style="font-size: 24px; color: var(--amber); margin-bottom: 6px;"></i>
+                  <div class="dropzone-main-text" style="font-size: 12px; font-weight: 700; color: var(--txt-primary);">Arrastra un archivo o haz clic para subir</div>
+                  <div class="dropzone-sub-text" style="font-size: 10.5px; color: var(--txt-muted);">Facturas de compras, fotos de remodelaciones o contratos escaneados (PDF, JPG, PNG)</div>
+                </div>
+
+                <div id="profile-doc-preview-container" class="file-preview-card" style="display: none; margin-top: 10px;">
+                  <div class="file-preview-info">
+                    <i class="fa-solid fa-file-circle-check" id="profile-doc-icon" style="color: var(--emerald); font-size: 20px;"></i>
+                    <div style="min-width: 0;">
+                      <div id="profile-doc-name" class="file-preview-name" style="font-size: 12px;"></div>
+                      <div id="profile-doc-size" class="file-preview-size" style="font-size: 10.5px;"></div>
+                    </div>
+                  </div>
+                  <button type="button" class="btn-remove-file" onclick="window.removeProfileDoc()" title="Remover archivo"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <div id="profile-uploaded-docs-list" style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;">
+                  <!-- Documentos guardados previamente -->
+                </div>
               </div>
             </div>
           </div>
+
         </div>
+      `;
 
-      </div>
-    `;
+      // Inicializar click y drag-and-drop en el dropzone del perfil
+      const docDropzone = document.getElementById('client-profile-doc-dropzone');
+      const docFileInput = document.getElementById('client-profile-doc-file');
+      if (docDropzone && docFileInput) {
+        docDropzone.onclick = () => docFileInput.click();
+        ['dragenter', 'dragover'].forEach(eventName => {
+          docDropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            docDropzone.classList.add('drag-active', 'dragover');
+          }, false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+          docDropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            docDropzone.classList.remove('drag-active', 'dragover');
+          }, false);
+        });
+        docDropzone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            try {
+              docFileInput.files = e.dataTransfer.files;
+            } catch (err) {}
+            window.handleProfileDocFileChange(e, tenant.id);
+          }
+        }, false);
+      }
 
-    // Renderizar documentos ya adjuntos previamente si existen en localStorage
-    renderTenantSavedDocs(tenantId);
+      // Renderizar documentos ya adjuntos previamente si existen en localStorage
+      renderTenantSavedDocs(tenant.id);
+    } catch (err) {
+      console.error('[renderClientFullProfile Critical Error]', err);
+      profileSheet.innerHTML = `
+        <div style="padding: 30px; text-align: center; background: rgba(239,68,68,0.05); border: 1px solid rgba(239,68,68,0.2); border-radius: 12px;">
+          <button type="button" class="ttp-back-btn" onclick="window.closeTenantFullProfile()" style="margin-bottom: 16px;">
+            <i class="fa-solid fa-arrow-left"></i> Volver al Directorio
+          </button>
+          <div style="font-weight: 700; color: var(--rose); font-size: 16px;">Error al cargar la ficha del arrendatario</div>
+          <div style="font-size: 12px; color: var(--txt-secondary); margin-top: 6px;">Ocurrió un error inesperado al procesar los datos de este inquilino.</div>
+        </div>
+      `;
+    }
   };
 
   // Manejo de archivos adjuntos del perfil de inquilino
@@ -1509,7 +1583,7 @@ document.addEventListener('DOMContentLoaded', () => {
     listEl.innerHTML = docs.map(d => `
       <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
         <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
-          <i class="${d.type.includes('pdf') ? 'fa-solid fa-file-pdf' : 'fa-solid fa-file-image'}" style="color: var(--amber);"></i>
+          <i class="${(d.type && d.type.includes('pdf')) ? 'fa-solid fa-file-pdf' : 'fa-solid fa-file-image'}" style="color: var(--amber);"></i>
           <span style="font-size: 11.5px; font-weight: 700; color: var(--txt-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(d.name)}</span>
           <span style="font-size: 10px; color: var(--txt-muted);">(${(d.size / 1024).toFixed(1)} KB)</span>
         </div>
@@ -3392,10 +3466,14 @@ document.addEventListener('DOMContentLoaded', () => {
     window.closeModal('modal-dossier');
   };
 
-  window.openDossierQuickPay = function() {
-    if (!currentDossierTenantId) return;
-    const invoices = dbService.getInvoices().filter(i => i.tenant_id === currentDossierTenantId && i.status !== 'pagado');
-    window.closeDossierModal();
+  window.openDossierQuickPay = function(tenantId) {
+    const targetId = tenantId || currentDossierTenantId;
+    if (!targetId) return;
+    currentDossierTenantId = targetId;
+    const invoices = (dbService.getInvoices ? dbService.getInvoices() : []).filter(i => i.tenant_id === targetId && i.status !== 'pagado');
+    if (typeof window.closeDossierModal === 'function') {
+      window.closeDossierModal();
+    }
     if (invoices.length > 0) {
       window.openPaymentModal(invoices[0].id);
     } else {
