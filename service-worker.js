@@ -5,7 +5,7 @@
  * ==============================================================================
  */
 
-const CACHE_NAME = 'ccms-erp-v2.9.2-docgen';
+const CACHE_NAME = 'ccms-erp-v2.9.3-approval-flow';
 const STATIC_ASSETS = [
   '/',
   '/index.html',

@@ -1221,8 +1221,16 @@ class DatabaseService {
     invoice.status = 'pagado';
     invoice.paid_at = payment.payment_date;
 
+    // Verificar y normalizar solvencia del inquilino tras la aprobación
+    if (tenant) {
+      const remainingOverdue = (data.invoices || []).filter(i => i.tenant_id === tenant.id && (i.status === 'en_mora' || i.status === 'pendiente') && i.id !== invoiceId);
+      if (remainingOverdue.length === 0) {
+        tenant.status = 'activo';
+      }
+    }
+
     // --- GENERACIÓN AUTOMÁTICA DEL RECIBO OFICIAL DE COBRANZA & REGISTRO CONTABLE ---
-    const tenant = data.tenants.find(t => t.id === invoice.tenant_id) || { business_name: 'Arrendatario', rif: 'N/A' };
+    const tenantObj = data.tenants.find(t => t.id === invoice.tenant_id) || { business_name: 'Arrendatario', rif: 'N/A' };
     const receiptNum = `REC-${invoice.period_year}-${String(invoice.period_month).padStart(2, '0')}-${invoice.unit_code}`;
     
     const receipt = {
@@ -1231,8 +1239,8 @@ class DatabaseService {
       invoice_id: invoiceId,
       invoice_number: invoice.invoice_number,
       tenant_id: invoice.tenant_id,
-      tenant_name: tenant.business_name,
-      tenant_rif: tenant.rif,
+      tenant_name: tenantObj.business_name,
+      tenant_rif: tenantObj.rif,
       unit_code: invoice.unit_code,
       period_month: invoice.period_month,
       period_year: invoice.period_year,
@@ -1292,6 +1300,63 @@ class DatabaseService {
     invoice.status = 'pendiente';
     this.saveData(data);
     return payment;
+  }
+
+  // --- MÓDULO DE ACUERDOS DE OBRAS Y DEDUCCIONES (ARTS. 13 & 32 G.O. 40.418) ---
+  getAgreements() {
+    const data = this.getData();
+    if (!data.agreements) {
+      try {
+        data.agreements = JSON.parse(localStorage.getItem('ccms_agreements') || '[]');
+      } catch (e) {
+        data.agreements = [];
+      }
+    }
+    return data.agreements || [];
+  }
+
+  saveAgreement(agrData) {
+    const data = this.getData();
+    if (!data.agreements) data.agreements = [];
+    const newAgr = {
+      id: agrData.id || 'agr-' + Date.now(),
+      tenant_id: agrData.tenant_id,
+      unit_code: agrData.unit_code,
+      type: agrData.type || 'Deducción de Canon por Obras Mayores (Art. 13 & 32)',
+      description: agrData.description || 'Acuerdo de Obras y Mejoras Estructurales',
+      total_amount_usd: parseFloat(agrData.total_amount_usd) || 0,
+      monthly_discount_usd: parseFloat(agrData.monthly_discount_usd) || 0,
+      months_count: parseInt(agrData.months_count) || 6,
+      start_date: agrData.start_date || new Date().toISOString().split('T')[0],
+      end_date: agrData.end_date || '',
+      proof_file: agrData.proof_file || null,
+      created_at: new Date().toISOString(),
+      status: 'activo'
+    };
+
+    const existingIdx = data.agreements.findIndex(a => a.id === newAgr.id);
+    if (existingIdx >= 0) {
+      data.agreements[existingIdx] = newAgr;
+    } else {
+      data.agreements.unshift(newAgr);
+    }
+
+    this.saveData(data);
+    try {
+      localStorage.setItem('ccms_agreements', JSON.stringify(data.agreements));
+    } catch (e) {}
+    return newAgr;
+  }
+
+  deleteAgreement(agreementId) {
+    const data = this.getData();
+    if (!data.agreements) return [];
+    data.agreements = data.agreements.filter(a => a.id !== agreementId);
+    this.saveData(data);
+    try {
+      localStorage.setItem('ccms_agreements', JSON.stringify(data.agreements));
+    } catch (e) {}
+    return data.agreements;
   }
 
   // --- MÓDULO DE CONFIGURACIÓN DE LA APP ---

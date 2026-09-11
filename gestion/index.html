@@ -2736,19 +2736,147 @@
   </div>
 </div>
 
+<!-- ========================================================================= -->
+<!-- MODAL: VISOR Y VISTA PREVIA DE DOCUMENTOS LEGALES OFICIALES (G.O. 40.418) -->
+<!-- ========================================================================= -->
+<div class="modal-overlay" id="modal-doc-preview" style="display: none;">
+  <div class="modal-window" style="max-width: 880px; width: 95%;">
+    <div class="modal-header" style="flex-wrap: wrap; gap: 10px;">
+      <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-file-shield" style="color: var(--cyan);"></i> <span id="doc-preview-modal-title">Vista Previa de Documento Legal Oficial</span>
+      </h3>
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <button type="button" class="btn-onboarding-cta" onclick="window.printActiveDocPreview()" style="font-size: 11.5px; padding: 6px 14px; background: var(--cyan); color: #000; font-weight: 800; border-color: var(--cyan);">
+          <i class="fa-solid fa-print"></i> Imprimir Documento
+        </button>
+        <button type="button" class="btn-currency-toggle" onclick="window.downloadActiveDocPreview()" style="font-size: 11.5px; padding: 6px 12px;">
+          <i class="fa-solid fa-download"></i> Descargar HTML
+        </button>
+        <button class="modal-close" onclick="window.closeDocPreviewModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+    </div>
+    <div class="modal-body" style="max-height: 75vh; overflow-y: auto; padding: 20px; background: rgba(15, 23, 42, 0.6);">
+      <div id="doc-preview-content-wrapper" style="background: white; color: #0f172a; border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,0.45); padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        <!-- Contenido renderizado dinámicamente -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: REGISTRO DE ACUERDO DE OBRAS Y DEDUCCIÓN AL CANON (ARTS. 13 & 32)  -->
+<!-- ========================================================================= -->
+<div class="modal-overlay" id="modal-agreement-editor" style="display: none;">
+  <div class="modal-window" style="max-width: 650px; width: 95%;">
+    <div class="modal-header">
+      <h3 class="modal-title">
+        <i class="fa-solid fa-handshake-angle" style="color: var(--purple);"></i> Registrar Acuerdo de Obras & Deducción de Canon
+      </h3>
+      <button class="modal-close" onclick="window.closeAgreementModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form id="agreement-editor-form" onsubmit="window.saveAgreementFromModal(event)" class="modal-body" style="display: flex; flex-direction: column; gap: 14px; padding: 20px;">
+      <input type="hidden" id="agr-modal-tenant-id" value="">
+      <input type="hidden" id="agr-modal-unit-code" value="">
+
+      <div style="background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.25); border-radius: 8px; padding: 12px; font-size: 12px;">
+        <div style="font-weight: 700; color: var(--amber); margin-bottom: 2px;">
+          <i class="fa-solid fa-scale-balanced"></i> Base Legal: Arts. 13 y 32 — Ley de Arrendamiento Comercial (G.O. 40.418)
+        </div>
+        <div style="color: var(--txt-secondary); font-size: 11px;">
+          Permite formalizar y amortizar inversiones o remodelaciones mayores realizadas por el arrendatario deduciendo cuotas mensuales de su canon de arrendamiento.
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label style="font-size: 11.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Arrendatario & Local Beneficiario</label>
+        <input type="text" class="form-control" id="agr-modal-tenant-display" readonly style="background: rgba(255,255,255,0.04); font-weight: 700; color: var(--amber);">
+      </div>
+
+      <div class="form-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label style="font-size: 11.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Tipo de Acuerdo / Compensación</label>
+          <select class="form-control" id="agr-modal-type" required style="font-size: 12px;">
+            <option value="Compensación de Obras Mayores (Art. 13 & 32 G.O. 40.418)">Compensación de Obras Mayores (Art. 13 & 32)</option>
+            <option value="Reparación Estructural / Santamarías / Fachada">Reparación Estructural / Santamarías / Fachada</option>
+            <option value="Acondicionamiento Inicial / Gracia Parcial">Acondicionamiento Inicial / Gracia Parcial</option>
+            <option value="Mantenimiento Mayor de Tuberías / Electricidad">Mantenimiento Mayor de Tuberías / Electricidad</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label style="font-size: 11.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Cuotas / Meses de Amortización</label>
+          <input type="number" min="1" max="36" class="form-control" id="agr-modal-months" value="6" required oninput="window.calcAgreementMonthlyDiscount()">
+        </div>
+      </div>
+
+      <div class="form-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label style="font-size: 11.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Inversión Total Autorizada ($ USD)</label>
+          <input type="number" step="0.01" class="form-control" id="agr-modal-total-usd" placeholder="Ej: 600.00" required oninput="window.calcAgreementMonthlyDiscount()">
+        </div>
+        <div class="form-group">
+          <label style="font-size: 11.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Deducción Mensual al Canon ($ USD/mes)</label>
+          <input type="number" step="0.01" class="form-control" id="agr-modal-monthly-usd" placeholder="Ej: 100.00" required style="font-weight: 800; color: var(--emerald);">
+        </div>
+      </div>
+
+      <div class="form-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label style="font-size: 11.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Fecha de Inicio de Deducción</label>
+          <input type="date" class="form-control" id="agr-modal-start-date" required>
+        </div>
+        <div class="form-group">
+          <label style="font-size: 11.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Fecha de Culminación</label>
+          <input type="date" class="form-control" id="agr-modal-end-date" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label style="font-size: 11.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Descripción Detallada de las Obras / Mejoras Realizadas</label>
+        <textarea class="form-control" id="agr-modal-desc" rows="3" placeholder="Detalle de trabajos, materiales y especificaciones de la obra ejecutada por el arrendatario..." required style="font-size: 12px; resize: vertical;"></textarea>
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px; border-top: 1px dashed var(--border-subtle); padding-top: 14px;">
+        <button type="button" class="btn-cancel" onclick="window.closeAgreementModal()" style="padding: 8px 16px; border-radius: 8px; font-size: 12px;">
+          Cancelar
+        </button>
+        <button type="submit" class="btn-onboarding-cta" style="background: var(--purple); border-color: var(--purple); color: #fff; padding: 8px 20px; font-size: 12px; font-weight: 800; border-radius: 8px;">
+          <i class="fa-solid fa-floppy-disk"></i> Registrar y Formalizar Acuerdo
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: VISOR DE COMPROBANTE BANCARIO & VALIDACIÓN DE PAGO (AUDITORÍA)     -->
+<!-- ========================================================================= -->
+<div class="modal-overlay" id="modal-payment-proof-viewer" style="display: none;">
+  <div class="modal-window" style="max-width: 760px; width: 95%;">
+    <div class="modal-header">
+      <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-building-columns" style="color: var(--emerald);"></i> <span id="proof-modal-header-title">Comprobante Bancario de Pago & Auditoría</span>
+      </h3>
+      <button class="modal-close" onclick="window.closePaymentProofModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body" id="payment-proof-content-wrapper" style="padding: 20px; max-height: 75vh; overflow-y: auto;">
+      <!-- Inyectado dinámicamente vía window.viewPaymentProof -->
+    </div>
+  </div>
+</div>
+
 <!-- SCRIPTS DE ARQUITECTURA (100% GRATUITOS - DEFERRED NON-BLOCKING) -->
-<script src="js/security.js?v=20260911_v47_docgen" defer></script>
-<script src="js/auth-guard.js?v=20260911_v47_docgen" defer></script>
-<script src="js/tenant-loader.js?v=20260911_v47_docgen" defer></script>
-<script src="js/venezuela-legal.js?v=20260911_v47_docgen" defer></script>
-<script src="js/financial-engine.js?v=20260911_v47_docgen" defer></script>
-<script src="js/seniat-engine.js?v=20260911_v47_docgen" defer></script>
-<script src="js/bank-reconciliation.js?v=20260911_v47_docgen" defer></script>
-<script src="js/google-workspace.js?v=20260911_v47_docgen" defer></script>
-<script src="js/notifications.js?v=20260911_v47_docgen" defer></script>
-<script src="js/seed-data-39.js?v=20260911_v47_docgen" defer></script>
-<script src="js/supabase-client.js?v=20260911_v47_docgen" defer></script>
-<script src="js/ayuda-content.js?v=20260911_v47_docgen" defer></script>
-<script src="js/app.js?v=20260911_v47_docgen" defer></script>
+<script src="js/security.js?v=20260911_v48_approval_flow" defer></script>
+<script src="js/auth-guard.js?v=20260911_v48_approval_flow" defer></script>
+<script src="js/tenant-loader.js?v=20260911_v48_approval_flow" defer></script>
+<script src="js/venezuela-legal.js?v=20260911_v48_approval_flow" defer></script>
+<script src="js/financial-engine.js?v=20260911_v48_approval_flow" defer></script>
+<script src="js/seniat-engine.js?v=20260911_v48_approval_flow" defer></script>
+<script src="js/bank-reconciliation.js?v=20260911_v48_approval_flow" defer></script>
+<script src="js/google-workspace.js?v=20260911_v48_approval_flow" defer></script>
+<script src="js/notifications.js?v=20260911_v48_approval_flow" defer></script>
+<script src="js/seed-data-39.js?v=20260911_v48_approval_flow" defer></script>
+<script src="js/supabase-client.js?v=20260911_v48_approval_flow" defer></script>
+<script src="js/ayuda-content.js?v=20260911_v48_approval_flow" defer></script>
+<script src="js/app.js?v=20260911_v48_approval_flow" defer></script>
 </body>
 </html>

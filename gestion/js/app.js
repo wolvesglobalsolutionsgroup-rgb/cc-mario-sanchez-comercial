@@ -91,6 +91,9 @@ document.addEventListener('DOMContentLoaded', () => {
   window.closeContractModal = function() { window.closeModal('modal-contract-viewer'); };
   window.closeReceiptPreviewModal = function() { window.closeModal('modal-receipt-preview'); };
   window.closeExpenseModal = function() { window.closeModal('modal-expense'); };
+  window.closeDocPreviewModal = function() { window.closeModal('modal-doc-preview'); };
+  window.closeAgreementModal = function() { window.closeModal('modal-agreement-editor'); };
+  window.closePaymentProofModal = function() { window.closeModal('modal-payment-proof-viewer'); };
 
   /**
    * Genera sello SHA-256 REAL de 256 bits vía WebCrypto API
@@ -1485,16 +1488,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     <th>Monto USD</th>
                     <th>Equiv. Bs. BCV</th>
                     <th>Estado</th>
-                    <th>Acción</th>
+                    <th style="min-width: 140px; text-align: center;">Acción & Cobranza</th>
                   </tr>
                 </thead>
                 <tbody>
                   ${allInvoices.length === 0 ? `
                     <tr><td colspan="8" style="text-align:center; padding: 24px; color: var(--txt-muted);">No hay facturas emitidas aún.</td></tr>
                   ` : allInvoices.map(inv => {
+                    const payments = (dbService.getPayments ? dbService.getPayments() : []);
+                    const payment = payments.find(p => p.invoice_id === inv.id) || (dbService.getPendingPayment ? dbService.getPendingPayment(inv.id) : null);
+                    const hasProof = Boolean(inv.receipt_proof || (payment && payment.receipt_proof) || payment);
+                    const isPendingApproval = inv.status === 'verificando' || (payment && payment.status === 'pendiente');
+
                     let pill = '<span class="status-pill pill-active"><i class="fa-solid fa-circle-check"></i> Pagado</span>';
-                    if (inv.status === 'en_mora') pill = '<span class="status-pill pill-overdue"><i class="fa-solid fa-circle-exclamation"></i> En Mora</span>';
-                    else if (inv.status === 'pendiente' || inv.status === 'verificando') pill = '<span class="status-pill pill-warning"><i class="fa-solid fa-clock"></i> Pendiente</span>';
+                    if (isPendingApproval) pill = '<span class="status-pill pill-warning" style="background: rgba(245,158,11,0.2); color: var(--amber);"><i class="fa-solid fa-clock-rotate-left"></i> Por Validar</span>';
+                    else if (inv.status === 'en_mora') pill = '<span class="status-pill pill-overdue"><i class="fa-solid fa-circle-exclamation"></i> En Mora</span>';
+                    else if (inv.status === 'pendiente') pill = '<span class="status-pill pill-warning"><i class="fa-solid fa-clock"></i> Pendiente</span>';
 
                     const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
                     const periodTxt = `${monthNames[(inv.period_month || 1) - 1]} ${inv.period_year || 2026}`;
@@ -1509,16 +1518,28 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td><strong style="color: var(--txt-primary);">${formatMoney(inv.total_usd)}</strong></td>
                         <td><span style="color: var(--amber); font-weight: 700;">${formatVes(vesEquivalent)}</span></td>
                         <td>${pill}</td>
-                        <td>
-                          <div style="display: flex; gap: 6px;">
-                            <button class="btn-action-icon" title="Imprimir Recibo Oficial" onclick="window.printReceipt('${inv.id}')">
-                              <i class="fa-solid fa-print"></i>
+                        <td style="text-align: center;">
+                          <div style="display: flex; gap: 6px; justify-content: center; align-items: center;">
+                            <!-- BOTÓN 1: VER / IMPRIMIR RECIBO OFICIAL CCMS -->
+                            <button class="btn-action-icon" title="Ver / Imprimir Recibo Oficial de Cobranza" style="background: rgba(14, 165, 233, 0.12); color: var(--cyan);" onclick="window.printReceipt('${inv.id}')">
+                              <i class="fa-solid fa-receipt"></i>
                             </button>
-                            ${inv.status !== 'pagado' ? `
-                              <button class="btn-action-icon" title="Registrar Pago" style="color: var(--emerald);" onclick="window.openPaymentModal('${inv.id}')">
+
+                            <!-- BOTÓN 2: VER COMPROBANTE BANCARIO & AUDITORÍA DE PAGO -->
+                            <button class="btn-action-icon" title="${hasProof ? 'Ver Comprobante Bancario Registrado' : 'Auditoría Bancaria del Pago'}" style="${hasProof ? 'background: rgba(16, 185, 129, 0.15); color: var(--emerald); border-color: rgba(16, 185, 129, 0.3);' : 'background: rgba(255,255,255,0.03); color: var(--txt-muted);'}" onclick="window.viewPaymentProof('${inv.id}')">
+                              <i class="fa-solid fa-building-columns"></i>
+                            </button>
+
+                            <!-- BOTÓN 3: APROBAR (SI ESTÁ POR VALIDAR) O REGISTRAR PAGO -->
+                            ${isPendingApproval ? `
+                              <button class="btn-action-icon" title="Revisar & Aprobar Pago Bancario" style="background: var(--emerald); color: #fff; font-weight: 800; border-color: var(--emerald);" onclick="window.viewPaymentProof('${inv.id}')">
+                                <i class="fa-solid fa-circle-check"></i>
+                              </button>
+                            ` : (inv.status !== 'pagado' ? `
+                              <button class="btn-action-icon" title="Registrar Pago" style="background: rgba(245, 158, 11, 0.15); color: var(--amber);" onclick="window.openPaymentModal('${inv.id}')">
                                 <i class="fa-solid fa-cash-register"></i>
                               </button>
-                            ` : ''}
+                            ` : '')}
                           </div>
                         </td>
                       </tr>
@@ -1535,27 +1556,32 @@ document.addEventListener('DOMContentLoaded', () => {
               <h3 class="ttp-panel-title">
                 <i class="fa-solid fa-handshake-angle" style="color: var(--purple);"></i> Acuerdos Especiales, Deducciones por Obras & Reparaciones
               </h3>
-              <button type="button" class="btn-currency-toggle" style="font-size: 11.5px; padding: 4px 12px;" onclick="window.openTenantDossier('${tenant.id}')">
-                <i class="fa-solid fa-plus-circle" style="color: var(--amber);"></i> Registrar Acuerdo en Modal
+              <button type="button" class="btn-currency-toggle" style="font-size: 11.5px; padding: 5px 14px; background: rgba(168, 85, 247, 0.15); color: var(--purple); border-color: var(--purple);" onclick="window.openAgreementModal('${tenant.id}')">
+                <i class="fa-solid fa-plus-circle"></i> + Registrar Acuerdo en Modal
               </button>
             </div>
 
             <div>
               ${agreements.length === 0 ? `
-                <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px dashed var(--border-subtle); border-radius: 8px; font-size: 12px; color: var(--txt-muted); text-align: center;">
-                  No hay acuerdos o deducciones especiales de obras registrados para este arrendatario.
+                <div style="padding: 20px; background: rgba(255,255,255,0.02); border: 1px dashed var(--border-subtle); border-radius: 8px; font-size: 12px; color: var(--txt-muted); text-align: center;">
+                  <i class="fa-solid fa-handshake" style="font-size: 24px; color: var(--purple); margin-bottom: 6px; display: block; opacity: 0.6;"></i>
+                  No hay acuerdos o deducciones especiales de obras registrados para este arrendatario.<br>
+                  <span style="font-size: 11px; color: var(--txt-secondary);">Haga clic en <strong>+ Registrar Acuerdo en Modal</strong> para formalizar compensaciones según Arts. 13 y 32 G.O. 40.418.</span>
                 </div>
               ` : `
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
                   ${agreements.map(a => `
-                    <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px; font-size: 12px;">
-                      <div style="display: flex; justify-content: space-between; font-weight: 700; color: var(--txt-primary);">
-                        <span>${escapeHtml(a.type || 'Deducción de Canon')}</span>
-                        <span style="color: var(--emerald); font-size: 13px;">${formatMoney(a.monthly_discount_usd)} / mes</span>
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 14px; font-size: 12px;">
+                      <div style="display: flex; justify-content: space-between; font-weight: 700; color: var(--txt-primary); align-items: center;">
+                        <span style="display: flex; align-items: center; gap: 6px;">
+                          <i class="fa-solid fa-stamp" style="color: var(--purple);"></i> ${escapeHtml(a.type || 'Deducción de Canon')}
+                        </span>
+                        <span style="color: var(--emerald); font-size: 14px; font-weight: 800;">$${parseFloat(a.monthly_discount_usd || 0).toFixed(2)} / mes</span>
                       </div>
-                      <div style="font-size: 11.5px; color: var(--txt-secondary); margin-top: 4px;">${escapeHtml(a.description || '')}</div>
-                      <div style="font-size: 10px; color: var(--txt-muted); margin-top: 6px; border-top: 1px dashed var(--border-subtle); padding-top: 4px;">
-                        Vigencia: <strong>${a.start_date}</strong> al <strong>${a.end_date}</strong>
+                      <div style="font-size: 11.5px; color: var(--txt-secondary); margin-top: 6px;">${escapeHtml(a.description || '')}</div>
+                      <div style="font-size: 10.5px; color: var(--txt-muted); margin-top: 8px; border-top: 1px dashed var(--border-subtle); padding-top: 6px; display: flex; justify-content: space-between;">
+                        <span>Inversión: <strong>$${parseFloat(a.total_amount_usd || 0).toFixed(2)}</strong> (${a.months_count || 6} cuotas)</span>
+                        <span>Vigencia: <strong>${a.start_date || '—'}</strong> al <strong>${a.end_date || '—'}</strong></span>
                       </div>
                     </div>
                   `).join('')}
@@ -1640,180 +1666,484 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // GENERAR Y ARCHIVAR DOCUMENTO OFICIAL DIRECTAMENTE EN EL EXPEDIENTE DEL INQUILINO
+  // ESTADO GLOBAL DE VISTA PREVIA DE DOCUMENTO
+  window._activePreviewDoc = null;
+
+  // GENERAR Y ARCHIVAR DOCUMENTO OFICIAL DIRECTAMENTE EN EL EXPEDIENTE DEL INQUILINO (BOTÓN AZUL)
   window.generateAndArchiveTenantDoc = async function(tenantId) {
-    const tenants = dbService.getTenants() || [];
-    const tenant = tenants.find(t => t.id === tenantId) || tenants.find(t => t.unit_code === tenantId);
-    if (!tenant) return;
-
-    const units = dbService.getUnits ? dbService.getUnits() : [];
-    const unit = units.find(u => u.code === tenant.unit_code) || { code: tenant.unit_code, name: `Local ${tenant.unit_code}`, area_m2: 100, condo_aliquot: 0.05, base_rent_usd: 500 };
-    const contracts = dbService.getContracts ? dbService.getContracts() : [];
-    const contract = contracts.find(c => c.tenant_id === tenant.id || c.unit_code === tenant.unit_code) || {};
-    const allInvoices = (dbService.getInvoices ? dbService.getInvoices() : []).filter(i => i.tenant_id === tenant.id);
-    const unpaidInvoices = allInvoices.filter(i => i.status !== 'pagado');
-    const agreements = (dbService.getAgreements ? dbService.getAgreements() : []).filter(a => a.tenant_id === tenant.id || a.unit_code === tenant.unit_code);
-
-    const docTypeEl = document.getElementById(`gen-doc-type-${tenantId}`);
-    const destEl = document.getElementById(`gen-doc-dest-${tenantId}`);
-    const dateEl = document.getElementById(`gen-doc-date-${tenantId}`);
-    const notesEl = document.getElementById(`gen-doc-notes-${tenantId}`);
-
-    const docType = docTypeEl ? docTypeEl.value : 'solvencia';
-    const destination = destEl ? destEl.value : 'A QUIEN PUEDA INTERESAR';
-    const issueDate = dateEl ? dateEl.value : new Date().toISOString().split('T')[0];
-    const notes = notesEl ? notesEl.value : '';
-
-    const options = {
-      destination,
-      issueDate: new Date(issueDate).toLocaleDateString('es-VE', { day: '2-digit', month: 'long', year: 'numeric' }),
-      notes,
-      bcvRate: (typeof financialEngine !== 'undefined' && financialEngine.getBcvRate) ? financialEngine.getBcvRate() : 48.5
-    };
-
-    let generatedHtml = '';
-    let docTitle = 'Documento';
-
-    if (docType === 'solvencia') {
-      docTitle = `Certificado de Solvencia - ${tenant.unit_code}`;
-      generatedHtml = await window.VenezuelaLegal.generateSolvenciaHTML(tenant, unit, allInvoices, options);
-    } else if (docType === 'notificacion_mora') {
-      docTitle = `Notificación de Mora (72h) - ${tenant.unit_code}`;
-      generatedHtml = await window.VenezuelaLegal.generateNotificacionMoraHTML(tenant, unit, unpaidInvoices, options);
-    } else if (docType === 'constancia') {
-      docTitle = `Constancia de Arrendamiento - ${tenant.unit_code}`;
-      generatedHtml = await window.VenezuelaLegal.generateConstanciaArrendatarioHTML(tenant, unit, contract, options);
-    } else if (docType === 'acta_entrega') {
-      docTitle = `Acta de Entrega - ${tenant.unit_code}`;
-      generatedHtml = await window.VenezuelaLegal.generateActaEntregaHTML(tenant, unit, contract, options);
-    } else if (docType === 'adenda_obras') {
-      docTitle = `Adenda de Obras - ${tenant.unit_code}`;
-      generatedHtml = await window.VenezuelaLegal.generateAdendaObrasHTML(tenant, unit, agreements[0] || {}, options);
-    }
-
-    const docItem = {
-      id: 'doc-gen-' + Date.now(),
-      tenant_id: tenant.id,
-      name: `${docTitle}.html`,
-      title: docTitle,
-      category: 'oficial',
-      type: 'text/html',
-      size: generatedHtml.length,
-      data: 'data:text/html;charset=utf-8,' + encodeURIComponent(generatedHtml),
-      rawHtml: generatedHtml,
-      uploaded_at: new Date().toISOString()
-    };
-
     try {
+      const tenants = dbService.getTenants() || [];
+      const tenant = tenants.find(t => t.id === tenantId) || tenants.find(t => t.unit_code === tenantId);
+      if (!tenant) return;
+
+      const units = dbService.getUnits ? dbService.getUnits() : [];
+      const unit = units.find(u => u.code === tenant.unit_code) || { code: tenant.unit_code, name: `Local ${tenant.unit_code}`, area_m2: 100, condo_aliquot: 0.05, base_rent_usd: 500 };
+      const contracts = dbService.getContracts ? dbService.getContracts() : [];
+      const contract = contracts.find(c => c.tenant_id === tenant.id || c.unit_code === tenant.unit_code) || {};
+      const allInvoices = (dbService.getInvoices ? dbService.getInvoices() : []).filter(i => i.tenant_id === tenant.id);
+      const unpaidInvoices = allInvoices.filter(i => i.status !== 'pagado');
+      const agreements = (dbService.getAgreements ? dbService.getAgreements() : []).filter(a => a.tenant_id === tenant.id || a.unit_code === tenant.unit_code);
+
+      const docTypeEl = document.getElementById(`gen-doc-type-${tenantId}`);
+      const destEl = document.getElementById(`gen-doc-dest-${tenantId}`);
+      const dateEl = document.getElementById(`gen-doc-date-${tenantId}`);
+      const notesEl = document.getElementById(`gen-doc-notes-${tenantId}`);
+
+      const docType = docTypeEl ? docTypeEl.value : 'solvencia';
+      const destination = destEl ? destEl.value : 'A QUIEN PUEDA INTERESAR';
+      const issueDate = dateEl ? dateEl.value : new Date().toISOString().split('T')[0];
+      const notes = notesEl ? notesEl.value : '';
+
+      const options = {
+        destination,
+        issueDate: new Date(issueDate).toLocaleDateString('es-VE', { day: '2-digit', month: 'long', year: 'numeric' }),
+        notes,
+        bcvRate: (typeof financialEngine !== 'undefined' && financialEngine.getBcvRate) ? financialEngine.getBcvRate() : 48.5
+      };
+
+      let generatedHtml = '';
+      let docTitle = 'Documento';
+
+      if (docType === 'solvencia') {
+        docTitle = `Certificado de Solvencia - Local ${tenant.unit_code}`;
+        generatedHtml = await window.VenezuelaLegal.generateSolvenciaHTML(tenant, unit, allInvoices, options);
+      } else if (docType === 'notificacion_mora') {
+        docTitle = `Notificación Formal de Mora (72h) - Local ${tenant.unit_code}`;
+        generatedHtml = await window.VenezuelaLegal.generateNotificacionMoraHTML(tenant, unit, unpaidInvoices, options);
+      } else if (docType === 'constancia') {
+        docTitle = `Constancia de Arrendamiento - Local ${tenant.unit_code}`;
+        generatedHtml = await window.VenezuelaLegal.generateConstanciaArrendatarioHTML(tenant, unit, contract, options);
+      } else if (docType === 'acta_entrega') {
+        docTitle = `Acta Circunstanciada de Entrega - Local ${tenant.unit_code}`;
+        generatedHtml = await window.VenezuelaLegal.generateActaEntregaHTML(tenant, unit, contract, options);
+      } else if (docType === 'adenda_obras') {
+        docTitle = `Adenda de Obras & Deducción - Local ${tenant.unit_code}`;
+        generatedHtml = await window.VenezuelaLegal.generateAdendaObrasHTML(tenant, unit, agreements[0] || {}, options);
+      }
+
+      const docItem = {
+        id: 'doc-gen-' + Date.now(),
+        tenant_id: tenant.id,
+        name: `${docTitle}.html`,
+        title: docTitle,
+        category: 'oficial',
+        type: 'text/html',
+        size: generatedHtml.length,
+        data: 'data:text/html;charset=utf-8,' + encodeURIComponent(generatedHtml),
+        rawHtml: generatedHtml,
+        uploaded_at: new Date().toISOString()
+      };
+
       const storedKey = 'ccms_tenant_docs_' + tenant.id;
       const existing = JSON.parse(localStorage.getItem(storedKey) || '[]');
       existing.unshift(docItem);
       localStorage.setItem(storedKey, JSON.stringify(existing));
-      showToast(`✓ Documento "${docTitle}" generado y archivado con éxito en el expediente.`, 'success', 'Documento Emitido');
+
+      showToast(`✓ Documento "${docTitle}" emitido y archivado con éxito en el expediente.`, 'success', 'Documento Emitido & Archivado');
       renderTenantSavedDocs(tenant.id);
 
-      // Abrir ventana imprimible directamente
-      window.openPrintableDocument(generatedHtml, docTitle);
+      // Guardar estado activo y abrir modal de vista previa in-app (libre de bloqueos de pop-up)
+      window._activePreviewDoc = {
+        title: docTitle,
+        html: generatedHtml,
+        tenantId: tenant.id
+      };
+
+      const titleEl = document.getElementById('doc-preview-modal-title');
+      if (titleEl) titleEl.textContent = docTitle;
+      const wrapperEl = document.getElementById('doc-preview-content-wrapper');
+      if (wrapperEl) wrapperEl.innerHTML = generatedHtml;
+
+      window.openModal('modal-doc-preview');
     } catch (err) {
       console.error('[Document Gen Storage Error]', err);
-      showToast('Error al archivar el documento en el expediente.', 'error');
+      showToast('Error al archivar y emitir el documento.', 'error');
     }
   };
 
-  // VISTA PREVIA DEL DOCUMENTO SIN IMPRIMIR DE INMEDIATO
+  // VISTA PREVIA DEL DOCUMENTO (BOTÓN VISTA PREVIA)
   window.previewTenantGeneratedDoc = async function(tenantId) {
+    try {
+      const tenants = dbService.getTenants() || [];
+      const tenant = tenants.find(t => t.id === tenantId) || tenants.find(t => t.unit_code === tenantId);
+      if (!tenant) return;
+
+      const units = dbService.getUnits ? dbService.getUnits() : [];
+      const unit = units.find(u => u.code === tenant.unit_code) || { code: tenant.unit_code, name: `Local ${tenant.unit_code}`, area_m2: 100, condo_aliquot: 0.05, base_rent_usd: 500 };
+      const contracts = dbService.getContracts ? dbService.getContracts() : [];
+      const contract = contracts.find(c => c.tenant_id === tenant.id || c.unit_code === tenant.unit_code) || {};
+      const allInvoices = (dbService.getInvoices ? dbService.getInvoices() : []).filter(i => i.tenant_id === tenant.id);
+      const unpaidInvoices = allInvoices.filter(i => i.status !== 'pagado');
+      const agreements = (dbService.getAgreements ? dbService.getAgreements() : []).filter(a => a.tenant_id === tenant.id || a.unit_code === tenant.unit_code);
+
+      const docTypeEl = document.getElementById(`gen-doc-type-${tenantId}`);
+      const destEl = document.getElementById(`gen-doc-dest-${tenantId}`);
+      const dateEl = document.getElementById(`gen-doc-date-${tenantId}`);
+      const notesEl = document.getElementById(`gen-doc-notes-${tenantId}`);
+
+      const docType = docTypeEl ? docTypeEl.value : 'solvencia';
+      const destination = destEl ? destEl.value : 'A QUIEN PUEDA INTERESAR';
+      const issueDate = dateEl ? dateEl.value : new Date().toISOString().split('T')[0];
+      const notes = notesEl ? notesEl.value : '';
+
+      const options = {
+        destination,
+        issueDate: new Date(issueDate).toLocaleDateString('es-VE', { day: '2-digit', month: 'long', year: 'numeric' }),
+        notes,
+        bcvRate: (typeof financialEngine !== 'undefined' && financialEngine.getBcvRate) ? financialEngine.getBcvRate() : 48.5
+      };
+
+      let generatedHtml = '';
+      let docTitle = 'Vista Previa de Documento';
+
+      if (docType === 'solvencia') {
+        docTitle = `Certificado de Solvencia - Local ${tenant.unit_code}`;
+        generatedHtml = await window.VenezuelaLegal.generateSolvenciaHTML(tenant, unit, allInvoices, options);
+      } else if (docType === 'notificacion_mora') {
+        docTitle = `Notificación Formal de Mora (72h) - Local ${tenant.unit_code}`;
+        generatedHtml = await window.VenezuelaLegal.generateNotificacionMoraHTML(tenant, unit, unpaidInvoices, options);
+      } else if (docType === 'constancia') {
+        docTitle = `Constancia de Arrendamiento - Local ${tenant.unit_code}`;
+        generatedHtml = await window.VenezuelaLegal.generateConstanciaArrendatarioHTML(tenant, unit, contract, options);
+      } else if (docType === 'acta_entrega') {
+        docTitle = `Acta Circunstanciada de Entrega - Local ${tenant.unit_code}`;
+        generatedHtml = await window.VenezuelaLegal.generateActaEntregaHTML(tenant, unit, contract, options);
+      } else if (docType === 'adenda_obras') {
+        docTitle = `Adenda de Obras & Deducción - Local ${tenant.unit_code}`;
+        generatedHtml = await window.VenezuelaLegal.generateAdendaObrasHTML(tenant, unit, agreements[0] || {}, options);
+      }
+
+      window._activePreviewDoc = {
+        title: docTitle,
+        html: generatedHtml,
+        tenantId: tenant.id
+      };
+
+      const titleEl = document.getElementById('doc-preview-modal-title');
+      if (titleEl) titleEl.textContent = docTitle;
+      const wrapperEl = document.getElementById('doc-preview-content-wrapper');
+      if (wrapperEl) wrapperEl.innerHTML = generatedHtml;
+
+      window.openModal('modal-doc-preview');
+    } catch (err) {
+      console.error('[Preview Doc Error]', err);
+      showToast('Error al generar la vista previa del documento.', 'error');
+    }
+  };
+
+  // IMPRESIÓN Y DESCARGA DESDE EL MODAL DE VISTA PREVIA
+  window.printActiveDocPreview = function() {
+    if (!window._activePreviewDoc) return;
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+          <meta charset="UTF-8">
+          <title>${escapeHtml(window._activePreviewDoc.title || 'Documento Oficial')} — C.C. Mario Sánchez</title>
+          <style>
+            @page { margin: 15mm; size: letter portrait; }
+            body { margin: 0; background: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+          </style>
+        </head>
+        <body>
+          ${window._activePreviewDoc.html}
+          <script>
+            window.onload = function() { window.print(); };
+          </script>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+    } else {
+      window.print();
+    }
+  };
+
+  window.downloadActiveDocPreview = function() {
+    if (!window._activePreviewDoc) return;
+    const blob = new Blob([window._activePreviewDoc.html], { type: 'text/html;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${(window._activePreviewDoc.title || 'Documento_Oficial').replace(/[^a-zA-Z0-9_-]/g, '_')}.html`;
+    link.click();
+    showToast('Documento descargado con éxito.', 'info');
+  };
+
+  // =========================================================================
+  // MÓDULO DE ACUERDOS DE OBRAS & DEDUCCIONES (ARTS. 13 & 32 G.O. 40.418)
+  // =========================================================================
+  window.openAgreementModal = function(tenantId) {
     const tenants = dbService.getTenants() || [];
     const tenant = tenants.find(t => t.id === tenantId) || tenants.find(t => t.unit_code === tenantId);
     if (!tenant) return;
 
-    const units = dbService.getUnits ? dbService.getUnits() : [];
-    const unit = units.find(u => u.code === tenant.unit_code) || { code: tenant.unit_code, name: `Local ${tenant.unit_code}`, area_m2: 100, condo_aliquot: 0.05, base_rent_usd: 500 };
-    const contracts = dbService.getContracts ? dbService.getContracts() : [];
-    const contract = contracts.find(c => c.tenant_id === tenant.id || c.unit_code === tenant.unit_code) || {};
-    const allInvoices = (dbService.getInvoices ? dbService.getInvoices() : []).filter(i => i.tenant_id === tenant.id);
-    const unpaidInvoices = allInvoices.filter(i => i.status !== 'pagado');
-    const agreements = (dbService.getAgreements ? dbService.getAgreements() : []).filter(a => a.tenant_id === tenant.id || a.unit_code === tenant.unit_code);
+    document.getElementById('agr-modal-tenant-id').value = tenant.id;
+    document.getElementById('agr-modal-unit-code').value = tenant.unit_code;
+    document.getElementById('agr-modal-tenant-display').value = `${tenant.business_name} (Local ${tenant.unit_code} • RIF: ${tenant.rif || 'N/A'})`;
+    
+    const today = new Date().toISOString().split('T')[0];
+    const sixMonthsLater = new Date();
+    sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6);
+    const endIso = sixMonthsLater.toISOString().split('T')[0];
 
-    const docTypeEl = document.getElementById(`gen-doc-type-${tenantId}`);
-    const destEl = document.getElementById(`gen-doc-dest-${tenantId}`);
-    const dateEl = document.getElementById(`gen-doc-date-${tenantId}`);
-    const notesEl = document.getElementById(`gen-doc-notes-${tenantId}`);
+    document.getElementById('agr-modal-start-date').value = today;
+    document.getElementById('agr-modal-end-date').value = endIso;
+    document.getElementById('agr-modal-months').value = 6;
+    document.getElementById('agr-modal-total-usd').value = '';
+    document.getElementById('agr-modal-monthly-usd').value = '';
+    document.getElementById('agr-modal-desc').value = '';
 
-    const docType = docTypeEl ? docTypeEl.value : 'solvencia';
-    const destination = destEl ? destEl.value : 'A QUIEN PUEDA INTERESAR';
-    const issueDate = dateEl ? dateEl.value : new Date().toISOString().split('T')[0];
-    const notes = notesEl ? notesEl.value : '';
+    window.openModal('modal-agreement-editor');
+  };
 
-    const options = {
-      destination,
-      issueDate: new Date(issueDate).toLocaleDateString('es-VE', { day: '2-digit', month: 'long', year: 'numeric' }),
-      notes,
-      bcvRate: (typeof financialEngine !== 'undefined' && financialEngine.getBcvRate) ? financialEngine.getBcvRate() : 48.5
-    };
+  window.calcAgreementMonthlyDiscount = function() {
+    const total = parseFloat(document.getElementById('agr-modal-total-usd').value) || 0;
+    const months = parseInt(document.getElementById('agr-modal-months').value) || 1;
+    const monthlyInput = document.getElementById('agr-modal-monthly-usd');
+    if (monthlyInput && total > 0 && months > 0) {
+      monthlyInput.value = (total / months).toFixed(2);
+    }
+  };
 
-    let generatedHtml = '';
-    let docTitle = 'Vista Previa de Documento';
+  window.saveAgreementFromModal = function(event) {
+    if (event) event.preventDefault();
+    const tenantId = document.getElementById('agr-modal-tenant-id').value;
+    const unitCode = document.getElementById('agr-modal-unit-code').value;
+    const type = document.getElementById('agr-modal-type').value;
+    const months = parseInt(document.getElementById('agr-modal-months').value) || 6;
+    const totalUsd = parseFloat(document.getElementById('agr-modal-total-usd').value) || 0;
+    const monthlyUsd = parseFloat(document.getElementById('agr-modal-monthly-usd').value) || 0;
+    const startDate = document.getElementById('agr-modal-start-date').value;
+    const endDate = document.getElementById('agr-modal-end-date').value;
+    const description = document.getElementById('agr-modal-desc').value;
 
-    if (docType === 'solvencia') {
-      docTitle = `Certificado de Solvencia - ${tenant.unit_code}`;
-      generatedHtml = await window.VenezuelaLegal.generateSolvenciaHTML(tenant, unit, allInvoices, options);
-    } else if (docType === 'notificacion_mora') {
-      docTitle = `Notificación de Mora (72h) - ${tenant.unit_code}`;
-      generatedHtml = await window.VenezuelaLegal.generateNotificacionMoraHTML(tenant, unit, unpaidInvoices, options);
-    } else if (docType === 'constancia') {
-      docTitle = `Constancia de Arrendamiento - ${tenant.unit_code}`;
-      generatedHtml = await window.VenezuelaLegal.generateConstanciaArrendatarioHTML(tenant, unit, contract, options);
-    } else if (docType === 'acta_entrega') {
-      docTitle = `Acta de Entrega - ${tenant.unit_code}`;
-      generatedHtml = await window.VenezuelaLegal.generateActaEntregaHTML(tenant, unit, contract, options);
-    } else if (docType === 'adenda_obras') {
-      docTitle = `Adenda de Obras - ${tenant.unit_code}`;
-      generatedHtml = await window.VenezuelaLegal.generateAdendaObrasHTML(tenant, unit, agreements[0] || {}, options);
+    if (!tenantId || !description || totalUsd <= 0) {
+      showToast('Por favor complete todos los campos obligatorios del acuerdo.', 'warning');
+      return;
     }
 
-    window.openPrintableDocument(generatedHtml, docTitle);
+    const agrData = {
+      tenant_id: tenantId,
+      unit_code: unitCode,
+      type: type,
+      description: description,
+      total_amount_usd: totalUsd,
+      monthly_discount_usd: monthlyUsd,
+      months_count: months,
+      start_date: startDate,
+      end_date: endDate
+    };
+
+    dbService.saveAgreement(agrData);
+    window.closeAgreementModal();
+    showToast(`✓ Acuerdo de deducción por $${monthlyUsd.toFixed(2)}/mes registrado exitosamente.`, 'success', 'Acuerdo Formalizado');
+    
+    // Recargar perfil del inquilino
+    window.renderClientFullProfile(tenantId);
+  };
+
+  // =========================================================================
+  // MÓDULO DE AUDITORÍA & VISOR DE COMPROBANTE BANCARIO DE PAGO
+  // =========================================================================
+  window._activeProofInvoiceId = null;
+
+  window.viewPaymentProof = function(invoiceId) {
+    const inv = dbService.getInvoices().find(i => i.id === invoiceId);
+    if (!inv) return;
+    const tenant = dbService.getTenants().find(t => t.id === inv.tenant_id) || { business_name: 'Arrendatario', unit_code: inv.unit_code };
+    const payments = dbService.getPayments ? dbService.getPayments() : [];
+    const payment = payments.find(p => p.invoice_id === invoiceId) || (dbService.getPendingPayment ? dbService.getPendingPayment(invoiceId) : null);
+    
+    window._activeProofInvoiceId = invoiceId;
+    const rates = financialEngine.getRates();
+    const bcvRate = (payment && payment.snapshot && payment.snapshot.bcv_rate_applied) ? payment.snapshot.bcv_rate_applied : rates.VES;
+    const proofFile = inv.receipt_proof || (payment && payment.receipt_proof);
+
+    const isPending = inv.status === 'verificando' || (payment && payment.status === 'pendiente');
+    const isPaid = inv.status === 'pagado';
+
+    const wrapper = document.getElementById('payment-proof-content-wrapper');
+    if (!wrapper) return;
+
+    let statusPill = `<span class="status-pill pill-warning" style="background: rgba(245,158,11,0.2); color: var(--amber);"><i class="fa-solid fa-clock-rotate-left"></i> Pendiente de Aprobación</span>`;
+    if (isPaid) statusPill = `<span class="status-pill pill-active"><i class="fa-solid fa-circle-check"></i> Pagado & Conciliado</span>`;
+    else if (inv.status === 'en_mora') statusPill = `<span class="status-pill pill-overdue"><i class="fa-solid fa-circle-exclamation"></i> En Mora</span>`;
+    else if (inv.status === 'pendiente') statusPill = `<span class="status-pill pill-warning"><i class="fa-solid fa-clock"></i> Pendiente sin Comprobante</span>`;
+
+    const methodTxt = payment ? (payment.payment_method || 'Transferencia Bancaria') : (inv.payment_method || 'No especificado');
+    const refTxt = payment ? (payment.reference_number || 'N/A') : (inv.reference_number || 'N/A');
+    const bankTxt = payment ? (payment.issuing_bank || 'Banco Nacional') : (inv.issuing_bank || 'N/A');
+    const amountPaid = payment ? (payment.amount_paid || inv.total_usd) : inv.total_usd;
+    const currency = payment ? (payment.currency || 'USD') : 'USD';
+    const totalBs = (amountPaid * bcvRate).toLocaleString('es-VE', { minimumFractionDigits: 2 });
+
+    wrapper.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <!-- CABECERA RESUMEN -->
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <div style="font-size: 11px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Factura / Cuota</div>
+            <div style="font-size: 16px; font-weight: 800; color: var(--amber);">${escapeHtml(inv.invoice_number)} — Local ${escapeHtml(inv.unit_code)}</div>
+            <div style="font-size: 12px; color: var(--txt-secondary);">${escapeHtml(tenant.business_name)} • RIF: ${escapeHtml(tenant.rif || 'N/A')}</div>
+          </div>
+          <div style="text-align: right;">
+            ${statusPill}
+            <div style="font-size: 11px; color: var(--txt-muted); margin-top: 4px;">Período: ${inv.period_month}/${inv.period_year}</div>
+          </div>
+        </div>
+
+        <!-- DETALLE BANCARIO & MONTOS -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 10px;">
+            <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase;">Monto Declarado</div>
+            <div style="font-size: 15px; font-weight: 800; color: var(--emerald);">${currency} $${amountPaid.toFixed(2)}</div>
+            <div style="font-size: 11px; color: var(--amber); font-weight: 700;">Equiv: Bs. ${totalBs}</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 10px;">
+            <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase;">Método de Pago</div>
+            <div style="font-size: 13px; font-weight: 700; color: var(--txt-primary);">${escapeHtml(methodTxt)}</div>
+            <div style="font-size: 11px; color: var(--txt-secondary);">${escapeHtml(bankTxt)}</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 10px;">
+            <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase;">N° Referencia Bancaria</div>
+            <div style="font-size: 13px; font-weight: 800; font-family: monospace; color: var(--cyan);">${escapeHtml(refTxt)}</div>
+            <div style="font-size: 11px; color: var(--txt-muted);">Tasa BCV: Bs. ${bcvRate.toFixed(2)}</div>
+          </div>
+        </div>
+
+        <!-- DATOS DEL PAGADOR / ORIGEN -->
+        ${payment && (payment.origin_name || payment.origin_doc || payment.origin_phone || payment.zelle_holder) ? `
+          <div style="background: rgba(14, 165, 233, 0.05); border: 1px solid rgba(14, 165, 233, 0.2); border-radius: 8px; padding: 10px 14px; font-size: 12px;">
+            <strong style="color: var(--cyan);"><i class="fa-solid fa-user-check"></i> Datos del Pagador / Cuenta Origen:</strong>
+            <div style="margin-top: 4px; display: flex; gap: 14px; flex-wrap: wrap; color: var(--txt-secondary);">
+              ${payment.origin_name ? `<div>Titular: <strong>${escapeHtml(payment.origin_name)}</strong></div>` : ''}
+              ${payment.origin_doc ? `<div>Cédula/RIF: <strong>${escapeHtml(payment.origin_doc)}</strong></div>` : ''}
+              ${payment.origin_phone ? `<div>Teléfono: <strong>${escapeHtml(payment.origin_phone)}</strong></div>` : ''}
+              ${payment.zelle_holder ? `<div>Titular Zelle: <strong>${escapeHtml(payment.zelle_holder)} (${escapeHtml(payment.zelle_email || '')})</strong></div>` : ''}
+              ${payment.txid ? `<div>Hash TxID: <strong style="font-family: monospace;">${escapeHtml(payment.txid)}</strong></div>` : ''}
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- VISOR DEL COMPROBANTE ADJUNTO / CAPTURA DE PAGO -->
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 16px; text-align: center;">
+          <div style="font-size: 12px; font-weight: 700; color: var(--txt-primary); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+            <span><i class="fa-solid fa-paperclip" style="color: var(--amber);"></i> Soporte Gráfico / Captura del Pago:</span>
+            ${proofFile ? `<span style="font-size: 11px; color: var(--txt-muted);">${escapeHtml(proofFile.name || 'Comprobante')}</span>` : ''}
+          </div>
+
+          ${proofFile && proofFile.data ? `
+            ${proofFile.type && proofFile.type.includes('pdf') ? `
+              <div style="padding: 24px; background: rgba(255,255,255,0.04); border-radius: 8px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-file-pdf" style="font-size: 48px; color: var(--rose);"></i>
+                <div style="font-weight: 700; color: var(--txt-primary);">${escapeHtml(proofFile.name || 'Comprobante_Pago.pdf')}</div>
+                <a href="${proofFile.data}" target="_blank" download="${proofFile.name || 'Comprobante.pdf'}" class="btn-onboarding-cta" style="font-size: 11.5px; padding: 6px 14px; background: var(--cyan); color: #000; text-decoration: none;">
+                  <i class="fa-solid fa-external-link"></i> Abrir / Descargar PDF
+                </a>
+              </div>
+            ` : `
+              <div style="max-height: 380px; overflow: hidden; border-radius: 8px; border: 1px solid var(--border-subtle); background: #000; display: flex; justify-content: center; align-items: center;">
+                <img src="${proofFile.data}" alt="Comprobante Bancario" style="max-width: 100%; max-height: 380px; object-fit: contain; cursor: zoom-in;" onclick="window.open('${proofFile.data}', '_blank')">
+              </div>
+              <div style="font-size: 10.5px; color: var(--txt-muted); margin-top: 6px;">Haga clic sobre la imagen para ver en tamaño completo</div>
+            `}
+          ` : `
+            <div style="padding: 30px; background: rgba(255,255,255,0.02); border: 1px dashed var(--border-subtle); border-radius: 8px; color: var(--txt-muted); font-size: 12px;">
+              <i class="fa-solid fa-file-circle-question" style="font-size: 32px; margin-bottom: 8px; display: block; color: var(--txt-muted);"></i>
+              No se adjuntó archivo de captura para este pago o fue registrado de forma presencial/efectivo.
+            </div>
+          `}
+        </div>
+
+        <!-- ACCIONES DE APROBACIÓN / VALIDACIÓN DE COBRANZA -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-top: 1px dashed var(--border-subtle); padding-top: 14px; margin-top: 4px;">
+          <button type="button" class="btn-cancel" onclick="window.closePaymentProofModal()" style="padding: 8px 14px; font-size: 12px;">
+            Cerrar
+          </button>
+          <div style="display: flex; gap: 10px;">
+            <button type="button" class="btn-currency-toggle" onclick="window.printReceipt('${inv.id}')" style="font-size: 12px; padding: 8px 14px;">
+              <i class="fa-solid fa-receipt"></i> Ver Recibo Oficial
+            </button>
+            ${isPending ? `
+              <button type="button" class="btn-cancel" style="color: var(--rose); background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); padding: 8px 14px; font-size: 12px;" onclick="window.rejectPaymentFromProofModal('${inv.id}')">
+                <i class="fa-solid fa-circle-xmark"></i> Rechazar
+              </button>
+              <button type="button" class="btn-onboarding-cta" style="background: var(--emerald); border-color: var(--emerald); color: #fff; font-weight: 800; padding: 8px 18px; font-size: 12px;" onclick="window.approvePaymentFromProofModal('${inv.id}')">
+                <i class="fa-solid fa-circle-check"></i> Aprobar & Conciliar en Banco
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+
+    window.openModal('modal-payment-proof-viewer');
+  };
+
+  window.approvePaymentFromProofModal = function(invoiceId) {
+    const targetId = invoiceId || window._activeProofInvoiceId;
+    if (!targetId) return;
+
+    try {
+      const result = dbService.approvePayment(targetId, 'Administración CCMS');
+      window.closePaymentProofModal();
+      showToast(`✓ Pago de factura ${result.invoice.invoice_number} APROBADO y conciliado exitosamente.`, 'success', 'Cobranza Confirmada');
+      
+      // Recargar perfil del inquilino y tablas generales
+      if (result.invoice && result.invoice.tenant_id) {
+        window.renderClientFullProfile(result.invoice.tenant_id);
+      }
+      if (window.renderInvoicesTable) window.renderInvoicesTable();
+      if (window.updateDashboardStats) window.updateDashboardStats();
+
+      // Abrir recibo oficial de inmediato
+      if (result.receipt && window.openReceiptPreview) {
+        window.openReceiptPreview(result.receipt);
+      }
+    } catch (err) {
+      console.error('[Approve Payment Error]', err);
+      showToast(err.message || 'Error al aprobar el pago.', 'error');
+    }
+  };
+
+  window.rejectPaymentFromProofModal = function(invoiceId) {
+    const targetId = invoiceId || window._activeProofInvoiceId;
+    if (!targetId) return;
+
+    const reason = prompt('Ingrese el motivo del rechazo del pago (ej: Monto incorrecto / Referencia no encontrada en cuenta bancaria):');
+    if (reason === null) return; // cancelado por el usuario
+
+    try {
+      dbService.rejectPayment(targetId, reason, 'Administración CCMS');
+      window.closePaymentProofModal();
+      showToast(`Pago rechazado y notificado al inquilino.`, 'warning', 'Pago Rechazado');
+      
+      const inv = dbService.getInvoices().find(i => i.id === targetId);
+      if (inv && inv.tenant_id) {
+        window.renderClientFullProfile(inv.tenant_id);
+      }
+      if (window.renderInvoicesTable) window.renderInvoicesTable();
+    } catch (err) {
+      console.error('[Reject Payment Error]', err);
+      showToast(err.message || 'Error al rechazar el pago.', 'error');
+    }
   };
 
   // HELPER PARA ABRIR VENTANA DE IMPRESIÓN Y VISTA PREVIA ELEGANTE
   window.openPrintableDocument = function(htmlContent, title = 'Documento Oficial') {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      showToast('Por favor permita las ventanas emergentes para visualizar el documento.', 'warning', 'Pop-up Bloqueado');
-      return;
-    }
+    window._activePreviewDoc = {
+      title: title,
+      html: htmlContent
+    };
 
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html lang="es">
-      <head>
-        <meta charset="UTF-8">
-        <title>${escapeHtml(title)} — C.C. Mario Sánchez</title>
-        <style>
-          @page { margin: 15mm; size: letter portrait; }
-          body { margin: 0; background: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-          .print-toolbar { position: sticky; top: 0; z-index: 100; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); width: 100%; padding: 12px 20px; display: flex; justify-content: center; gap: 14px; border-bottom: 1px solid #334155; box-sizing: border-box; }
-          .btn-print { background: #0284c7; color: #fff; border: none; padding: 8px 22px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 8px; }
-          .btn-close { background: #334155; color: #cbd5e1; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; }
-          .doc-canvas { margin: 24px auto 40px; }
-          @media print {
-            .print-toolbar { display: none !important; }
-            body { background: #fff !important; }
-            .doc-canvas { margin: 0 !important; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="print-toolbar">
-          <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button>
-          <button class="btn-close" onclick="window.close()">Cerrar Ventana</button>
-        </div>
-        <div class="doc-canvas">
-          ${htmlContent}
-        </div>
-      </body>
-      </html>
-    `);
-    printWindow.document.close();
+    const titleEl = document.getElementById('doc-preview-modal-title');
+    if (titleEl) titleEl.textContent = title;
+    const wrapperEl = document.getElementById('doc-preview-content-wrapper');
+    if (wrapperEl) wrapperEl.innerHTML = htmlContent;
+
+    window.openModal('modal-doc-preview');
   };
 
   // VER UN DOCUMENTO DEL ARCHIVO DIGITAL
