@@ -2358,4 +2358,59 @@ select.form-control optgroup {
   background: rgba(244, 63, 94, 0.15);
 }
 
-
+/* ========================================================================= */
+/* ESTILOS DE IMPRESIÓN OFICIAL EJECUTIVO (TIME TO PROGRAM / A4 PORTRAIT)     */
+/* ========================================================================= */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm 10mm;
+  }
+  
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+  }
+  
+  /* Ocultar elementos de navegación y UI durante impresión */
+  .sidebar, .topbar, .modal-header, .modal-close, .btn-action-icon, 
+  .btn-onboarding-cta, .btn-currency-toggle, .bottom-nav-mobile {
+    display: none !important;
+  }
+  
+  .modal-overlay {
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+    display: block !important;
+  }
+  
+  .modal-window {
+    box-shadow: none !important;
+    border: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+  
+  .modal-body {
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+  
+  .printable-legal-doc, .contract-doc {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    page-break-inside: avoid !important;
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
+  }
+}

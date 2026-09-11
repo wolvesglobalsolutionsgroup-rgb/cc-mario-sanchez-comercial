@@ -2178,38 +2178,70 @@ document.addEventListener('DOMContentLoaded', () => {
     window.openModal('modal-doc-preview');
   };
 
-  // VER UN DOCUMENTO DEL ARCHIVO DIGITAL
+  // VER UN DOCUMENTO DEL ARCHIVO DIGITAL (MODAL IN-APP)
   window.viewArchivedDoc = function(tenantId, docId) {
     const storedKey = 'ccms_tenant_docs_' + tenantId;
     try {
       const docs = JSON.parse(localStorage.getItem(storedKey) || '[]');
       const doc = docs.find(d => d.id === docId);
-      if (!doc) return;
+      if (!doc) {
+        showToast('Documento no encontrado en el expediente.', 'warning');
+        return;
+      }
 
       if (doc.rawHtml) {
         window.openPrintableDocument(doc.rawHtml, doc.title || doc.name);
       } else if (doc.type && doc.type.includes('pdf')) {
-        const pdfWindow = window.open("");
-        if (pdfWindow) {
-          pdfWindow.document.write(`<iframe src="${doc.data}" frameborder="0" style="border:0; top:0; left:0; bottom:0; right:0; width:100%; height:100%;" allowfullscreen></iframe>`);
-        } else {
-          window.location.href = doc.data;
-        }
+        const content = `
+          <div style="text-align: center; padding: 10px;">
+            <div style="margin-bottom: 12px; font-weight: 700; color: #0f172a; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <i class="fa-solid fa-file-pdf" style="color: #ef4444; font-size: 18px;"></i>
+              <span>${escapeHtml(doc.title || doc.name)}</span>
+            </div>
+            <iframe src="${doc.data}" frameborder="0" style="border: 1px solid #cbd5e1; border-radius: 8px; width: 100%; height: 72vh;" allowfullscreen></iframe>
+          </div>
+        `;
+        window.openPrintableDocument(content, doc.title || doc.name);
       } else {
-        const imgWindow = window.open("");
-        if (imgWindow) {
-          imgWindow.document.write(`
-            <body style="margin:0; background:#0f172a; display:flex; justify-content:center; align-items:center; min-height:100vh;">
-              <div style="text-align:center; padding:20px;">
-                <h3 style="color:#f59e0b; font-family:sans-serif; margin-bottom:10px;">${escapeHtml(doc.name)}</h3>
-                <img src="${doc.data}" style="max-width:90vw; max-height:85vh; border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.5); border:1px solid #334155;">
-              </div>
-            </body>
-          `);
-        }
+        const content = `
+          <div style="text-align: center; padding: 10px;">
+            <div style="margin-bottom: 12px; font-weight: 700; color: #0f172a; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <i class="fa-solid fa-file-image" style="color: #f59e0b; font-size: 18px;"></i>
+              <span>${escapeHtml(doc.title || doc.name)}</span>
+            </div>
+            <img src="${doc.data}" alt="${escapeHtml(doc.name)}" style="max-width: 100%; max-height: 72vh; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); border: 1px solid #cbd5e1; object-fit: contain;">
+          </div>
+        `;
+        window.openPrintableDocument(content, doc.title || doc.name);
       }
     } catch (e) {
       console.error('[ViewArchivedDoc Error]', e);
+      showToast('Error al abrir el documento.', 'error');
+    }
+  };
+
+  // ELIMINAR UN DOCUMENTO DEL ARCHIVO DIGITAL
+  window.deleteTenantDoc = async function(tenantId, docId) {
+    if (!tenantId || !docId) return;
+    const confirmMsg = '¿Está seguro de eliminar este documento del expediente digital del inquilino? Esta acción no se puede deshacer.';
+    let confirmed = false;
+    if (window.SecuritySuite && typeof window.SecuritySuite.confirm === 'function') {
+      confirmed = await window.SecuritySuite.confirm(confirmMsg, 'Eliminar Documento', 'fa-trash');
+    } else {
+      confirmed = window.confirm(confirmMsg);
+    }
+    if (!confirmed) return;
+
+    try {
+      const storedKey = 'ccms_tenant_docs_' + tenantId;
+      const docs = JSON.parse(localStorage.getItem(storedKey) || '[]');
+      const filtered = docs.filter(d => d.id !== docId);
+      localStorage.setItem(storedKey, JSON.stringify(filtered));
+      showToast('✓ Documento eliminado correctamente del expediente.', 'info', 'Expediente Actualizado');
+      renderTenantSavedDocs(tenantId);
+    } catch (err) {
+      console.error('[DeleteTenantDoc Error]', err);
+      showToast('Error al eliminar el documento.', 'error');
     }
   };
 
@@ -6875,79 +6907,92 @@ document.addEventListener('DOMContentLoaded', () => {
     const digitalSeal = await generateReceiptSealAsync(receipt, bcvRate);
 
     wrapper.innerHTML = `
-      <div style="border: 2px solid #0f172a; padding: 24px; border-radius: 8px; background: white; color: #0f172a;">
-        <!-- HEADER MEMBRETE -->
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 16px;">
-          <div>
-            <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: #0f172a;">${escapeHtml(tenantName)}</h2>
-            <div style="font-size: 11px; color: #475569;">RIF: ${escapeHtml(tenantRif)} • ${escapeHtml(tenantAddr)}</div>
-            <div style="font-size: 11px; color: #475569;">Sociedad Administradora Inmobiliaria & Junta Condominial</div>
+      <div class="printable-legal-doc" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 11.5px; line-height: 1.45; color: #0f172a; max-width: 820px; margin: 0 auto; background: #ffffff; padding: 22px 26px; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); page-break-inside: avoid;">
+        <style>
+          @media print {
+            @page { size: A4 portrait; margin: 8mm 10mm; }
+            body { background: #fff !important; color: #000 !important; }
+            .printable-legal-doc { border: none !important; box-shadow: none !important; padding: 6px 12px !important; max-width: 100% !important; page-break-inside: avoid !important; }
+          }
+        </style>
+
+        <!-- HEADER EXECUTIVE WITH CCMS 2K LOGO -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 14px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <img src="logo_cc_mario_sanchez_2k.svg" alt="CCMS Logo" style="width: 46px; height: 46px; object-fit: contain; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); flex-shrink: 0;" onerror="this.style.display='none';">
+            <div>
+              <h2 style="font-size: 15px; margin: 0; text-transform: uppercase; font-weight: 800; color: #0f172a; letter-spacing: -0.2px;">${escapeHtml(tenantName)}</h2>
+              <div style="font-size: 10.5px; color: #475569; font-weight: 600; margin-top: 1px;">R.I.F. ${escapeHtml(tenantRif)} • ${escapeHtml(tenantAddr)}</div>
+              <div style="font-size: 10px; color: #64748b;">Sociedad Administradora Inmobiliaria & Junta Condominial</div>
+            </div>
           </div>
           <div style="text-align: right;">
-            <div style="font-size: 15px; font-weight: 900; color: #059669;">RECIBO OFICIAL DE COBRANZA</div>
-            <div style="font-family: monospace; font-size: 13px; font-weight: 700; color: #0f172a;">${escapeHtml(receipt.receipt_number)}</div>
-            <div style="font-size: 11px; color: #64748b;">Fecha Aprobación: ${new Date(receipt.approved_at || Date.now()).toLocaleDateString('es-VE')}</div>
+            <span style="display: inline-block; padding: 3px 10px; background: #ecfdf5; color: #047857; border: 1px solid #10b981; border-radius: 9999px; font-weight: 800; font-size: 10.5px; text-transform: uppercase; margin-bottom: 3px;">
+              ● RECIBO CONCILIADO
+            </span>
+            <div style="font-size: 13px; font-weight: 800; color: #0f172a; font-family: monospace;">${escapeHtml(receipt.receipt_number)}</div>
+            <div style="font-size: 10.5px; color: #64748b;">Aprobación: <strong>${new Date(receipt.approved_at || Date.now()).toLocaleDateString('es-VE')}</strong></div>
           </div>
         </div>
 
-        <!-- DATOS DEL ARRENDATARIO Y UNIDAD -->
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; margin-bottom: 16px; font-size: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <!-- 2-COLUMN METADATA GRID -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px; margin-bottom: 12px; font-size: 11.5px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
           <div><strong>Arrendatario:</strong> ${escapeHtml(receipt.tenant_name)}</div>
-          <div><strong>RIF:</strong> ${escapeHtml(receipt.tenant_rif)}</div>
-          <div><strong>Unidad Comercial:</strong> <span style="color: #b45309; font-weight: 700;">${escapeHtml(receipt.unit_code)}</span></div>
-          <div><strong>Período Liquidado:</strong> ${receipt.period_month}/${receipt.period_year}</div>
+          <div><strong>R.I.F.:</strong> <span style="font-family: monospace; font-weight: 700;">${escapeHtml(receipt.tenant_rif)}</span></div>
+          <div><strong>Unidad Comercial:</strong> <span style="color: #b45309; font-weight: 800;">${escapeHtml(receipt.unit_code)}</span></div>
+          <div><strong>Período Liquidado:</strong> Mes ${receipt.period_month}/${receipt.period_year}</div>
           <div><strong>Método de Pago:</strong> ${escapeHtml(receipt.payment_method)}</div>
           <div><strong>N° Referencia Bancaria:</strong> <span style="font-family: monospace; font-weight: 700;">${escapeHtml(receipt.reference_number)}</span></div>
           ${receipt.issuing_bank ? `<div><strong>Banco Emisor:</strong> <span style="font-weight: 600; color: #1e293b;">${escapeHtml(receipt.issuing_bank)}</span></div>` : ''}
           ${receipt.origin_phone ? `<div><strong>Teléfono / Origen Pago:</strong> <span style="font-family: monospace;">${escapeHtml(receipt.origin_phone)}</span> ${receipt.origin_doc ? `(${escapeHtml(receipt.origin_doc)})` : ''}</div>` : ''}
           ${receipt.zelle_holder ? `<div style="grid-column: 1 / -1;"><strong>Titular Zelle Emisor:</strong> ${escapeHtml(receipt.zelle_holder)} (${escapeHtml(receipt.zelle_email || 'N/A')})</div>` : ''}
-          ${receipt.txid ? `<div style="grid-column: 1 / -1;"><strong>Hash Cripto TxID:</strong> <span style="font-family: monospace; font-size: 10.5px; color: #059669; word-break: break-all;">${escapeHtml(receipt.txid)}</span></div>` : ''}
+          ${receipt.txid ? `<div style="grid-column: 1 / -1;"><strong>Hash Cripto TxID:</strong> <span style="font-family: monospace; font-size: 10px; color: #047857; word-break: break-all;">${escapeHtml(receipt.txid)}</span></div>` : ''}
         </div>
 
-        <!-- DETALLE DE CONCEPTOS -->
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 12px;">
+        <!-- DETALLE DE CONCEPTOS (TIME TO PROGRAM COMPACT TABLE) -->
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 11.5px;">
           <thead>
-            <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
-              <th style="padding: 8px; text-align: left;">Concepto Arrendaticio</th>
-              <th style="padding: 8px; text-align: right;">Monto USD</th>
+            <tr style="background: #f1f5f9; border-top: 1px solid #cbd5e1; border-bottom: 2px solid #cbd5e1;">
+              <th style="padding: 6px 8px; text-align: left;">Concepto Arrendaticio</th>
+              <th style="padding: 6px 8px; text-align: right;">Monto USD</th>
             </tr>
           </thead>
           <tbody>
             <tr style="border-bottom: 1px solid #e2e8f0;">
-              <td style="padding: 8px;">Canon Fijo Mensual de Arrendamiento (CAF Art. 32)</td>
-              <td style="padding: 8px; text-align: right;">$${rentVal.toFixed(2)}</td>
+              <td style="padding: 6px 8px;">Canon Fijo Mensual de Arrendamiento (CAF Art. 32 G.O. 40.418)</td>
+              <td style="padding: 6px 8px; text-align: right;">$${rentVal.toFixed(2)}</td>
             </tr>
             <tr style="border-bottom: 1px solid #e2e8f0;">
-              <td style="padding: 8px;">Cuota de Gastos Comunes / Condominio</td>
-              <td style="padding: 8px; text-align: right;">$${condoVal.toFixed(2)}</td>
+              <td style="padding: 6px 8px;">Cuota de Participación en Gastos Comunes / Condominio</td>
+              <td style="padding: 6px 8px; text-align: right;">$${condoVal.toFixed(2)}</td>
             </tr>
-            <tr style="font-weight: 800; background: #f8fafc; font-size: 13px;">
-              <td style="padding: 10px 8px;">TOTAL PAGADO & CONCILIADO:</td>
-              <td style="padding: 10px 8px; text-align: right; color: #059669;">$${totalVal.toFixed(2)} USD</td>
+            <tr style="font-weight: 800; background: #f8fafc; font-size: 12px; border-top: 2px solid #cbd5e1;">
+              <td style="padding: 8px;">TOTAL PAGADO & CONCILIADO:</td>
+              <td style="padding: 8px; text-align: right; color: #047857; font-size: 12.5px;">$${totalVal.toFixed(2)} USD</td>
             </tr>
           </tbody>
         </table>
 
         <!-- SNAPSHOT MULTIMONEDA A LA FECHA VALOR -->
-        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 10px; font-size: 11.5px; margin-bottom: 16px;">
-          <strong>Snapshot Contable Multimoneda a la Fecha Valor:</strong>
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 8px 12px; font-size: 10.5px; margin-bottom: 12px;">
+          <strong style="color: #047857;">Snapshot Contable Multimoneda a la Fecha Valor:</strong>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 4px;">
             <div>• Bolívares Oficiales (Tasa BCV ${bcvRate} Bs/USD): <strong>Bs. ${totalBs}</strong></div>
             <div>• Euros (€): <strong>€ ${totalEur} EUR</strong></div>
             <div>• Criptoactivos USDT: <strong>USDT ${totalVal.toFixed(2)}</strong></div>
-            <div>• Verificado por: <strong>${escapeHtml(receipt.approved_by || 'Administración')}</strong></div>
+            <div>• Aprobado y Conciliado por: <strong>${escapeHtml(receipt.approved_by || 'Administración')}</strong></div>
           </div>
         </div>
 
         <!-- SELLO DIGITAL DE INTEGRIDAD JURÍDICA (SHA-256) -->
-        <div style="border-top: 1px dashed #94a3b8; padding-top: 10px; margin-top: 12px; display: flex; justify-content: space-between; align-items: center; font-family: monospace; font-size: 10px; color: #475569;">
+        <div style="border-top: 1px dashed #cbd5e1; padding-top: 8px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; font-family: monospace; font-size: 9px; color: #64748b;">
           <div>
-            <strong style="color: #0f172a; text-transform: uppercase;">Sello Criptográfico de Integridad (SHA-256)</strong><br>
+            <strong style="color: #0f172a;">SELLO CRIPTOGRÁFICO DE INTEGRIDAD (SHA-256):</strong><br>
             <span>Hash: ${digitalSeal}</span><br>
-            <span>Emitido bajo Gaceta Oficial N° 40.418 | SENIAT Finiquito Fiscal</span>
+            <span>Emitido bajo Gaceta Oficial N° 40.418 | Finiquito Fiscal Administrativo</span>
           </div>
           <div style="text-align: right;">
-            <span style="display: inline-block; padding: 4px 8px; border: 1px solid #10b981; color: #047857; font-weight: bold; border-radius: 4px; background: #ecfdf5; font-size: 9.5px;">
+            <span style="display: inline-block; padding: 2px 6px; border: 1px solid #10b981; color: #047857; font-weight: 700; border-radius: 4px; background: #ecfdf5; font-size: 8.5px;">
               ✓ RECIBO INMUTABLE
             </span>
           </div>
