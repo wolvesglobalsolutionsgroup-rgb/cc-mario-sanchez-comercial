@@ -319,58 +319,100 @@
         </div>
       </section>
 
-      <!-- TAB 1: LOCALES & INQUILINOS -->
+      <!-- TAB 1: LOCALES & INQUILINOS (TIME TO PROGRAM MODERN UI) -->
       <section class="tab-view" id="tab-inquilinos" data-roles="admin">
-        <div class="section-head" style="flex-wrap: wrap; gap: 10px;">
-          <div>
-            <h3 class="section-title">
-              <i class="fa-solid fa-store" style="color: var(--amber);"></i> Directorio de Unidades y Arrendatarios
-            </h3>
-            <span id="tenants-directory-subtitle" style="font-size: 12px; color: var(--txt-secondary);">Cargando unidades...</span>
+        
+        <!-- VISTA 1: LISTADO / GRID DE CLIENTES -->
+        <div id="tenants-main-view">
+          <!-- TIME TO PROGRAM HEADER BAR -->
+          <div class="ttp-header-bar">
+            <div>
+              <h2 class="ttp-greeting-title">Hola, <span id="ttp-greeting-name">Administración CCMS</span></h2>
+              <div class="ttp-greeting-sub">Panorama dinámico y facturación en tiempo real de todos los arrendatarios y locales.</div>
+            </div>
+
+            <div class="ttp-controls-group">
+              <div class="ttp-search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="ttp-tenant-search" placeholder="Buscar cliente, RIF o local..." data-input="filterTenantsView()">
+              </div>
+
+              <select id="ttp-tenant-filter-status" class="form-control" style="width: auto; height: 38px; font-size: 12px; padding: 0 10px;" data-change="filterTenantsView()">
+                <option value="all">Todos los Estados</option>
+                <option value="solvente">Solventes</option>
+                <option value="moroso">En Mora</option>
+                <option value="disponible">Disponibles</option>
+              </select>
+
+              <div style="display: flex; gap: 4px; background: rgba(255,255,255,0.04); padding: 3px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                <button type="button" id="btn-view-cards" class="btn-currency-toggle active" data-click="setTenantsViewMode('cards')" title="Vista en Cuadrícula de Tarjetas" style="padding: 6px 12px; font-size: 12px;">
+                  <i class="fa-solid fa-grip"></i> <span>Tarjetas</span>
+                </button>
+                <button type="button" id="btn-view-table" class="btn-currency-toggle" data-click="setTenantsViewMode('table')" title="Vista en Tabla Detallada" style="padding: 6px 12px; font-size: 12px;">
+                  <i class="fa-solid fa-table-list"></i> <span>Tabla</span>
+                </button>
+              </div>
+
+              <a href="onboarding.html" class="btn-onboarding-cta" style="height: 38px; padding: 0 16px; font-size: 12.5px;">
+                <i class="fa-solid fa-plus"></i> <span>+ Add Client</span>
+              </a>
+            </div>
           </div>
 
-          <!-- Mini-KPIs del Directorio de Unidades -->
-          <div id="tenant-dir-kpis" style="display: flex; gap: 10px; margin-left: auto; flex-wrap: wrap; align-items: center;">
-            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 10px; padding: 6px 12px; text-align: center;">
-              <div style="font-size: 16px; font-weight: 800; color: var(--emerald); font-family: var(--font-heading);" id="dir-kpi-solventes">—</div>
-              <div style="font-size: 9.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Solventes</div>
+          <!-- MINI-KPIS RESUMEN -->
+          <div id="tenant-dir-kpis" style="display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; align-items: center;">
+            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 10px; padding: 8px 16px; text-align: center; flex: 1; min-width: 130px;">
+              <div style="font-size: 18px; font-weight: 800; color: var(--emerald); font-family: var(--font-heading);" id="dir-kpi-solventes">—</div>
+              <div style="font-size: 10px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Solventes</div>
             </div>
-            <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 10px; padding: 6px 12px; text-align: center;">
-              <div style="font-size: 16px; font-weight: 800; color: var(--rose); font-family: var(--font-heading);" id="dir-kpi-morosos">—</div>
-              <div style="font-size: 9.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">En Mora</div>
+            <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 10px; padding: 8px 16px; text-align: center; flex: 1; min-width: 130px;">
+              <div style="font-size: 18px; font-weight: 800; color: var(--rose); font-family: var(--font-heading);" id="dir-kpi-morosos">—</div>
+              <div style="font-size: 10px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">En Mora</div>
             </div>
-            <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 10px; padding: 6px 12px; text-align: center;">
-              <div style="font-size: 16px; font-weight: 800; color: var(--amber); font-family: var(--font-heading);" id="dir-kpi-total-mora">—</div>
-              <div style="font-size: 9.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Total Mora ($)</div>
+            <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 10px; padding: 8px 16px; text-align: center; flex: 1; min-width: 130px;">
+              <div style="font-size: 18px; font-weight: 800; color: var(--amber); font-family: var(--font-heading);" id="dir-kpi-total-mora">—</div>
+              <div style="font-size: 10px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Total Mora ($)</div>
             </div>
-            <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 10px; padding: 6px 12px; text-align: center;">
-              <div style="font-size: 16px; font-weight: 800; color: #818cf8; font-family: var(--font-heading);" id="dir-kpi-disponibles">—</div>
-              <div style="font-size: 9.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Disponibles</div>
+            <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 10px; padding: 8px 16px; text-align: center; flex: 1; min-width: 130px;">
+              <div style="font-size: 18px; font-weight: 800; color: #818cf8; font-family: var(--font-heading);" id="dir-kpi-disponibles">—</div>
+              <div style="font-size: 10px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Disponibles</div>
+            </div>
+          </div>
+
+          <!-- TIME TO PROGRAM CARDS GRID -->
+          <div id="tenants-cards-grid" class="ttp-clients-grid">
+            <!-- Injected via JS -->
+          </div>
+
+          <!-- TABLA DETALLADA (MODO SECUNDARIO) -->
+          <div class="data-card" id="tenants-table-container" style="display: none;">
+            <div class="table-responsive">
+              <table class="modern-table">
+                <thead>
+                  <tr>
+                    <th>Espacio</th>
+                    <th>Arrendatario / RIF</th>
+                    <th>Área (m²)</th>
+                    <th>Canon Mensual</th>
+                    <th>Saldo Pendiente</th>
+                    <th>Mora</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tenants-table-body">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
 
-        <div class="data-card">
-          <div class="table-responsive">
-            <table class="modern-table">
-              <thead>
-                <tr>
-                  <th>Espacio</th>
-                  <th>Arrendatario / RIF</th>
-                  <th>Área (m²)</th>
-                  <th>Canon Mensual</th>
-                  <th>Saldo Pendiente</th>
-                  <th>Mora</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="tenants-table-body">
-                <!-- Injected via JS -->
-              </tbody>
-            </table>
-          </div>
+        <!-- VISTA 2: TIME TO PROGRAM FULL CLIENT PROFILE SHEET (IMAGE 5) -->
+        <div id="client-full-profile-sheet" class="ttp-profile-sheet" style="display: none;">
+          <!-- Injected via JS (renderClientFullProfile) -->
         </div>
+
       </section>
 
       <!-- TAB 2: COBRANZAS & RECIBOS -->

@@ -80,7 +80,9 @@
   // --- 3. CONTROL DE ACCESO ESTRICTO & PREVENCIÓN IDOR (ZERO-TRUST) ---
   function verifyResourceAccess(resource, session) {
     if (!session || !session.role) return { allowed: false, reason: 'NO_AUTH' };
-    if (session.role === 'admin') return { allowed: true, role: 'admin' };
+    if (['admin', 'superadmin', 'admin_finanzas', 'admin_legal', 'admin_mantenimiento', 'heredero'].includes(session.role)) {
+      return { allowed: true, role: session.role };
+    }
     
     if (session.role === 'tenant') {
       const userTenantId = session.tenant_id;
@@ -420,10 +422,35 @@
     });
   }
 
+  function triggerFileInput(inputId) {
+    if (!inputId) return;
+    const el = typeof inputId === 'string' ? document.getElementById(inputId) : inputId;
+    if (el && typeof el.click === 'function') {
+      try {
+        el.click();
+      } catch (err) {
+        console.warn('[triggerFileInput] Error:', err);
+      }
+    }
+  }
+
   // --- 9. UNIVERSAL CSP-SAFE DOM EVENT DELEGATOR ---
   function safeInvoke(code, elem, event) {
     if (!code) return;
     try {
+      if (code.includes('triggerFileInput(')) {
+        const idMatch = code.match(/triggerFileInput\(['"]([^'"]+)['"]\)/);
+        if (idMatch && idMatch[1]) {
+          triggerFileInput(idMatch[1]);
+          return;
+        }
+      }
+      const clickMatch = code.match(/document\.getElementById\(['"]([^'"]+)['"]\)\.click\(\)/);
+      if (clickMatch && clickMatch[1]) {
+        triggerFileInput(clickMatch[1]);
+        return;
+      }
+
       const callMatch = code.match(/^([a-zA-Z0-9_$.]+)\s*\((.*)\)$/);
       if (callMatch) {
         const fnPath = callMatch[1];
@@ -453,12 +480,6 @@
       }
       if (code.includes('window.activeTemplateTextarea = this')) {
         global.activeTemplateTextarea = elem;
-        return;
-      }
-      const clickMatch = code.match(/document\.getElementById\(['"]([^'"]+)['"]\)\.click\(\)/);
-      if (clickMatch) {
-        const el = document.getElementById(clickMatch[1]);
-        if (el) el.click();
         return;
       }
     } catch (err) {
@@ -503,6 +524,7 @@
   }, true);
 
   // Export to global
+  global.triggerFileInput = triggerFileInput;
   global.safeInvoke = safeInvoke;
   global.SecuritySuite = {
     escapeHtml,
@@ -518,7 +540,8 @@
     renderEmptyState,
     toast: showToast,
     confirm: showModernConfirm,
-    prompt: showModernPrompt
+    prompt: showModernPrompt,
+    triggerFileInput
   };
   global.escapeHtml = escapeHtml;
   global.isSafeReceiptDataUrl = isSafeReceiptDataUrl;

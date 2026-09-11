@@ -809,24 +809,74 @@ document.addEventListener('DOMContentLoaded', () => {
     updateAgingBucket('90', bucket90);
   }
 
-  // B. DIRECTORIO DE INQUILINOS & LOCALES
-  function renderTenantsTable() {
-    const tbody = document.getElementById('tenants-table-body');
-    if (!tbody) return;
-    tbody.innerHTML = '';
+  // B. DIRECTORIO DE INQUILINOS & LOCALES (TIME TO PROGRAM MODERN ARCHITECTURE)
+  let tenantsViewMode = 'cards'; // 'cards' | 'table'
 
+  window.setTenantsViewMode = function(mode) {
+    tenantsViewMode = mode;
+    const cardsGrid = document.getElementById('tenants-cards-grid');
+    const tableCont = document.getElementById('tenants-table-container');
+    const btnCards = document.getElementById('btn-view-cards');
+    const btnTable = document.getElementById('btn-view-table');
+
+    if (mode === 'cards') {
+      if (cardsGrid) cardsGrid.style.display = 'grid';
+      if (tableCont) tableCont.style.display = 'none';
+      if (btnCards) btnCards.classList.add('active');
+      if (btnTable) btnTable.classList.remove('active');
+    } else {
+      if (cardsGrid) cardsGrid.style.display = 'none';
+      if (tableCont) tableCont.style.display = 'block';
+      if (btnCards) btnCards.classList.remove('active');
+      if (btnTable) btnTable.classList.add('active');
+    }
+  };
+
+  window.filterTenantsView = function() {
+    renderTenantsDirectory();
+  };
+
+  const AVATAR_GRADIENTS = [
+    'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+    'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+    'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
+    'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)',
+    'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)',
+    'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)'
+  ];
+
+  function getMonogramAndGradient(name, index = 0) {
+    const clean = (name || 'CC').trim();
+    const words = clean.split(/\s+/);
+    let monogram = 'CC';
+    if (words.length > 1) {
+      monogram = (words[0][0] + words[1][0]).toUpperCase();
+    } else {
+      monogram = clean.substring(0, 2).toUpperCase();
+    }
+    const gradient = AVATAR_GRADIENTS[index % AVATAR_GRADIENTS.length];
+    return { monogram, gradient };
+  }
+
+  function renderTenantsDirectory() {
     const units = dbService.getUnits();
     const tenants = dbService.getTenants();
     const contracts = dbService.getContracts();
     const allInvoices = dbService.getInvoices();
 
-    // Actualizar subtítulo dinámico con el conteo real
-    const subtitle = document.getElementById('tenants-directory-subtitle');
-    if (subtitle) {
-      subtitle.textContent = `${units.length} Unidades Comerciales e Industriales`;
+    const searchInput = document.getElementById('ttp-tenant-search');
+    const filterQuery = (searchInput ? searchInput.value.trim().toLowerCase() : '');
+    const filterStatusEl = document.getElementById('ttp-tenant-filter-status');
+    const filterStatus = filterStatusEl ? filterStatusEl.value : 'all';
+
+    // Saludo reactivo
+    const currentSess = (typeof AuthGuard !== 'undefined') ? AuthGuard.currentUser() : null;
+    const greetingEl = document.getElementById('ttp-greeting-name');
+    if (greetingEl && currentSess) {
+      greetingEl.textContent = currentSess.display_name || 'Administración CCMS';
     }
 
-    // Calcular métricas de resumen del directorio
+    // Mini KPIs Globales
     let countSolvente = 0;
     let countMoroso = 0;
     let countDisponible = 0;
@@ -859,90 +909,635 @@ document.addEventListener('DOMContentLoaded', () => {
     setKpiText('dir-kpi-disponibles', countDisponible);
     setKpiText('dir-kpi-total-mora', formatMoney(totalMoraUsd));
 
-    units.forEach(unit => {
-      const tr = document.createElement('tr');
+    // Filtrado de Unidades
+    const filteredUnits = units.filter(unit => {
       const tenant = tenants.find(t => t.id === unit.tenant_id);
       const contract = contracts.find(c => c.unit_code === unit.code);
-
-      // Facturas y saldos de este inquilino
       const tenantInvoices = tenant ? allInvoices.filter(i => i.tenant_id === tenant.id) : [];
-      const unpaidInvoices = tenantInvoices.filter(i => i.status !== 'pagado');
       const moraInvoices = tenantInvoices.filter(i => i.status === 'en_mora');
-      const pendingSaldoUsd = unpaidInvoices.reduce((a, i) => a + (parseFloat(i.total_usd) || 0), 0);
-      const moraAmtUsd = moraInvoices.reduce((a, i) => a + (parseFloat(i.total_usd) || 0), 0);
+      const moraAmt = moraInvoices.reduce((a, i) => a + (parseFloat(i.total_usd) || 0), 0);
+      const isMoroso = moraAmt > 0 || (tenant && tenant.status === 'moroso');
 
-      let statusBadge = '';
-      if (unit.status === 'disponible') {
-        statusBadge = '<span class="status-pill pill-info"><i class="fa-solid fa-circle"></i> Disponible</span>';
-      } else if (moraAmtUsd > 0 || (tenant && tenant.status === 'moroso')) {
-        statusBadge = '<span class="status-pill pill-overdue"><i class="fa-solid fa-circle-exclamation"></i> En Mora</span>';
-      } else if (contract && contract.status === 'por_vencer') {
-        statusBadge = '<span class="status-pill pill-warning"><i class="fa-solid fa-clock"></i> Por Vencer</span>';
-      } else {
-        statusBadge = '<span class="status-pill pill-active"><i class="fa-solid fa-circle-check"></i> Solvente</span>';
+      if (filterStatus === 'solvente' && (unit.status === 'disponible' || isMoroso)) return false;
+      if (filterStatus === 'moroso' && !isMoroso) return false;
+      if (filterStatus === 'disponible' && unit.status !== 'disponible') return false;
+
+      if (filterQuery) {
+        const uCode = (unit.code || '').toLowerCase();
+        const uName = (unit.name || '').toLowerCase();
+        const tName = tenant ? (tenant.business_name || '').toLowerCase() : '';
+        const tTrade = tenant ? (tenant.trade_name || '').toLowerCase() : '';
+        const tRif = tenant ? (tenant.rif || '').toLowerCase() : '';
+        const tRep = tenant ? (tenant.legal_rep_name || '').toLowerCase() : '';
+        return uCode.includes(filterQuery) || uName.includes(filterQuery) || tName.includes(filterQuery) || tTrade.includes(filterQuery) || tRif.includes(filterQuery) || tRep.includes(filterQuery);
       }
-
-      // Columna Saldo Pendiente
-      const saldoHtml = tenant
-        ? pendingSaldoUsd > 0
-          ? `<strong style="color: var(--amber); font-family: var(--font-heading);">${formatMoney(pendingSaldoUsd)}</strong>
-             <div style="font-size: 10px; color: var(--txt-muted);">${unpaidInvoices.length} ${unpaidInvoices.length === 1 ? 'cuota pendiente' : 'cuotas pendientes'}</div>`
-          : `<span style="color: var(--emerald); font-weight: 700;"><i class="fa-solid fa-circle-check" style="font-size: 10px;"></i> Al día</span>`
-        : `<span style="color: var(--txt-muted); font-style: italic;">—</span>`;
-
-      // Columna Mora
-      const moraHtml = tenant
-        ? moraAmtUsd > 0
-          ? `<strong style="color: var(--rose); font-family: var(--font-heading);">${formatMoney(moraAmtUsd)}</strong>
-             <div style="font-size: 10px; color: var(--rose);">${moraInvoices.length} ${moraInvoices.length === 1 ? 'factura vencida' : 'facturas vencidas'}</div>`
-          : `<span style="color: var(--txt-muted);">$0.00</span>`
-        : `<span style="color: var(--txt-muted); font-style: italic;">—</span>`;
-
-      tr.innerHTML = `
-        <td>
-          <strong style="color: var(--amber); font-family: var(--font-heading); font-size: 13.5px;">${escapeHtml(unit.code)}</strong>
-          <div style="font-size: 11px; color: var(--txt-muted);">${escapeHtml(unit.name)}</div>
-        </td>
-        <td>
-          ${tenant ? `<strong>${escapeHtml(tenant.business_name)}</strong><div style="font-size: 11px; color: var(--txt-secondary);">RIF: ${escapeHtml(tenant.rif)} • ${escapeHtml(tenant.trade_name || '')}</div>` : '<span style="color: var(--txt-muted); font-style: italic;">Sin Arrendatario</span>'}
-        </td>
-        <td>
-          <strong>${(parseFloat(unit.area_m2) || 0).toLocaleString()} m²</strong>
-          <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase;">${escapeHtml(unit.category || '')}</div>
-        </td>
-        <td>
-          <strong>${formatMoney(unit.base_rent_usd)}</strong>
-          <div style="font-size: 10.5px; color: var(--amber);">Alícuota: ${((parseFloat(unit.condo_aliquot) || 0) * 100).toFixed(1)}%</div>
-        </td>
-        <td>${saldoHtml}</td>
-        <td>${moraHtml}</td>
-        <td>${statusBadge}</td>
-        <td>
-          <div style="display: flex; gap: 6px;">
-            ${tenant ? `
-              <button class="btn-action-icon" title="Ver Expediente Jurídico" data-click="openTenantDossier('${tenant.id}')">
-                <i class="fa-solid fa-folder-open"></i>
-              </button>
-              <button class="btn-action-icon" title="Ver Contrato de Arrendamiento (G.O. 40.418)" style="color: var(--cyan);" data-click="viewTenantContract('${tenant.id}')">
-                <i class="fa-solid fa-file-signature"></i>
-              </button>
-              <button class="btn-action-icon btn-wa-action" title="Mensaje Instantáneo WhatsApp" data-click="openWhatsAppModal('${tenant.id}')">
-                <i class="fa-brands fa-whatsapp"></i>
-              </button>
-              <button class="btn-action-icon" title="Calcular Prórroga Legal" style="color: var(--amber);" data-click="openProrrogaModal('${unit.code}')">
-                <i class="fa-solid fa-scale-balanced"></i>
-              </button>
-            ` : `
-              <a href="onboarding.html?unit=${unit.code}" class="btn-action-icon" title="Asignar Arrendatario" style="text-decoration: none;">
-                <i class="fa-solid fa-user-plus" style="color: var(--amber);"></i>
-              </a>
-            `}
-          </div>
-        </td>
-      `;
-      tbody.appendChild(tr);
+      return true;
     });
+
+    // RENDER 1: CARDS GRID (TIME TO PROGRAM IMAGE 4 STYLE)
+    const cardsGrid = document.getElementById('tenants-cards-grid');
+    if (cardsGrid) {
+      cardsGrid.innerHTML = '';
+      if (filteredUnits.length === 0) {
+        cardsGrid.innerHTML = `
+          <div style="grid-column: 1/-1; text-align: center; padding: 40px 20px; background: rgba(255,255,255,0.02); border: 1px dashed var(--border-subtle); border-radius: 12px;">
+            <i class="fa-solid fa-magnifying-glass" style="font-size: 32px; color: var(--txt-muted); margin-bottom: 10px;"></i>
+            <div style="font-weight: 700; color: var(--txt-primary); font-size: 15px;">No se encontraron resultados</div>
+            <div style="font-size: 12px; color: var(--txt-secondary); margin-top: 4px;">Intente con otro término de búsqueda o cambie el filtro de estado.</div>
+          </div>
+        `;
+      } else {
+        filteredUnits.forEach((unit, idx) => {
+          const tenant = tenants.find(t => t.id === unit.tenant_id);
+          const contract = contracts.find(c => c.unit_code === unit.code);
+          const tenantInvoices = tenant ? allInvoices.filter(i => i.tenant_id === tenant.id) : [];
+          const unpaidInvoices = tenantInvoices.filter(i => i.status !== 'pagado');
+          const moraInvoices = tenantInvoices.filter(i => i.status === 'en_mora');
+          const totalBilled = tenantInvoices.reduce((a, i) => a + (parseFloat(i.total_usd) || 0), 0);
+          const pendingSaldoUsd = unpaidInvoices.reduce((a, i) => a + (parseFloat(i.total_usd) || 0), 0);
+          const isOverdue = moraInvoices.length > 0 || (tenant && tenant.status === 'moroso');
+
+          const card = document.createElement('div');
+          const isVacant = unit.status === 'disponible';
+          const cardClass = isVacant ? 'ttp-client-card is-vacant' : (isOverdue ? 'ttp-client-card is-overdue' : 'ttp-client-card is-solvent');
+          card.className = cardClass;
+
+          const { monogram, gradient } = getMonogramAndGradient(tenant ? tenant.business_name : unit.name, idx);
+
+          let statusBadge = '';
+          if (isVacant) {
+            statusBadge = `<span class="status-pill pill-info"><i class="fa-solid fa-building"></i> Disponible</span>`;
+          } else if (isOverdue) {
+            statusBadge = `<span class="status-pill pill-overdue"><i class="fa-solid fa-circle-exclamation"></i> En Mora: ${formatMoney(pendingSaldoUsd)}</span>`;
+          } else {
+            statusBadge = `<span class="status-pill pill-active"><i class="fa-solid fa-circle-check"></i> Solvente</span>`;
+          }
+
+          card.innerHTML = `
+            <div class="ttp-card-header">
+              <div class="ttp-avatar-circle" style="background: ${gradient};">
+                ${monogram}
+              </div>
+              <div class="ttp-client-info">
+                <div class="ttp-client-name" title="${escapeHtml(tenant ? tenant.business_name : unit.name)}">
+                  ${escapeHtml(tenant ? tenant.business_name : unit.name)}
+                </div>
+                <div class="ttp-client-sub">
+                  ${escapeHtml(unit.code)} • ${(parseFloat(unit.area_m2) || 0).toLocaleString()} m² ${tenant ? `• RIF: ${escapeHtml(tenant.rif)}` : ''}
+                </div>
+              </div>
+            </div>
+
+            <div class="ttp-card-body">
+              <div class="ttp-metric-col">
+                <span class="ttp-metric-label">Total Facturado</span>
+                <span class="ttp-metric-val">${tenant ? formatMoney(totalBilled) : '$0.00'}</span>
+              </div>
+              <div class="ttp-metric-col" style="align-items: flex-end;">
+                <span class="ttp-metric-label">Estado</span>
+                ${statusBadge}
+              </div>
+            </div>
+          `;
+
+          card.onclick = () => {
+            if (tenant) {
+              window.openTenantFullProfile(tenant.id);
+            } else {
+              window.location.href = `onboarding.html?unit=${encodeURIComponent(unit.code)}`;
+            }
+          };
+
+          cardsGrid.appendChild(card);
+        });
+      }
+    }
+
+    // RENDER 2: TABLE VIEW
+    const tbody = document.getElementById('tenants-table-body');
+    if (tbody) {
+      tbody.innerHTML = '';
+      filteredUnits.forEach(unit => {
+        const tr = document.createElement('tr');
+        const tenant = tenants.find(t => t.id === unit.tenant_id);
+        const contract = contracts.find(c => c.unit_code === unit.code);
+        const tenantInvoices = tenant ? allInvoices.filter(i => i.tenant_id === tenant.id) : [];
+        const unpaidInvoices = tenantInvoices.filter(i => i.status !== 'pagado');
+        const moraInvoices = tenantInvoices.filter(i => i.status === 'en_mora');
+        const pendingSaldoUsd = unpaidInvoices.reduce((a, i) => a + (parseFloat(i.total_usd) || 0), 0);
+        const moraAmtUsd = moraInvoices.reduce((a, i) => a + (parseFloat(i.total_usd) || 0), 0);
+
+        let statusBadge = '';
+        if (unit.status === 'disponible') {
+          statusBadge = '<span class="status-pill pill-info"><i class="fa-solid fa-circle"></i> Disponible</span>';
+        } else if (moraAmtUsd > 0 || (tenant && tenant.status === 'moroso')) {
+          statusBadge = '<span class="status-pill pill-overdue"><i class="fa-solid fa-circle-exclamation"></i> En Mora</span>';
+        } else if (contract && contract.status === 'por_vencer') {
+          statusBadge = '<span class="status-pill pill-warning"><i class="fa-solid fa-clock"></i> Por Vencer</span>';
+        } else {
+          statusBadge = '<span class="status-pill pill-active"><i class="fa-solid fa-circle-check"></i> Solvente</span>';
+        }
+
+        const saldoHtml = tenant
+          ? pendingSaldoUsd > 0
+            ? `<strong style="color: var(--amber); font-family: var(--font-heading);">${formatMoney(pendingSaldoUsd)}</strong>
+               <div style="font-size: 10px; color: var(--txt-muted);">${unpaidInvoices.length} cuotas</div>`
+            : `<span style="color: var(--emerald); font-weight: 700;"><i class="fa-solid fa-circle-check" style="font-size: 10px;"></i> Al día</span>`
+          : `<span style="color: var(--txt-muted); font-style: italic;">—</span>`;
+
+        const moraHtml = tenant
+          ? moraAmtUsd > 0
+            ? `<strong style="color: var(--rose); font-family: var(--font-heading);">${formatMoney(moraAmtUsd)}</strong>
+               <div style="font-size: 10px; color: var(--rose);">${moraInvoices.length} vencidas</div>`
+            : `<span style="color: var(--txt-muted);">$0.00</span>`
+          : `<span style="color: var(--txt-muted); font-style: italic;">—</span>`;
+
+        tr.innerHTML = `
+          <td>
+            <strong style="color: var(--amber); font-family: var(--font-heading); font-size: 13.5px;">${escapeHtml(unit.code)}</strong>
+            <div style="font-size: 11px; color: var(--txt-muted);">${escapeHtml(unit.name)}</div>
+          </td>
+          <td>
+            ${tenant ? `<strong style="cursor:pointer;" onclick="window.openTenantFullProfile('${tenant.id}')">${escapeHtml(tenant.business_name)}</strong><div style="font-size: 11px; color: var(--txt-secondary);">RIF: ${escapeHtml(tenant.rif)} • ${escapeHtml(tenant.trade_name || '')}</div>` : '<span style="color: var(--txt-muted); font-style: italic;">Sin Arrendatario</span>'}
+          </td>
+          <td>
+            <strong>${(parseFloat(unit.area_m2) || 0).toLocaleString()} m²</strong>
+            <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase;">${escapeHtml(unit.category || '')}</div>
+          </td>
+          <td>
+            <strong>${formatMoney(unit.base_rent_usd)}</strong>
+            <div style="font-size: 10.5px; color: var(--amber);">Alícuota: ${((parseFloat(unit.condo_aliquot) || 0) * 100).toFixed(1)}%</div>
+          </td>
+          <td>${saldoHtml}</td>
+          <td>${moraHtml}</td>
+          <td>${statusBadge}</td>
+          <td>
+            <div style="display: flex; gap: 6px;">
+              ${tenant ? `
+                <button class="btn-action-icon" title="Ver Expediente Completo (Ficha)" onclick="window.openTenantFullProfile('${tenant.id}')">
+                  <i class="fa-solid fa-user-tie"></i>
+                </button>
+                <button class="btn-action-icon" title="Ver Expediente Modal" data-click="openTenantDossier('${tenant.id}')">
+                  <i class="fa-solid fa-folder-open"></i>
+                </button>
+                <button class="btn-action-icon btn-wa-action" title="Mensaje WhatsApp" data-click="openWhatsAppModal('${tenant.id}')">
+                  <i class="fa-brands fa-whatsapp"></i>
+                </button>
+              ` : `
+                <a href="onboarding.html?unit=${unit.code}" class="btn-action-icon" title="Asignar Arrendatario" style="text-decoration: none;">
+                  <i class="fa-solid fa-user-plus" style="color: var(--amber);"></i>
+                </a>
+              `}
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
   }
+
+  function renderTenantsTable() {
+    renderTenantsDirectory();
+  }
+
+  // TIME TO PROGRAM FULL CLIENT PROFILE SHEET CONTROLLER (IMAGE 5 STYLE)
+  let activeProfileTenantId = null;
+
+  window.openTenantFullProfile = function(tenantId) {
+    activeProfileTenantId = tenantId;
+    const mainView = document.getElementById('tenants-main-view');
+    const profileSheet = document.getElementById('client-full-profile-sheet');
+    if (mainView) mainView.style.display = 'none';
+    if (profileSheet) {
+      profileSheet.style.display = 'flex';
+      renderClientFullProfile(tenantId);
+      profileSheet.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  window.closeTenantFullProfile = function() {
+    const mainView = document.getElementById('tenants-main-view');
+    const profileSheet = document.getElementById('client-full-profile-sheet');
+    if (profileSheet) profileSheet.style.display = 'none';
+    if (mainView) mainView.style.display = 'block';
+    renderTenantsDirectory();
+  };
+
+  window.renderClientFullProfile = function(tenantId) {
+    const profileSheet = document.getElementById('client-full-profile-sheet');
+    if (!profileSheet) return;
+
+    const tenant = dbService.getTenants().find(t => t.id === tenantId);
+    if (!tenant) return;
+    const contract = dbService.getContracts().find(c => c.tenant_id === tenantId);
+    const unit = dbService.getUnits().find(u => u.code === tenant.unit_code);
+    const allInvoices = dbService.getInvoices().filter(i => i.tenant_id === tenantId);
+
+    // Ordenar facturas por período descendente
+    allInvoices.sort((a, b) => {
+      if (b.period_year !== a.period_year) return b.period_year - a.period_year;
+      return b.period_month - a.period_month;
+    });
+
+    const totalBilled = allInvoices.reduce((a, i) => a + (parseFloat(i.total_usd) || 0), 0);
+    const paidInvoices = allInvoices.filter(i => i.status === 'pagado');
+    const unpaidInvoices = allInvoices.filter(i => i.status !== 'pagado');
+    const totalCollected = paidInvoices.reduce((a, i) => a + (parseFloat(i.total_usd) || 0), 0);
+    const balanceOwed = unpaidInvoices.reduce((a, i) => a + (parseFloat(i.total_usd) || 0), 0);
+    const avgInvoice = allInvoices.length ? (totalBilled / allInvoices.length) : 0;
+    const maxInvoice = allInvoices.length ? Math.max(...allInvoices.map(i => parseFloat(i.total_usd) || 0)) : 0;
+    const pctPaid = totalBilled > 0 ? Math.round((totalCollected / totalBilled) * 100) : 100;
+
+    const { monogram, gradient } = getMonogramAndGradient(tenant.business_name);
+    const cleanWa = (tenant.whatsapp || '').replace(/[^0-9]/g, '');
+
+    // Acuerdos especiales para este inquilino
+    const agreements = (dbService.getAgreements ? dbService.getAgreements() : []).filter(a => a.tenant_id === tenantId || a.unit_code === tenant.unit_code);
+
+    profileSheet.innerHTML = `
+      <!-- TOP BAR WITH BACK BUTTON & ACTIONS -->
+      <div class="ttp-sheet-topbar">
+        <div class="ttp-sheet-client-meta">
+          <button type="button" class="ttp-back-btn" onclick="window.closeTenantFullProfile()" title="Volver al Directorio de Clientes">
+            <i class="fa-solid fa-arrow-left"></i>
+          </button>
+          <div class="ttp-sheet-avatar" style="background: ${gradient};">
+            ${monogram}
+          </div>
+          <div>
+            <h1 class="ttp-sheet-title">${escapeHtml(tenant.business_name)}</h1>
+            <div class="ttp-sheet-subtitle">
+              ${escapeHtml(tenant.email || 'sin-correo@ccms.com')} • RIF: ${escapeHtml(tenant.rif)} • <strong style="color: var(--amber);">${escapeHtml(tenant.unit_code)}</strong> • ${escapeHtml(tenant.commercial_activity || 'Comercial')}
+            </div>
+          </div>
+        </div>
+
+        <div class="ttp-sheet-actions">
+          <button type="button" class="btn-currency-toggle" data-click="openTenantDossier('${tenant.id}')" style="font-size: 12px; padding: 7px 14px;">
+            <i class="fa-solid fa-folder-open" style="color: var(--amber);"></i> <span>Expediente Modal</span>
+          </button>
+          <button type="button" class="btn-currency-toggle" data-click="viewTenantContract('${tenant.id}')" style="color: var(--cyan); border-color: var(--cyan); font-size: 12px; padding: 7px 14px;">
+            <i class="fa-solid fa-file-contract"></i> <span>Ver Contrato Legal</span>
+          </button>
+          <button type="button" class="btn-onboarding-cta" data-click="openDossierQuickPay('${tenant.id}')" style="background: var(--emerald); border-color: var(--emerald); color: #fff; font-size: 12px; padding: 7px 16px;">
+            <i class="fa-solid fa-receipt"></i> <span>Registrar Pago</span>
+          </button>
+          ${cleanWa ? `
+            <a href="https://wa.me/${cleanWa}" target="_blank" rel="noopener noreferrer" class="btn-onboarding-cta" style="background: #25D366; border-color: #25D366; color: #fff; font-size: 12px; padding: 7px 14px; text-decoration: none;">
+              <i class="fa-brands fa-whatsapp"></i> <span>WhatsApp</span>
+            </a>
+          ` : ''}
+        </div>
+      </div>
+
+      <!-- TOP 3 KPIS BANNER (IMAGE 5 STYLE) -->
+      <div class="ttp-kpi-banner">
+        <div class="ttp-kpi-sheet-card">
+          <span class="ttp-kpi-sheet-label">Total Cuotas / Facturas</span>
+          <span class="ttp-kpi-sheet-val" style="color: var(--cyan);">${allInvoices.length} <span style="font-size: 14px; font-weight: 600; color: var(--txt-muted);">Emitidas</span></span>
+        </div>
+        <div class="ttp-kpi-sheet-card">
+          <span class="ttp-kpi-sheet-label">Total Facturado</span>
+          <span class="ttp-kpi-sheet-val" style="color: var(--txt-primary);">${formatMoney(totalBilled)}</span>
+        </div>
+        <div class="ttp-kpi-sheet-card" style="border-color: ${balanceOwed > 0 ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)'};">
+          <span class="ttp-kpi-sheet-label">Saldo Pendiente / Mora</span>
+          <span class="ttp-kpi-sheet-val" style="color: ${balanceOwed > 0 ? 'var(--rose)' : 'var(--emerald)'};">${formatMoney(balanceOwed)}</span>
+        </div>
+      </div>
+
+      <!-- 4-CARD PROFILE DASHBOARD GRID -->
+      <div class="ttp-profile-grid">
+        
+        <!-- CARD 1: CONTACT DETAILS -->
+        <div class="ttp-panel-card">
+          <div class="ttp-panel-head">
+            <h3 class="ttp-panel-title">
+              <i class="fa-solid fa-address-card" style="color: var(--amber);"></i> Datos del Arrendatario & Contacto
+            </h3>
+            <button type="button" class="btn-currency-toggle" style="font-size: 11px; padding: 4px 10px;" data-click="toggleDossierEditMode(true); openTenantDossier('${tenant.id}')">
+              <i class="fa-solid fa-pen-to-square"></i> Editar
+            </button>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: 12.5px;">
+            <div>
+              <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Razón Social</div>
+              <strong style="color: var(--txt-primary);">${escapeHtml(tenant.business_name)}</strong>
+            </div>
+            <div>
+              <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Nombre Comercial</div>
+              <span style="color: var(--txt-primary);">${escapeHtml(tenant.trade_name || 'Sin Nombre Comercial')}</span>
+            </div>
+            <div>
+              <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">RIF Jurídico</div>
+              <span style="color: var(--amber); font-family: monospace; font-weight: 700;">${escapeHtml(tenant.rif)}</span>
+            </div>
+            <div>
+              <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Representante Legal</div>
+              <span style="color: var(--txt-primary);">${escapeHtml(tenant.legal_rep_name)} (C.I. ${escapeHtml(tenant.legal_rep_dni)})</span>
+            </div>
+            <div>
+              <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Teléfono & Móvil</div>
+              <span style="color: var(--txt-primary);">${escapeHtml(tenant.phone || 'N/A')}</span>
+            </div>
+            <div>
+              <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Correo Electrónico</div>
+              <span style="color: var(--txt-primary);">${escapeHtml(tenant.email || 'N/A')}</span>
+            </div>
+            <div>
+              <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Unidad & Área</div>
+              <strong style="color: var(--amber);">${escapeHtml(tenant.unit_code)}</strong> (${unit ? (parseFloat(unit.area_m2) || 0).toLocaleString() : 0} m²)
+            </div>
+            <div>
+              <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Canon & Alícuota</div>
+              <strong style="color: var(--emerald);">${contract ? formatMoney(contract.rent_usd) : (unit ? formatMoney(unit.base_rent_usd) : '$0.00')} / mes</strong>
+            </div>
+          </div>
+
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px; margin-top: 4px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--amber); text-transform: uppercase; margin-bottom: 4px;">
+              <i class="fa-solid fa-clipboard-list"></i> Observaciones del Arrendatario
+            </div>
+            <p style="font-size: 12px; color: var(--txt-secondary); margin: 0; line-height: 1.4; font-style: italic;">
+              ${escapeHtml(tenant.observations || 'Sin observaciones registradas.')}
+            </p>
+          </div>
+        </div>
+
+        <!-- CARD 2: PAYMENT STATUS & SUMMARY -->
+        <div class="ttp-panel-card">
+          <div class="ttp-panel-head">
+            <h3 class="ttp-panel-title">
+              <i class="fa-solid fa-chart-pie" style="color: var(--emerald);"></i> Estado de Pago & Rendimiento
+            </h3>
+            <span class="status-pill ${pctPaid === 100 ? 'pill-active' : (pctPaid >= 70 ? 'pill-warning' : 'pill-overdue')}" style="font-size: 11px;">
+              ${pctPaid}% Pagado
+            </span>
+          </div>
+
+          <!-- Barra de Progreso Cobrado vs Pendiente -->
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 6px;">
+              <span style="color: var(--emerald); font-weight: 700;"><i class="fa-solid fa-circle-check"></i> Pagado: ${formatMoney(totalCollected)}</span>
+              <span style="color: var(--rose); font-weight: 700;"><i class="fa-solid fa-circle-exclamation"></i> Pendiente: ${formatMoney(balanceOwed)}</span>
+            </div>
+            <div style="width: 100%; height: 12px; border-radius: 6px; background: rgba(239,68,68,0.25); overflow: hidden; display: flex;">
+              <div style="width: ${pctPaid}%; background: linear-gradient(90deg, #10b981 0%, #059669 100%); height: 100%; transition: width 0.6s ease;"></div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; font-size: 12.5px;">
+            <div style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+              <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Promedio Factura</div>
+              <div style="font-size: 18px; font-weight: 800; color: var(--txt-primary); font-family: var(--font-heading); margin-top: 2px;">
+                ${formatMoney(avgInvoice)}
+              </div>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+              <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Factura Más Alta</div>
+              <div style="font-size: 18px; font-weight: 800; color: var(--amber); font-family: var(--font-heading); margin-top: 2px;">
+                ${formatMoney(maxInvoice)}
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px dashed var(--border-subtle); font-size: 12px; color: var(--txt-secondary);">
+            <span>Cuotas al día: <strong style="color: var(--emerald);">${paidInvoices.length}</strong></span>
+            <span>Cuotas vencidas: <strong style="color: var(--rose);">${unpaidInvoices.length}</strong></span>
+          </div>
+        </div>
+
+        <!-- CARD 3: INVOICE HISTORY TABLE -->
+        <div class="ttp-panel-card" style="grid-column: 1/-1;">
+          <div class="ttp-panel-head">
+            <h3 class="ttp-panel-title">
+              <i class="fa-solid fa-file-invoice-dollar" style="color: var(--cyan);"></i> Historial Completo de Facturas & Cuotas
+            </h3>
+            <button type="button" class="btn-currency-toggle" data-click="exportPaymentsCSV()" style="font-size: 11px; padding: 4px 10px;">
+              <i class="fa-solid fa-file-csv" style="color: var(--emerald);"></i> Exportar CSV
+            </button>
+          </div>
+
+          <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
+            <table class="modern-table" style="font-size: 12px;">
+              <thead>
+                <tr>
+                  <th>N° Recibo / Período</th>
+                  <th>Concepto</th>
+                  <th>Emisión</th>
+                  <th>Vencimiento</th>
+                  <th>Monto USD</th>
+                  <th>Equiv. Bs. BCV</th>
+                  <th>Estado</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${allInvoices.length === 0 ? `
+                  <tr><td colspan="8" style="text-align:center; padding: 24px; color: var(--txt-muted);">No hay facturas emitidas aún.</td></tr>
+                ` : allInvoices.map(inv => {
+                  let pill = '<span class="status-pill pill-active"><i class="fa-solid fa-circle-check"></i> Pagado</span>';
+                  if (inv.status === 'en_mora') pill = '<span class="status-pill pill-overdue"><i class="fa-solid fa-circle-exclamation"></i> En Mora</span>';
+                  else if (inv.status === 'pendiente' || inv.status === 'verificando') pill = '<span class="status-pill pill-warning"><i class="fa-solid fa-clock"></i> Pendiente</span>';
+
+                  const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+                  const periodTxt = `${monthNames[(inv.period_month || 1) - 1]} ${inv.period_year || 2026}`;
+
+                  return `
+                    <tr>
+                      <td><strong style="color: var(--amber);">${escapeHtml(inv.invoice_number || inv.id)}</strong><div style="font-size: 10.5px; color: var(--txt-muted);">${periodTxt}</div></td>
+                      <td>${escapeHtml(inv.concept || 'Canon de Arrendamiento + Condominio')}</td>
+                      <td>${inv.issue_date || '—'}</td>
+                      <td>${inv.due_date || '—'}</td>
+                      <td><strong style="color: var(--txt-primary);">${formatMoney(inv.total_usd)}</strong></td>
+                      <td><span style="color: var(--amber); font-weight: 700;">${formatVes(inv.total_ves || (inv.total_usd * 48.5))}</span></td>
+                      <td>${pill}</td>
+                      <td>
+                        <div style="display: flex; gap: 6px;">
+                          <button class="btn-action-icon" title="Ver Recibo Imprimible" onclick="window.viewInvoiceDetail('${inv.id}')">
+                            <i class="fa-solid fa-print"></i>
+                          </button>
+                          ${inv.status !== 'pagado' ? `
+                            <button class="btn-action-icon" title="Registrar Pago" style="color: var(--emerald);" onclick="window.openPaymentModal('${inv.id}')">
+                              <i class="fa-solid fa-cash-register"></i>
+                            </button>
+                          ` : ''}
+                        </div>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- CARD 4: ACUERDOS ESPECIALES, OBRAS & ARCHIVOS ADJUNTOS -->
+        <div class="ttp-panel-card" style="grid-column: 1/-1;">
+          <div class="ttp-panel-head">
+            <h3 class="ttp-panel-title">
+              <i class="fa-solid fa-handshake-angle" style="color: var(--purple);"></i> Acuerdos Especiales, Deducciones por Obras & Soporte Documental
+            </h3>
+            <span class="status-pill pill-info" style="font-size: 10px;">Art. 13 & 32 G.O. 40.418</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <!-- SUB-PANEL 1: ACUERDOS REGISTRADOS -->
+            <div>
+              <h4 style="font-size: 12px; font-weight: 700; color: var(--amber); text-transform: uppercase; margin: 0 0 10px 0;">
+                <i class="fa-solid fa-list-check"></i> Acuerdos Vigentes
+              </h4>
+              ${agreements.length === 0 ? `
+                <div style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px dashed var(--border-subtle); border-radius: 8px; font-size: 12px; color: var(--txt-muted); text-align: center;">
+                  No hay acuerdos o deducciones especiales registrados para este arrendatario.
+                </div>
+              ` : `
+                <div style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto;">
+                  ${agreements.map(a => `
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 10px; font-size: 12px;">
+                      <div style="display: flex; justify-content: space-between; font-weight: 700; color: var(--txt-primary);">
+                        <span>${escapeHtml(a.type || 'Deducción')}</span>
+                        <span style="color: var(--emerald);">${formatMoney(a.monthly_discount_usd)} / mes</span>
+                      </div>
+                      <div style="font-size: 11px; color: var(--txt-secondary); margin-top: 3px;">${escapeHtml(a.description || '')}</div>
+                      <div style="font-size: 10px; color: var(--txt-muted); margin-top: 4px;">Vigencia: ${a.start_date} al ${a.end_date}</div>
+                    </div>
+                  `).join('')}
+                </div>
+              `}
+              <div style="margin-top: 12px;">
+                <button type="button" class="btn-currency-toggle" style="font-size: 11.5px; padding: 6px 12px;" data-click="openTenantDossier('${tenant.id}')">
+                  <i class="fa-solid fa-plus-circle" style="color: var(--amber);"></i> Registrar Nuevo Acuerdo en Modal
+                </button>
+              </div>
+            </div>
+
+            <!-- SUB-PANEL 2: DROPZONE UNIVERSAL PARA ADJUNTAR SOPORTES / CONTRATO / FOTOS DE REPARACIONES -->
+            <div>
+              <h4 style="font-size: 12px; font-weight: 700; color: var(--cyan); text-transform: uppercase; margin: 0 0 10px 0;">
+                <i class="fa-solid fa-paperclip"></i> Cargar Anexos & Soportes de Obras
+              </h4>
+
+              <input type="file" id="client-profile-doc-file" accept="image/*,.pdf" style="display: none;" onchange="window.handleProfileDocFileChange(event, '${tenant.id}')">
+              
+              <div class="custom-file-dropzone amber-zone" id="client-profile-doc-dropzone" onclick="document.getElementById('client-profile-doc-file').click()" style="padding: 16px; text-align: center; border: 2px dashed var(--border-subtle); border-radius: 10px; cursor: pointer; background: rgba(255,255,255,0.02);">
+                <i class="fa-solid fa-cloud-arrow-up dropzone-icon" style="font-size: 24px; color: var(--amber); margin-bottom: 6px;"></i>
+                <div class="dropzone-main-text" style="font-size: 12px; font-weight: 700; color: var(--txt-primary);">Arrastra un archivo o haz clic para subir</div>
+                <div class="dropzone-sub-text" style="font-size: 10.5px; color: var(--txt-muted);">Facturas de compras, fotos de remodelaciones o contratos escaneados (PDF, JPG, PNG)</div>
+              </div>
+
+              <div id="profile-doc-preview-container" class="file-preview-card" style="display: none; margin-top: 10px;">
+                <div class="file-preview-info">
+                  <i class="fa-solid fa-file-circle-check" id="profile-doc-icon" style="color: var(--emerald); font-size: 20px;"></i>
+                  <div style="min-width: 0;">
+                    <div id="profile-doc-name" class="file-preview-name" style="font-size: 12px;"></div>
+                    <div id="profile-doc-size" class="file-preview-size" style="font-size: 10.5px;"></div>
+                  </div>
+                </div>
+                <button type="button" class="btn-remove-file" onclick="window.removeProfileDoc()" title="Remover archivo"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+
+              <div id="profile-uploaded-docs-list" style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;">
+                <!-- Documentos guardados previamente -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    `;
+
+    // Renderizar documentos ya adjuntos previamente si existen en localStorage
+    renderTenantSavedDocs(tenantId);
+  };
+
+  // Manejo de archivos adjuntos del perfil de inquilino
+  window.handleProfileDocFileChange = function(e, tenantId) {
+    const file = (e.target && e.target.files && e.target.files[0])
+      ? e.target.files[0]
+      : (e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files[0] : null);
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('El archivo seleccionado excede el límite máximo de 10 MB.', 'warning', 'Archivo Excedido');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      const docItem = {
+        id: 'doc-' + Date.now(),
+        tenant_id: tenantId,
+        name: file.name,
+        type: file.type || 'application/octet-stream',
+        size: file.size,
+        data: evt.target.result,
+        uploaded_at: new Date().toISOString()
+      };
+
+      try {
+        const storedKey = 'ccms_tenant_docs_' + tenantId;
+        const existing = JSON.parse(localStorage.getItem(storedKey) || '[]');
+        existing.push(docItem);
+        localStorage.setItem(storedKey, JSON.stringify(existing));
+        showToast('Documento o soporte de obra adjuntado exitosamente.', 'success', 'Archivo Guardado');
+        renderTenantSavedDocs(tenantId);
+      } catch (err) {
+        console.error('[ProfileDoc] Storage err:', err);
+        showToast('Error al guardar el archivo adjunto.', 'error');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  function renderTenantSavedDocs(tenantId) {
+    const listEl = document.getElementById('profile-uploaded-docs-list');
+    if (!listEl) return;
+    const storedKey = 'ccms_tenant_docs_' + tenantId;
+    let docs = [];
+    try {
+      docs = JSON.parse(localStorage.getItem(storedKey) || '[]');
+    } catch (e) {}
+
+    if (docs.length === 0) {
+      listEl.innerHTML = '';
+      return;
+    }
+
+    listEl.innerHTML = docs.map(d => `
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+          <i class="${d.type.includes('pdf') ? 'fa-solid fa-file-pdf' : 'fa-solid fa-file-image'}" style="color: var(--amber);"></i>
+          <span style="font-size: 11.5px; font-weight: 700; color: var(--txt-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(d.name)}</span>
+          <span style="font-size: 10px; color: var(--txt-muted);">(${(d.size / 1024).toFixed(1)} KB)</span>
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <a href="${d.data}" download="${escapeHtml(d.name)}" class="btn-action-icon" title="Descargar"><i class="fa-solid fa-download"></i></a>
+          <button type="button" class="btn-action-icon" style="color: var(--rose);" onclick="window.deleteTenantDoc('${tenantId}', '${d.id}')" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  window.deleteTenantDoc = function(tenantId, docId) {
+    const storedKey = 'ccms_tenant_docs_' + tenantId;
+    try {
+      let docs = JSON.parse(localStorage.getItem(storedKey) || '[]');
+      docs = docs.filter(d => d.id !== docId);
+      localStorage.setItem(storedKey, JSON.stringify(docs));
+      showToast('Documento eliminado.', 'info');
+      renderTenantSavedDocs(tenantId);
+    } catch (e) {}
+  };
+
+  window.removeProfileDoc = function() {
+    const input = document.getElementById('client-profile-doc-file');
+    if (input) input.value = '';
+    const container = document.getElementById('profile-doc-preview-container');
+    if (container) container.style.display = 'none';
+  };
 
   // Variables de filtros activos
   let filterCobranzasMonth = '3';
@@ -5952,21 +6547,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // Configuración de eventos Drag & Drop para los Dropzones personalizados
-  function setupCustomDropzones() {
-    [
-      { zoneId: 'pay-receipt-dropzone', handler: window.handleReceiptFileChange },
-      { zoneId: 'exp-proof-dropzone', handler: window.handleExpenseFileChange },
-      { zoneId: 'inv-kdx-photo-dropzone', handler: window.handleKardexPhotoChange }
-    ].forEach(item => {
-      const zone = document.getElementById(item.zoneId);
+  // Configuración Universal de Eventos Click y Drag & Drop para todos los Dropzones
+  function initUniversalDropzones() {
+    const DROPZONE_CONFIGS = [
+      { zoneId: 'pay-receipt-dropzone', inputId: 'pay-receipt-file', handler: window.handleReceiptFileChange },
+      { zoneId: 'exp-proof-dropzone', inputId: 'exp-proof-file', handler: window.handleExpenseFileChange },
+      { zoneId: 'agr-proof-dropzone', inputId: 'agr-proof-file', handler: window.handleAgreementProofChange },
+      { zoneId: 'inv-con-photo-dropzone', inputId: 'inv-con-photo-file', handler: window.handleConsumablePhotoChange },
+      { zoneId: 'inv-kdx-photo-dropzone', inputId: 'inv-kdx-photo-file', handler: window.handleKardexPhotoChange },
+      { zoneId: 'backup-restore-dropzone', inputId: 'backup-restore-file-input', handler: window.handleBackupRestoreFileInput },
+      { zoneId: 'staff-photo-dropzone', inputId: 'staff-photo-file', handler: window.handleStaffPhotoChange }
+    ];
+
+    DROPZONE_CONFIGS.forEach(cfg => {
+      const zone = document.getElementById(cfg.zoneId);
+      const input = document.getElementById(cfg.inputId);
       if (!zone) return;
 
+      // Click listener directo para abrir diálogo de archivo
+      zone.addEventListener('click', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.closest('button')) return;
+        if (input && typeof input.click === 'function') {
+          input.click();
+        }
+      });
+
+      // Drag & Drop listeners
       ['dragenter', 'dragover'].forEach(eventName => {
         zone.addEventListener(eventName, (e) => {
           e.preventDefault();
           e.stopPropagation();
-          zone.classList.add('dragover');
+          zone.classList.add('drag-active', 'dragover');
         }, false);
       });
 
@@ -5974,17 +6585,27 @@ document.addEventListener('DOMContentLoaded', () => {
         zone.addEventListener(eventName, (e) => {
           e.preventDefault();
           e.stopPropagation();
-          zone.classList.remove('dragover');
+          zone.classList.remove('drag-active', 'dragover');
         }, false);
       });
 
       zone.addEventListener('drop', (e) => {
-        item.handler(e);
+        e.preventDefault();
+        e.stopPropagation();
+        if (input && e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          try {
+            input.files = e.dataTransfer.files;
+          } catch (err) {}
+        }
+        if (typeof cfg.handler === 'function') {
+          cfg.handler(e);
+        }
       }, false);
     });
   }
 
-  setupCustomDropzones();
+  window.initUniversalDropzones = initUniversalDropzones;
+  initUniversalDropzones();
 
   // ==============================================================================
   // MÓDULO DE INVENTARIO: ACTIVOS FIJOS, CONSUMIBLES & KARDEX
@@ -6321,6 +6942,58 @@ document.addEventListener('DOMContentLoaded', () => {
     if (input) input.value = '';
     const container = document.getElementById('inv-kdx-photo-preview-container');
     const dropzone = document.getElementById('inv-kdx-photo-dropzone');
+    if (container) container.style.display = 'none';
+    if (dropzone) dropzone.style.display = 'flex';
+  };
+
+  let currentConsumablePhoto = null;
+  window.handleConsumablePhotoChange = function(e) {
+    const file = (e.target && e.target.files && e.target.files[0])
+      ? e.target.files[0]
+      : (e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files[0] : null);
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      showToast("La foto o ficha técnica excede el límite de 10MB.", "warning", "Archivo Excedido");
+      const input = document.getElementById('inv-con-photo-file');
+      if (input) input.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      currentConsumablePhoto = {
+        name: file.name,
+        type: file.type || 'image/jpeg',
+        size: file.size,
+        data: evt.target.result,
+        uploaded_at: new Date().toISOString()
+      };
+
+      const container = document.getElementById('inv-con-photo-preview-container');
+      const dropzone = document.getElementById('inv-con-photo-dropzone');
+      const nameEl = document.getElementById('inv-con-photo-name');
+      const sizeEl = document.getElementById('inv-con-photo-size');
+      const iconEl = document.getElementById('inv-con-photo-icon');
+
+      if (container) container.style.display = 'flex';
+      if (dropzone) dropzone.style.display = 'none';
+      if (nameEl) nameEl.textContent = file.name;
+      if (sizeEl) sizeEl.textContent = `${(file.size / 1024).toFixed(1)} KB • ${(file.type || 'Imagen').split('/')[1] || 'archivo'}`;
+      if (iconEl) {
+        iconEl.className = file.type && file.type.includes('pdf') ? 'fa-solid fa-file-pdf' : 'fa-solid fa-file-image';
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.removeConsumablePhoto = function(e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    currentConsumablePhoto = null;
+    const input = document.getElementById('inv-con-photo-file');
+    if (input) input.value = '';
+    const container = document.getElementById('inv-con-photo-preview-container');
+    const dropzone = document.getElementById('inv-con-photo-dropzone');
     if (container) container.style.display = 'none';
     if (dropzone) dropzone.style.display = 'flex';
   };

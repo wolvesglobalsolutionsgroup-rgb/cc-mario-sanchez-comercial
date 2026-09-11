@@ -2,13 +2,15 @@
  * Centro Comercial Mario Sánchez — Onboarding Wizard Controller
  */
 
-// El wizard de onboarding es solo-admin
+// El wizard de onboarding es solo-admin y superadmin
 (function() {
   if (typeof AuthGuard !== 'undefined') {
     const sess = AuthGuard.require('admin');
     if (!sess) return;
     document.addEventListener('DOMContentLoaded', function() {
-      AuthGuard.mountUserChip();
+      if (typeof AuthGuard.mountUserChip === 'function') {
+        AuthGuard.mountUserChip();
+      }
     });
   }
 })();
@@ -17,7 +19,8 @@
 window.addEventListener('pageshow', function() {
   if (typeof AuthGuard !== 'undefined') {
     const sess = AuthGuard.currentUser();
-    if (!sess || sess.role !== 'admin') {
+    const isAllowed = sess && ['superadmin', 'admin', 'admin_finanzas', 'admin_legal'].includes(sess.role);
+    if (!isAllowed) {
       window.location.replace('login.html?expired=bfcache');
     }
   }
