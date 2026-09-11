@@ -585,6 +585,10 @@ const VenezuelaLegal = {
   }
 };
 
+if (typeof window !== 'undefined') {
+  window.VenezuelaLegal = VenezuelaLegal;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = VenezuelaLegal;
 }

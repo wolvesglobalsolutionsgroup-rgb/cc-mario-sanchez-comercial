@@ -1516,8 +1516,8 @@ document.addEventListener('DOMContentLoaded', () => {
                   ${allInvoices.length === 0 ? `
                     <tr><td colspan="8" style="text-align:center; padding: 24px; color: var(--txt-muted);">No hay facturas emitidas aún.</td></tr>
                   ` : allInvoices.map(inv => {
-                    const payments = (dbService.getPayments ? dbService.getPayments() : []);
-                    const payment = payments.find(p => p.invoice_id === inv.id) || (dbService.getPendingPayment ? dbService.getPendingPayment(inv.id) : null);
+                    const allPayments = (dbService.getPayments ? dbService.getPayments() : []) || [];
+                    const payment = (Array.isArray(allPayments) ? allPayments.find(p => p.invoice_id === inv.id) : null) || (dbService.getPendingPayment ? dbService.getPendingPayment(inv.id) : null);
                     const hasProof = Boolean(inv.receipt_proof || (payment && payment.receipt_proof) || payment);
                     const isPendingApproval = inv.status === 'verificando' || (payment && payment.status === 'pendiente');
 
@@ -1971,11 +1971,13 @@ document.addEventListener('DOMContentLoaded', () => {
   window._activeProofInvoiceId = null;
 
   window.viewPaymentProof = function(invoiceId) {
-    const inv = dbService.getInvoices().find(i => i.id === invoiceId);
+    const invs = (dbService.getInvoices ? dbService.getInvoices() : []) || [];
+    const inv = invs.find(i => i.id === invoiceId);
     if (!inv) return;
-    const tenant = dbService.getTenants().find(t => t.id === inv.tenant_id) || { business_name: 'Arrendatario', unit_code: inv.unit_code };
-    const payments = dbService.getPayments ? dbService.getPayments() : [];
-    const payment = payments.find(p => p.invoice_id === invoiceId) || (dbService.getPendingPayment ? dbService.getPendingPayment(invoiceId) : null);
+    const tenants = (dbService.getTenants ? dbService.getTenants() : []) || [];
+    const tenant = tenants.find(t => t.id === inv.tenant_id) || { business_name: 'Arrendatario', unit_code: inv.unit_code };
+    const payments = (dbService.getPayments ? dbService.getPayments() : []) || [];
+    const payment = (Array.isArray(payments) ? payments.find(p => p.invoice_id === invoiceId) : null) || (dbService.getPendingPayment ? dbService.getPendingPayment(invoiceId) : null);
     
     window._activeProofInvoiceId = invoiceId;
     const rates = financialEngine.getRates();
@@ -1996,9 +1998,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const methodTxt = payment ? (payment.payment_method || 'Transferencia Bancaria') : (inv.payment_method || 'No especificado');
     const refTxt = payment ? (payment.reference_number || 'N/A') : (inv.reference_number || 'N/A');
     const bankTxt = payment ? (payment.issuing_bank || 'Banco Nacional') : (inv.issuing_bank || 'N/A');
-    const amountPaid = payment ? (payment.amount_paid || inv.total_usd) : inv.total_usd;
+    const amountPaid = parseFloat(payment ? (payment.amount_paid || inv.total_usd) : inv.total_usd) || 0;
     const currency = payment ? (payment.currency || 'USD') : 'USD';
-    const totalBs = (amountPaid * bcvRate).toLocaleString('es-VE', { minimumFractionDigits: 2 });
+    const rateNum = parseFloat(bcvRate) || ((typeof financialEngine !== 'undefined' && financialEngine.getRates) ? financialEngine.getRates().VES : 48.5) || 48.5;
+    const totalBs = (amountPaid * rateNum).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     wrapper.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: 16px;">
@@ -2030,7 +2033,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 10px;">
             <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase;">N° Referencia Bancaria</div>
             <div style="font-size: 13px; font-weight: 800; font-family: monospace; color: var(--cyan);">${escapeHtml(refTxt)}</div>
-            <div style="font-size: 11px; color: var(--txt-muted);">Tasa BCV: Bs. ${bcvRate.toFixed(2)}</div>
+            <div style="font-size: 11px; color: var(--txt-muted);">Tasa BCV: Bs. ${rateNum.toFixed(2)}</div>
           </div>
         </div>
 
@@ -6845,12 +6848,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const wrapper = document.getElementById('receipt-document-wrapper');
     if (!modal || !wrapper || !receipt) return;
 
-    const bcvRate = (receipt.snapshot && receipt.snapshot.bcv_rate_applied)
-      ? receipt.snapshot.bcv_rate_applied.toFixed(2)
-      : financialEngine.getRates().VES.toFixed(2);
+    const rentVal = parseFloat(receipt.rent_usd || 0) || 0;
+    const condoVal = parseFloat(receipt.condo_usd || 0) || 0;
+    const totalVal = parseFloat(receipt.total_usd || 0) || (rentVal + condoVal);
 
-    const totalBs = financialEngine.convert(receipt.total_usd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
-    const totalEur = financialEngine.convert(receipt.total_usd, 'USD', 'EUR').toLocaleString('de-DE', { minimumFractionDigits: 2 });
+    const bcvRate = (receipt.snapshot && receipt.snapshot.bcv_rate_applied)
+      ? (parseFloat(receipt.snapshot.bcv_rate_applied) || 48.5).toFixed(2)
+      : ((typeof financialEngine !== 'undefined' && financialEngine.getRates) ? parseFloat(financialEngine.getRates().VES).toFixed(2) : '48.50');
+
+    const totalBs = financialEngine.convert(totalVal, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
+    const totalEur = financialEngine.convert(totalVal, 'USD', 'EUR').toLocaleString('de-DE', { minimumFractionDigits: 2 });
 
     const tenantName = (window.TenantConfig && window.TenantConfig.getLegalName) ? window.TenantConfig.getLegalName() : 'CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.';
     const tenantRif = (window.TenantConfig && window.TenantConfig.getRif) ? window.TenantConfig.getRif() : 'J-29881234-0';
@@ -6900,15 +6907,15 @@ document.addEventListener('DOMContentLoaded', () => {
           <tbody>
             <tr style="border-bottom: 1px solid #e2e8f0;">
               <td style="padding: 8px;">Canon Fijo Mensual de Arrendamiento (CAF Art. 32)</td>
-              <td style="padding: 8px; text-align: right;">$${receipt.rent_usd.toFixed(2)}</td>
+              <td style="padding: 8px; text-align: right;">$${rentVal.toFixed(2)}</td>
             </tr>
             <tr style="border-bottom: 1px solid #e2e8f0;">
               <td style="padding: 8px;">Cuota de Gastos Comunes / Condominio</td>
-              <td style="padding: 8px; text-align: right;">$${receipt.condo_usd.toFixed(2)}</td>
+              <td style="padding: 8px; text-align: right;">$${condoVal.toFixed(2)}</td>
             </tr>
             <tr style="font-weight: 800; background: #f8fafc; font-size: 13px;">
               <td style="padding: 10px 8px;">TOTAL PAGADO & CONCILIADO:</td>
-              <td style="padding: 10px 8px; text-align: right; color: #059669;">$${receipt.total_usd.toFixed(2)} USD</td>
+              <td style="padding: 10px 8px; text-align: right; color: #059669;">$${totalVal.toFixed(2)} USD</td>
             </tr>
           </tbody>
         </table>
@@ -6919,7 +6926,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 4px;">
             <div>• Bolívares Oficiales (Tasa BCV ${bcvRate} Bs/USD): <strong>Bs. ${totalBs}</strong></div>
             <div>• Euros (€): <strong>€ ${totalEur} EUR</strong></div>
-            <div>• Criptoactivos USDT: <strong>USDT ${receipt.total_usd.toFixed(2)}</strong></div>
+            <div>• Criptoactivos USDT: <strong>USDT ${totalVal.toFixed(2)}</strong></div>
             <div>• Verificado por: <strong>${escapeHtml(receipt.approved_by || 'Administración')}</strong></div>
           </div>
         </div>
