@@ -28,11 +28,24 @@
 
   <!-- Script Inmediato Anti-FOUC (Cero parpadeo entre Dark y Light Mode) -->
   <script>
-    window.CCMS_DEMO_MODE = (
-      window.location.hostname === 'localhost' ||
-      window.location.hostname === '127.0.0.1' ||
-      localStorage.getItem('CCMS_FORCE_DEMO') === 'true'
-    );
+    // Atajo de URL para activar/desactivar la demo sin tocar la consola (FICHA UI-12):
+    // ?demo=true  -> activa el modo demo en este navegador (persiste en localStorage)
+    // ?demo=off   -> lo desactiva explícitamente en este navegador
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      if (params.has('demo')) {
+        var val = params.get('demo');
+        if (val === 'true' || val === '1') {
+          localStorage.setItem('CCMS_FORCE_DEMO', 'true');
+        } else if (val === 'off' || val === 'false' || val === '0') {
+          localStorage.setItem('CCMS_FORCE_DEMO', 'false');
+        }
+      }
+    })();
+
+    // Modo Demo habilitado por defecto para pruebas y showcase comercial.
+    // Se desactiva únicamente al pasar ?demo=off en la URL
+    window.CCMS_DEMO_MODE = (localStorage.getItem('CCMS_FORCE_DEMO') !== 'false');
   </script>
   <script src="js/theme-init.js?v=20260911_v45_ttp"></script>
 

@@ -184,10 +184,10 @@ window.handleLogin = handleLogin;
 
 document.addEventListener('DOMContentLoaded', () => {
   const demoSec = document.getElementById('demo-roles-section');
-  if (demoSec && window.CCMS_DEMO_MODE === true) {
-    demoSec.style.display = '';
+  if (demoSec) {
+    demoSec.style.display = (window.CCMS_DEMO_MODE === false) ? 'none' : '';
   }
-  if (!AuthGuard.demoEnabled && window.CCMS_DEMO_MODE !== true) {
+  if (window.CCMS_DEMO_MODE === false) {
     document.querySelectorAll('[data-demo-login]').forEach((el) => { el.style.display = 'none'; });
   }
   
