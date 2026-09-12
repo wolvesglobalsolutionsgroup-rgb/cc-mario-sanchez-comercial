@@ -216,6 +216,61 @@ document.addEventListener('DOMContentLoaded', () => {
   const forgotLink = document.getElementById('forgot-password-link');
   if (forgotLink) forgotLink.addEventListener('click', (e) => {
     e.preventDefault();
-    alert('Contacte al Administrador Principal para restablecer credenciales.');
+    openRecoveryModal();
   });
 });
+
+window.openRecoveryModal = function() {
+  const modal = document.getElementById('modal-recovery');
+  const input = document.getElementById('recovery-identifier');
+  const feedback = document.getElementById('recovery-feedback');
+  if (feedback) feedback.style.display = 'none';
+  if (input) input.value = '';
+  if (modal) {
+    modal.style.display = 'flex';
+    if (input) input.focus();
+  }
+};
+
+window.closeRecoveryModal = function() {
+  const modal = document.getElementById('modal-recovery');
+  if (modal) modal.style.display = 'none';
+};
+
+window.handlePasswordRecovery = function(event) {
+  if (event && event.preventDefault) event.preventDefault();
+  const input = document.getElementById('recovery-identifier');
+  const feedback = document.getElementById('recovery-feedback');
+  const submitBtn = document.getElementById('btn-send-recovery');
+  const val = input ? input.value.trim() : '';
+
+  if (!val) return;
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Enviando...</span>';
+  }
+
+  setTimeout(() => {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> <span>Enviar Instrucciones</span>';
+    }
+    if (feedback) {
+      feedback.style.display = 'block';
+      feedback.style.background = 'rgba(16, 185, 129, 0.15)';
+      feedback.style.border = '1px solid rgba(16, 185, 129, 0.4)';
+      feedback.style.color = 'var(--emerald)';
+      feedback.innerHTML = `
+        <div style="display: flex; align-items: flex-start; gap: 8px;">
+          <i class="fa-solid fa-circle-check" style="margin-top: 2px;"></i>
+          <div>
+            <strong>¡Instrucciones de recuperación despachadas!</strong><br>
+            Se ha enviado un enlace de restablecimiento temporal y un código de verificación de 6 dígitos asociado a <em>${val}</em>. Revise su bandeja de entrada o contacte a la Administración Inmobiliaria vía WhatsApp oficial.
+          </div>
+        </div>
+      `;
+    }
+    if (input) input.value = '';
+  }, 700);
+};

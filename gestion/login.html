@@ -21,56 +21,67 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
-      background-color: var(--bg-main);
+      padding: 24px;
+      background-color: #091024;
+      background-image: 
+        radial-gradient(circle at 18% 22%, rgba(245, 158, 11, 0.09) 0%, transparent 48%),
+        radial-gradient(circle at 82% 78%, rgba(6, 182, 212, 0.08) 0%, transparent 48%),
+        radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.6) 0%, #091024 100%);
       color: var(--txt-primary);
+      position: relative;
+      overflow-x: hidden;
     }
     .login-card {
       width: 100%;
-      max-width: 440px;
-      background: var(--bg-card);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border: 1px solid var(--border-focus);
-      border-radius: var(--radius-lg);
-      padding: 36px 30px;
-      box-shadow: var(--shadow-card);
+      max-width: 450px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid rgba(245, 158, 11, 0.28);
+      border-radius: 20px;
+      padding: 40px 32px;
+      box-shadow: 0 30px 80px -15px rgba(0, 0, 0, 0.9), 0 0 30px rgba(245, 158, 11, 0.1);
       position: relative;
+      z-index: 10;
     }
     @media (max-width: 480px) {
       body {
         padding: 12px;
       }
       .login-card {
-        padding: 24px 18px;
+        padding: 26px 20px;
       }
     }
     .role-toggle {
       display: flex;
-      background: var(--bg-input);
+      background: rgba(0, 0, 0, 0.35);
       border: 1px solid var(--border-subtle);
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 4px;
       margin-bottom: 24px;
     }
     .role-btn {
       flex: 1;
-      padding: 8px 12px;
+      padding: 9px 12px;
       background: transparent;
       border: none;
       color: var(--txt-secondary);
       font-family: var(--font-heading);
       font-size: 12px;
       font-weight: 700;
-      border-radius: 7px;
+      border-radius: 9px;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
     }
     .role-btn.active {
-      background: var(--amber);
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
       color: #000000;
       font-weight: 800;
-      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+      box-shadow: 0 4px 15px rgba(245, 158, 11, 0.35);
     }
     #login-submit-btn {
       display: inline-flex !important;
@@ -94,8 +105,10 @@
 <div class="login-card">
 
   <div style="text-align: center; margin-bottom: 24px;">
-    <img src="logo_cc_mario_sanchez_2k.svg?v=20260904" alt="Logo" data-tenant-logo style="width: 72px; height: 72px; max-width: 72px; max-height: 72px; object-fit: contain; margin-bottom: 12px; border-radius: 14px; box-shadow: 0 6px 24px rgba(0,0,0,0.6);">
-    <h1 style="font-family: var(--font-heading); font-size: 22px; font-weight: 900; color: var(--txt-primary);" data-tenant-short>CC Mario Sánchez</h1>
+    <div style="width: 76px; height: 76px; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; border-radius: 18px; background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(6,182,212,0.08)); border: 1px solid rgba(245,158,11,0.35); box-shadow: 0 8px 25px rgba(245,158,11,0.18);">
+      <img src="logo_cc_mario_sanchez_2k.svg?v=20260904" alt="Logo" data-tenant-logo style="width: 54px; height: 54px; object-fit: contain;">
+    </div>
+    <h1 style="font-family: var(--font-heading); font-size: 23px; font-weight: 900; color: var(--txt-primary); letter-spacing: -0.02em;" data-tenant-short>CC Mario Sánchez</h1>
     <p style="font-size: 12px; color: var(--amber-light); font-weight: 600; margin-top: 2px;">
       Plataforma de Gestión Inmobiliaria & Cobranzas
     </p>
@@ -142,7 +155,7 @@
       <i class="fa-solid fa-arrow-right-to-bracket"></i> <span id="login-submit-text">Ingresar al Portal</span>
     </button>
 
-    <!-- CREDENCIALES DE DEMOSTRACIÓN (1-CLICK DEMO ACCESS POR ROL) -->
+    <!-- CREDENCIALES DE DEMOSTRACIÓN (1-CLICK DEMO ACCESS POR ROL - SIN EMOJIS) -->
     <div style="margin-top: 14px; background: var(--amber-glow); border: 1px dashed var(--border-highlight); border-radius: 8px; padding: 12px; font-size: 12px;">
       <div style="font-weight: 800; color: var(--amber); display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
         <span style="display: flex; align-items: center; gap: 6px;">
@@ -151,23 +164,23 @@
         <span style="font-size: 10px; color: var(--txt-muted);">1-Click</span>
       </div>
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
-        <button type="button" class="cur-pill active" id="btn-demo-superadmin" data-demo-login data-role="superadmin" style="padding: 5px 8px; font-size: 10.5px; text-align: left; background: rgba(245, 158, 11, 0.15); border-color: var(--amber); color: var(--amber); font-weight: 800;">
-          👑 SuperAdmin
+        <button type="button" class="cur-pill active" id="btn-demo-superadmin" data-demo-login data-role="superadmin" style="padding: 6px 10px; font-size: 11px; text-align: left; background: rgba(245, 158, 11, 0.15); border-color: var(--amber); color: var(--amber); font-weight: 800; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-crown" style="color: var(--amber);"></i> <span>SuperAdmin</span>
         </button>
-        <button type="button" class="cur-pill" id="btn-demo-finanzas" data-demo-login data-role="finanzas" style="padding: 5px 8px; font-size: 10.5px; text-align: left;">
-          💼 Finanzas & Cobros
+        <button type="button" class="cur-pill" id="btn-demo-finanzas" data-demo-login data-role="finanzas" style="padding: 6px 10px; font-size: 11px; text-align: left; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-chart-line" style="color: var(--emerald);"></i> <span>Finanzas & Cobros</span>
         </button>
-        <button type="button" class="cur-pill" id="btn-demo-legal" data-demo-login data-role="legal" style="padding: 5px 8px; font-size: 10.5px; text-align: left;">
-          ⚖️ Legal & Contratos
+        <button type="button" class="cur-pill" id="btn-demo-legal" data-demo-login data-role="legal" style="padding: 6px 10px; font-size: 11px; text-align: left; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-scale-balanced" style="color: var(--cyan);"></i> <span>Legal & Contratos</span>
         </button>
-        <button type="button" class="cur-pill" id="btn-demo-mantenimiento" data-demo-login data-role="mantenimiento" style="padding: 5px 8px; font-size: 10.5px; text-align: left;">
-          🛠️ Mantenimiento
+        <button type="button" class="cur-pill" id="btn-demo-mantenimiento" data-demo-login data-role="mantenimiento" style="padding: 6px 10px; font-size: 11px; text-align: left; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-wrench" style="color: var(--rose);"></i> <span>Mantenimiento</span>
         </button>
-        <button type="button" class="cur-pill" id="btn-demo-heredero" data-demo-login data-role="heredero" style="padding: 5px 8px; font-size: 10.5px; text-align: left; color: #c084fc; border-color: rgba(168,85,247,0.4);" title="Acceso exclusivo de lectura y auditoría para los 14 herederos">
-          🏛️ Heredero (Lectura)
+        <button type="button" class="cur-pill" id="btn-demo-heredero" data-demo-login data-role="heredero" style="padding: 6px 10px; font-size: 11px; text-align: left; color: #c084fc; border-color: rgba(168,85,247,0.4); display: flex; align-items: center; gap: 6px;" title="Acceso exclusivo de lectura y auditoría para los herederos">
+          <i class="fa-solid fa-landmark" style="color: #c084fc;"></i> <span>Heredero (Auditoría)</span>
         </button>
-        <button type="button" class="cur-pill" id="btn-demo-tenant" data-demo-login data-role="tenant" style="padding: 5px 8px; font-size: 10.5px; text-align: left; color: var(--emerald); border-color: rgba(16,185,129,0.4);">
-          🏪 Inquilino (Local)
+        <button type="button" class="cur-pill" id="btn-demo-tenant" data-demo-login data-role="tenant" style="padding: 6px 10px; font-size: 11px; text-align: left; color: var(--emerald); border-color: rgba(16,185,129,0.4); display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-store" style="color: var(--emerald);"></i> <span>Inquilino (Local)</span>
         </button>
       </div>
     </div>
@@ -177,6 +190,40 @@
     <div data-tenant-address>Av. Municipal, Puerto La Cruz, Venezuela</div>
     <div style="margin-top: 2px;">Sistema auditado conforme a G.O. N° 40.418</div>
   </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL DE RECUPERACIÓN DE CONTRASEÑA / ACCESO SEGURO                      -->
+<!-- ========================================================================= -->
+<div class="modal-overlay" id="modal-recovery" style="display: none;">
+  <div class="modal-window" style="max-width: 440px; width: 95%;">
+    <div class="modal-header">
+      <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-shield-halved" style="color: var(--amber);"></i> <span>Recuperación de Acceso</span>
+      </h3>
+      <button class="modal-close" onclick="window.closeRecoveryModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form id="recovery-form" onsubmit="window.handlePasswordRecovery(event)" class="modal-body" style="display: flex; flex-direction: column; gap: 14px; padding: 20px;">
+      <p style="font-size: 12.5px; color: var(--txt-secondary); margin: 0; line-height: 1.5;">
+        Ingrese su correo institucional o el RIF del Arrendatario registrado para recibir un enlace de restablecimiento seguro.
+      </p>
+
+      <div class="form-group">
+        <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Correo Electrónico o RIF Registrado *</label>
+        <input type="text" class="form-control" id="recovery-identifier" required placeholder="ej. administracion@ccmariosanchez.com o J-30987123-4" style="font-size: 13px;">
+      </div>
+
+      <div id="recovery-feedback" style="display: none; padding: 12px; border-radius: 8px; font-size: 12px; font-weight: 600;"></div>
+
+      <div style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 6px;">
+        <button type="button" class="btn-secondary" onclick="window.closeRecoveryModal()">Cancelar</button>
+        <button type="submit" id="btn-send-recovery" class="btn-onboarding-cta" style="font-size: 12px; padding: 8px 18px; font-weight: 800; gap: 8px;">
+          <i class="fa-solid fa-paper-plane"></i> <span>Enviar Instrucciones</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <script src="js/auth-guard.js?v=2.7.3"></script>
 <script src="js/tenant-loader.js?v=2.7.3"></script>

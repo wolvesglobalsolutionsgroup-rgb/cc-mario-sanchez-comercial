@@ -869,6 +869,29 @@ class DatabaseService {
     return data.tenants[idx];
   }
 
+  updateContract(tenantId, updateData) {
+    const data = this.getData();
+    if (!data.contracts) data.contracts = [];
+    let idx = data.contracts.findIndex(c => c.tenant_id === tenantId);
+    let updated;
+    if (idx === -1) {
+      updated = { id: 'c-' + Date.now(), tenant_id: tenantId, ...updateData };
+      data.contracts.push(updated);
+    } else {
+      data.contracts[idx] = { ...data.contracts[idx], ...updateData };
+      updated = data.contracts[idx];
+    }
+    this.saveData(data);
+    this.logAuditAction({
+      action: 'UPDATE',
+      entity: 'CONTRACT',
+      entity_id: tenantId,
+      entity_name: updated.contract_number || 'Contrato Legal',
+      details: `Actualización de condiciones del contrato ${updated.contract_number || ''}`
+    });
+    return updated;
+  }
+
   // --- MÓDULO DE ACUERDOS ESPECIALES, REPARACIONES & COMPENSACIONES ---
   getSpecialAgreements(tenantId = null) {
     const data = this.getData();

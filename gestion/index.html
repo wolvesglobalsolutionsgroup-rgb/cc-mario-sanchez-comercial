@@ -52,10 +52,31 @@
     </div>
 
     <nav class="sidebar-nav">
+      <!-- 1. GESTIÓN INMOBILIARIA & ARRENDAMIENTOS -->
+      <div style="margin: 6px 14px 4px; font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: var(--txt-muted); letter-spacing: 0.08em; display: flex; align-items: center; gap: 6px;" data-roles="admin">
+        <i class="fa-solid fa-building" style="color: var(--cyan); font-size: 9px;"></i>
+        <span>Gestión Inmobiliaria</span>
+      </div>
+
       <a href="#" class="nav-item active" data-tab="inquilinos" data-roles="admin">
         <i class="fa-solid fa-store" style="color: var(--cyan);"></i>
         <span>Locales & Inquilinos</span>
       </a>
+      <a href="onboarding.html" class="nav-item" data-roles="admin">
+        <i class="fa-solid fa-user-plus" style="color: var(--amber);"></i>
+        <span>Nuevo Onboarding</span>
+      </a>
+      <a href="#" class="nav-item" data-tab="calendario" data-roles="any">
+        <i class="fa-solid fa-calendar-days" style="color: var(--amber);"></i>
+        <span>Calendario & Vencimientos</span>
+      </a>
+
+      <!-- 2. FINANZAS & COBRANZAS -->
+      <div style="margin: 14px 14px 4px; padding-top: 8px; border-top: 1px solid var(--border-subtle); font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: var(--txt-muted); letter-spacing: 0.08em; display: flex; align-items: center; gap: 6px;">
+        <i class="fa-solid fa-coins" style="color: var(--emerald); font-size: 9px;"></i>
+        <span>Finanzas & Cobranzas</span>
+      </div>
+
       <a href="#" class="nav-item" data-tab="cobranzas" data-roles="any">
         <i class="fa-solid fa-receipt" style="color: var(--emerald);"></i>
         <span data-roles="admin">Cobranzas & Recibos</span>
@@ -65,42 +86,36 @@
         <i class="fa-solid fa-calculator" style="color: var(--purple);"></i>
         <span>Gastos Comunes</span>
       </a>
+      <a href="#" class="nav-item" data-tab="informes" data-roles="admin" id="nav-tab-informes">
+        <i class="fa-solid fa-file-contract" style="color: var(--cyan);"></i>
+        <span>Informes & Contabilidad</span>
+      </a>
+
+      <!-- 3. OPERACIONES & LOGÍSTICA -->
+      <div style="margin: 14px 14px 4px; padding-top: 8px; border-top: 1px solid var(--border-subtle); font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: var(--txt-muted); letter-spacing: 0.08em; display: flex; align-items: center; gap: 6px;">
+        <i class="fa-solid fa-truck-ramp-box" style="color: var(--rose); font-size: 9px;"></i>
+        <span>Operaciones & Logística</span>
+      </div>
+
+      <a href="#" class="nav-item" data-tab="logistica" data-roles="admin">
+        <i class="fa-solid fa-truck-moving" style="color: var(--emerald);"></i>
+        <span>Plaza & Gandolas</span>
+      </a>
       <a href="#" class="nav-item" data-tab="inventario" data-roles="admin">
         <i class="fa-solid fa-boxes-stacked" style="color: var(--amber);"></i>
         <span>Bienes & Consumibles</span>
-      </a>
-      <a href="#" class="nav-item" data-tab="calendario" data-roles="any">
-        <i class="fa-solid fa-calendar-days" style="color: var(--amber);"></i>
-        <span>Calendario & Vencimientos</span>
       </a>
       <a href="#" class="nav-item" data-tab="alertas" data-roles="any">
         <i class="fa-solid fa-bell" style="color: var(--rose);"></i>
         <span>Alertas & Avisos</span>
       </a>
-      <a href="#" class="nav-item" data-tab="logistica" data-roles="admin">
-        <i class="fa-solid fa-truck-moving" style="color: var(--emerald);"></i>
-        <span>Plaza & Gandolas</span>
-      </a>
-      <a href="#" class="nav-item" data-tab="informes" data-roles="admin" id="nav-tab-informes">
-        <i class="fa-solid fa-file-contract" style="color: var(--cyan);"></i>
-        <span>Informes & Contabilidad</span>
-      </a>
-      <a href="#" class="nav-item" data-tab="ayuda" data-roles="any" id="nav-tab-ayuda">
-        <i class="fa-solid fa-circle-question" style="color: var(--cyan);"></i>
-        <span>Ayuda & Marco Legal</span>
-      </a>
-      <a href="onboarding.html" class="nav-item" data-roles="admin">
-        <i class="fa-solid fa-user-plus" style="color: var(--amber);"></i>
-        <span>Nuevo Onboarding</span>
-      </a>
 
-      <div style="margin: 12px 16px 6px; padding-top: 10px; border-top: 1px solid var(--border-subtle); font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--txt-muted); letter-spacing: 0.05em;">
-        Ecosistema
+      <!-- 4. ECOSISTEMA CCMS -->
+      <div style="margin: 14px 14px 4px; padding-top: 8px; border-top: 1px solid var(--border-subtle); font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: var(--txt-muted); letter-spacing: 0.08em; display: flex; align-items: center; gap: 6px;">
+        <i class="fa-solid fa-network-wired" style="color: var(--cyan); font-size: 9px;"></i>
+        <span>Ecosistema</span>
       </div>
-      <a href="/" target="_blank" class="nav-item">
-        <i class="fa-solid fa-globe" style="color: var(--cyan);"></i>
-        <span>Web Comercial</span>
-      </a>
+
       <a href="/levantamiento/" target="_blank" class="nav-item" data-roles="admin">
         <i class="fa-solid fa-map-location-dot" style="color: var(--amber);"></i>
         <span>Planos GIS (Junta Directiva)</span>
@@ -109,11 +124,17 @@
         <i class="fa-solid fa-shop" style="color: var(--emerald);"></i>
         <span>Portal de Alquiler</span>
       </a>
+      <a href="/" target="_blank" class="nav-item">
+        <i class="fa-solid fa-globe" style="color: var(--cyan);"></i>
+        <span>Web Comercial</span>
+      </a>
 
-      <!-- PIE DE NAVEGACIÓN: CONFIGURACIÓN Y AUDITORÍA AL FONDO (ERGONOMÍA ESTÁNDAR) -->
-      <div style="margin: 12px 16px 6px; padding-top: 10px; border-top: 1px solid var(--border-subtle); font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--txt-muted); letter-spacing: 0.05em;" data-roles="admin">
-        Administración
+      <!-- 5. GOBERNANZA & SOPORTE -->
+      <div style="margin: 14px 14px 4px; padding-top: 8px; border-top: 1px solid var(--border-subtle); font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: var(--txt-muted); letter-spacing: 0.08em; display: flex; align-items: center; gap: 6px;">
+        <i class="fa-solid fa-shield-halved" style="color: var(--amber); font-size: 9px;"></i>
+        <span>Gobernanza & Soporte</span>
       </div>
+
       <a href="#" class="nav-item" data-tab="configuracion" data-roles="admin" id="nav-tab-configuracion">
         <i class="fa-solid fa-gear" style="color: var(--amber);"></i>
         <span>Configuración del Sistema</span>
@@ -121,6 +142,10 @@
       <a href="#" class="nav-item" data-roles="admin" data-click="window.openAuditTrailModal()" id="nav-tab-auditoria" title="Consultar bitácora de auditoría y trazabilidad de cambios">
         <i class="fa-solid fa-clock-rotate-left" style="color: var(--cyan);"></i>
         <span>Historial de Auditoría</span>
+      </a>
+      <a href="#" class="nav-item" data-tab="ayuda" data-roles="any" id="nav-tab-ayuda">
+        <i class="fa-solid fa-circle-question" style="color: var(--cyan);"></i>
+        <span>Ayuda & Marco Legal (G.O. 40.418)</span>
       </a>
     </nav>
 
@@ -174,6 +199,13 @@
 
       <div class="top-actions">
         
+        <!-- BUSCADOR GLOBAL COMMAND-K (CTRL+K) -->
+        <button type="button" class="btn-theme-toggle" id="btn-command-k-trigger" onclick="window.openCommandKModal()" title="Búsqueda Global y Comandos Rápidos (Ctrl + K)" style="width: auto; padding: 0 14px; gap: 8px; border-radius: 20px; font-size: 12px; font-weight: 700; border-color: var(--border-subtle);">
+          <i class="fa-solid fa-magnifying-glass" style="color: var(--amber);"></i>
+          <span style="display: inline-block;">Buscar...</span>
+          <span class="command-k-badge-esc" style="font-size: 9.5px; padding: 1px 6px; border-radius: 4px; background: rgba(255,255,255,0.08); border: 1px solid var(--border-subtle); color: var(--txt-muted);">⌘K</span>
+        </button>
+
         <!-- SELECTOR CUATRIMONEDA GLOBAL (FORMATO EJECUTIVO INTERNACIONAL) -->
         <div class="currency-selector-bar">
           <button class="cur-pill active" data-cur="USD">$ USD</button>
@@ -205,9 +237,9 @@
     <!-- CONTENT WRAPPER -->
     <div class="content-wrapper">
       
-      <!-- BALANCES Y KPIS FINANCIEROS -->
+      <!-- BALANCES Y KPIS FINANCIEROS (INTERACTIVOS CON DRILL-DOWN) -->
       <section class="kpi-grid">
-        <div class="kpi-card">
+        <div class="kpi-card" onclick="window.drillDownKPI('occupancy')" style="cursor: pointer;" title="Filtrar Locales e Inquilinos">
           <div class="kpi-top">
             <span class="kpi-title">Ocupación Inmueble</span>
             <div class="kpi-icon-badge badge-cyan"><i class="fa-solid fa-building-circle-check"></i></div>
@@ -216,7 +248,7 @@
           <div class="kpi-sub" id="kpi-occupancy-sub">Calculando m²...</div>
         </div>
 
-        <div class="kpi-card">
+        <div class="kpi-card" onclick="window.drillDownKPI('billed')" style="cursor: pointer;" title="Ver todas las cobranzas">
           <div class="kpi-top">
             <span class="kpi-title">Facturación Mensual</span>
             <div class="kpi-icon-badge badge-amber"><i class="fa-solid fa-file-invoice-dollar"></i></div>
@@ -225,7 +257,7 @@
           <div class="kpi-sub">Canon pactado + condominio</div>
         </div>
 
-        <div class="kpi-card">
+        <div class="kpi-card" onclick="window.drillDownKPI('collected')" style="cursor: pointer;" title="Ver cuotas pagadas">
           <div class="kpi-top">
             <span class="kpi-title">Total Recaudado</span>
             <div class="kpi-icon-badge badge-emerald"><i class="fa-solid fa-circle-check"></i></div>
@@ -234,7 +266,7 @@
           <div class="kpi-sub" id="kpi-collected-sub">0% de efectividad</div>
         </div>
 
-        <div class="kpi-card">
+        <div class="kpi-card" onclick="window.drillDownKPI('overdue')" style="cursor: pointer;" title="Filtrar facturas en mora">
           <div class="kpi-top">
             <span class="kpi-title">Cuentas por Cobrar (Mora)</span>
             <div class="kpi-icon-badge badge-rose"><i class="fa-solid fa-triangle-exclamation"></i></div>
@@ -243,7 +275,7 @@
           <div class="kpi-sub" id="kpi-overdue-sub">0 cuentas vencidas</div>
         </div>
 
-        <div class="kpi-card">
+        <div class="kpi-card" onclick="window.drillDownKPI('expenses')" style="cursor: pointer;" title="Ir a Gastos Comunes">
           <div class="kpi-top">
             <span class="kpi-title">Egresos Operativos</span>
             <div class="kpi-icon-badge badge-purple"><i class="fa-solid fa-money-bill-transfer"></i></div>
@@ -252,7 +284,7 @@
           <div class="kpi-sub" id="kpi-expenses-sub">Gastos de áreas comunes</div>
         </div>
 
-        <div class="kpi-card">
+        <div class="kpi-card" onclick="window.drillDownKPI('collected')" style="cursor: pointer;" title="Ver balances">
           <div class="kpi-top">
             <span class="kpi-title">Utilidad Neta Mes</span>
             <div class="kpi-icon-badge badge-emerald"><i class="fa-solid fa-chart-line"></i></div>
@@ -324,6 +356,91 @@
         </div>
       </section>
 
+      <!-- SECCIÓN: ANALÍTICAS VISUALES EJECUTIVAS (GRÁFICOS CIRCULARES SVG & VELOCÍMETROS FINANCIEROS) -->
+      <section class="data-card" id="executive-analytics-section" data-roles="admin" style="padding: 20px; margin-bottom: 20px; border: 1px solid var(--border-subtle); background: var(--bg-card);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px;">
+          <div>
+            <h4 style="font-family: var(--font-heading); font-size: 15px; font-weight: 800; color: var(--txt-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-chart-pie" style="color: var(--amber);"></i> Monitor Ejecutivo de Eficiencia Inmobiliaria & Cánones
+            </h4>
+            <span style="font-size: 12px; color: var(--txt-secondary);">Indicadores circulares de rendimiento en tiempo real e inspección de cartera</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="status-pill pill-info" style="font-size: 10.5px;">
+              <i class="fa-solid fa-circle-notch fa-spin"></i> Tiempo Real
+            </span>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+          
+          <!-- MEDIDOR CIRCULAR 1: EFECTIVIDAD DE COBRANZA -->
+          <div class="data-card" onclick="window.drillDownKPI('collected')" style="padding: 16px; border: 1px solid rgba(16,185,129,0.25); background: rgba(16,185,129,0.02); display: flex; align-items: center; gap: 16px; cursor: pointer; border-radius: var(--radius-md);" title="Haga clic para ver cobros pagados">
+            <div class="progress-radial-wrap" style="width: 78px; height: 78px; flex-shrink: 0;">
+              <svg class="progress-radial-svg" viewBox="0 0 36 36">
+                <path class="progress-radial-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" stroke-width="3.2"/>
+                <path id="radial-meter-cobranza" class="progress-radial-meter" stroke="var(--emerald)" stroke-width="3.4" stroke-dasharray="100, 100" stroke-dashoffset="100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+              </svg>
+              <div class="progress-radial-text" id="radial-text-cobranza" style="color: var(--emerald); font-size: 14px;">0%</div>
+            </div>
+            <div>
+              <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Efectividad Cobranza</div>
+              <div style="font-size: 15px; font-weight: 800; color: var(--txt-primary); font-family: var(--font-heading); margin-top: 2px;" id="radial-subval-cobranza">$0.00</div>
+              <div style="font-size: 11px; color: var(--emerald); margin-top: 2px;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Ver Recaudación</div>
+            </div>
+          </div>
+
+          <!-- MEDIDOR CIRCULAR 2: OCUPACIÓN INMOBILIARIA -->
+          <div class="data-card" onclick="window.drillDownKPI('occupancy')" style="padding: 16px; border: 1px solid rgba(6,182,212,0.25); background: rgba(6,182,212,0.02); display: flex; align-items: center; gap: 16px; cursor: pointer; border-radius: var(--radius-md);" title="Haga clic para ver estado de locales">
+            <div class="progress-radial-wrap" style="width: 78px; height: 78px; flex-shrink: 0;">
+              <svg class="progress-radial-svg" viewBox="0 0 36 36">
+                <path class="progress-radial-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" stroke-width="3.2"/>
+                <path id="radial-meter-ocupacion" class="progress-radial-meter" stroke="var(--cyan)" stroke-width="3.4" stroke-dasharray="100, 100" stroke-dashoffset="100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+              </svg>
+              <div class="progress-radial-text" id="radial-text-ocupacion" style="color: var(--cyan); font-size: 14px;">0%</div>
+            </div>
+            <div>
+              <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Ocupación Total</div>
+              <div style="font-size: 15px; font-weight: 800; color: var(--txt-primary); font-family: var(--font-heading); margin-top: 2px;" id="radial-subval-ocupacion">0 / 0 Locales</div>
+              <div style="font-size: 11px; color: var(--cyan); margin-top: 2px;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Explorar Espacios</div>
+            </div>
+          </div>
+
+          <!-- MEDIDOR CIRCULAR 3: ÍNDICE DE MORA / RIESGO -->
+          <div class="data-card" onclick="window.drillDownKPI('overdue')" style="padding: 16px; border: 1px solid rgba(239,68,68,0.25); background: rgba(239,68,68,0.02); display: flex; align-items: center; gap: 16px; cursor: pointer; border-radius: var(--radius-md);" title="Haga clic para filtrar inquilinos en mora">
+            <div class="progress-radial-wrap" style="width: 78px; height: 78px; flex-shrink: 0;">
+              <svg class="progress-radial-svg" viewBox="0 0 36 36">
+                <path class="progress-radial-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" stroke-width="3.2"/>
+                <path id="radial-meter-mora" class="progress-radial-meter" stroke="var(--rose)" stroke-width="3.4" stroke-dasharray="100, 100" stroke-dashoffset="100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+              </svg>
+              <div class="progress-radial-text" id="radial-text-mora" style="color: var(--rose); font-size: 14px;">0%</div>
+            </div>
+            <div>
+              <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Índice de Cartera Vencida</div>
+              <div style="font-size: 15px; font-weight: 800; color: var(--rose); font-family: var(--font-heading); margin-top: 2px;" id="radial-subval-mora">$0.00</div>
+              <div style="font-size: 11px; color: var(--rose); margin-top: 2px;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Gestionar Morosidad</div>
+            </div>
+          </div>
+
+          <!-- MEDIDOR CIRCULAR 4: CUMPLIMIENTO FISCAL SENIAT -->
+          <div class="data-card" onclick="window.drillDownKPI('seniat')" style="padding: 16px; border: 1px solid rgba(245,158,11,0.25); background: rgba(245,158,11,0.02); display: flex; align-items: center; gap: 16px; cursor: pointer; border-radius: var(--radius-md);" title="Haga clic para ver auditoría fiscal">
+            <div class="progress-radial-wrap" style="width: 78px; height: 78px; flex-shrink: 0;">
+              <svg class="progress-radial-svg" viewBox="0 0 36 36">
+                <path class="progress-radial-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" stroke-width="3.2"/>
+                <path id="radial-meter-seniat" class="progress-radial-meter" stroke="var(--amber)" stroke-width="3.4" stroke-dasharray="100, 100" stroke-dashoffset="100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+              </svg>
+              <div class="progress-radial-text" id="radial-text-seniat" style="color: var(--amber); font-size: 14px;">0%</div>
+            </div>
+            <div>
+              <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Contribuyentes Especiales</div>
+              <div style="font-size: 15px; font-weight: 800; color: var(--txt-primary); font-family: var(--font-heading); margin-top: 2px;" id="radial-subval-seniat">0 de 0</div>
+              <div style="font-size: 11px; color: var(--amber); margin-top: 2px;"><i class="fa-solid fa-landmark"></i> Retenciones SENIAT</div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
       <!-- TAB 1: LOCALES & INQUILINOS (TIME TO PROGRAM MODERN UI) -->
       <section class="tab-view" id="tab-inquilinos" data-roles="admin">
         
@@ -358,8 +475,31 @@
                 </button>
               </div>
 
+              <!-- DROPDOWN DE EXPORTACIÓN UNIVERSAL (INQUILINOS) -->
+              <div class="export-dropdown-wrapper" id="export-dropdown-inquilinos">
+                <button type="button" class="btn-currency-toggle" onclick="window.toggleExportDropdown('inquilinos')" style="height: 38px; padding: 0 14px; font-size: 12px; gap: 6px; font-weight: 700;">
+                  <i class="fa-solid fa-file-export" style="color: var(--cyan);"></i>
+                  <span>Exportar</span>
+                  <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
+                </button>
+                <div class="export-dropdown-menu">
+                  <button type="button" class="export-dropdown-item" onclick="window.exportTableData('inquilinos', 'xlsx')">
+                    <i class="fa-solid fa-file-excel" style="color: #10b981;"></i>
+                    <span>Descargar Excel (.xlsx)</span>
+                  </button>
+                  <button type="button" class="export-dropdown-item" onclick="window.exportTableData('inquilinos', 'csv')">
+                    <i class="fa-solid fa-file-csv" style="color: #06b6d4;"></i>
+                    <span>Descargar CSV (.csv)</span>
+                  </button>
+                  <button type="button" class="export-dropdown-item" onclick="window.exportTableData('inquilinos', 'pdf')">
+                    <i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i>
+                    <span>Imprimir / Guardar PDF</span>
+                  </button>
+                </div>
+              </div>
+
               <a href="onboarding.html" class="btn-onboarding-cta" style="height: 38px; padding: 0 16px; font-size: 12.5px;">
-                <i class="fa-solid fa-plus"></i> <span>+ Add Client</span>
+                <i class="fa-solid fa-plus"></i> <span>+ Añadir Cliente</span>
               </a>
             </div>
           </div>
@@ -411,6 +551,9 @@
               </table>
             </div>
           </div>
+
+          <!-- PAGINACIÓN LOCALES E INQUILINOS -->
+          <div id="pagination-inquilinos" class="pagination-bar" style="margin-top: 10px;"></div>
         </div>
 
         <!-- VISTA 2: TIME TO PROGRAM FULL CLIENT PROFILE SHEET (IMAGE 5) -->
@@ -482,10 +625,28 @@
               </select>
             </div>
 
-            <button type="button" class="btn-currency-toggle" data-click="exportPaymentsCSV()" title="Descargar Libro de Cobranzas en formato CSV / Excel" style="padding: 5px 10px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 6px;">
-              <i class="fa-solid fa-file-csv" style="color: var(--emerald);"></i>
-              <span>Exportar CSV</span>
-            </button>
+            <!-- DROPDOWN DE EXPORTACIÓN UNIVERSAL (COBRANZAS) -->
+            <div class="export-dropdown-wrapper" id="export-dropdown-cobranzas">
+              <button type="button" class="btn-currency-toggle" onclick="window.toggleExportDropdown('cobranzas')" style="padding: 5px 12px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
+                <i class="fa-solid fa-file-export" style="color: var(--emerald);"></i>
+                <span>Exportar</span>
+                <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
+              </button>
+              <div class="export-dropdown-menu">
+                <button type="button" class="export-dropdown-item" onclick="window.exportTableData('cobranzas', 'xlsx')">
+                  <i class="fa-solid fa-file-excel" style="color: #10b981;"></i>
+                  <span>Descargar Excel (.xlsx)</span>
+                </button>
+                <button type="button" class="export-dropdown-item" onclick="window.exportTableData('cobranzas', 'csv')">
+                  <i class="fa-solid fa-file-csv" style="color: #06b6d4;"></i>
+                  <span>Descargar CSV (.csv)</span>
+                </button>
+                <button type="button" class="export-dropdown-item" onclick="window.exportTableData('cobranzas', 'pdf')">
+                  <i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i>
+                  <span>Imprimir / Guardar PDF</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -534,6 +695,8 @@
               </tbody>
             </table>
           </div>
+          <!-- PAGINACIÓN COBRANZAS -->
+          <div id="pagination-cobranzas" class="pagination-bar"></div>
         </div>
       </section>
 
@@ -570,10 +733,28 @@
             </div>
 
             <div style="display: flex; align-items: center; gap: 8px;">
-              <button type="button" class="btn-currency-toggle" data-click="exportExpensesCSV()" title="Descargar Libro de Gastos en formato CSV / Excel" style="padding: 6px 12px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 6px;">
-                <i class="fa-solid fa-file-csv" style="color: var(--purple);"></i>
-                <span>Exportar CSV</span>
-              </button>
+              <!-- DROPDOWN DE EXPORTACIÓN UNIVERSAL (CONDOMINIO) -->
+              <div class="export-dropdown-wrapper" id="export-dropdown-condominio">
+                <button type="button" class="btn-currency-toggle" onclick="window.toggleExportDropdown('condominio')" style="padding: 6px 12px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
+                  <i class="fa-solid fa-file-export" style="color: var(--purple);"></i>
+                  <span>Exportar</span>
+                  <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
+                </button>
+                <div class="export-dropdown-menu">
+                  <button type="button" class="export-dropdown-item" onclick="window.exportTableData('condominio', 'xlsx')">
+                    <i class="fa-solid fa-file-excel" style="color: #10b981;"></i>
+                    <span>Descargar Excel (.xlsx)</span>
+                  </button>
+                  <button type="button" class="export-dropdown-item" onclick="window.exportTableData('condominio', 'csv')">
+                    <i class="fa-solid fa-file-csv" style="color: #06b6d4;"></i>
+                    <span>Descargar CSV (.csv)</span>
+                  </button>
+                  <button type="button" class="export-dropdown-item" onclick="window.exportTableData('condominio', 'pdf')">
+                    <i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i>
+                    <span>Imprimir / Guardar PDF</span>
+                  </button>
+                </div>
+              </div>
 
               <button type="button" class="btn-onboarding-cta" id="btn-open-expense-modal" data-click="openExpenseModal()" style="padding: 7px 14px; font-size: 12px; background: var(--purple); border-color: var(--purple); display: inline-flex; align-items: center; gap: 6px;" data-roles="admin" title="Registrar Gasto Común o Factura de Proveedor">
                 <i class="fa-solid fa-file-invoice-dollar"></i> <span class="btn-label-desktop">Registrar Gasto / Factura</span><span class="btn-label-mobile">+ Gasto</span>
@@ -622,6 +803,8 @@
               </tbody>
             </table>
           </div>
+          <!-- PAGINACIÓN CONDOMINIO -->
+          <div id="pagination-condominio" class="pagination-bar"></div>
         </div>
       </section>
 
@@ -645,6 +828,29 @@
             <button type="button" class="btn-currency-toggle" id="btn-subtab-kardex" data-click="switchInventorySubtab('kardex')" style="font-size: 11.5px; padding: 6px 12px;">
               <i class="fa-solid fa-clipboard-list"></i> <span>Kardex (Entradas / Salidas)</span>
             </button>
+            <!-- DROPDOWN DE EXPORTACIÓN UNIVERSAL (INVENTARIO) -->
+            <div class="export-dropdown-wrapper" id="export-dropdown-inventario">
+              <button type="button" class="btn-currency-toggle" onclick="window.toggleExportDropdown('inventario')" style="font-size: 11.5px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
+                <i class="fa-solid fa-file-export" style="color: var(--amber);"></i>
+                <span>Exportar</span>
+                <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
+              </button>
+              <div class="export-dropdown-menu">
+                <button type="button" class="export-dropdown-item" onclick="window.exportTableData('inventario', 'xlsx')">
+                  <i class="fa-solid fa-file-excel" style="color: #10b981;"></i>
+                  <span>Descargar Excel (.xlsx)</span>
+                </button>
+                <button type="button" class="export-dropdown-item" onclick="window.exportTableData('inventario', 'csv')">
+                  <i class="fa-solid fa-file-csv" style="color: #06b6d4;"></i>
+                  <span>Descargar CSV (.csv)</span>
+                </button>
+                <button type="button" class="export-dropdown-item" onclick="window.exportTableData('inventario', 'pdf')">
+                  <i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i>
+                  <span>Imprimir / Guardar PDF</span>
+                </button>
+              </div>
+            </div>
+
             <button type="button" class="btn-onboarding-cta" data-click="openNewInventoryItemModal()" style="font-size: 11.5px; padding: 6px 14px; background: var(--amber); border-color: var(--amber); color: #000; font-weight: 800;">
               <i class="fa-solid fa-plus"></i> <span>+ Registrar Ítem</span>
             </button>
@@ -687,6 +893,8 @@
                 </tbody>
               </table>
             </div>
+            <!-- PAGINACIÓN INVENTARIO -->
+            <div id="pagination-inventario" class="pagination-bar"></div>
           </div>
         </div>
 
@@ -753,7 +961,7 @@
 
           <!-- FILTRO Y ACCIONES CALENDARIO -->
           <div class="period-filters-bar" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <button type="button" class="btn btn-primary" data-click="openAddCalendarEventModal()" style="font-size: 12px; padding: 6px 14px; gap: 6px; font-weight: 800;" title="Crear nuevo recordatorio en el calendario">
+            <button type="button" class="btn-onboarding-cta" data-click="openAddCalendarEventModal()" style="height: 36px; padding: 0 16px; font-size: 12px; gap: 8px; font-weight: 800;" title="Crear nuevo recordatorio en el calendario">
               <i class="fa-solid fa-calendar-plus"></i> <span>+ Nuevo Recordatorio</span>
             </button>
             <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Tipo:</label>
@@ -1337,7 +1545,7 @@
               <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">
                 <i class="fa-solid fa-folder-tree"></i> Tipo de Informe:
               </label>
-              <select id="report-type-select" class="form-control" data-change="onReportTypeChange()" style="padding: 8px 10px; font-size: 13px; text-overflow: ellipsis;">
+              <select id="report-type-select" class="form-control" onchange="window.onReportTypeChange()" data-change="onReportTypeChange()" style="padding: 8px 10px; font-size: 13px; text-overflow: ellipsis;">
                 <option value="recaudacion">1. Informe Mensual de Recaudación & Cobranzas</option>
                 <option value="condominio">2. Informe de Gastos Comunes & Liquidación Condominial</option>
                 <option value="solvencia">3. Estado de Cuenta & Certificado de Solvencia por Inquilino</option>
@@ -1355,7 +1563,7 @@
             <div id="report-param-period" style="display: flex; gap: 10px; flex: 1.5 1 200px; min-width: 0; width: 100%;">
               <div style="flex: 1; min-width: 0;">
                 <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">Mes:</label>
-                <select id="report-param-month" class="form-control" data-change="generateSelectedReport()" style="padding: 8px 10px; font-size: 13px;">
+                <select id="report-param-month" class="form-control" onchange="window.generateSelectedReport()" data-change="generateSelectedReport()" style="padding: 8px 10px; font-size: 13px;">
                   <option value="1">Enero</option>
                   <option value="2">Febrero</option>
                   <option value="3" selected>Marzo</option>
@@ -1372,7 +1580,7 @@
               </div>
               <div style="flex: 1; min-width: 0;">
                 <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">Año:</label>
-                <select id="report-param-year" class="form-control" data-change="generateSelectedReport()" style="padding: 8px 10px; font-size: 13px;">
+                <select id="report-param-year" class="form-control" onchange="window.generateSelectedReport()" data-change="generateSelectedReport()" style="padding: 8px 10px; font-size: 13px;">
                   <option value="2026" selected>2026</option>
                   <option value="2025">2025</option>
                 </select>
@@ -1383,7 +1591,7 @@
               <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">
                 <i class="fa-solid fa-store"></i> Inquilino / Arrendatario:
               </label>
-              <select id="report-param-tenant" class="form-control" data-change="generateSelectedReport()" style="padding: 8px 10px; font-size: 13px;">
+              <select id="report-param-tenant" class="form-control" onchange="window.generateSelectedReport()" data-change="generateSelectedReport()" style="padding: 8px 10px; font-size: 13px;">
                 <!-- Injected via JS -->
               </select>
             </div>
@@ -1392,7 +1600,15 @@
 
         <!-- ÁREA DE VISUALIZACIÓN FORMAL DEL INFORME (IMPRIMIBLE) -->
         <div class="data-card" id="report-display-container" style="padding: 24px; min-height: 400px; background: var(--bg-card);">
-          <!-- Injected via JS -->
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 320px; gap: 14px; text-align: center;">
+            <div style="width: 46px; height: 46px; border-radius: 50%; border: 3px solid rgba(245,158,11,0.2); border-top-color: var(--amber); animation: spin 0.9s linear infinite;"></div>
+            <div style="font-size: 14px; font-weight: 700; color: var(--txt-primary); font-family: var(--font-heading);">
+              Consolidando Informe Contable Oficial...
+            </div>
+            <div style="font-size: 12px; color: var(--txt-muted); max-width: 400px;">
+              Generando arqueo de cuotas, balances multimoneda y cumplimiento fiscal bajo Gaceta Oficial N° 40.418.
+            </div>
+          </div>
         </div>
       </section>
 
@@ -1797,8 +2013,26 @@
 
         <div style="margin-top: 14px; display: flex; justify-content: flex-end; gap: 8px;">
           <button type="button" id="btn-dossier-view-contract" class="btn-currency-toggle" style="color: var(--cyan); border-color: var(--cyan); font-size: 12px; padding: 7px 14px; font-weight: 700;">
-            <i class="fa-solid fa-file-signature"></i> Ver Contrato Legal Completo
+            <i class="fa-solid fa-file-lines"></i> Ver Formato Digital Imprimible
           </button>
+          <button type="button" class="btn-onboarding-cta" id="btn-dossier-edit-real-contract" onclick="window.openContractEditor(window.activeDossierTenantId)" style="font-size: 12px; padding: 7px 14px; font-weight: 800;">
+            <i class="fa-solid fa-file-signature"></i> Cargar / Editar Contrato Real
+          </button>
+        </div>
+
+        <!-- SECCIÓN: CONTRATO FÍSICO / ESCANEADO DIGITALIZADO -->
+        <div class="contract-real-card" style="margin-top: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+            <div>
+              <h6 style="margin: 0; font-size: 12px; font-weight: 800; color: var(--amber); text-transform: uppercase;">
+                <i class="fa-solid fa-file-pdf"></i> Archivo Físico / Escaneado Real
+              </h6>
+              <span style="font-size: 11px; color: var(--txt-secondary);">Copia original sellada y firmada por el arrendatario y la Sucesión Mario Sánchez</span>
+            </div>
+          </div>
+          <div id="dossier-real-contract-preview" class="contract-real-preview-box">
+            <!-- Injected via JS -->
+          </div>
         </div>
       </div>
     </div>
@@ -2417,8 +2651,8 @@
 
         <div style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 8px;">
           <button type="button" class="btn-currency-toggle" data-click="closeAddCalendarEventModal()">Cancelar</button>
-          <button type="submit" class="btn btn-primary" style="font-weight: 800; gap: 6px;">
-            <i class="fa-solid fa-save"></i> Guardar Recordatorio
+          <button type="submit" class="btn-onboarding-cta" style="font-weight: 800; gap: 8px;">
+            <i class="fa-solid fa-calendar-check"></i> <span>Guardar Recordatorio</span>
           </button>
         </div>
       </div>
@@ -2873,6 +3107,134 @@
     <div class="modal-body" id="payment-proof-content-wrapper" style="padding: 20px; max-height: 75vh; overflow-y: auto;">
       <!-- Inyectado dinámicamente vía window.viewPaymentProof -->
     </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: GLOBAL SEARCH OMNIBOX COMMAND-K (CTRL+K / CMD+K)                  -->
+<!-- ========================================================================= -->
+<div class="modal-overlay" id="modal-command-k" style="display: none;" onclick="if(event.target===this) window.closeCommandKModal()">
+  <div class="modal-window command-k-dialog">
+    <div class="command-k-header">
+      <i class="fa-solid fa-magnifying-glass" style="color: var(--amber); font-size: 16px;"></i>
+      <input type="text" id="command-k-input" class="command-k-input" placeholder="Buscar clientes, locales, recibos, gastos, módulos o acciones..." autocomplete="off" oninput="window.handleCommandKInput(this.value)" onkeydown="window.handleCommandKKeydown(event)">
+      <span class="command-k-badge-esc" onclick="window.closeCommandKModal()">ESC</span>
+    </div>
+    <div class="command-k-results" id="command-k-results">
+      <!-- Dynamic search results injected by JS -->
+    </div>
+    <div class="command-k-footer">
+      <div class="command-k-footer-tip">
+        <span><kbd>↑</kbd> <kbd>↓</kbd> Navegar</span>
+        <span><kbd>↵</kbd> Seleccionar</span>
+        <span><kbd>esc</kbd> Cerrar</span>
+      </div>
+      <div style="color: var(--txt-muted);">CC Mario Sánchez ERP</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: GESTOR Y EDITOR DE CONTRATO REAL (DIGITALIZADO / FÍSICO)           -->
+<!-- ========================================================================= -->
+<div class="modal-overlay" id="modal-contract-editor" style="display: none;" onclick="if(event.target===this) window.closeContractEditor()">
+  <div class="modal-window" style="max-width: 680px; width: 95%;">
+    <div class="modal-header">
+      <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-file-signature" style="color: var(--amber);"></i>
+        <span>Contrato Real de Arrendamiento & Parámetros</span>
+      </h3>
+      <button class="modal-close" onclick="window.closeContractEditor()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form id="form-contract-editor" onsubmit="window.saveContractRealChanges(event)" class="modal-body" style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+      <input type="hidden" id="contract-edit-tenant-id">
+
+      <div style="background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; padding: 10px 14px; font-size: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+        <div>
+          <span style="color: var(--txt-muted); font-size: 11px; text-transform: uppercase; font-weight: 700;">Arrendatario:</span>
+          <strong id="contract-edit-tenant-name" style="color: var(--txt-primary); margin-left: 6px;"></strong>
+        </div>
+        <div>
+          <span style="color: var(--txt-muted); font-size: 11px; text-transform: uppercase; font-weight: 700;">Local:</span>
+          <strong id="contract-edit-unit-code" style="color: var(--amber); margin-left: 6px;"></strong>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Número de Contrato *</label>
+          <input type="text" id="contract-edit-number" class="form-control" required placeholder="Ej: CTR-2026-L01">
+        </div>
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Modalidad de Canon *</label>
+          <select id="contract-edit-rent-type" class="form-control" required>
+            <option value="fijo">Canon Fijo Mensual (USD)</option>
+            <option value="porcentaje">Canon Variable (% Ventas Brutas)</option>
+            <option value="mixto">Canon Mixto (Base Fija + % Excedente)</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Canon Base Mensual (USD) *</label>
+          <input type="number" id="contract-edit-rent-usd" step="0.01" class="form-control" required min="0">
+        </div>
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Depósito en Garantía (USD) *</label>
+          <input type="number" id="contract-edit-deposit-usd" step="0.01" class="form-control" required min="0">
+          <small style="font-size: 10px; color: var(--txt-muted);">Máximo 3 meses (Art. 19 Ley Arrendamiento Comercial)</small>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Fecha de Inicio *</label>
+          <input type="date" id="contract-edit-start-date" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Fecha de Vencimiento *</label>
+          <input type="date" id="contract-edit-end-date" class="form-control" required>
+        </div>
+      </div>
+
+      <!-- CARGA DE CONTRATO FÍSICO ESCANEADO (PDF / FOTOS) -->
+      <div class="form-group">
+        <label style="font-size: 11px; font-weight: 700; color: var(--amber); text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-cloud-arrow-up"></i> Archivo del Contrato Escaneado / Digital (PDF o Imagen)
+        </label>
+        <input type="file" id="contract-edit-file-input" accept=".pdf,image/*" style="display: none;" onchange="window.handleRealContractFileSelected(event)">
+        
+        <div id="contract-dropzone" onclick="document.getElementById('contract-edit-file-input').click()" style="border: 2px dashed var(--border-subtle); border-radius: 8px; padding: 18px; text-align: center; cursor: pointer; background: rgba(255,255,255,0.02); transition: all 0.2s ease;">
+          <i class="fa-solid fa-file-pdf" style="font-size: 28px; color: var(--amber); margin-bottom: 6px;"></i>
+          <div style="font-size: 12px; font-weight: 700; color: var(--txt-primary);">Haz clic para seleccionar o arrastra el documento del contrato real</div>
+          <div style="font-size: 10.5px; color: var(--txt-muted); margin-top: 2px;">Formatos soportados: PDF, JPG, PNG (Hasta 25MB)</div>
+        </div>
+
+        <div id="contract-file-attached-info" style="display: none; margin-top: 8px; padding: 8px 12px; border-radius: 6px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.3); align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-file-circle-check" style="color: var(--emerald); font-size: 16px;"></i>
+            <div>
+              <div id="contract-file-name" style="font-size: 11.5px; font-weight: 700; color: var(--txt-primary);"></div>
+              <div id="contract-file-size" style="font-size: 10px; color: var(--txt-muted);"></div>
+            </div>
+          </div>
+          <button type="button" class="btn-remove-file" onclick="window.removeRealContractFile()" title="Remover archivo"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Cláusulas Especiales o Notas Legales</label>
+        <textarea id="contract-edit-notes" class="form-control" rows="2" placeholder="Observaciones especiales sobre uso del local, renovaciones pactadas, días de gracia..."></textarea>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; border-top: 1px solid var(--border-subtle); padding-top: 14px; margin-top: 6px;">
+        <button type="button" class="btn-currency-toggle" onclick="window.closeContractEditor()">Cancelar</button>
+        <button type="submit" class="btn-onboarding-cta" style="font-weight: 800; gap: 8px;">
+          <i class="fa-solid fa-floppy-disk"></i> <span>Guardar Términos del Contrato</span>
+        </button>
+      </div>
+    </form>
   </div>
 </div>
 

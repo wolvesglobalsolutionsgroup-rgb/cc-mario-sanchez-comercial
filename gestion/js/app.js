@@ -432,6 +432,13 @@ document.addEventListener('DOMContentLoaded', () => {
       // Re-renderizar de inmediato para garantizar datos frescos y sincronizados al instante
       renderAll();
 
+      if (currentTab === 'reportes') {
+        try {
+          if (typeof initReportsTab === 'function') initReportsTab();
+          if (typeof window.generateSelectedReport === 'function') window.generateSelectedReport();
+        } catch (err) { console.error('[ReportsTab] Render error:', err); }
+      }
+
       if (currentTab === 'ayuda' && window.HelpContent && typeof window.HelpContent.render === 'function') {
         try { window.HelpContent.render(); } catch (err) { console.error('[HelpContent] Render error:', err); }
       }
@@ -765,6 +772,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 7. Aging Report (Antigüedad de Cuentas por Cobrar - 30/60/90+ días)
     renderAgingReport(invoices, currentRole);
+
+    // 8. Medidores Circulares SVG Ejecutivos
+    try { renderRadialGauges(); } catch (e) { console.error('[RenderError] RadialGauges:', e); }
   }
 
   // C. AGING REPORT (ANTIGÜEDAD DE DEUDA EJECUTIVA - ESTILO TIME TO PROGRAM)
@@ -1055,7 +1065,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const tbody = document.getElementById('tenants-table-body');
     if (tbody) {
       tbody.innerHTML = '';
-      filteredUnits.forEach(unit => {
+      const pagedUnits = (typeof getPagedItems === 'function') ? getPagedItems('inquilinos', filteredUnits) : filteredUnits;
+      pagedUnits.forEach(unit => {
         const tr = document.createElement('tr');
         const tenant = tenants.find(t => t.id === unit.tenant_id);
         const contract = contracts.find(c => c.unit_code === unit.code);
@@ -1131,6 +1142,9 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         tbody.appendChild(tr);
       });
+      if (typeof renderPaginationControls === 'function') {
+        renderPaginationControls('inquilinos', filteredUnits.length);
+      }
     }
   }
 
@@ -2584,7 +2598,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    invoices.forEach(inv => {
+    const pagedInvoices = (typeof getPagedItems === 'function') ? getPagedItems('cobranzas', invoices) : invoices;
+    pagedInvoices.forEach(inv => {
       const tr = document.createElement('tr');
       const tenant = tenants.find(t => t.id === inv.tenant_id) || { business_name: 'Desconocido', whatsapp: '' };
 
@@ -2640,6 +2655,9 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
       tbody.appendChild(tr);
     });
+    if (typeof renderPaginationControls === 'function') {
+      renderPaginationControls('cobranzas', invoices.length);
+    }
   }
 
   // D. GASTOS COMUNES Y DISTRIBUCIÓN CONDOMINIAL CON FILTRADO POR PERÍODO
@@ -2685,7 +2703,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    filtered.forEach(exp => {
+    const pagedExpenses = (typeof getPagedItems === 'function') ? getPagedItems('condominio', filtered) : filtered;
+    pagedExpenses.forEach(exp => {
       const tr = document.createElement('tr');
       const baseUsd = parseFloat(exp.amount_usd) || 0;
       const baseBs = financialEngine.convert(baseUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
@@ -2741,6 +2760,9 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
       tbody.appendChild(tr);
     });
+    if (typeof renderPaginationControls === 'function') {
+      renderPaginationControls('condominio', filtered.length);
+    }
   }
 
   // Variables para la cuadrícula mensual interactiva
@@ -4422,6 +4444,12 @@ document.addEventListener('DOMContentLoaded', () => {
       };
     }
 
+    // Renderizar sección de contrato físico digitalizado
+    window.activeDossierTenantId = tenantId;
+    if (typeof window.renderRealContractInDossier === 'function') {
+      window.renderRealContractInDossier(tenantId);
+    }
+
     // Tab 3: Historial
     const historyTbody = document.getElementById('dossier-history-table-body');
     const solvencyBadge = document.getElementById('dossier-solvency-badge');
@@ -4970,9 +4998,9 @@ document.addEventListener('DOMContentLoaded', () => {
         <option value="${t.id}">${escapeHtml(t.business_name)} (${escapeHtml(t.unit_code)})</option>
       `).join('');
     }
-    // Generar informe por defecto si está vacío
+    // Generar informe por defecto si no hay reporte renderizado aún
     const container = document.getElementById('report-display-container');
-    if (container && (!container.innerHTML || container.innerHTML.trim() === '')) {
+    if (container && (!container.querySelector('.report-document-sheet') && !container.querySelector('.report-card') && !container.querySelector('table'))) {
       generateSelectedReport();
     }
   }
@@ -8353,6 +8381,750 @@ document.addEventListener('DOMContentLoaded', () => {
     window.renderStaffProfileCards();
     showToast('Foto de perfil guardada con éxito.', 'success', 'Perfil Actualizado');
   };
+
+  // =========================================================================
+  // MEDIDORES CIRCULARES SVG & DRILL-DOWN DE KPIS EJECUTIVOS (REQ. 16)
+  // =========================================================================
+  function renderRadialGauges() {
+    try {
+      const units = dbService.getUnits ? dbService.getUnits() : [];
+      const tenants = dbService.getTenants ? dbService.getTenants() : [];
+      const allInvoices = dbService.getInvoices ? dbService.getInvoices() : [];
+      const invoices = visibleInvoices(allInvoices);
+
+      // 1. Efectividad de cobranza
+      const totalBilled = invoices.reduce((acc, i) => acc + (parseFloat(i.total_usd) || 0), 0);
+      const paidInvoices = invoices.filter(i => i.status === 'pagado');
+      const totalPaid = paidInvoices.reduce((acc, i) => acc + (parseFloat(i.total_usd) || 0), 0);
+      const cobranzaPct = totalBilled > 0 ? Math.min(100, Math.round((totalPaid / totalBilled) * 100)) : 0;
+      
+      const meterCob = document.getElementById('radial-meter-cobranza');
+      const textCob = document.getElementById('radial-text-cobranza');
+      const subCob = document.getElementById('radial-subval-cobranza');
+      if (meterCob) meterCob.setAttribute('stroke-dashoffset', (100 - cobranzaPct).toString());
+      if (textCob) textCob.textContent = `${cobranzaPct}%`;
+      if (subCob) subCob.textContent = formatMoney(totalPaid);
+
+      // 2. Ocupación inmobiliaria
+      const occupiedUnits = units.filter(u => u.status === 'arrendado').length;
+      const totalUnits = units.length;
+      const occPct = totalUnits > 0 ? Math.min(100, Math.round((occupiedUnits / totalUnits) * 100)) : 0;
+
+      const meterOcc = document.getElementById('radial-meter-ocupacion');
+      const textOcc = document.getElementById('radial-text-ocupacion');
+      const subOcc = document.getElementById('radial-subval-ocupacion');
+      if (meterOcc) meterOcc.setAttribute('stroke-dashoffset', (100 - occPct).toString());
+      if (textOcc) textOcc.textContent = `${occPct}%`;
+      if (subOcc) subOcc.textContent = `${occupiedUnits} de ${totalUnits} Locales`;
+
+      // 3. Índice de Mora / Riesgo
+      const overdueInvoices = invoices.filter(i => i.status === 'en_mora');
+      const totalOverdue = overdueInvoices.reduce((acc, i) => acc + (parseFloat(i.total_usd) || 0), 0);
+      const moraPct = totalBilled > 0 ? Math.min(100, Math.round((totalOverdue / totalBilled) * 100)) : 0;
+
+      const meterMora = document.getElementById('radial-meter-mora');
+      const textMora = document.getElementById('radial-text-mora');
+      const subMora = document.getElementById('radial-subval-mora');
+      if (meterMora) meterMora.setAttribute('stroke-dashoffset', (100 - moraPct).toString());
+      if (textMora) textMora.textContent = `${moraPct}%`;
+      if (subMora) subMora.textContent = formatMoney(totalOverdue);
+
+      // 4. Clasificación Tributaria SENIAT (Contribuyentes Especiales)
+      const specialTenants = tenants.filter(t => t.taxpayer_type === 'especial' || (t.rif && t.rif.toUpperCase().startsWith('J'))).length;
+      const totalTenantsCount = tenants.length;
+      const seniatPct = totalTenantsCount > 0 ? Math.min(100, Math.round((specialTenants / totalTenantsCount) * 100)) : 0;
+
+      const meterSen = document.getElementById('radial-meter-seniat');
+      const textSen = document.getElementById('radial-text-seniat');
+      const subSen = document.getElementById('radial-subval-seniat');
+      if (meterSen) meterSen.setAttribute('stroke-dashoffset', (100 - seniatPct).toString());
+      if (textSen) textSen.textContent = `${seniatPct}%`;
+      if (subSen) subSen.textContent = `${specialTenants} de ${totalTenantsCount} Inquilinos`;
+    } catch (e) {
+      console.error('[renderRadialGauges Error]', e);
+    }
+  }
+
+  // Interacción Drill-Down en KPIs y Gráficos Circulares
+  window.drillDownKPI = function(metric) {
+    const navItems = document.querySelectorAll('.nav-item[data-tab]');
+    const selectTab = (tabName) => {
+      navItems.forEach(n => {
+        if (n.getAttribute('data-tab') === tabName) {
+          n.click();
+        }
+      });
+    };
+
+    if (metric === 'occupancy') {
+      selectTab('inquilinos');
+      const statusSelect = document.getElementById('ttp-tenant-filter-status');
+      if (statusSelect) {
+        statusSelect.value = 'all';
+        renderTenantsDirectory();
+      }
+    } else if (metric === 'billed') {
+      selectTab('cobranzas');
+      const statusSelect = document.getElementById('filter-cobranzas-status');
+      if (statusSelect) {
+        statusSelect.value = 'all';
+        window.applyCobranzasFilters();
+      }
+    } else if (metric === 'collected') {
+      selectTab('cobranzas');
+      const statusSelect = document.getElementById('filter-cobranzas-status');
+      if (statusSelect) {
+        statusSelect.value = 'pagado';
+        window.applyCobranzasFilters();
+      }
+    } else if (metric === 'overdue') {
+      selectTab('cobranzas');
+      const statusSelect = document.getElementById('filter-cobranzas-status');
+      if (statusSelect) {
+        statusSelect.value = 'en_mora';
+        window.applyCobranzasFilters();
+      }
+    } else if (metric === 'expenses') {
+      selectTab('condominio');
+    } else if (metric === 'seniat') {
+      selectTab('reportes');
+      const reportSelect = document.getElementById('report-type-select');
+      if (reportSelect) {
+        reportSelect.value = 'seniat_ventas';
+        if (typeof window.onReportTypeChange === 'function') {
+          window.onReportTypeChange();
+        } else {
+          window.generateSelectedReport();
+        }
+      }
+    }
+  };
+
+  // =========================================================================
+  // MOTOR UNIVERSAL DE EXPORTACIÓN MULTI-FORMATO (PDF / EXCEL / CSV) (REQ. 6)
+  // =========================================================================
+  window.toggleExportDropdown = function(moduleKey) {
+    const wrapper = document.getElementById(`export-dropdown-${moduleKey}`);
+    if (!wrapper) return;
+    const wasOpen = wrapper.classList.contains('open');
+    document.querySelectorAll('.export-dropdown-wrapper.open').forEach(el => el.classList.remove('open'));
+    if (!wasOpen) {
+      wrapper.classList.add('open');
+    }
+  };
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.export-dropdown-wrapper')) {
+      document.querySelectorAll('.export-dropdown-wrapper.open').forEach(el => el.classList.remove('open'));
+    }
+  });
+
+  window.exportTableData = function(moduleKey, format) {
+    document.querySelectorAll('.export-dropdown-wrapper.open').forEach(el => el.classList.remove('open'));
+
+    let headers = [];
+    let rows = [];
+    let filename = `CCMS_${moduleKey}_${new Date().toISOString().slice(0, 10)}`;
+    let title = 'Reporte Oficial';
+
+    if (moduleKey === 'inquilinos') {
+      title = 'Directorio de Locales e Inquilinos';
+      headers = ['Local', 'Inquilino / Razón Social', 'RIF', 'Área m²', 'Canon USD', 'Alícuota %', 'Saldo Deudor USD', 'Mora USD', 'Estado'];
+      const units = dbService.getUnits ? dbService.getUnits() : [];
+      const tenants = dbService.getTenants ? dbService.getTenants() : [];
+      const allInvoices = dbService.getInvoices ? dbService.getInvoices() : [];
+      
+      rows = units.map(u => {
+        const t = tenants.find(ten => ten.id === u.tenant_id);
+        const tInvoices = t ? allInvoices.filter(i => i.tenant_id === t.id) : [];
+        const unpaid = tInvoices.filter(i => i.status !== 'pagado');
+        const mora = tInvoices.filter(i => i.status === 'en_mora');
+        const saldo = unpaid.reduce((a, i) => a + (parseFloat(i.total_usd) || 0), 0);
+        const moraAmt = mora.reduce((a, i) => a + (parseFloat(i.total_usd) || 0), 0);
+        return [
+          u.code || '',
+          t ? t.business_name : 'Disponible',
+          t ? t.rif : 'N/A',
+          (parseFloat(u.area_m2) || 0) + ' m²',
+          `$${(parseFloat(u.base_rent_usd) || 0).toFixed(2)}`,
+          `${((parseFloat(u.condo_aliquot) || 0) * 100).toFixed(2)}%`,
+          `$${saldo.toFixed(2)}`,
+          `$${moraAmt.toFixed(2)}`,
+          u.status === 'disponible' ? 'Disponible' : (moraAmt > 0 ? 'En Mora' : 'Solvente')
+        ];
+      });
+    } else if (moduleKey === 'cobranzas') {
+      title = 'Cobranzas y Cuotas Facturadas';
+      headers = ['Factura N°', 'Período', 'Local', 'Inquilino', 'Canon USD', 'Condominio USD', 'Total USD', 'Vencimiento', 'Estado'];
+      const invoices = dbService.getInvoices ? dbService.getInvoices() : [];
+      const tenants = dbService.getTenants ? dbService.getTenants() : [];
+      rows = invoices.map(i => {
+        const t = tenants.find(ten => ten.id === i.tenant_id);
+        return [
+          i.invoice_number || '',
+          `${i.period_month}/${i.period_year}`,
+          i.unit_code || '',
+          t ? t.business_name : 'Inquilino General',
+          `$${(parseFloat(i.rent_usd) || 0).toFixed(2)}`,
+          `$${(parseFloat(i.condo_usd) || 0).toFixed(2)}`,
+          `$${(parseFloat(i.total_usd) || 0).toFixed(2)}`,
+          i.due_date || '',
+          i.status ? i.status.toUpperCase() : 'PENDIENTE'
+        ];
+      });
+    } else if (moduleKey === 'condominio') {
+      title = 'Gastos Comunes y Liquidación Condominial';
+      headers = ['Concepto', 'Proveedor', 'RIF', 'Factura N°', 'Categoría', 'Período', 'Monto USD', 'Ret. IVA', 'Ret. ISLR'];
+      const expenses = dbService.getCondoExpenses ? dbService.getCondoExpenses() : [];
+      rows = expenses.map(e => [
+        e.concept || '',
+        e.provider_name || 'General',
+        e.provider_rif || '',
+        e.invoice_number || 'S/N',
+        e.category || e.cat || 'General',
+        `${e.period_month}/${e.period_year}`,
+        `$${(parseFloat(e.amount_usd) || 0).toFixed(2)}`,
+        e.withhold_iva ? 'Sí (75%)' : 'No',
+        e.withhold_islr ? 'Sí (2%)' : 'No'
+      ]);
+    } else if (moduleKey === 'inventario') {
+      title = 'Inventario de Bienes y Activos Fijos';
+      headers = ['Código', 'Nombre del Activo', 'Ubicación', 'Especificación', 'Serial', 'Estado', 'Mantenimiento'];
+      const activos = dbService.getActivosFijos ? dbService.getActivosFijos() : [];
+      rows = activos.map(a => [
+        a.code || '',
+        a.name || '',
+        a.location || '',
+        a.technical_spec || '',
+        a.serial_number || 'S/N',
+        (a.status || 'operativo').toUpperCase(),
+        a.maintenance_frequency || 'Trimestral'
+      ]);
+    }
+
+    if (format === 'csv') {
+      const csvContent = '\uFEFF' + [
+        headers.map(h => `"${h.replace(/"/g, '""')}"`).join(';'),
+        ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(';'))
+      ].join('\r\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${filename}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast(`Exportación a CSV generada con éxito (${rows.length} registros).`, 'success', 'Exportación CSV');
+    } else if (format === 'xlsx') {
+      const tableRows = rows.map(r => `<tr>${r.map(c => `<td style="border:1px solid #cbd5e1;padding:6px 10px;">${escapeHtml(String(c))}</td>`).join('')}</tr>`).join('');
+      const tableHeaders = headers.map(h => `<th style="background:#091024;color:#f59e0b;border:1px solid #cbd5e1;padding:8px 10px;text-align:left;">${escapeHtml(h)}</th>`).join('');
+      const excelHtml = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+          <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>${moduleKey}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+        </head>
+        <body>
+          <h2 style="font-family:Arial;color:#091024;">CENTRO COMERCIAL MARIO SÁNCHEZ - ${title}</h2>
+          <p style="font-family:Arial;color:#64748b;font-size:12px;">Generado: ${new Date().toLocaleString('es-VE')} | RIF: J-30211544-2 | Gaceta Oficial N° 40.418</p>
+          <table style="font-family:Arial;border-collapse:collapse;font-size:12px;">
+            <thead><tr>${tableHeaders}</tr></thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+        </body>
+        </html>
+      `;
+      const blob = new Blob([excelHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${filename}.xls`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast(`Libro de Excel descargado con éxito (${rows.length} registros).`, 'success', 'Exportación Excel');
+    } else if (format === 'pdf') {
+      const tableHeaders = headers.map(h => `<th style="border:1px solid #cbd5e1;padding:7px 9px;background:#091024;color:#f59e0b;font-size:10.5px;text-transform:uppercase;">${escapeHtml(h)}</th>`).join('');
+      const tableRows = rows.map(r => `<tr>${r.map(c => `<td style="border:1px solid #e2e8f0;padding:6px 9px;font-size:10.5px;">${escapeHtml(String(c))}</td>`).join('')}</tr>`).join('');
+      const printWindow = window.open('', '_blank', 'width=1100,height=800');
+      if (printWindow) {
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html lang="es">
+          <head>
+            <meta charset="utf-8">
+            <title>${title} - CC Mario Sánchez</title>
+            <style>
+              body { font-family: 'Segoe UI', Arial, sans-serif; margin: 24px; color: #0f172a; background: #fff; }
+              .header-box { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f59e0b; padding-bottom: 12px; margin-bottom: 18px; }
+              .header-title { font-size: 18px; font-weight: 800; color: #091024; margin: 0; text-transform: uppercase; }
+              .header-sub { font-size: 11px; color: #64748b; margin-top: 4px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 14px; }
+              .footer-legal { margin-top: 24px; border-top: 1px solid #cbd5e1; padding-top: 10px; font-size: 9.5px; color: #64748b; display: flex; justify-content: space-between; }
+              @media print {
+                body { margin: 0; }
+                .no-print { display: none; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header-box">
+              <div>
+                <div class="header-title">Centro Comercial Mario Sánchez</div>
+                <div class="header-sub">RIF: J-30211544-2 • Sucesión Mario Sánchez • San Diego, Carabobo</div>
+                <div style="font-size: 13px; font-weight: 700; color: #d97706; margin-top: 6px;">${title}</div>
+              </div>
+              <div style="text-align: right; font-size: 11px; color: #64748b;">
+                <div><strong>Fecha de Emisión:</strong> ${new Date().toLocaleDateString('es-VE')}</div>
+                <div><strong>Total Registros:</strong> ${rows.length}</div>
+              </div>
+            </div>
+            <table>
+              <thead><tr>${tableHeaders}</tr></thead>
+              <tbody>${tableRows}</tbody>
+            </table>
+            <div class="footer-legal">
+              <span>Certificación de Auditoría Inmobiliaria y Contable bajo Gaceta Oficial N° 40.418</span>
+              <span>Página 1 de 1</span>
+            </div>
+            <script>
+              window.onload = function() { window.print(); };
+            </script>
+          </body>
+          </html>
+        `);
+        printWindow.document.close();
+        showToast('Vista de impresión PDF generada con éxito.', 'info', 'Impresión PDF');
+      }
+    }
+  };
+
+  // =========================================================================
+  // MOTOR DE PAGINACIÓN DINÁMICA DE TABLAS (REQ. 15)
+  // =========================================================================
+  const _paginationState = {
+    inquilinos: { page: 1, pageSize: 10 },
+    cobranzas: { page: 1, pageSize: 10 },
+    condominio: { page: 1, pageSize: 10 },
+    inventario: { page: 1, pageSize: 10 }
+  };
+
+  function getPagedItems(moduleKey, items) {
+    if (!_paginationState[moduleKey]) _paginationState[moduleKey] = { page: 1, pageSize: 10 };
+    const st = _paginationState[moduleKey];
+    const total = items.length;
+    const maxPage = Math.max(1, Math.ceil(total / st.pageSize));
+    if (st.page > maxPage) st.page = maxPage;
+    const start = (st.page - 1) * st.pageSize;
+    return items.slice(start, start + st.pageSize);
+  }
+
+  function renderPaginationControls(moduleKey, totalItems) {
+    const bar = document.getElementById(`pagination-${moduleKey}`);
+    if (!bar) return;
+    const st = _paginationState[moduleKey] || { page: 1, pageSize: 10 };
+    const totalPages = Math.max(1, Math.ceil(totalItems / st.pageSize));
+    const startItem = totalItems === 0 ? 0 : (st.page - 1) * st.pageSize + 1;
+    const endItem = Math.min(st.page * st.pageSize, totalItems);
+
+    bar.innerHTML = `
+      <div class="pagination-info">
+        Mostrando <strong style="color: var(--txt-primary);">${startItem}-${endItem}</strong> de <strong style="color: var(--txt-primary);">${totalItems}</strong> registros
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <select class="pagination-select" onchange="window.changeTablePageSize('${moduleKey}', this.value)" title="Registros por página">
+          <option value="10" ${st.pageSize === 10 ? 'selected' : ''}>10 / pág</option>
+          <option value="25" ${st.pageSize === 25 ? 'selected' : ''}>25 / pág</option>
+          <option value="50" ${st.pageSize === 50 ? 'selected' : ''}>50 / pág</option>
+        </select>
+        <button type="button" class="pagination-btn" ${st.page <= 1 ? 'disabled' : ''} onclick="window.changeTablePage('${moduleKey}', ${st.page - 1})" title="Página anterior">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <span style="font-size: 11.5px; font-weight: 700; color: var(--txt-primary); padding: 0 6px;">${st.page} / ${totalPages}</span>
+        <button type="button" class="pagination-btn" ${st.page >= totalPages ? 'disabled' : ''} onclick="window.changeTablePage('${moduleKey}', ${st.page + 1})" title="Página siguiente">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+    `;
+  }
+
+  window.changeTablePage = function(moduleKey, page) {
+    if (!_paginationState[moduleKey]) _paginationState[moduleKey] = { page: 1, pageSize: 10 };
+    _paginationState[moduleKey].page = Math.max(1, page);
+    if (moduleKey === 'inquilinos') renderTenantsDirectory();
+    else if (moduleKey === 'cobranzas') renderInvoicesTable();
+    else if (moduleKey === 'condominio') renderCondoExpenses();
+    else if (moduleKey === 'inventario') renderInventory();
+  };
+
+  window.changeTablePageSize = function(moduleKey, size) {
+    if (!_paginationState[moduleKey]) _paginationState[moduleKey] = { page: 1, pageSize: 10 };
+    _paginationState[moduleKey].pageSize = parseInt(size) || 10;
+    _paginationState[moduleKey].page = 1;
+    if (moduleKey === 'inquilinos') renderTenantsDirectory();
+    else if (moduleKey === 'cobranzas') renderInvoicesTable();
+    else if (moduleKey === 'condominio') renderCondoExpenses();
+    else if (moduleKey === 'inventario') renderInventory();
+  };
+
+  // =========================================================================
+  // GESTIÓN DE CONTRATOS REALES / FÍSICOS DIGITALIZADOS (REQ. 3 & IMAGEN 3)
+  // =========================================================================
+  window.activeContractTenantId = null;
+  window.tempRealContractFile = null;
+
+  window.openContractEditor = function(tenantId) {
+    const effectiveId = tenantId || window.activeDossierTenantId;
+    if (!effectiveId) return;
+    window.activeContractTenantId = effectiveId;
+
+    const tenants = dbService.getTenants ? dbService.getTenants() : [];
+    const contracts = dbService.getContracts ? dbService.getContracts() : [];
+    const units = dbService.getUnits ? dbService.getUnits() : [];
+
+    const tenant = tenants.find(t => t.id === effectiveId);
+    if (!tenant) return;
+    const contract = contracts.find(c => c.tenant_id === effectiveId);
+    const unit = units.find(u => u.code === tenant.unit_code);
+
+    const tidInput = document.getElementById('contract-edit-tenant-id');
+    const tnameEl = document.getElementById('contract-edit-tenant-name');
+    const ucodeEl = document.getElementById('contract-edit-unit-code');
+
+    if (tidInput) tidInput.value = effectiveId;
+    if (tnameEl) tnameEl.textContent = tenant.business_name || '';
+    if (ucodeEl) ucodeEl.textContent = tenant.unit_code || '';
+
+    const numInput = document.getElementById('contract-edit-number');
+    const rentTypeSel = document.getElementById('contract-edit-rent-type');
+    const rentUsdInput = document.getElementById('contract-edit-rent-usd');
+    const depUsdInput = document.getElementById('contract-edit-deposit-usd');
+    const startDateInput = document.getElementById('contract-edit-start-date');
+    const endDateInput = document.getElementById('contract-edit-end-date');
+    const notesInput = document.getElementById('contract-edit-notes');
+
+    if (numInput) numInput.value = contract ? contract.contract_number : `CTR-2026-${tenant.unit_code || '01'}`;
+    if (rentTypeSel) rentTypeSel.value = contract && contract.rent_type ? contract.rent_type : 'fijo';
+    if (rentUsdInput) rentUsdInput.value = contract ? contract.rent_usd : (unit ? unit.base_rent_usd : 0);
+    if (depUsdInput) depUsdInput.value = contract ? contract.deposit_usd : ((unit ? unit.base_rent_usd : 0) * 3);
+    if (startDateInput) startDateInput.value = contract ? contract.start_date : '2026-01-01';
+    if (endDateInput) endDateInput.value = contract ? contract.end_date : '2026-12-31';
+    if (notesInput) notesInput.value = contract && contract.notes ? contract.notes : '';
+
+    window.tempRealContractFile = (contract && contract.real_contract_file) ? { ...contract.real_contract_file } : null;
+    const infoBox = document.getElementById('contract-file-attached-info');
+    const nameEl = document.getElementById('contract-file-name');
+    const sizeEl = document.getElementById('contract-file-size');
+
+    if (window.tempRealContractFile && infoBox && nameEl && sizeEl) {
+      nameEl.textContent = window.tempRealContractFile.name;
+      sizeEl.textContent = `${(window.tempRealContractFile.size / 1024).toFixed(1)} KB • Digitalizado`;
+      infoBox.style.display = 'flex';
+    } else if (infoBox) {
+      infoBox.style.display = 'none';
+    }
+
+    const modal = document.getElementById('modal-contract-editor');
+    if (modal) modal.style.display = 'flex';
+  };
+
+  window.closeContractEditor = function() {
+    const modal = document.getElementById('modal-contract-editor');
+    if (modal) modal.style.display = 'none';
+    window.tempRealContractFile = null;
+    const fileInput = document.getElementById('contract-edit-file-input');
+    if (fileInput) fileInput.value = '';
+  };
+
+  window.handleRealContractFileSelected = function(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type) && !file.name.toLowerCase().endsWith('.pdf')) {
+      showToast('Formato de archivo no permitido. Suba un documento PDF o imagen JPG/PNG.', 'error', 'Archivo No Permitido');
+      return;
+    }
+    if (file.size > 25 * 1024 * 1024) {
+      showToast('El archivo supera el límite de 25 MB.', 'error', 'Archivo Muy Grande');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      window.tempRealContractFile = {
+        name: file.name,
+        type: file.type || 'application/pdf',
+        size: file.size,
+        data: evt.target.result,
+        uploaded_at: new Date().toISOString()
+      };
+
+      const infoBox = document.getElementById('contract-file-attached-info');
+      const nameEl = document.getElementById('contract-file-name');
+      const sizeEl = document.getElementById('contract-file-size');
+      if (infoBox && nameEl && sizeEl) {
+        nameEl.textContent = file.name;
+        sizeEl.textContent = `${(file.size / 1024).toFixed(1)} KB • Listo para guardar`;
+        infoBox.style.display = 'flex';
+      }
+      showToast('Documento digitalizado adjunto. Guarde para confirmar.', 'success', 'Archivo Adjunto');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.removeRealContractFile = function() {
+    window.tempRealContractFile = null;
+    const infoBox = document.getElementById('contract-file-attached-info');
+    if (infoBox) infoBox.style.display = 'none';
+    const fileInput = document.getElementById('contract-edit-file-input');
+    if (fileInput) fileInput.value = '';
+    showToast('Archivo físico desvinculado. Guarde los cambios para aplicar.', 'info', 'Archivo Removido');
+  };
+
+  window.saveContractRealChanges = function(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const tenantId = document.getElementById('contract-edit-tenant-id').value;
+    if (!tenantId) return;
+
+    const contractUpdate = {
+      contract_number: document.getElementById('contract-edit-number').value.trim(),
+      rent_type: document.getElementById('contract-edit-rent-type').value,
+      rent_usd: parseFloat(document.getElementById('contract-edit-rent-usd').value) || 0,
+      deposit_usd: parseFloat(document.getElementById('contract-edit-deposit-usd').value) || 0,
+      deposit_months: Math.min(3, Math.round((parseFloat(document.getElementById('contract-edit-deposit-usd').value) || 0) / (parseFloat(document.getElementById('contract-edit-rent-usd').value) || 1))),
+      start_date: document.getElementById('contract-edit-start-date').value,
+      end_date: document.getElementById('contract-edit-end-date').value,
+      notes: document.getElementById('contract-edit-notes').value.trim(),
+      real_contract_file: window.tempRealContractFile
+    };
+
+    if (dbService.updateContract) {
+      dbService.updateContract(tenantId, contractUpdate);
+    }
+
+    showToast('Términos del contrato y documento físico guardados.', 'success', 'Contrato Actualizado');
+    window.closeContractEditor();
+
+    if (window.activeDossierTenantId === tenantId) {
+      window.openTenantDossier(tenantId);
+    }
+    renderAll();
+  };
+
+  window.renderRealContractInDossier = function(tenantId) {
+    const container = document.getElementById('dossier-real-contract-preview');
+    if (!container) return;
+
+    const contracts = dbService.getContracts ? dbService.getContracts() : [];
+    const contract = contracts.find(c => c.tenant_id === tenantId);
+    const file = contract && contract.real_contract_file;
+
+    if (!file) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 22px 14px; background: rgba(255,255,255,0.015); border: 1px dashed var(--border-subtle); border-radius: 8px;">
+          <i class="fa-solid fa-folder-open" style="font-size: 28px; color: var(--txt-muted); opacity: 0.5; margin-bottom: 8px; display: block;"></i>
+          <div style="font-size: 12px; font-weight: 700; color: var(--txt-secondary);">No se ha digitalizado el contrato físico sellado</div>
+          <div style="font-size: 11px; color: var(--txt-muted); margin-top: 2px;">Cargue la copia original firmada y notariada en formato PDF o imagen.</div>
+          <button type="button" class="btn-onboarding-cta" onclick="window.openContractEditor('${tenantId}')" style="margin-top: 12px; font-size: 11px; padding: 6px 14px; font-weight: 800;">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Cargar Contrato Físico
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    const isPdf = file.type && file.type.includes('pdf');
+    const icon = isPdf ? 'fa-solid fa-file-pdf' : 'fa-solid fa-file-image';
+    const dateStr = file.uploaded_at ? new Date(file.uploaded_at).toLocaleDateString('es-VE') : 'Reciente';
+
+    container.innerHTML = `
+      <div style="background: rgba(255,255,255,0.025); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
+          <i class="${icon}" style="font-size: 32px; color: var(--amber); flex-shrink: 0;"></i>
+          <div style="min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <strong style="font-size: 12.5px; color: var(--txt-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(file.name)}</strong>
+              <span class="status-pill pill-active" style="font-size: 9.5px; padding: 2px 7px;">NOTARIADO & DIGITALIZADO</span>
+            </div>
+            <div style="font-size: 11px; color: var(--txt-muted); margin-top: 3px;">
+              Digitalizado el: ${dateStr} • ${(file.size / 1024).toFixed(1)} KB
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 6px; flex-shrink: 0;">
+          <a href="${file.data}" target="_blank" class="btn-currency-toggle" style="font-size: 11px; padding: 5px 10px; color: var(--cyan); border-color: var(--cyan);" title="Visualizar documento"><i class="fa-solid fa-eye"></i> Ver</a>
+          <a href="${file.data}" download="${escapeHtml(file.name)}" class="btn-currency-toggle" style="font-size: 11px; padding: 5px 10px;" title="Descargar copia"><i class="fa-solid fa-download"></i> Descargar</a>
+          <button type="button" class="btn-currency-toggle" style="font-size: 11px; padding: 5px 10px; color: var(--amber); border-color: var(--amber);" onclick="window.openContractEditor('${tenantId}')" title="Reemplazar o editar"><i class="fa-solid fa-pen-to-square"></i></button>
+        </div>
+      </div>
+    `;
+  };
+
+  // =========================================================================
+  // GLOBAL COMMAND-K SEARCH OMNIBOX ENGINE (REQ. 9)
+  // =========================================================================
+  window.openCommandKModal = function() {
+    const modal = document.getElementById('modal-command-k');
+    const input = document.getElementById('command-k-input');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    if (input) {
+      input.value = '';
+      input.focus();
+      window.handleCommandKInput('');
+    }
+  };
+
+  window.closeCommandKModal = function() {
+    const modal = document.getElementById('modal-command-k');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.handleCommandKInput = function(query) {
+    const container = document.getElementById('command-k-results');
+    if (!container) return;
+    const q = (query || '').trim().toLowerCase();
+
+    const units = dbService.getUnits ? dbService.getUnits() : [];
+    const tenants = dbService.getTenants ? dbService.getTenants() : [];
+    const invoices = dbService.getInvoices ? dbService.getInvoices() : [];
+
+    const actions = [
+      { title: 'Nuevo Inquilino (Onboarding)', category: 'Acciones Rápidas', icon: 'fa-solid fa-user-plus', color: 'var(--amber)', run: "window.location.href='onboarding.html'" },
+      { title: 'Registrar Pago / Cobranza', category: 'Acciones Rápidas', icon: 'fa-solid fa-receipt', color: 'var(--emerald)', run: "document.querySelector('.nav-item[data-tab=\"cobranzas\"]').click()" },
+      { title: 'Ver Gastos Comunes (Condominio)', category: 'Módulos', icon: 'fa-solid fa-calculator', color: 'var(--purple)', run: "document.querySelector('.nav-item[data-tab=\"condominio\"]').click()" },
+      { title: 'Informes & Contabilidad Oficial', category: 'Módulos', icon: 'fa-solid fa-book', color: 'var(--cyan)', run: "document.querySelector('.nav-item[data-tab=\"reportes\"]').click()" },
+      { title: 'Calendario & Vencimientos', category: 'Módulos', icon: 'fa-solid fa-calendar', color: 'var(--amber)', run: "document.querySelector('.nav-item[data-tab=\"calendario\"]').click()" },
+      { title: 'Inventario de Bienes & Kardex', category: 'Módulos', icon: 'fa-solid fa-boxes-stacked', color: 'var(--rose)', run: "document.querySelector('.nav-item[data-tab=\"inventario\"]').click()" },
+      { title: 'Centro de Ayuda & Marco Legal (G.O. 40.418)', category: 'Soporte', icon: 'fa-solid fa-scale-balanced', color: 'var(--cyan)', run: "document.querySelector('.nav-item[data-tab=\"ayuda\"]').click()" }
+    ];
+
+    let results = [];
+
+    actions.forEach(a => {
+      if (!q || a.title.toLowerCase().includes(q) || a.category.toLowerCase().includes(q)) {
+        results.push({
+          type: 'action',
+          title: a.title,
+          sub: a.category,
+          icon: a.icon,
+          color: a.color,
+          action: a.run
+        });
+      }
+    });
+
+    tenants.forEach(t => {
+      if (q && ((t.business_name || '').toLowerCase().includes(q) || (t.trade_name || '').toLowerCase().includes(q) || (t.rif || '').toLowerCase().includes(q) || (t.unit_code || '').toLowerCase().includes(q))) {
+        results.push({
+          type: 'tenant',
+          title: `${t.business_name} (${t.unit_code || 'Local'})`,
+          sub: `RIF: ${t.rif} • ${t.commercial_activity || 'Comercial'} • ${t.status === 'moroso' ? 'EN MORA' : 'SOLVENTE'}`,
+          icon: 'fa-solid fa-store',
+          color: t.status === 'moroso' ? 'var(--rose)' : 'var(--emerald)',
+          action: `window.closeCommandKModal(); window.openTenantFullProfile('${t.id}')`
+        });
+      }
+    });
+
+    units.forEach(u => {
+      if (q && ((u.code || '').toLowerCase().includes(q) || (u.name || '').toLowerCase().includes(q) || (u.category || '').toLowerCase().includes(q))) {
+        results.push({
+          type: 'unit',
+          title: `Local ${u.code}: ${u.name}`,
+          sub: `${u.area_m2} m² • ${u.category || 'Local'} • ${u.status.toUpperCase()}`,
+          icon: 'fa-solid fa-door-open',
+          color: 'var(--cyan)',
+          action: `window.closeCommandKModal(); document.querySelector('.nav-item[data-tab="inquilinos"]').click();`
+        });
+      }
+    });
+
+    if (q) {
+      invoices.forEach(inv => {
+        if ((inv.invoice_number || '').toLowerCase().includes(q) || (inv.unit_code || '').toLowerCase().includes(q)) {
+          results.push({
+            type: 'invoice',
+            title: `Factura ${inv.invoice_number} (${inv.unit_code})`,
+            sub: `Monto: $${(inv.total_usd || 0).toFixed(2)} • Vence: ${inv.due_date} • ${inv.status.toUpperCase()}`,
+            icon: 'fa-solid fa-file-invoice-dollar',
+            color: inv.status === 'pagado' ? 'var(--emerald)' : 'var(--amber)',
+            action: `window.closeCommandKModal(); document.querySelector('.nav-item[data-tab="cobranzas"]').click();`
+          });
+        }
+      });
+    }
+
+    if (results.length === 0) {
+      container.innerHTML = `
+        <div style="padding: 28px 14px; text-align: center; color: var(--txt-muted);">
+          <i class="fa-solid fa-magnifying-glass" style="font-size: 24px; opacity: 0.4; margin-bottom: 8px; display: block;"></i>
+          <div style="font-size: 13px; font-weight: 700; color: var(--txt-primary);">No se encontraron resultados para "${escapeHtml(query)}"</div>
+          <div style="font-size: 11.5px; margin-top: 4px;">Intente buscando por nombre de cliente, código de local (ej. L-01), RIF o número de recibo.</div>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = results.slice(0, 15).map((r, i) => `
+      <div class="command-k-item ${i === 0 ? 'selected' : ''}" data-action="${escapeHtml(r.action)}" onclick="eval(this.getAttribute('data-action'))">
+        <i class="${r.icon} command-k-item-icon" style="color: ${r.color};"></i>
+        <div class="command-k-item-info">
+          <div class="command-k-item-title">${escapeHtml(r.title)}</div>
+          <div class="command-k-item-sub">${escapeHtml(r.sub)}</div>
+        </div>
+        <i class="fa-solid fa-arrow-turn-down" style="color: var(--txt-muted); font-size: 11px; transform: rotate(90deg);"></i>
+      </div>
+    `).join('');
+  };
+
+  window.handleCommandKKeydown = function(e) {
+    const items = document.querySelectorAll('.command-k-item');
+    if (!items || items.length === 0) return;
+    let selectedIdx = -1;
+    items.forEach((item, idx) => {
+      if (item.classList.contains('selected')) selectedIdx = idx;
+    });
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const nextIdx = (selectedIdx + 1) % items.length;
+      items.forEach(el => el.classList.remove('selected'));
+      items[nextIdx].classList.add('selected');
+      items[nextIdx].scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const prevIdx = (selectedIdx - 1 + items.length) % items.length;
+      items.forEach(el => el.classList.remove('selected'));
+      items[prevIdx].classList.add('selected');
+      items[prevIdx].scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (selectedIdx >= 0 && items[selectedIdx]) {
+        const action = items[selectedIdx].getAttribute('data-action');
+        if (action) {
+          eval(action);
+        }
+      }
+    } else if (e.key === 'Escape') {
+      window.closeCommandKModal();
+    }
+  };
+
+  window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      const modal = document.getElementById('modal-command-k');
+      if (modal && modal.style.display === 'flex') {
+        window.closeCommandKModal();
+      } else {
+        window.openCommandKModal();
+      }
+    }
+  });
 
   // Render inicial
   renderAll();
