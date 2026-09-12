@@ -4,229 +4,998 @@
   <meta charset="UTF-8">
   <base href="/gestion/">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Acceso Administrativo — CC Mario Sánchez</title>
+  <title>Acceso Corporativo — Centro Comercial Mario Sánchez</title>
   <link rel="icon" type="image/x-icon" href="favicon_2k.ico?v=20260904">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon_2k.png?v=20260904">
   <link rel="icon" type="image/svg+xml" href="logo_cc_mario_sanchez_2k.svg?v=20260904">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon_2k.png?v=20260904">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
   <link rel="stylesheet" href="css/dashboard.css">
   <script src="js/theme-init.js"></script>
 
   <style>
+    :root {
+      --login-bg: #060b18;
+      --login-card-bg: rgba(11, 18, 38, 0.92);
+      --login-border: rgba(245, 158, 11, 0.28);
+      --login-gold: #f59e0b;
+      --login-gold-hover: #d97706;
+      --login-gold-glow: rgba(245, 158, 11, 0.22);
+      --login-cyan: #06b6d4;
+      --login-input-bg: rgba(13, 22, 45, 0.95);
+      --login-input-border: rgba(148, 163, 184, 0.22);
+      --login-txt-white: #f8fafc;
+      --login-txt-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 24px;
-      background-color: #091024;
+      padding: 24px 16px;
+      background-color: var(--login-bg);
       background-image: 
-        radial-gradient(circle at 18% 22%, rgba(245, 158, 11, 0.09) 0%, transparent 48%),
-        radial-gradient(circle at 82% 78%, rgba(6, 182, 212, 0.08) 0%, transparent 48%),
-        radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.6) 0%, #091024 100%);
-      color: var(--txt-primary);
-      position: relative;
-      overflow-x: hidden;
+        radial-gradient(ellipse at 15% 15%, rgba(30, 58, 138, 0.45) 0%, transparent 60%),
+        radial-gradient(ellipse at 85% 85%, rgba(245, 158, 11, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.06) 0%, transparent 70%);
+      background-attachment: fixed;
+      font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--login-txt-white);
     }
-    .login-card {
+
+    /* MASTER SPLIT-SCREEN CONTAINER */
+    .login-master-wrapper {
       width: 100%;
-      max-width: 450px;
-      background: rgba(15, 23, 42, 0.85);
+      max-width: 1140px;
+      min-height: 680px;
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid var(--login-border);
+      background: rgba(8, 14, 30, 0.85);
       backdrop-filter: blur(28px);
       -webkit-backdrop-filter: blur(28px);
-      border: 1px solid rgba(245, 158, 11, 0.28);
-      border-radius: 20px;
-      padding: 40px 32px;
-      box-shadow: 0 30px 80px -15px rgba(0, 0, 0, 0.9), 0 0 30px rgba(245, 158, 11, 0.1);
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.8), 0 0 45px rgba(245, 158, 11, 0.08);
       position: relative;
-      z-index: 10;
     }
-    @media (max-width: 480px) {
-      body {
-        padding: 12px;
-      }
-      .login-card {
-        padding: 26px 20px;
-      }
-    }
-    .role-toggle {
+
+    /* LEFT SHOWCASE PANE */
+    .showcase-pane {
+      background: linear-gradient(155deg, rgba(16, 28, 62, 0.95) 0%, rgba(6, 11, 24, 0.98) 100%);
+      border-right: 1px solid rgba(245, 158, 11, 0.15);
+      padding: 48px 42px;
       display: flex;
-      background: rgba(0, 0, 0, 0.35);
-      border: 1px solid var(--border-subtle);
-      border-radius: 12px;
-      padding: 4px;
-      margin-bottom: 24px;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
     }
-    .role-btn {
-      flex: 1;
-      padding: 9px 12px;
-      background: transparent;
-      border: none;
-      color: var(--txt-secondary);
-      font-family: var(--font-heading);
-      font-size: 12px;
-      font-weight: 700;
-      border-radius: 9px;
-      cursor: pointer;
-      transition: all 0.2s ease;
+
+    .showcase-pane::before {
+      content: '';
+      position: absolute;
+      top: -100px;
+      left: -100px;
+      width: 320px;
+      height: 320px;
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .showcase-pane::after {
+      content: '';
+      position: absolute;
+      bottom: -80px;
+      right: -80px;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .showcase-brand-header {
+      position: relative;
+      z-index: 2;
+    }
+
+    .brand-crest-box {
+      width: 80px;
+      height: 80px;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 7px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(6, 182, 212, 0.1));
+      border: 1.5px solid rgba(245, 158, 11, 0.5);
+      box-shadow: 0 10px 30px rgba(245, 158, 11, 0.22);
+      margin-bottom: 22px;
     }
+
+    .brand-crest-box img {
+      width: 58px;
+      height: 58px;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
+    }
+
+    .brand-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 27px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+      line-height: 1.15;
+      margin-bottom: 8px;
+    }
+
+    .brand-tagline {
+      font-size: 13.5px;
+      color: var(--login-gold);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      margin-bottom: 12px;
+    }
+
+    .badge-legal-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(6, 182, 212, 0.12);
+      border: 1px solid rgba(6, 182, 212, 0.35);
+      color: #38bdf8;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+
+    /* SHOWCASE CARDS GRID */
+    .showcase-features-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin: 32px 0;
+      position: relative;
+      z-index: 2;
+    }
+
+    .feature-microcard {
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .feature-microcard:hover {
+      transform: translateX(4px);
+      border-color: rgba(245, 158, 11, 0.35);
+      background: rgba(15, 23, 42, 0.85);
+    }
+
+    .feature-icon-circle {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+
+    .feature-info h4 {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #f1f5f9;
+      margin-bottom: 2px;
+    }
+
+    .feature-info p {
+      font-size: 11px;
+      color: var(--login-txt-muted);
+      line-height: 1.35;
+    }
+
+    .showcase-footer {
+      position: relative;
+      z-index: 2;
+      padding-top: 18px;
+      border-top: 1px solid rgba(148, 163, 184, 0.12);
+      font-size: 11px;
+      color: var(--login-txt-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    /* RIGHT AUTH PANE */
+    .auth-pane {
+      padding: 44px 38px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      background: var(--login-card-bg);
+      position: relative;
+    }
+
+    .auth-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .auth-headline h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 21px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 3px;
+    }
+
+    .auth-headline p {
+      font-size: 12px;
+      color: var(--login-txt-muted);
+    }
+
+    .system-status-beacon {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #34d399;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 10.5px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .beacon-pulse {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+
+    /* ROLE SWITCHER SLIDER */
+    .role-toggle {
+      display: flex;
+      background: rgba(8, 14, 30, 0.85);
+      border: 1.5px solid rgba(148, 163, 184, 0.18);
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 22px;
+      position: relative;
+    }
+
+    .role-btn {
+      flex: 1;
+      padding: 10px 14px;
+      background: transparent;
+      border: none;
+      color: var(--login-txt-muted);
+      font-family: 'Manrope', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
     .role-btn.active {
-      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      background: var(--login-gold);
       color: #000000;
       font-weight: 800;
-      box-shadow: 0 4px 15px rgba(245, 158, 11, 0.35);
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
     }
-    #login-submit-btn {
-      display: inline-flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      gap: 10px !important;
+
+    /* INPUT GROUPS - CRITICAL OVERRIDE: NEVER WHITE RECTANGLES */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .input-field-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-field-icon {
+      position: absolute;
+      left: 14px;
+      color: var(--login-gold);
+      font-size: 14px;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* Explicito para evitar user-agent stylesheets de Chrome */
+    input[type="text"].custom-login-input,
+    input[type="password"].custom-login-input {
       width: 100% !important;
-      padding: 13px !important;
-    }
-    #login-submit-btn span,
-    #login-submit-text {
-      display: inline !important;
+      background-color: var(--login-input-bg) !important;
+      background: var(--login-input-bg) !important;
+      border: 1.5px solid var(--login-input-border) !important;
+      border-radius: 10px !important;
+      padding: 12px 14px 12px 42px !important;
+      color: #ffffff !important;
+      font-family: 'Manrope', sans-serif !important;
       font-size: 13.5px !important;
-      font-weight: 800 !important;
-      letter-spacing: 0.3px !important;
+      font-weight: 600 !important;
+      outline: none !important;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.3) !important;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease !important;
+    }
+
+    input[type="text"].custom-login-input:focus,
+    input[type="password"].custom-login-input:focus {
+      background-color: rgba(16, 26, 54, 0.98) !important;
+      border-color: var(--login-gold) !important;
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25), inset 0 2px 4px rgba(0,0,0,0.4) !important;
+    }
+
+    input[type="text"].custom-login-input::placeholder,
+    input[type="password"].custom-login-input::placeholder {
+      color: #64748b !important;
+      font-weight: 500 !important;
+    }
+
+    .btn-eye-toggle {
+      position: absolute;
+      right: 12px;
+      background: transparent;
+      border: none;
+      color: var(--login-txt-muted);
+      cursor: pointer;
+      padding: 6px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.15s ease;
+    }
+
+    .btn-eye-toggle:hover {
+      color: var(--login-gold);
+    }
+
+    .auth-options-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      font-size: 12px;
+    }
+
+    .remember-check-label {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: #cbd5e1;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .remember-check-label input {
+      accent-color: var(--login-gold);
+      width: 15px;
+      height: 15px;
+      cursor: pointer;
+    }
+
+    .recovery-trigger-link {
+      color: var(--login-gold);
+      text-decoration: none;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: opacity 0.15s ease;
+    }
+
+    .recovery-trigger-link:hover {
+      text-decoration: underline;
+      opacity: 0.9;
+    }
+
+    /* SUBMIT BUTTON */
+    .btn-login-master {
+      width: 100%;
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: #000000;
+      border: none;
+      border-radius: 11px;
+      padding: 13px 20px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 4px 20px rgba(245, 158, 11, 0.38);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    }
+
+    .btn-login-master:hover {
+      transform: translateY(-1.5px);
+      box-shadow: 0 6px 26px rgba(245, 158, 11, 0.5);
+      filter: brightness(1.05);
+    }
+
+    .btn-login-master:active {
+      transform: translateY(0);
+    }
+
+    /* VIP DEMO BOX */
+    .demo-vip-box {
+      margin-top: 20px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px dashed rgba(245, 158, 11, 0.35);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .demo-vip-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .demo-vip-title {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: var(--login-gold);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .demo-badge-pill {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--login-gold);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-size: 9.5px;
+      font-weight: 800;
+    }
+
+    .demo-roles-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+    }
+
+    .btn-demo-role-pill {
+      background: rgba(13, 22, 45, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-family: 'Manrope', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      color: #e2e8f0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      text-align: left;
+      transition: all 0.15s ease;
+    }
+
+    .btn-demo-role-pill:hover,
+    .btn-demo-role-pill.active {
+      background: rgba(245, 158, 11, 0.18);
+      border-color: var(--login-gold);
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    .btn-credentials-guide {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: #38bdf8;
+      font-size: 11.5px;
+      font-weight: 700;
+      margin-top: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: color 0.15s ease;
+    }
+
+    .btn-credentials-guide:hover {
+      color: #7dd3fc;
+      text-decoration: underline;
+    }
+
+    /* FEEDBACK BANNERS */
+    #login-info {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #34d399;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 14px;
+      display: none;
+    }
+
+    #login-error {
+      background: rgba(244, 63, 94, 0.15);
+      border: 1px solid rgba(244, 63, 94, 0.4);
+      color: #fb7185;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 14px;
+      display: none;
+    }
+
+    /* MODAL STYLING */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 7, 18, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 16px;
+    }
+
+    .modal-dialog-box {
+      width: 100%;
+      max-width: 520px;
+      background: #0b132b;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      border-radius: 18px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 35px rgba(245, 158, 11, 0.15);
+      overflow: hidden;
+    }
+
+    .modal-top-bar {
+      padding: 16px 22px;
+      background: rgba(15, 23, 42, 0.8);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-top-bar h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .modal-btn-close {
+      background: transparent;
+      border: none;
+      color: var(--login-txt-muted);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 4px;
+      transition: color 0.15s;
+    }
+
+    .modal-btn-close:hover {
+      color: #ffffff;
+    }
+
+    .modal-content-body {
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-height: 75vh;
+      overflow-y: auto;
+    }
+
+    /* RESPONSIVE BREAKPOINTS */
+    @media (max-width: 960px) {
+      .login-master-wrapper {
+        grid-template-columns: 1fr;
+        max-width: 500px;
+      }
+      .showcase-pane {
+        padding: 30px 24px 20px;
+        border-right: none;
+        border-bottom: 1px solid rgba(245, 158, 11, 0.15);
+      }
+      .showcase-features-grid,
+      .showcase-footer {
+        display: none;
+      }
+      .brand-title {
+        font-size: 22px;
+      }
+      .auth-pane {
+        padding: 30px 24px;
+      }
     }
   </style>
 </head>
 <body>
 
-<div class="login-card">
+<div class="login-master-wrapper">
 
-  <div style="text-align: center; margin-bottom: 24px;">
-    <div style="width: 76px; height: 76px; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; border-radius: 18px; background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(6,182,212,0.08)); border: 1px solid rgba(245,158,11,0.35); box-shadow: 0 8px 25px rgba(245,158,11,0.18);">
-      <img src="logo_cc_mario_sanchez_2k.svg?v=20260904" alt="Logo" data-tenant-logo style="width: 54px; height: 54px; object-fit: contain;">
-    </div>
-    <h1 style="font-family: var(--font-heading); font-size: 23px; font-weight: 900; color: var(--txt-primary); letter-spacing: -0.02em;" data-tenant-short>CC Mario Sánchez</h1>
-    <p style="font-size: 12px; color: var(--amber-light); font-weight: 600; margin-top: 2px;">
-      Plataforma de Gestión Inmobiliaria & Cobranzas
-    </p>
-  </div>
-
-  <!-- SELECTOR DE ROL -->
-  <div class="role-toggle">
-    <button class="role-btn active" id="btn-role-admin" type="button">
-      <i class="fa-solid fa-user-shield"></i> Administrador
-    </button>
-    <button class="role-btn" id="btn-role-tenant" type="button">
-      <i class="fa-solid fa-store"></i> Inquilino
-    </button>
-  </div>
-
-  <form id="login-form" style="display: flex; flex-direction: column; gap: 16px;">
-
-    <div class="form-group">
-      <label id="lbl-identifier">Correo Electrónico Administrador</label>
-      <input type="text" class="form-control" id="login-user" autocomplete="username" required>
+  <!-- ======================================================================= -->
+  <!-- 1. PANEL IZQUIERDO: IDENTIDAD INSTITUCIONAL, ECOSISTEMA & MARCO LEGAL   -->
+  <!-- ======================================================================= -->
+  <aside class="showcase-pane">
+    <div class="showcase-brand-header">
+      <div class="brand-crest-box">
+        <img src="logo_cc_mario_sanchez_2k.svg?v=20260904" alt="Cresta Oficial" data-tenant-logo>
+      </div>
+      <h1 class="brand-title" data-tenant-brand>Centro Comercial Mario Sánchez</h1>
+      <div class="brand-tagline">Plataforma de Gestión Inmobiliaria, Cánones & Auditoría Fiscal</div>
+      <div>
+        <span class="badge-legal-pill">
+          <i class="fa-solid fa-scale-balanced" style="color: #38bdf8;"></i> Regulado bajo Gaceta Oficial N° 40.418
+        </span>
+      </div>
     </div>
 
-    <div class="form-group">
-      <label>Contraseña de Seguridad</label>
-      <input type="password" class="form-control" id="login-pass" autocomplete="current-password" required>
+    <!-- CARACTERÍSTICAS OPERATIVAS DE ÉLITE -->
+    <div class="showcase-features-grid">
+      <div class="feature-microcard">
+        <div class="feature-icon-circle" style="background: rgba(6, 182, 212, 0.15); color: #06b6d4;">
+          <i class="fa-solid fa-store"></i>
+        </div>
+        <div class="feature-info">
+          <h4>39 Unidades & Locales Comerciales</h4>
+          <p>Padrón oficial unificado con cálculo de cánones fijos/variables, alícuotas de condominio y amortizaciones.</p>
+        </div>
+      </div>
+
+      <div class="feature-microcard">
+        <div class="feature-icon-circle" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+          <i class="fa-solid fa-coins"></i>
+        </div>
+        <div class="feature-info">
+          <h4>Multimoneda en Tiempo Real</h4>
+          <p>Sincronización automatizada con la tasa oficial BCV, Euro y referencia Binance USDT.</p>
+        </div>
+      </div>
+
+      <div class="feature-microcard">
+        <div class="feature-icon-circle" style="background: rgba(168, 85, 247, 0.15); color: #c084fc;">
+          <i class="fa-solid fa-landmark"></i>
+        </div>
+        <div class="feature-info">
+          <h4>Sucesión Mario Sánchez (Herederos)</h4>
+          <p>Módulo de auditoría transparente e irrestricta de solo lectura para los 14 herederos copropietarios.</p>
+        </div>
+      </div>
+
+      <div class="feature-microcard">
+        <div class="feature-icon-circle" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="feature-info">
+          <h4>Seguridad Criptográfica PBKDF2 & RLS</h4>
+          <p>Hash con 100.000 iteraciones + salt aleatorio y Row Level Security en bases de datos PostgreSQL.</p>
+        </div>
+      </div>
     </div>
 
-    <div id="login-info" style="display:none;background:rgba(16, 185, 129, 0.15);border:1px solid rgba(16, 185, 129, 0.4);color:#34d399;border-radius:8px;padding:10px 12px;font-size:12px;font-weight:600;">
+    <div class="showcase-footer">
+      <div><i class="fa-solid fa-location-dot" style="color: var(--login-gold);"></i> <span data-tenant-address>Av. Municipal cruce con Calle Sucre, Puerto La Cruz, Venezuela</span></div>
+      <div><i class="fa-solid fa-file-shield" style="color: var(--login-cyan);"></i> Sistema Auditado y Conforme con la Ley de Arrendamiento Inmobiliario</div>
+    </div>
+  </aside>
+
+  <!-- ======================================================================= -->
+  <!-- 2. PANEL DERECHO: CONSOLA DE AUTENTICACIÓN VIP                          -->
+  <!-- ======================================================================= -->
+  <main class="auth-pane">
+    <div class="auth-header-row">
+      <div class="auth-headline">
+        <h2>Acceso al Portal</h2>
+        <p>Ingrese sus credenciales de seguridad</p>
+      </div>
+      <div class="system-status-beacon">
+        <span class="beacon-pulse"></span>
+        <span>En Línea</span>
+      </div>
+    </div>
+
+    <!-- SELECTOR DE ROL: ADMINISTRADOR VS INQUILINO -->
+    <div class="role-toggle">
+      <button class="role-btn active" id="btn-role-admin" type="button">
+        <i class="fa-solid fa-user-shield"></i> Administración & Directiva
+      </button>
+      <button class="role-btn" id="btn-role-tenant" type="button">
+        <i class="fa-solid fa-store"></i> Inquilinos & Locales
+      </button>
+    </div>
+
+    <!-- MENSAJES DE ESTADO / ERROR -->
+    <div id="login-info">
       <i class="fa-solid fa-circle-check"></i> <span id="login-info-msg"></span>
     </div>
 
-    <div id="login-error" style="display:none;background:var(--rose-glow);border:1px solid var(--rose);color:var(--rose);border-radius:8px;padding:10px 12px;font-size:12px;font-weight:600;">
+    <div id="login-error">
       <i class="fa-solid fa-triangle-exclamation"></i> <span id="login-error-msg"></span>
     </div>
 
-    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px;">
-      <label style="color: var(--txt-secondary); display: flex; align-items: center; gap: 6px; cursor: pointer;">
-        <input type="checkbox" id="remember-session" checked style="accent-color: var(--amber);"> Recordar sesión
-      </label>
-      <a href="#" id="forgot-password-link" style="color: var(--amber-light); text-decoration: none;">¿Olvidó su clave?</a>
-    </div>
-
-    <button type="submit" id="login-submit-btn" class="btn-onboarding-cta" style="width: 100%; justify-content: center; padding: 12px; margin-top: 8px;">
-      <i class="fa-solid fa-arrow-right-to-bracket"></i> <span id="login-submit-text">Ingresar al Portal</span>
-    </button>
-
-    <!-- CREDENCIALES DE DEMOSTRACIÓN (1-CLICK DEMO ACCESS POR ROL - SIN EMOJIS) -->
-    <div style="margin-top: 14px; background: var(--amber-glow); border: 1px dashed var(--border-highlight); border-radius: 8px; padding: 12px; font-size: 12px;">
-      <div style="font-weight: 800; color: var(--amber); display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-        <span style="display: flex; align-items: center; gap: 6px;">
-          <i class="fa-solid fa-key"></i> <span>Acceso Rápido por Rol (Demostración):</span>
-        </span>
-        <span style="font-size: 10px; color: var(--txt-muted);">1-Click</span>
+    <!-- FORMULARIO DE INGRESO -->
+    <form id="login-form">
+      <div class="form-group">
+        <label id="lbl-identifier">
+          <i class="fa-solid fa-id-badge" style="color: var(--login-gold);"></i> Correo Institucional Administrador
+        </label>
+        <div class="input-field-wrap">
+          <i class="fa-solid fa-envelope input-field-icon" id="icon-identifier"></i>
+          <input type="text" class="custom-login-input" id="login-user" autocomplete="username" required placeholder="ej. administracion@ccmariosanchez.com">
+        </div>
       </div>
-      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
-        <button type="button" class="cur-pill active" id="btn-demo-superadmin" data-demo-login data-role="superadmin" style="padding: 6px 10px; font-size: 11px; text-align: left; background: rgba(245, 158, 11, 0.15); border-color: var(--amber); color: var(--amber); font-weight: 800; display: flex; align-items: center; gap: 6px;">
-          <i class="fa-solid fa-crown" style="color: var(--amber);"></i> <span>SuperAdmin</span>
-        </button>
-        <button type="button" class="cur-pill" id="btn-demo-finanzas" data-demo-login data-role="finanzas" style="padding: 6px 10px; font-size: 11px; text-align: left; display: flex; align-items: center; gap: 6px;">
-          <i class="fa-solid fa-chart-line" style="color: var(--emerald);"></i> <span>Finanzas & Cobros</span>
-        </button>
-        <button type="button" class="cur-pill" id="btn-demo-legal" data-demo-login data-role="legal" style="padding: 6px 10px; font-size: 11px; text-align: left; display: flex; align-items: center; gap: 6px;">
-          <i class="fa-solid fa-scale-balanced" style="color: var(--cyan);"></i> <span>Legal & Contratos</span>
-        </button>
-        <button type="button" class="cur-pill" id="btn-demo-mantenimiento" data-demo-login data-role="mantenimiento" style="padding: 6px 10px; font-size: 11px; text-align: left; display: flex; align-items: center; gap: 6px;">
-          <i class="fa-solid fa-wrench" style="color: var(--rose);"></i> <span>Mantenimiento</span>
-        </button>
-        <button type="button" class="cur-pill" id="btn-demo-heredero" data-demo-login data-role="heredero" style="padding: 6px 10px; font-size: 11px; text-align: left; color: #c084fc; border-color: rgba(168,85,247,0.4); display: flex; align-items: center; gap: 6px;" title="Acceso exclusivo de lectura y auditoría para los herederos">
-          <i class="fa-solid fa-landmark" style="color: #c084fc;"></i> <span>Heredero (Auditoría)</span>
-        </button>
-        <button type="button" class="cur-pill" id="btn-demo-tenant" data-demo-login data-role="tenant" style="padding: 6px 10px; font-size: 11px; text-align: left; color: var(--emerald); border-color: rgba(16,185,129,0.4); display: flex; align-items: center; gap: 6px;">
-          <i class="fa-solid fa-store" style="color: var(--emerald);"></i> <span>Inquilino (Local)</span>
-        </button>
-      </div>
-    </div>
-  </form>
-
-  <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-subtle); text-align: center; font-size: 11px; color: var(--txt-muted);">
-    <div data-tenant-address>Av. Municipal, Puerto La Cruz, Venezuela</div>
-    <div style="margin-top: 2px;">Sistema auditado conforme a G.O. N° 40.418</div>
-  </div>
-</div>
-
-<!-- ========================================================================= -->
-<!-- MODAL DE RECUPERACIÓN DE CONTRASEÑA / ACCESO SEGURO                      -->
-<!-- ========================================================================= -->
-<div class="modal-overlay" id="modal-recovery" style="display: none;">
-  <div class="modal-window" style="max-width: 440px; width: 95%;">
-    <div class="modal-header">
-      <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
-        <i class="fa-solid fa-shield-halved" style="color: var(--amber);"></i> <span>Recuperación de Acceso</span>
-      </h3>
-      <button class="modal-close" onclick="window.closeRecoveryModal()"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <form id="recovery-form" onsubmit="window.handlePasswordRecovery(event)" class="modal-body" style="display: flex; flex-direction: column; gap: 14px; padding: 20px;">
-      <p style="font-size: 12.5px; color: var(--txt-secondary); margin: 0; line-height: 1.5;">
-        Ingrese su correo institucional o el RIF del Arrendatario registrado para recibir un enlace de restablecimiento seguro.
-      </p>
 
       <div class="form-group">
-        <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Correo Electrónico o RIF Registrado *</label>
-        <input type="text" class="form-control" id="recovery-identifier" required placeholder="ej. administracion@ccmariosanchez.com o J-30987123-4" style="font-size: 13px;">
+        <label>
+          <i class="fa-solid fa-key" style="color: var(--login-gold);"></i> Contraseña de Seguridad
+        </label>
+        <div class="input-field-wrap">
+          <i class="fa-solid fa-lock input-field-icon"></i>
+          <input type="password" class="custom-login-input" id="login-pass" autocomplete="current-password" required placeholder="••••••••••••">
+          <button type="button" class="btn-eye-toggle" id="btn-toggle-pass" onclick="togglePasswordVisibility()" title="Mostrar u ocultar contraseña">
+            <i class="fa-solid fa-eye" id="icon-eye-toggle"></i>
+          </button>
+        </div>
       </div>
 
-      <div id="recovery-feedback" style="display: none; padding: 12px; border-radius: 8px; font-size: 12px; font-weight: 600;"></div>
+      <div class="auth-options-row">
+        <label class="remember-check-label">
+          <input type="checkbox" id="remember-session" checked> Recordar credenciales
+        </label>
+        <a href="#" class="recovery-trigger-link" id="forgot-password-link" onclick="window.openRecoveryModal(event)">
+          <i class="fa-solid fa-shield-halved"></i> ¿Olvidó su clave?
+        </a>
+      </div>
 
-      <div style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 6px;">
-        <button type="button" class="btn-secondary" onclick="window.closeRecoveryModal()">Cancelar</button>
-        <button type="submit" id="btn-send-recovery" class="btn-onboarding-cta" style="font-size: 12px; padding: 8px 18px; font-weight: 800; gap: 8px;">
-          <i class="fa-solid fa-paper-plane"></i> <span>Enviar Instrucciones</span>
+      <button type="submit" id="login-submit-btn" class="btn-login-master">
+        <i class="fa-solid fa-arrow-right-to-bracket"></i> <span id="login-submit-text">Ingresar al Portal</span>
+      </button>
+
+      <!-- CONSOLA VIP DE ACCESO RÁPIDO DEMO (1-CLICK ROLES - SIN EMOJIS) -->
+      <div class="demo-vip-box">
+        <div class="demo-vip-header">
+          <span class="demo-vip-title">
+            <i class="fa-solid fa-bolt"></i> Acceso Rápido por Rol
+          </span>
+          <span class="demo-badge-pill">1-Click Demo</span>
+        </div>
+        <div class="demo-roles-grid">
+          <button type="button" class="btn-demo-role-pill active" id="btn-demo-superadmin" data-demo-login data-role="superadmin" title="Bypass administrativo y control maestro">
+            <i class="fa-solid fa-crown" style="color: #f59e0b;"></i> <span>SuperAdmin</span>
+          </button>
+          <button type="button" class="btn-demo-role-pill" id="btn-demo-finanzas" data-demo-login data-role="finanzas" title="Finanzas, cobranzas y retenciones SENIAT">
+            <i class="fa-solid fa-chart-line" style="color: #10b981;"></i> <span>Finanzas & Cobros</span>
+          </button>
+          <button type="button" class="btn-demo-role-pill" id="btn-demo-legal" data-demo-login data-role="legal" title="Contratos legales y adendas notariales">
+            <i class="fa-solid fa-scale-balanced" style="color: #06b6d4;"></i> <span>Legal & Contratos</span>
+          </button>
+          <button type="button" class="btn-demo-role-pill" id="btn-demo-mantenimiento" data-demo-login data-role="mantenimiento" title="Kardex de consumibles e infraestructura">
+            <i class="fa-solid fa-wrench" style="color: #f43f5e;"></i> <span>Mantenimiento</span>
+          </button>
+          <button type="button" class="btn-demo-role-pill" id="btn-demo-heredero" data-demo-login data-role="heredero" style="border-color: rgba(168,85,247,0.35); color: #c084fc;" title="Modo Solo Lectura transparente para los 14 herederos">
+            <i class="fa-solid fa-landmark" style="color: #c084fc;"></i> <span>Heredero (Auditoría)</span>
+          </button>
+          <button type="button" class="btn-demo-role-pill" id="btn-demo-tenant" data-demo-login data-role="tenant" style="border-color: rgba(16,185,129,0.35); color: #34d399;" title="Portal del inquilino (Local PB-01)">
+            <i class="fa-solid fa-store" style="color: #34d399;"></i> <span>Inquilino (Local)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- BOTÓN GUÍA DE GESTIÓN DE CREDENCIALES -->
+      <button type="button" class="btn-credentials-guide" onclick="window.openCredentialsGuide()">
+        <i class="fa-solid fa-circle-question"></i> ¿Cómo se generan y gestionan las credenciales del ERP?
+      </button>
+    </form>
+  </main>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 3. MODAL DE RECUPERACIÓN & RESTABLECIMIENTO DE CONTRASEÑA                -->
+<!-- ========================================================================= -->
+<div class="modal-overlay" id="modal-recovery">
+  <div class="modal-dialog-box">
+    <div class="modal-top-bar">
+      <h3><i class="fa-solid fa-shield-halved" style="color: var(--login-gold);"></i> Recuperación de Acceso Seguro</h3>
+      <button class="modal-btn-close" onclick="window.closeRecoveryModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    
+    <div class="modal-content-body">
+      <!-- SELECTOR DE PESTAÑAS DENTRO DEL MODAL -->
+      <div style="display: flex; background: rgba(8,14,30,0.9); border-radius: 8px; padding: 3px; border: 1px solid rgba(148,163,184,0.15);">
+        <button type="button" id="tab-recovery-instructions" class="role-btn active" onclick="switchRecoveryTab('instructions')" style="padding: 7px 10px; font-size: 11px;">
+          <i class="fa-solid fa-envelope-open-text"></i> Despachar Enlace
+        </button>
+        <button type="button" id="tab-recovery-direct" class="role-btn" onclick="switchRecoveryTab('direct')" style="padding: 7px 10px; font-size: 11px;">
+          <i class="fa-solid fa-key"></i> Restablecer Ahora (PIN / Demo)
         </button>
       </div>
-    </form>
+
+      <!-- VISTA 1: DESPACHO DE INSTRUCCIONES -->
+      <form id="form-recovery-instructions" onsubmit="window.handlePasswordRecovery(event)" style="display: flex; flex-direction: column; gap: 14px;">
+        <p style="font-size: 12.5px; color: var(--login-txt-muted); line-height: 1.5; margin: 0;">
+          Ingrese su correo electrónico registrado o el RIF del Arrendatario para verificar su identidad en el padrón de usuarios.
+        </p>
+
+        <div class="form-group" style="margin: 0;">
+          <label>Correo Electrónico o RIF Registrado *</label>
+          <div class="input-field-wrap">
+            <i class="fa-solid fa-id-card input-field-icon"></i>
+            <input type="text" class="custom-login-input" id="recovery-identifier" required placeholder="ej. administracion@ccmariosanchez.com o J-30987123-4">
+          </div>
+        </div>
+
+        <div id="recovery-feedback" style="display: none; padding: 12px; border-radius: 8px; font-size: 12px; font-weight: 600;"></div>
+
+        <div style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 6px;">
+          <button type="button" class="btn-demo-role-pill" onclick="window.closeRecoveryModal()">Cancelar</button>
+          <button type="submit" id="btn-send-recovery" class="btn-login-master" style="width: auto; padding: 10px 18px; font-size: 12px;">
+            <i class="fa-solid fa-paper-plane"></i> Enviar Instrucciones
+          </button>
+        </div>
+      </form>
+
+      <!-- VISTA 2: RESTABLECIMIENTO DIRECTO -->
+      <form id="form-recovery-direct" onsubmit="window.handleDirectPasswordReset(event)" style="display: none; flex-direction: column; gap: 14px;">
+        <p style="font-size: 12.5px; color: var(--login-txt-muted); line-height: 1.5; margin: 0;">
+          Modo autoservicio: ingrese el identificador de su cuenta y asigne una nueva clave de seguridad. Se actualizará con cifrado PBKDF2 de forma inmediata.
+        </p>
+
+        <div class="form-group" style="margin: 0;">
+          <label>Identificador (Correo o RIF) *</label>
+          <div class="input-field-wrap">
+            <i class="fa-solid fa-user input-field-icon"></i>
+            <input type="text" class="custom-login-input" id="direct-reset-identifier" required placeholder="ej. administracion@ccmariosanchez.com o J-30987123-4">
+          </div>
+        </div>
+
+        <div class="form-group" style="margin: 0;">
+          <label>Nueva Contraseña *</label>
+          <div class="input-field-wrap">
+            <i class="fa-solid fa-lock input-field-icon"></i>
+            <input type="password" class="custom-login-input" id="direct-reset-newpass" required placeholder="Mínimo 6 caracteres" minlength="6">
+          </div>
+        </div>
+
+        <div id="direct-reset-feedback" style="display: none; padding: 12px; border-radius: 8px; font-size: 12px; font-weight: 600;"></div>
+
+        <div style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 6px;">
+          <button type="button" class="btn-demo-role-pill" onclick="window.closeRecoveryModal()">Cancelar</button>
+          <button type="submit" id="btn-direct-reset-submit" class="btn-login-master" style="width: auto; padding: 10px 18px; font-size: 12px;">
+            <i class="fa-solid fa-check"></i> Actualizar Clave
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 
-<script src="js/auth-guard.js?v=2.7.3"></script>
-<script src="js/tenant-loader.js?v=2.7.3"></script>
-<script src="js/login.js?v=2.7.3"></script>
+<!-- ========================================================================= -->
+<!-- 4. MODAL EDUCATIVO: GUÍA DE GESTIÓN Y GENERACIÓN DE CREDENCIALES         -->
+<!-- ========================================================================= -->
+<div class="modal-overlay" id="modal-credentials-guide">
+  <div class="modal-dialog-box" style="max-width: 620px;">
+    <div class="modal-top-bar">
+      <h3><i class="fa-solid fa-book-bookmark" style="color: var(--login-cyan);"></i> Arquitectura de Credenciales & Acceso</h3>
+      <button class="modal-btn-close" onclick="window.closeCredentialsGuide()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    
+    <div class="modal-content-body" style="font-size: 12.5px; line-height: 1.6; color: #e2e8f0;">
+      <div style="background: rgba(6,182,212,0.1); border: 1px solid rgba(6,182,212,0.3); border-radius: 10px; padding: 14px;">
+        <strong style="color: #38bdf8; font-size: 13.5px; display: block; margin-bottom: 4px;">
+          <i class="fa-solid fa-info-circle"></i> ¿Cómo funciona el sistema de usuarios del CCMS ERP?
+        </strong>
+        El portal cuenta con un sistema de autenticación de alta fidelidad basado en <strong>Roles & Permisos Estrictos (RBAC)</strong> auditado conforme a la <strong>Gaceta Oficial N° 40.418</strong>:
+      </div>
+
+      <div>
+        <h4 style="color: var(--login-gold); font-size: 13px; font-weight: 800; margin-bottom: 4px;">
+          1. Generación de Cuentas Administrativas
+        </h4>
+        <p style="color: var(--login-txt-muted);">
+          Las cuentas de personal (SuperAdmin, Finanzas, Legal, Mantenimiento) son aprovisionadas centralmente por el Administrador General o conectadas a <strong>Supabase Auth</strong>. Tienen identificadores basados en correos electrónicos corporativos (ej. <code>administracion@ccmariosanchez.com</code>).
+        </p>
+      </div>
+
+      <div>
+        <h4 style="color: #34d399; font-size: 13px; font-weight: 800; margin-bottom: 4px;">
+          2. Generación de Credenciales para Inquilinos (Locales)
+        </h4>
+        <p style="color: var(--login-txt-muted);">
+          Cada vez que el Centro Comercial formaliza un contrato en el módulo de <strong>Onboarding</strong> o <strong>Locales & Inquilinos</strong>, el sistema genera automáticamente el perfil de acceso del arrendatario utilizando su <strong>RIF Jurídico</strong> como usuario identificador (ej: <code>J-30987123-4</code>). El inquilino recibe su clave inicial por WhatsApp o correo oficial.
+        </p>
+      </div>
+
+      <div>
+        <h4 style="color: #c084fc; font-size: 13px; font-weight: 800; margin-bottom: 4px;">
+          3. Modo Copropietario Heredero (Sucesión Mario Sánchez)
+        </h4>
+        <p style="color: var(--login-txt-muted);">
+          Diseñado para los 14 herederos copropietarios del inmueble. Permite una fiscalización transparente en <strong>Modo Solo Lectura</strong>, garantizando que puedan consultar cualquier informe financiero, canon cobrado o contrato sin posibilidad de alterar los datos operativos.
+        </p>
+      </div>
+
+      <div>
+        <h4 style="color: var(--login-cyan); font-size: 13px; font-weight: 800; margin-bottom: 4px;">
+          4. Seguridad Criptográfica de las Contraseñas
+        </h4>
+        <p style="color: var(--login-txt-muted);">
+          Las contraseñas nunca se guardan en texto plano. Se procesan mediante el estándar criptográfico <strong>PBKDF2 con salt aleatorio de 16 bytes y 100.000 iteraciones</strong> mediante WebCrypto. Si un usuario olvida su clave, el módulo de recuperación genera un token seguro de restablecimiento o permite la actualización controlada.
+        </p>
+      </div>
+
+      <div style="text-align: right; margin-top: 8px;">
+        <button type="button" class="btn-login-master" onclick="window.closeCredentialsGuide()" style="width: auto; padding: 8px 18px; font-size: 12px; margin-left: auto;">
+          Entendido
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/auth-guard.js"></script>
+<script src="js/tenant-loader.js"></script>
+<script src="js/login.js"></script>
 </body>
 </html>

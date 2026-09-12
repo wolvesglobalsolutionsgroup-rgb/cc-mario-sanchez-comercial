@@ -52,19 +52,25 @@
     </div>
 
     <nav class="sidebar-nav">
+      <!-- ACCESO EXCLUSIVO INQUILINO: MI PERFIL Y MI LOCAL -->
+      <a href="#" class="nav-item active" data-tab="perfil-inquilino" data-roles="tenant" style="display: none;">
+        <i class="fa-solid fa-id-card-clip" style="color: var(--amber);"></i>
+        <span>Mi Perfil & Mi Local</span>
+      </a>
+
       <!-- 1. GESTIÓN INMOBILIARIA & ARRENDAMIENTOS -->
       <div style="margin: 6px 14px 4px; font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: var(--txt-muted); letter-spacing: 0.08em; display: flex; align-items: center; gap: 6px;" data-roles="admin">
         <i class="fa-solid fa-building" style="color: var(--cyan); font-size: 9px;"></i>
         <span>Gestión Inmobiliaria</span>
       </div>
 
-      <a href="#" class="nav-item active" data-tab="inquilinos" data-roles="admin">
+      <a href="#" class="nav-item active" data-tab="dashboard" data-roles="admin">
+        <i class="fa-solid fa-chart-line" style="color: var(--amber);"></i>
+        <span>Dashboard Ejecutivo</span>
+      </a>
+      <a href="#" class="nav-item" data-tab="inquilinos" data-roles="admin">
         <i class="fa-solid fa-store" style="color: var(--cyan);"></i>
         <span>Locales & Inquilinos</span>
-      </a>
-      <a href="onboarding.html" class="nav-item" data-roles="admin">
-        <i class="fa-solid fa-user-plus" style="color: var(--amber);"></i>
-        <span>Nuevo Onboarding</span>
       </a>
       <a href="#" class="nav-item" data-tab="calendario" data-roles="any">
         <i class="fa-solid fa-calendar-days" style="color: var(--amber);"></i>
@@ -224,9 +230,9 @@
           <i class="fa-solid fa-sun" style="color: var(--amber);"></i>
         </button>
 
-        <a href="onboarding.html" class="btn-onboarding-cta" data-roles="admin">
-          <i class="fa-solid fa-plus"></i> <span>Registrar Inquilino</span>
-        </a>
+        <button type="button" class="btn-onboarding-cta" data-roles="admin" onclick="window.openQuickAddClientModal()" title="Registrar nuevo arrendatario en modal rápido">
+          <i class="fa-solid fa-user-plus"></i> <span>Registrar Inquilino</span>
+        </button>
 
         <button type="button" class="btn-theme-toggle" data-roles="admin" data-click="resetDemoData()" title="Restablecer todos los datos ficticios de la demo">
           <i class="fa-solid fa-rotate-left" style="color: var(--cyan);"></i>
@@ -236,6 +242,9 @@
 
     <!-- CONTENT WRAPPER -->
     <div class="content-wrapper">
+      
+      <!-- TAB 0: DASHBOARD EJECUTIVO (AISLADO EN SU PROPIO MÓDULO PARA NO INVADIR OTROS) -->
+      <section class="tab-view active" id="tab-dashboard" data-roles="admin">
       
       <!-- BALANCES Y KPIS FINANCIEROS (INTERACTIVOS CON DRILL-DOWN) -->
       <section class="kpi-grid">
@@ -422,27 +431,342 @@
             </div>
           </div>
 
-          <!-- MEDIDOR CIRCULAR 4: CUMPLIMIENTO FISCAL SENIAT -->
-          <div class="data-card" onclick="window.drillDownKPI('seniat')" style="padding: 16px; border: 1px solid rgba(245,158,11,0.25); background: rgba(245,158,11,0.02); display: flex; align-items: center; gap: 16px; cursor: pointer; border-radius: var(--radius-md);" title="Haga clic para ver auditoría fiscal">
+          <!-- MEDIDOR CIRCULAR 4: SOLVENCIA DE ARRENDATARIOS (CARTERA AL DÍA) -->
+          <div class="data-card" onclick="window.drillDownKPI('solvencia')" style="padding: 16px; border: 1px solid rgba(245,158,11,0.25); background: rgba(245,158,11,0.02); display: flex; align-items: center; gap: 16px; cursor: pointer; border-radius: var(--radius-md);" title="Haga clic para ver inquilinos solventes">
             <div class="progress-radial-wrap" style="width: 78px; height: 78px; flex-shrink: 0;">
               <svg class="progress-radial-svg" viewBox="0 0 36 36">
                 <path class="progress-radial-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" stroke-width="3.2"/>
-                <path id="radial-meter-seniat" class="progress-radial-meter" stroke="var(--amber)" stroke-width="3.4" stroke-dasharray="100, 100" stroke-dashoffset="100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                <path id="radial-meter-solvencia" class="progress-radial-meter" stroke="var(--amber)" stroke-width="3.4" stroke-dasharray="100, 100" stroke-dashoffset="100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
               </svg>
-              <div class="progress-radial-text" id="radial-text-seniat" style="color: var(--amber); font-size: 14px;">0%</div>
+              <div class="progress-radial-text" id="radial-text-solvencia" style="color: var(--amber); font-size: 14px;">0%</div>
             </div>
             <div>
-              <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Contribuyentes Especiales</div>
-              <div style="font-size: 15px; font-weight: 800; color: var(--txt-primary); font-family: var(--font-heading); margin-top: 2px;" id="radial-subval-seniat">0 de 0</div>
-              <div style="font-size: 11px; color: var(--amber); margin-top: 2px;"><i class="fa-solid fa-landmark"></i> Retenciones SENIAT</div>
+              <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Solvencia de Cartera</div>
+              <div style="font-size: 15px; font-weight: 800; color: var(--txt-primary); font-family: var(--font-heading); margin-top: 2px;" id="radial-subval-solvencia">0 de 0</div>
+              <div style="font-size: 11px; color: var(--amber); margin-top: 2px;"><i class="fa-solid fa-user-check"></i> Al Día con el Centro Comercial</div>
             </div>
           </div>
 
         </div>
       </section>
 
+      <!-- SECCIÓN: GRÁFICO DE BARRAS DE RENDIMIENTO COMERCIAL SEMESTRAL (FACTURACIÓN VS RECAUDACIÓN) -->
+      <section class="executive-chart-card" id="executive-barchart-section" data-roles="admin">
+        <div class="executive-chart-header">
+          <div>
+            <h4 class="executive-chart-title">
+              <i class="fa-solid fa-chart-column" style="color: var(--amber);"></i> Rendimiento Comercial Empresarial — Facturación vs Recaudación
+            </h4>
+            <div class="executive-chart-sub">Desempeño mensual consolidado de cánones pactados frente a cobranza líquida efectiva (Últimos 6 meses)</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700;">
+              <span style="width: 10px; height: 10px; border-radius: 3px; background: var(--amber); display: inline-block;"></span>
+              <span style="color: var(--txt-primary);">Facturación Pactada</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700;">
+              <span style="width: 10px; height: 10px; border-radius: 3px; background: var(--emerald); display: inline-block;"></span>
+              <span style="color: var(--txt-primary);">Recaudado Efectivo</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="barchart-stage" id="barchart-stage-container">
+          <!-- Inyectado dinámicamente vía app.js -->
+        </div>
+
+        <!-- KPI SUMMARY BAR -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-subtle);">
+          <div style="background: rgba(245, 158, 11, 0.04); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; padding: 10px 14px;">
+            <div style="font-size: 10px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Promedio Facturado Mes</div>
+            <div style="font-size: 17px; font-weight: 800; color: var(--amber); font-family: var(--font-heading); margin-top: 2px;" id="barchart-avg-billed">$4,120.00</div>
+          </div>
+          <div style="background: rgba(16, 185, 129, 0.04); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; padding: 10px 14px;">
+            <div style="font-size: 10px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Promedio Recaudado Mes</div>
+            <div style="font-size: 17px; font-weight: 800; color: var(--emerald); font-family: var(--font-heading); margin-top: 2px;" id="barchart-avg-collected">$3,980.00</div>
+          </div>
+          <div style="background: rgba(6, 182, 212, 0.04); border: 1px solid rgba(6, 182, 212, 0.2); border-radius: 8px; padding: 10px 14px;">
+            <div style="font-size: 10px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Efectividad Semestral</div>
+            <div style="font-size: 17px; font-weight: 800; color: var(--cyan); font-family: var(--font-heading); margin-top: 2px;" id="barchart-efficiency-rate">96.6%</div>
+          </div>
+          <div style="background: rgba(168, 85, 247, 0.04); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 8px; padding: 10px 14px;">
+            <div style="font-size: 10px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Cumplimiento Fiscal CCMS</div>
+            <div style="font-size: 17px; font-weight: 800; color: var(--purple); font-family: var(--font-heading); margin-top: 2px;">100% Declarado</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN: GRÁFICOS CIRCULARES EMPRESARIALES (DONUT CHARTS CORPORATIVOS DE ALTA GAMA) -->
+      <section class="executive-donuts-grid" data-roles="admin">
+        
+        <!-- DONUT 1: COMPOSICIÓN DE INGRESOS OPERATIVOS DE CCMS -->
+        <div class="executive-chart-card" style="margin-bottom: 0;">
+          <div class="executive-chart-header" style="margin-bottom: 14px; padding-bottom: 10px;">
+            <div>
+              <h4 class="executive-chart-title">
+                <i class="fa-solid fa-chart-pie" style="color: var(--emerald);"></i> Composición de Ingresos de la Sociedad
+              </h4>
+              <div class="executive-chart-sub">Desglose de las fuentes de ingreso bruto del Centro Comercial</div>
+            </div>
+          </div>
+
+          <div class="donut-visual-container">
+            <div class="donut-svg-wrap">
+              <svg viewBox="0 0 42 42" style="width: 100%; height: 100%; transform: rotate(-90deg);">
+                <circle cx="21" cy="21" r="15.9155" fill="transparent" stroke="rgba(255,255,255,0.05)" stroke-width="4.5"></circle>
+                <!-- Segmento 1: Cánones (72%) -->
+                <circle cx="21" cy="21" r="15.9155" fill="transparent" stroke="var(--amber)" stroke-width="4.5" stroke-dasharray="72 28" stroke-dashoffset="0"></circle>
+                <!-- Segmento 2: Condominio (22%) -->
+                <circle cx="21" cy="21" r="15.9155" fill="transparent" stroke="var(--emerald)" stroke-width="4.5" stroke-dasharray="22 78" stroke-dashoffset="-72"></circle>
+                <!-- Segmento 3: Otros / Plaza (6%) -->
+                <circle cx="21" cy="21" r="15.9155" fill="transparent" stroke="var(--cyan)" stroke-width="4.5" stroke-dasharray="6 94" stroke-dashoffset="-94"></circle>
+              </svg>
+              <div class="donut-center-text">
+                <div class="donut-center-val" id="donut-center-revenue-val">$4,850</div>
+                <div class="donut-center-sub">Total Mes</div>
+              </div>
+            </div>
+
+            <div class="donut-legend-table" id="donut-revenue-legend">
+              <div class="donut-legend-item">
+                <div style="display: flex; align-items: center;">
+                  <span class="donut-legend-dot" style="background: var(--amber);"></span>
+                  <span style="color: var(--txt-primary);">Cánones de Arrendamiento</span>
+                </div>
+                <strong style="color: var(--amber);" id="donut-legend-canon-pct">72% ($3,492)</strong>
+              </div>
+              <div class="donut-legend-item">
+                <div style="display: flex; align-items: center;">
+                  <span class="donut-legend-dot" style="background: var(--emerald);"></span>
+                  <span style="color: var(--txt-primary);">Cuotas de Condominio</span>
+                </div>
+                <strong style="color: var(--emerald);" id="donut-legend-condo-pct">22% ($1,067)</strong>
+              </div>
+              <div class="donut-legend-item">
+                <div style="display: flex; align-items: center;">
+                  <span class="donut-legend-dot" style="background: var(--cyan);"></span>
+                  <span style="color: var(--txt-primary);">Uso de Plaza & Servicios</span>
+                </div>
+                <strong style="color: var(--cyan);" id="donut-legend-other-pct">6% ($291)</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DONUT 2: PORTAFOLIO POR RUBRO COMERCIAL -->
+        <div class="executive-chart-card" style="margin-bottom: 0;">
+          <div class="executive-chart-header" style="margin-bottom: 14px; padding-bottom: 10px;">
+            <div>
+              <h4 class="executive-chart-title">
+                <i class="fa-solid fa-cubes" style="color: var(--cyan);"></i> Diversificación Comercial del Inmueble
+              </h4>
+              <div class="executive-chart-sub">Distribución de espacios arrendables según actividad comercial</div>
+            </div>
+          </div>
+
+          <div class="donut-visual-container">
+            <div class="donut-svg-wrap">
+              <svg viewBox="0 0 42 42" style="width: 100%; height: 100%; transform: rotate(-90deg);" id="donut-portfolio-svg">
+                <circle cx="21" cy="21" r="15.9155" fill="transparent" stroke="rgba(255,255,255,0.05)" stroke-width="4.5"></circle>
+                <!-- Segmento Calzado/Modas (34%) -->
+                <circle cx="21" cy="21" r="15.9155" fill="transparent" stroke="#10b981" stroke-width="4.5" stroke-dasharray="34 66" stroke-dashoffset="0"></circle>
+                <!-- Segmento Salud/Farmacia (26%) -->
+                <circle cx="21" cy="21" r="15.9155" fill="transparent" stroke="#06b6d4" stroke-width="4.5" stroke-dasharray="26 74" stroke-dashoffset="-34"></circle>
+                <!-- Segmento Alimentos/Bodegón (22%) -->
+                <circle cx="21" cy="21" r="15.9155" fill="transparent" stroke="#f59e0b" stroke-width="4.5" stroke-dasharray="22 78" stroke-dashoffset="-60"></circle>
+                <!-- Segmento Tecnología (18%) -->
+                <circle cx="21" cy="21" r="15.9155" fill="transparent" stroke="#a855f7" stroke-width="4.5" stroke-dasharray="18 82" stroke-dashoffset="-82"></circle>
+              </svg>
+              <div class="donut-center-text">
+                <div class="donut-center-val" id="donut-center-area-val">850 m²</div>
+                <div class="donut-center-sub">Área Total</div>
+              </div>
+            </div>
+
+            <div class="donut-legend-table" id="donut-portfolio-legend">
+              <div class="donut-legend-item">
+                <div style="display: flex; align-items: center;">
+                  <span class="donut-legend-dot" style="background: #10b981;"></span>
+                  <span style="color: var(--txt-primary);">Calzado, Ropa & Modas</span>
+                </div>
+                <strong style="color: #10b981;">34% (289 m²)</strong>
+              </div>
+              <div class="donut-legend-item">
+                <div style="display: flex; align-items: center;">
+                  <span class="donut-legend-dot" style="background: #06b6d4;"></span>
+                  <span style="color: var(--txt-primary);">Salud, Farmacia & Óptica</span>
+                </div>
+                <strong style="color: #06b6d4;">26% (221 m²)</strong>
+              </div>
+              <div class="donut-legend-item">
+                <div style="display: flex; align-items: center;">
+                  <span class="donut-legend-dot" style="background: #f59e0b;"></span>
+                  <span style="color: var(--txt-primary);">Alimentos & Bodegón</span>
+                </div>
+                <strong style="color: #f59e0b;">22% (187 m²)</strong>
+              </div>
+              <div class="donut-legend-item">
+                <div style="display: flex; align-items: center;">
+                  <span class="donut-legend-dot" style="background: #a855f7;"></span>
+                  <span style="color: var(--txt-primary);">Telefonía & Tecnología</span>
+                </div>
+                <strong style="color: #a855f7;">18% (153 m²)</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+      </section>
+
+      <!-- TAB INQUILINO: MI PERFIL Y MI LOCAL (AUTOGESTIÓN INTEGRAL PARA ARRENDATARIOS) -->
+      <section class="tab-view" id="tab-perfil-inquilino" data-roles="tenant" style="display: none;">
+        
+        <!-- HERO PROFILE BANNER -->
+        <div class="data-card" style="padding: 24px; margin-bottom: 20px; background: linear-gradient(135deg, rgba(245,158,11,0.06), rgba(16,185,129,0.04)); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+            <div style="display: flex; align-items: center; gap: 18px;">
+              <div style="width: 64px; height: 64px; border-radius: 14px; background: linear-gradient(135deg, var(--amber), var(--emerald)); display: flex; align-items: center; justify-content: center; font-size: 26px; color: #000; box-shadow: 0 4px 14px rgba(245,158,11,0.3);">
+                <i class="fa-solid fa-store"></i>
+              </div>
+              <div>
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                  <h2 id="tp-business-name" style="font-family: var(--font-heading); font-size: 22px; font-weight: 800; color: var(--txt-primary); margin: 0;">Inversiones Don Mario C.A.</h2>
+                  <span id="tp-solvency-pill" class="status-pill pill-active" style="font-size: 11px; padding: 3px 10px; font-weight: 700;">
+                    <i class="fa-solid fa-circle-check"></i> Solvente / Al Día
+                  </span>
+                </div>
+                <div style="font-size: 13px; color: var(--txt-secondary); margin-top: 4px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                  <span><strong style="color: var(--txt-primary);">RIF:</strong> <span id="tp-rif">J-50123456-1</span></span>
+                  <span>•</span>
+                  <span><strong style="color: var(--txt-primary);">Local:</strong> <span id="tp-unit-code" style="color: var(--amber); font-weight: 700;">LOC-01 (PB)</span></span>
+                  <span>•</span>
+                  <span><strong style="color: var(--txt-primary);">Área:</strong> <span id="tp-surface">54.50 m²</span></span>
+                  <span>•</span>
+                  <span><strong style="color: var(--txt-primary);">Rubro:</strong> <span id="tp-category">Comercio General</span></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- BOTONES DE ACCIÓN RÁPIDA -->
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <button type="button" class="btn-onboarding-cta" onclick="window.openTenantReportPaymentModal()" style="padding: 10px 20px; font-size: 13px; background: var(--emerald); border-color: var(--emerald); color: #fff;">
+                <i class="fa-solid fa-receipt"></i> <span>Reportar Pago Móvil / Transferencia</span>
+              </button>
+              <button type="button" class="btn-currency-toggle" onclick="window.downloadTenantSolvencyCertificate()" style="padding: 10px 16px; font-size: 13px; border-color: var(--border-subtle);">
+                <i class="fa-solid fa-file-shield" style="color: var(--cyan);"></i> <span>Certificado de Solvencia</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- GRID DE 4 TARJETAS OPERATIVAS -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-bottom: 24px;">
+          
+          <!-- TARJETA 1: CANON Y ALQUILER PACTADO -->
+          <div class="data-card" style="padding: 18px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+            <div style="font-size: 11px; font-weight: 800; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-coins" style="color: var(--amber);"></i> Canon Mensual de Arrendamiento
+            </div>
+            <div style="font-size: 24px; font-weight: 800; font-family: var(--font-heading); color: var(--amber);" id="tp-canon-usd">$450.00</div>
+            <div style="font-size: 12px; color: var(--txt-secondary); margin-top: 4px;" id="tp-canon-ves">Equivalente: Bs. 0,00 @ BCV</div>
+            <div style="font-size: 11px; color: var(--txt-muted); margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border-subtle); display: flex; justify-content: space-between;">
+              <span>Alícuota Condominio: <strong id="tp-alicuota">7.25%</strong></span>
+              <span>Día de Cobro: <strong>Primeros 5 días</strong></span>
+            </div>
+          </div>
+
+          <!-- TARJETA 2: CONTRATO AUTÉNTICO NOTARIADO (G.O. 40.418) -->
+          <div class="data-card" style="padding: 18px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+            <div style="font-size: 11px; font-weight: 800; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-file-contract" style="color: var(--cyan);"></i> Contrato Notariado (G.O. 40.418)
+            </div>
+            <div style="font-size: 16px; font-weight: 800; color: var(--txt-primary); font-family: var(--font-heading);" id="tp-contract-num">CTR-2026-L01</div>
+            <div style="font-size: 12px; color: var(--txt-secondary); margin-top: 4px;" id="tp-contract-period">Vigencia: 01/01/2026 - 31/12/2026</div>
+            <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border-subtle); display: flex; align-items: center; justify-content: space-between;">
+              <span class="status-pill pill-active" style="font-size: 9.5px;"><i class="fa-solid fa-stamp"></i> Notariado</span>
+              <button type="button" class="btn-currency-toggle" onclick="window.viewTenantPhysicalContract()" style="font-size: 11px; padding: 4px 10px;">
+                <i class="fa-solid fa-file-pdf" style="color: var(--rose);"></i> Ver Documento
+              </button>
+            </div>
+          </div>
+
+          <!-- TARJETA 3: ESTADO FINANCIERO CON EL CCMS -->
+          <div class="data-card" style="padding: 18px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+            <div style="font-size: 11px; font-weight: 800; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-scale-balanced" style="color: var(--emerald);"></i> Estado de Cuenta
+            </div>
+            <div style="font-size: 24px; font-weight: 800; font-family: var(--font-heading); color: var(--emerald);" id="tp-debt-val">$0.00</div>
+            <div style="font-size: 12px; color: var(--txt-secondary); margin-top: 4px;" id="tp-debt-status-text">Sin deuda pendiente</div>
+            <div style="font-size: 11px; color: var(--txt-muted); margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border-subtle); display: flex; justify-content: space-between;">
+              <span>Garantía en Depósito: <strong id="tp-deposit-val">$900.00</strong></span>
+              <span>Cuotas Pagadas: <strong id="tp-paid-count">0</strong></span>
+            </div>
+          </div>
+
+          <!-- TARJETA 4: CUENTAS BANCARIAS RECEPTORAS DE CCMS -->
+          <div class="data-card" style="padding: 18px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+            <div style="font-size: 11px; font-weight: 800; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-building-columns" style="color: var(--purple);"></i> Cuentas Receptoras CCMS
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); padding: 5px 8px; border-radius: 4px;">
+                <span><strong>Banesco:</strong> 0134-0001-11-0012345678</span>
+                <button type="button" class="btn-copy-code" onclick="navigator.clipboard.writeText('01340001110012345678'); alert('Cuenta Banesco copiada')" title="Copiar cuenta" style="background: none; border: none; color: var(--amber); cursor: pointer;"><i class="fa-regular fa-copy"></i></button>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); padding: 5px 8px; border-radius: 4px;">
+                <span><strong>Pago Móvil:</strong> Banesco • 0414-5551234</span>
+                <button type="button" class="btn-copy-code" onclick="navigator.clipboard.writeText('04145551234'); alert('Teléfono copiado')" title="Copiar teléfono" style="background: none; border: none; color: var(--amber); cursor: pointer;"><i class="fa-regular fa-copy"></i></button>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); padding: 5px 8px; border-radius: 4px;">
+                <span><strong>Binance Pay:</strong> ID 88291044 (USDT)</span>
+                <button type="button" class="btn-copy-code" onclick="navigator.clipboard.writeText('88291044'); alert('Binance Pay ID copiado')" title="Copiar Pay ID" style="background: none; border: none; color: var(--amber); cursor: pointer;"><i class="fa-regular fa-copy"></i></button>
+              </div>
+            </div>
+            <div style="font-size: 10px; color: var(--txt-muted); margin-top: 6px;">Titular: Centro Comercial Mario Sánchez C.A. • RIF J-30211544-2</div>
+          </div>
+
+        </div>
+
+        <!-- TABLA DE HISTORIAL DE CUOTAS Y RECIBOS OFICIALES -->
+        <div class="data-card" style="padding: 20px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <h3 style="font-family: var(--font-heading); font-size: 15px; font-weight: 800; color: var(--txt-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-clock-rotate-left" style="color: var(--amber);"></i> Historial de Cuotas, Pagos & Recibos Arrendaticios
+              </h3>
+              <div style="font-size: 12px; color: var(--txt-secondary);">Recibos digitales inmutables con sello de verificación criptográfico SHA-256 (G.O. 40.418)</div>
+            </div>
+            <button type="button" class="btn-onboarding-cta" onclick="window.openTenantReportPaymentModal()" style="font-size: 12px; padding: 6px 14px; background: var(--emerald); border-color: var(--emerald); color: #fff;">
+              <i class="fa-solid fa-plus"></i> Reportar Nuevo Pago
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table" id="tenant-profile-invoices-table">
+              <thead>
+                <tr>
+                  <th>N° Control / Recibo</th>
+                  <th>Período / Concepto</th>
+                  <th>Monto USD</th>
+                  <th>Monto Bs. (BCV)</th>
+                  <th>Referencia Bancaria</th>
+                  <th>Sello SHA-256</th>
+                  <th>Estado</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="tenant-profile-invoices-body">
+                <!-- Se inyecta dinámicamente vía app.js (renderTenantSelfProfile) -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
       <!-- TAB 1: LOCALES & INQUILINOS (TIME TO PROGRAM MODERN UI) -->
-      <section class="tab-view" id="tab-inquilinos" data-roles="admin">
+      <section class="tab-view" id="tab-inquilinos" data-roles="admin" style="display: none;">
         
         <!-- VISTA 1: LISTADO / GRID DE CLIENTES -->
         <div id="tenants-main-view">
@@ -498,9 +822,9 @@
                 </div>
               </div>
 
-              <a href="onboarding.html" class="btn-onboarding-cta" style="height: 38px; padding: 0 16px; font-size: 12.5px;">
-                <i class="fa-solid fa-plus"></i> <span>+ Añadir Cliente</span>
-              </a>
+              <button type="button" class="btn-onboarding-cta" onclick="window.openQuickAddClientModal()" style="height: 38px; padding: 0 16px; font-size: 12.5px;">
+                <i class="fa-solid fa-user-plus"></i> <span>+ Registrar Inquilino</span>
+              </button>
             </div>
           </div>
 
@@ -2182,6 +2506,211 @@
         </button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- MODAL: REGISTRO RÁPIDO DE INQUILINO (AGILIDAD TOTAL SIN REDIRECCIÓN) -->
+<div class="modal-overlay" id="modal-quick-add-client">
+  <div class="modal-window" style="max-width: 680px; width: 95%;">
+    <div class="modal-header">
+      <h3 class="modal-title">
+        <i class="fa-solid fa-user-plus" style="color: var(--amber);"></i> Registro Rápido de Nuevo Arrendatario
+      </h3>
+      <button class="modal-close" onclick="window.closeQuickAddClientModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form id="quick-add-client-form" onsubmit="window.handleQuickAddClientSubmit(event)" class="modal-body" style="display: flex; flex-direction: column; gap: 14px; max-height: 78vh; overflow-y: auto; padding: 18px;">
+      
+      <div style="background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; padding: 10px 14px; font-size: 11.5px; color: var(--txt-secondary);">
+        <i class="fa-solid fa-bolt" style="color: var(--amber);"></i> Registro inmediato en la base de datos de locales del Centro Comercial. Asigna local, genera contrato inicial y apertura el estado de cuenta.
+      </div>
+
+      <!-- ASIGNACIÓN DE LOCAL -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Local Comercial Asignado *</label>
+          <select id="qadd-unit-select" class="form-control" required style="font-size: 12.5px;">
+            <!-- Opciones cargadas dinámicamente -->
+          </select>
+        </div>
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Rubro / Actividad Comercial *</label>
+          <input type="text" id="qadd-category" class="form-control" required placeholder="Ej: Calzado y Modas, Farmacia, Óptica" style="font-size: 12.5px;">
+        </div>
+      </div>
+
+      <!-- DATOS DE LA EMPRESA ARRENDATARIA -->
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Razón Social / Nombre Comercial *</label>
+          <input type="text" id="qadd-business-name" class="form-control" required placeholder="Ej: Inversiones Los Andes C.A." style="font-size: 12.5px;">
+        </div>
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">RIF Fiscal *</label>
+          <input type="text" id="qadd-rif" class="form-control" required placeholder="J-12345678-0" style="font-size: 12.5px;">
+        </div>
+      </div>
+
+      <!-- REPRESENTANTE LEGAL Y CONTACTO -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Representante Legal *</label>
+          <input type="text" id="qadd-rep-name" class="form-control" required placeholder="Nombre y Apellido" style="font-size: 12.5px;">
+        </div>
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Cédula de Identidad *</label>
+          <input type="text" id="qadd-rep-ci" class="form-control" required placeholder="V-18.456.789" style="font-size: 12.5px;">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Teléfono de Contacto *</label>
+          <input type="text" id="qadd-phone" class="form-control" required placeholder="0414-1234567" style="font-size: 12.5px;">
+        </div>
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Correo Electrónico *</label>
+          <input type="email" id="qadd-email" class="form-control" required placeholder="cliente@empresa.com" style="font-size: 12.5px;">
+        </div>
+      </div>
+
+      <!-- CONDICIONES ECONÓMICAS DEL CONTRATO -->
+      <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px;">
+        <div style="font-size: 11px; font-weight: 800; color: var(--amber); text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-file-signature"></i> Condiciones de Arrendamiento (G.O. 40.418)
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+          <div class="form-group">
+            <label style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Canon Pactado ($ USD) *</label>
+            <input type="number" step="0.01" min="0" id="qadd-canon-usd" class="form-control" required placeholder="450.00" style="font-size: 12.5px;">
+          </div>
+          <div class="form-group">
+            <label style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Alícuota Condominio (%) *</label>
+            <input type="number" step="0.01" min="0" id="qadd-alicuota" class="form-control" required placeholder="7.25" style="font-size: 12.5px;">
+          </div>
+          <div class="form-group">
+            <label style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Meses de Garantía *</label>
+            <select id="qadd-deposit-months" class="form-control" style="font-size: 12.5px;">
+              <option value="1">1 Mes</option>
+              <option value="2">2 Meses</option>
+              <option value="3" selected>3 Meses (Máx. Ley)</option>
+            </select>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+          <div class="form-group">
+            <label style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Fecha de Inicio *</label>
+            <input type="date" id="qadd-start-date" class="form-control" required style="font-size: 12px;">
+          </div>
+          <div class="form-group">
+            <label style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Duración del Contrato *</label>
+            <select id="qadd-contract-duration" class="form-control" style="font-size: 12px;">
+              <option value="12" selected>1 Año (Renovable)</option>
+              <option value="6">6 Meses</option>
+              <option value="24">2 Años</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
+        <button type="button" class="btn-currency-toggle" onclick="window.closeQuickAddClientModal()">Cancelar</button>
+        <button type="submit" class="btn-onboarding-cta" style="font-weight: 800; padding: 8px 20px; font-size: 13px;">
+          <i class="fa-solid fa-check"></i> <span>Registrar y Activar Inquilino</span>
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: REPORTE DE PAGO ARRENDATARIO (CONEXIÓN DIRECTA CON CONCILIACIÓN ADMIN) -->
+<div class="modal-overlay" id="modal-tenant-report-payment">
+  <div class="modal-window" style="max-width: 600px; width: 95%;">
+    <div class="modal-header">
+      <h3 class="modal-title">
+        <i class="fa-solid fa-receipt" style="color: var(--emerald);"></i> Reportar Pago de Arrendamiento
+      </h3>
+      <button class="modal-close" onclick="window.closeTenantReportPaymentModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form id="tenant-report-payment-form" onsubmit="window.handleTenantReportPaymentSubmit(event)" class="modal-body" style="display: flex; flex-direction: column; gap: 14px; max-height: 78vh; overflow-y: auto; padding: 18px;">
+      
+      <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; padding: 10px 14px; font-size: 11.5px; color: var(--txt-secondary);">
+        <i class="fa-solid fa-shield-halved" style="color: var(--emerald);"></i> Su reporte ingresará a la bandeja de conciliación de Administración. Una vez validada la referencia, se emitirá su <strong>Recibo Oficial con Sello Criptográfico SHA-256</strong>.
+      </div>
+
+      <div class="form-group">
+        <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Concepto / Mes a Pagar *</label>
+        <select id="trp-concept-select" class="form-control" required style="font-size: 12.5px;">
+          <option value="Canon Arrendamiento Mensual">Canon de Arrendamiento Comercial</option>
+          <option value="Cuota Gastos Comunes / Condominio">Cuota de Condominio y Mantenimiento</option>
+          <option value="Canon + Condominio Unificado">Canon de Arrendamiento + Condominio</option>
+          <option value="Pago Anticipado / Depósito">Pago Adelantado / Depósito en Garantía</option>
+        </select>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Monto Pagado ($ USD) *</label>
+          <input type="number" step="0.01" min="0.01" id="trp-amount-usd" class="form-control" required placeholder="0.00" style="font-size: 13px;" oninput="window.calculateTrpBsEquivalent()">
+        </div>
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Equivalente en Bolívares (BCV)</label>
+          <input type="text" id="trp-amount-ves" class="form-control" readonly placeholder="Bs. 0,00" style="font-size: 13px; color: var(--amber); background: rgba(255,255,255,0.02);">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Canal de Pago Utilizado *</label>
+          <select id="trp-payment-method" class="form-control" required style="font-size: 12.5px;">
+            <option value="Transferencia Banesco">Transferencia Banesco</option>
+            <option value="Transferencia Mercantil">Transferencia Banco Mercantil</option>
+            <option value="Pago Móvil Interbancario">Pago Móvil Interbancario</option>
+            <option value="Binance USDT (TRC-20)">Binance Pay / USDT (TRC-20)</option>
+            <option value="Efectivo Divisas USD">Efectivo USD (Caja Administración)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">N° de Referencia / Comprobante *</label>
+          <input type="text" id="trp-reference" class="form-control" required placeholder="Ej: 00984721 o Hash Tx" style="font-size: 12.5px;">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Fecha en que se efectuó el pago *</label>
+        <input type="date" id="trp-date" class="form-control" required style="font-size: 12.5px;">
+      </div>
+
+      <!-- CARGA DE CAPTURA DE PAGO (DROPZONE) -->
+      <div class="form-group">
+        <label style="font-size: 11px; font-weight: 700; color: var(--amber); text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-cloud-arrow-up"></i> Adjuntar Captura o Comprobante Bancario (JPG, PNG o PDF)
+        </label>
+        <input type="file" id="trp-file-input" accept="image/*,.pdf" style="display: none;" onchange="window.handleTrpFileSelected(event)">
+        <div id="trp-dropzone" onclick="document.getElementById('trp-file-input').click()" style="border: 2px dashed var(--border-subtle); border-radius: 8px; padding: 14px; text-align: center; cursor: pointer; background: rgba(255,255,255,0.02);">
+          <i class="fa-solid fa-file-arrow-up" style="font-size: 22px; color: var(--emerald); margin-bottom: 4px;"></i>
+          <div style="font-size: 12px; font-weight: 700; color: var(--txt-primary);">Haz clic para seleccionar comprobante</div>
+          <div style="font-size: 10px; color: var(--txt-muted);">Formatos admitidos: JPG, PNG o PDF</div>
+        </div>
+        <div id="trp-file-info" style="display: none; margin-top: 8px; padding: 6px 10px; border-radius: 6px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.3); align-items: center; justify-content: space-between;">
+          <div style="font-size: 11.5px; color: var(--emerald); font-weight: 700;" id="trp-file-name"></div>
+          <button type="button" onclick="window.removeTrpFile()" style="background: none; border: none; color: var(--rose); cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Notas o Comentarios Adicionales</label>
+        <textarea id="trp-notes" class="form-control" rows="2" placeholder="Observaciones sobre el pago..." style="font-size: 12px;"></textarea>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
+        <button type="button" class="btn-currency-toggle" onclick="window.closeTenantReportPaymentModal()">Cancelar</button>
+        <button type="submit" class="btn-onboarding-cta" style="background: var(--emerald); border-color: var(--emerald); color: #fff; font-weight: 800; padding: 8px 22px; font-size: 13px;">
+          <i class="fa-solid fa-paper-plane"></i> <span>Enviar Reporte a Administración</span>
+        </button>
+      </div>
+
+    </form>
   </div>
 </div>
 

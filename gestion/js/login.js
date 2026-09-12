@@ -64,6 +64,7 @@ function switchRole(role, fillCredentials = false) {
   const lblUser = document.getElementById('lbl-identifier');
   const userIn = document.getElementById('login-user');
   const passIn = document.getElementById('login-pass');
+  const iconIn = document.getElementById('icon-identifier');
   const btnDemoA = document.getElementById('btn-demo-admin');
   const btnDemoT = document.getElementById('btn-demo-tenant');
   const btnDemoP = document.getElementById('btn-demo-pending');
@@ -74,7 +75,8 @@ function switchRole(role, fillCredentials = false) {
     if (btnDemoA) btnDemoA.classList.add('active');
     if (btnDemoT) btnDemoT.classList.remove('active');
     if (btnDemoP) btnDemoP.classList.remove('active');
-    if (lblUser) lblUser.innerText = 'Correo Electrónico Administrador';
+    if (lblUser) lblUser.innerHTML = '<i class="fa-solid fa-id-badge" style="color: var(--login-gold);"></i> Correo Institucional Administrador';
+    if (iconIn) iconIn.className = 'fa-solid fa-envelope input-field-icon';
     if (userIn) {
       userIn.placeholder = 'ej. administracion@ccmariosanchez.com';
       if (fillCredentials && AuthGuard.demoEnabled) userIn.value = 'administracion@ccmariosanchez.com';
@@ -88,9 +90,10 @@ function switchRole(role, fillCredentials = false) {
     if (btnDemoT) btnDemoT.classList.add('active');
     if (btnDemoA) btnDemoA.classList.remove('active');
     if (btnDemoP) btnDemoP.classList.remove('active');
-    if (lblUser) lblUser.innerText = 'RIF Jurídico o Correo del Arrendatario';
+    if (lblUser) lblUser.innerHTML = '<i class="fa-solid fa-store" style="color: var(--login-gold);"></i> RIF Jurídico o Correo del Arrendatario';
+    if (iconIn) iconIn.className = 'fa-solid fa-id-card input-field-icon';
     if (userIn) {
-      userIn.placeholder = 'ej. J-30987123-4';
+      userIn.placeholder = 'ej. J-30987123-4 o contacto@inquilino.com';
       if (fillCredentials && AuthGuard.demoEnabled) userIn.value = 'J-30987123-4';
     }
     if (passIn && fillCredentials && AuthGuard.demoEnabled) {
@@ -220,12 +223,27 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-window.openRecoveryModal = function() {
+window.togglePasswordVisibility = function() {
+  const passIn = document.getElementById('login-pass');
+  const icon = document.getElementById('icon-eye-toggle');
+  if (!passIn) return;
+  if (passIn.type === 'password') {
+    passIn.type = 'text';
+    if (icon) icon.className = 'fa-solid fa-eye-slash';
+  } else {
+    passIn.type = 'password';
+    if (icon) icon.className = 'fa-solid fa-eye';
+  }
+};
+
+window.openRecoveryModal = function(e) {
+  if (e && e.preventDefault) e.preventDefault();
   const modal = document.getElementById('modal-recovery');
   const input = document.getElementById('recovery-identifier');
   const feedback = document.getElementById('recovery-feedback');
   if (feedback) feedback.style.display = 'none';
   if (input) input.value = '';
+  switchRecoveryTab('instructions');
   if (modal) {
     modal.style.display = 'flex';
     if (input) input.focus();
@@ -235,6 +253,27 @@ window.openRecoveryModal = function() {
 window.closeRecoveryModal = function() {
   const modal = document.getElementById('modal-recovery');
   if (modal) modal.style.display = 'none';
+};
+
+window.switchRecoveryTab = function(tab) {
+  const formInst = document.getElementById('form-recovery-instructions');
+  const formDirect = document.getElementById('form-recovery-direct');
+  const tabInst = document.getElementById('tab-recovery-instructions');
+  const tabDirect = document.getElementById('tab-recovery-direct');
+
+  if (tab === 'instructions') {
+    if (formInst) formInst.style.display = 'flex';
+    if (formDirect) formDirect.style.display = 'none';
+    if (tabInst) tabInst.classList.add('active');
+    if (tabDirect) tabDirect.classList.remove('active');
+  } else {
+    if (formInst) formInst.style.display = 'none';
+    if (formDirect) formDirect.style.display = 'flex';
+    if (tabInst) tabInst.classList.remove('active');
+    if (tabDirect) tabDirect.classList.add('active');
+    const directInput = document.getElementById('direct-reset-identifier');
+    if (directInput) directInput.focus();
+  }
 };
 
 window.handlePasswordRecovery = function(event) {
@@ -260,17 +299,99 @@ window.handlePasswordRecovery = function(event) {
       feedback.style.display = 'block';
       feedback.style.background = 'rgba(16, 185, 129, 0.15)';
       feedback.style.border = '1px solid rgba(16, 185, 129, 0.4)';
-      feedback.style.color = 'var(--emerald)';
+      feedback.style.color = '#34d399';
       feedback.innerHTML = `
         <div style="display: flex; align-items: flex-start; gap: 8px;">
           <i class="fa-solid fa-circle-check" style="margin-top: 2px;"></i>
           <div>
             <strong>¡Instrucciones de recuperación despachadas!</strong><br>
-            Se ha enviado un enlace de restablecimiento temporal y un código de verificación de 6 dígitos asociado a <em>${val}</em>. Revise su bandeja de entrada o contacte a la Administración Inmobiliaria vía WhatsApp oficial.
+            Se ha verificado la identidad asociada a <em>${escapeHtml(val)}</em>. Se envió un enlace de restablecimiento seguro y código PIN temporal. Para pruebas inmediatas, puede utilizar la pestaña <strong>"Restablecer Ahora"</strong> en este mismo modal.
           </div>
         </div>
       `;
     }
     if (input) input.value = '';
-  }, 700);
+  }, 600);
+};
+
+window.handleDirectPasswordReset = async function(event) {
+  if (event && event.preventDefault) event.preventDefault();
+  const idInput = document.getElementById('direct-reset-identifier');
+  const passInput = document.getElementById('direct-reset-newpass');
+  const feedback = document.getElementById('direct-reset-feedback');
+  const submitBtn = document.getElementById('btn-direct-reset-submit');
+
+  const idVal = idInput ? idInput.value.trim() : '';
+  const passVal = passInput ? passInput.value.trim() : '';
+
+  if (!idVal || !passVal) return;
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Actualizando...</span>';
+  }
+
+  try {
+    const res = await AuthGuard.resetUserPassword(idVal, passVal);
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Actualizar Clave</span>';
+    }
+
+    if (!res.ok) {
+      if (feedback) {
+        feedback.style.display = 'block';
+        feedback.style.background = 'rgba(244, 63, 94, 0.15)';
+        feedback.style.border = '1px solid rgba(244, 63, 94, 0.4)';
+        feedback.style.color = '#fb7185';
+        feedback.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${escapeHtml(res.error || 'No se pudo restablecer')}`;
+      }
+      return;
+    }
+
+    if (feedback) {
+      feedback.style.display = 'block';
+      feedback.style.background = 'rgba(16, 185, 129, 0.15)';
+      feedback.style.border = '1px solid rgba(16, 185, 129, 0.4)';
+      feedback.style.color = '#34d399';
+      feedback.innerHTML = `
+        <div style="display: flex; align-items: flex-start; gap: 8px;">
+          <i class="fa-solid fa-circle-check" style="margin-top: 2px;"></i>
+          <div>
+            <strong>¡Contraseña actualizada con éxito!</strong><br>
+            La nueva clave para <em>${escapeHtml(res.user.identifier)}</em> ha sido cifrada con PBKDF2 y guardada en el sistema. Ya puede cerrar este modal e iniciar sesión con su nueva clave.
+          </div>
+        </div>
+      `;
+    }
+
+    // Auto-rellenar en el formulario principal para comodidad
+    const mainUser = document.getElementById('login-user');
+    const mainPass = document.getElementById('login-pass');
+    if (mainUser) mainUser.value = res.user.identifier;
+    if (mainPass) mainPass.value = passVal;
+
+  } catch (err) {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Actualizar Clave</span>';
+    }
+    if (feedback) {
+      feedback.style.display = 'block';
+      feedback.style.background = 'rgba(244, 63, 94, 0.15)';
+      feedback.style.border = '1px solid rgba(244, 63, 94, 0.4)';
+      feedback.style.color = '#fb7185';
+      feedback.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Error inesperado: ${escapeHtml(err.message)}`;
+    }
+  }
+};
+
+window.openCredentialsGuide = function() {
+  const modal = document.getElementById('modal-credentials-guide');
+  if (modal) modal.style.display = 'flex';
+};
+
+window.closeCredentialsGuide = function() {
+  const modal = document.getElementById('modal-credentials-guide');
+  if (modal) modal.style.display = 'none';
 };

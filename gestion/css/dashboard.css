@@ -2888,7 +2888,7 @@ select.form-control optgroup {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 18px;
+  padding: 10px 18px;
   background: var(--bg-card);
   border-top: 1px solid var(--border-subtle);
   border-radius: 0 0 var(--radius-md) var(--radius-md);
@@ -2901,31 +2901,54 @@ select.form-control optgroup {
   color: var(--txt-secondary);
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-
-.pagination-select {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  color: var(--txt-primary);
-  border-radius: 6px;
-  padding: 3px 8px;
-  font-size: 11.5px;
-  cursor: pointer;
+  gap: 8px;
 }
 
 .pagination-controls {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
-.pagination-btn {
-  background: var(--bg-surface);
+.pagination-size-pills {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  padding: 2px;
+}
+
+.pagination-size-pill {
+  background: none;
+  border: none;
+  color: var(--txt-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pagination-size-pill:hover {
+  color: var(--txt-primary);
+}
+
+.pagination-size-pill.active {
+  background: var(--amber);
+  color: #000000;
+  font-weight: 800;
+}
+
+.pagination-pill-btn {
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border-subtle);
   color: var(--txt-primary);
-  width: 30px;
-  height: 30px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
   border-radius: 6px;
   display: inline-flex;
   align-items: center;
@@ -2936,22 +2959,23 @@ select.form-control optgroup {
   transition: all 0.15s ease;
 }
 
-.pagination-btn:hover:not(:disabled) {
+.pagination-pill-btn:hover:not(:disabled) {
   border-color: var(--amber);
   color: var(--amber);
   background: var(--amber-glow);
 }
 
-.pagination-btn:disabled {
-  opacity: 0.35;
+.pagination-pill-btn:disabled {
+  opacity: 0.25;
   cursor: not-allowed;
 }
 
-.pagination-btn.active {
+.pagination-pill-btn.active {
   background: var(--amber);
   color: #000000;
   border-color: var(--amber);
   font-weight: 800;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.35);
 }
 
 /* ========================================================================= */
@@ -3132,4 +3156,212 @@ select.form-control optgroup {
     page-break-after: avoid !important;
     page-break-before: avoid !important;
   }
+}
+
+/* ========================================================================= */
+/* EXECUTIVE PERFORMANCE CHARTS (BAR CHARTS & LUXURY DONUTS)                */
+/* ========================================================================= */
+.executive-chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.executive-chart-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--amber), transparent);
+}
+
+.executive-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.executive-chart-title {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--txt-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.executive-chart-sub {
+  font-size: 12px;
+  color: var(--txt-secondary);
+  margin-top: 2px;
+}
+
+.barchart-stage {
+  height: 220px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  padding: 20px 10px 10px;
+  position: relative;
+  background: rgba(255, 255, 255, 0.015);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-subtle);
+  gap: 16px;
+}
+
+.barchart-gridline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed rgba(255, 255, 255, 0.05);
+  pointer-events: none;
+}
+
+.barchart-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+  flex: 1;
+  max-width: 90px;
+  z-index: 2;
+}
+
+.barchart-bars-wrap {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 170px;
+  width: 100%;
+  justify-content: center;
+}
+
+.barchart-bar {
+  width: 18px;
+  border-radius: 4px 4px 0 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+}
+
+.barchart-bar:hover {
+  filter: brightness(1.25);
+  transform: scaleY(1.03);
+}
+
+.barchart-bar.bar-billed {
+  background: linear-gradient(180deg, #f59e0b, rgba(245, 158, 11, 0.35));
+  border: 1px solid rgba(245, 158, 11, 0.6);
+  border-bottom: none;
+}
+
+.barchart-bar.bar-collected {
+  background: linear-gradient(180deg, #10b981, rgba(16, 185, 129, 0.35));
+  border: 1px solid rgba(16, 185, 129, 0.6);
+  border-bottom: none;
+  box-shadow: 0 -2px 10px rgba(16, 185, 129, 0.25);
+}
+
+.barchart-label {
+  margin-top: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--txt-muted);
+  text-transform: uppercase;
+}
+
+.barchart-pct-pill {
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--emerald);
+  margin-bottom: 4px;
+}
+
+.executive-donuts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.donut-visual-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.donut-svg-wrap {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  flex-shrink: 0;
+}
+
+.donut-center-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.donut-center-val {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--txt-primary);
+  line-height: 1.1;
+}
+
+.donut-center-sub {
+  font-size: 9.5px;
+  color: var(--txt-muted);
+  text-transform: uppercase;
+}
+
+.donut-legend-table {
+  flex: 1;
+  min-width: 170px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.donut-legend-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.donut-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
 }

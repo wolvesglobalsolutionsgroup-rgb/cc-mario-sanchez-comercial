@@ -792,6 +792,26 @@
     return { ok: true, user: newUser };
   }
 
+  async function resetUserPassword(identifier, newPassword) {
+    if (!identifier || !newPassword) {
+      return { ok: false, error: 'Identificador y nueva contraseña requeridos.' };
+    }
+    const users = getUsers();
+    const idLower = String(identifier).trim().toLowerCase();
+    const target = users.find(u => u.identifier && u.identifier.toLowerCase() === idLower);
+    if (!target) {
+      return { ok: false, error: 'No se encontró ningún usuario registrado con el correo o RIF indicado.' };
+    }
+    if (newPassword.length < 6) {
+      return { ok: false, error: 'La nueva contraseña debe tener al menos 6 caracteres.' };
+    }
+    const newHash = await hashPasswordWithSalt(newPassword);
+    target.password_sha256 = newHash;
+    saveUsers(users);
+    audit('password_reset', { identifier: target.identifier, role: target.role });
+    return { ok: true, user: target };
+  }
+
   // --- 5. EXPORT ---------------------------------------------------------------
 
   global.AuthGuard = {
@@ -807,6 +827,7 @@
     approveUser,
     rejectUser,
     registerOrInviteUser,
+    resetUserPassword,
     hashPasswordWithSalt,
     verifyPassword,
     sha256: sha256Legacy,
