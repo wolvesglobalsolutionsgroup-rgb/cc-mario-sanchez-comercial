@@ -54,6 +54,10 @@ self.addEventListener('fetch', (event) => {
   // No interceptar peticiones externas (APIs, CDNs, Supabase)
   if (url.origin !== self.location.origin) return;
 
+  // No interceptar navegaciones de documento HTML — evita servir un Content-Type
+  // ambiguo desde caché que dispare el prompt de descarga en Safari (H-06).
+  if (event.request.mode === 'navigate') return;
+
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {

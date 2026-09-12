@@ -14,7 +14,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
   <link rel="stylesheet" href="css/dashboard.css">
-  <script>window.CCMS_DEMO_MODE = true;</script>
+  <script>
+    window.CCMS_DEMO_MODE = (
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      localStorage.getItem('CCMS_FORCE_DEMO') === 'true'
+    );
+  </script>
   <script src="js/theme-init.js"></script>
 
   <style>
@@ -815,7 +821,7 @@
       </button>
 
       <!-- CONSOLA VIP DE ACCESO RÁPIDO DEMO (1-CLICK ROLES - SIN EMOJIS) -->
-      <div class="demo-vip-box">
+      <div class="demo-roles-section demo-vip-box" id="demo-roles-section" style="display:none;">
         <div class="demo-vip-header">
           <span class="demo-vip-title">
             <i class="fa-solid fa-bolt"></i> Acceso Rápido por Rol

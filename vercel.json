@@ -17,6 +17,12 @@
   ],
   "headers": [
     {
+      "source": "/(gestion|login|onboarding|alquiler|levantamiento|gis|planos)",
+      "headers": [
+        { "key": "Content-Type", "value": "text/html; charset=utf-8" }
+      ]
+    },
+    {
       "source": "/(.*)",
       "headers": [
         {

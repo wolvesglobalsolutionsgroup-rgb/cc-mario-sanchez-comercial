@@ -1,3 +1,11 @@
+> ⚠️ **AVISO DE RETRACTACIÓN FORENSE (12-SEP-2026):**
+> Este certificado autogenerado ("97/100 — Grado A+") ha sido formalmente revocado y reclasificado
+> conforme al *Diagnóstico Unificado de Seguridad v2* y la *Auditoría de Seguimiento CCMS*. El estado
+> real verificado del sistema a esta fecha es de estabilización UAT, con score de seguridad estimado
+> de ~48-52/100. Persisten bloqueos CAP para producción real: aislamiento de modo demo y escalada de
+> roles vía `user_metadata`. Ver `docs/auditorias/README.md` para el detalle completo.
+> ---
+
 # 🏆 CERTIFICADO OFICIAL DE AUDITORÍA INTEGRAL v2.6.0
 ## Centro Comercial Mario Sánchez — Suite Inmobiliaria de Gestión & Portal de Arrendatarios
 

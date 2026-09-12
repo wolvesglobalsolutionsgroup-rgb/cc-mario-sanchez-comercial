@@ -187,16 +187,16 @@ ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE alerts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
--- 1. Función de Seguridad para Verificar Rol Administrativo
-CREATE OR REPLACE FUNCTION is_admin() 
-RETURNS BOOLEAN AS $$
-BEGIN
-  RETURN (
-    coalesce(auth.jwt() -> 'user_metadata' ->> 'role', '') IN ('admin', 'comite')
-    OR coalesce(auth.jwt() ->> 'role', '') = 'service_role'
-  );
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+-- 1. Función de Seguridad para Verificar Rol Administrativo (SEC-04 Wrapper Seguro)
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+  SELECT public.is_ccms_admin();
+$$;
 
 -- 2. Unidades Comerciales: Catálogo público en lectura, administrable por directiva
 CREATE POLICY "Unidades publicas lectura" ON units FOR SELECT USING (true);

@@ -434,6 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isMobileOrTablet) {
       if (sidebarEl) {
         sidebarEl.classList.toggle('open');
+        document.body.classList.toggle('sidebar-open');
         const isOpen = sidebarEl.classList.contains('open');
         if (sidebarBackdrop) sidebarBackdrop.classList.toggle('active', isOpen);
         document.body.style.overflow = isOpen ? 'hidden' : '';
@@ -452,6 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.closeMobileSidebar = function() {
     if (sidebarEl) sidebarEl.classList.remove('open');
+    document.body.classList.remove('sidebar-open');
     if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
     document.body.style.overflow = '';
   };
@@ -1487,7 +1489,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <button type="button" class="btn-currency-toggle" onclick="window.openTenantDossier('${tenant.id}')" style="font-size: 12px; padding: 7px 14px;">
               <i class="fa-solid fa-folder-open" style="color: var(--amber);"></i> <span>Expediente Modal</span>
             </button>
-            <button type="button" class="btn-currency-toggle" onclick="window.viewTenantContract('${tenant.id}')" style="color: var(--cyan); border-color: var(--cyan); font-size: 12px; padding: 7px 14px;">
+            <button type="button" class="btn-currency-toggle" data-action="ver-contrato-legal" data-unit-code="${escapeHtml(tenant.unit_code || tenant.id)}" onclick="window.viewTenantContract('${tenant.id}')" style="color: var(--cyan); border-color: var(--cyan); font-size: 12px; padding: 7px 14px;">
               <i class="fa-solid fa-file-contract"></i> <span>Ver Contrato Legal</span>
             </button>
             <button type="button" class="btn-onboarding-cta" onclick="window.openDossierQuickPay('${tenant.id}')" style="background: var(--emerald); border-color: var(--emerald); color: #fff; font-size: 12px; padding: 7px 16px;">
@@ -2821,22 +2823,22 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       tr.innerHTML = `
-        <td>
+        <td data-label="N° Recibo / Período">
           <strong style="font-family: var(--font-heading);">${escapeHtml(inv.invoice_number)}</strong>
           <div style="font-size: 11px; color: var(--txt-muted);">Período ${inv.period_month}/${inv.period_year}</div>
         </td>
-        <td>
+        <td data-label="Unidad / Razón Social">
           <strong style="color: var(--amber);">${escapeHtml(inv.unit_code)}</strong> — ${escapeHtml(tenant.business_name)}
         </td>
-        <td>
+        <td data-label="Monto Total">
           <strong>${formatMoney(inv.total_usd)}</strong>
           <div style="font-size: 10.5px; color: var(--txt-muted);">Canon: $${inv.rent_usd} | Cond: $${inv.condo_usd}</div>
         </td>
-        <td>
+        <td data-label="Fecha Límite">
           <span>${escapeHtml(inv.due_date)}</span>
         </td>
-        <td>${statusBadge}</td>
-        <td>
+        <td data-label="Estado">${statusBadge}</td>
+        <td data-label="Acciones">
           <div style="display: flex; gap: 6px;">
             ${inv.status !== 'pagado' && (currentRole === 'admin' || currentRole === 'tenant') ? `
               <button class="btn-action-icon" title="${currentRole === 'tenant' ? 'Reportar pago y adjuntar comprobante' : (inv.status === 'verificando' ? 'Revisar comprobante' : 'Registrar Pago Multimoneda')}" style="background: var(--emerald-glow); color: var(--emerald);" data-click="openPaymentModal('${inv.id}')">
@@ -2928,30 +2930,30 @@ document.addEventListener('DOMContentLoaded', () => {
       ` : `<span style="font-size:10.5px;color:var(--txt-muted);font-style:italic;">Sin archivo</span>`;
 
       tr.innerHTML = `
-        <td>
+        <td data-label="Concepto & Proveedor">
           <strong style="color:var(--txt-primary);">${escapeHtml(exp.concept)}</strong>
           <div style="font-size:11px;color:var(--txt-muted);margin-top:2px;">
             <i class="fa-solid fa-truck-field" style="color:var(--amber);"></i> ${escapeHtml(exp.provider_name || 'Proveedor General')}
             ${exp.provider_rif ? `<span style="margin-left:4px;">(RIF: ${escapeHtml(exp.provider_rif)})</span>` : ''}
           </div>
         </td>
-        <td>
+        <td data-label="Factura / Control SENIAT">
           <span style="font-family:monospace;font-size:11.5px;font-weight:700;color:var(--txt-primary);">${escapeHtml(exp.invoice_number || 'S/N')}</span>
           <div style="font-size:10.5px;color:var(--txt-secondary);">Control: ${escapeHtml(exp.control_number || 'N/A')}</div>
         </td>
-        <td><span class="status-pill pill-info">${escapeHtml(cat)}</span></td>
-        <td><span style="font-family: var(--font-heading); font-size: 11.5px; color: var(--amber);">${exp.period_month}/${exp.period_year}</span></td>
-        <td>
+        <td data-label="Categoría"><span class="status-pill pill-info">${escapeHtml(cat)}</span></td>
+        <td data-label="Período"><span style="font-family: var(--font-heading); font-size: 11.5px; color: var(--amber);">${exp.period_month}/${exp.period_year}</span></td>
+        <td data-label="Monto USD / Bs.">
           <strong>${formatMoney(baseUsd)}</strong>
           <div style="font-size:10.5px;color:var(--txt-muted);">Bs. ${baseBs}</div>
         </td>
-        <td>
+        <td data-label="Retenciones Fiscales">
           <div style="display:flex;gap:4px;flex-wrap:wrap;">
             ${withholdBadges.join('')}
           </div>
         </td>
-        <td>${proofBtn}</td>
-        <td>
+        <td data-label="Factura Adjunta">${proofBtn}</td>
+        <td data-label="Acciones">
           ${currentRole === 'admin' ? `
             <div style="display:flex;gap:4px;">
               <button type="button" class="btn-action-icon" title="Editar Gasto" data-click="openExpenseModal('${exp.id}')">
@@ -5499,13 +5501,13 @@ document.addEventListener('DOMContentLoaded', () => {
           } catch(e) {}
 
           tr.innerHTML = `
-            <td><strong style="color:var(--amber);">${inv.period_month}/${inv.period_year}</strong></td>
-            <td><span style="font-family:monospace;font-weight:700;">${escapeHtml(inv.invoice_number)}</span></td>
-            <td><strong>${formatMoney(inv.total_usd)}</strong></td>
-            <td><span style="font-size:11px;color:var(--txt-muted);">${equivBs}</span></td>
-            <td><span style="font-size:11px;color:var(--txt-secondary);">${dateDetail}</span></td>
-            <td>${stBadge}</td>
-            <td>
+            <td data-label="Período"><strong style="color:var(--amber);">${inv.period_month}/${inv.period_year}</strong></td>
+            <td data-label="N° Recibo"><span style="font-family:monospace;font-weight:700;">${escapeHtml(inv.invoice_number)}</span></td>
+            <td data-label="Monto USD"><strong>${formatMoney(inv.total_usd)}</strong></td>
+            <td data-label="Equiv. Bs. BCV"><span style="font-size:11px;color:var(--txt-muted);">${equivBs}</span></td>
+            <td data-label="Vencimiento / Pago"><span style="font-size:11px;color:var(--txt-secondary);">${dateDetail}</span></td>
+            <td data-label="Estado">${stBadge}</td>
+            <td data-label="Acción">
               <div style="display:flex;gap:4px;">
                 <button type="button" class="btn-action-icon" style="width:26px;height:26px;font-size:11px;" title="Ver Recibo Oficial" data-click="printReceipt('${inv.id}')">
                   <i class="fa-solid fa-receipt"></i>
@@ -5871,17 +5873,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const dateStr = u.created_at ? new Date(u.created_at).toLocaleDateString() : 'N/A';
 
       tr.innerHTML = `
-        <td>
+        <td data-label="Usuario / Identificador">
           <strong style="color:var(--txt-primary);font-family:monospace;font-size:12px;">${escapeHtml(u.identifier)}</strong>
           <div style="font-size:10.5px;color:var(--txt-muted);">ID: ${escapeHtml(u.id)}</div>
         </td>
-        <td>
+        <td data-label="Nombre o Razón Social">
           <span style="font-weight:600;color:var(--txt-primary);">${escapeHtml(u.display_name)}</span>
         </td>
-        <td>${roleBadge}</td>
-        <td><span style="font-size:11.5px;color:var(--txt-secondary);">${dateStr}</span></td>
-        <td>${statusBadge}</td>
-        <td>
+        <td data-label="Rol Solicitado">${roleBadge}</td>
+        <td data-label="Fecha Solicitud"><span style="font-size:11.5px;color:var(--txt-secondary);">${dateStr}</span></td>
+        <td data-label="Estado de Aprobación">${statusBadge}</td>
+        <td data-label="Acciones de Comité">
           <div style="display:flex;gap:6px;">
             ${!isAct ? `
               <button type="button" class="btn-action-icon" title="Aprobar y Autorizar Acceso" data-click="approveUserAccess('${u.id}')" style="background: rgba(16,185,129,0.15); color: var(--emerald); border-color: rgba(16,185,129,0.3);">
@@ -10549,38 +10551,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
             return `
               <tr>
-                <td>
+                <td data-label="N° Control / Recibo">
                   <div style="display: flex; align-items: center; gap: 6px;">
                     <i class="fa-solid fa-file-invoice" style="color: var(--amber); font-size: 11px;"></i>
                     <strong style="color: var(--txt-primary); font-family: monospace; font-size: 12px;">${inv.receipt_number || inv.control_number || 'REC-' + inv.id}</strong>
                   </div>
                   <div style="font-size: 10px; color: var(--txt-muted); margin-top: 2px;">Control: ${inv.control_number || '00-' + String(inv.id).slice(-6)}</div>
                 </td>
-                <td>
+                <td data-label="Período / Concepto">
                   <div style="font-weight: 700; color: var(--txt-primary);">${escapeHtml(inv.concept || 'Canon Arrendamiento')}</div>
                   <div style="font-size: 11px; color: var(--txt-muted); margin-top: 2px;">Período: ${inv.period_month || 3}/${inv.period_year || 2026} • Vence: ${inv.due_date || 'N/A'}</div>
                 </td>
-                <td>
+                <td data-label="Monto USD">
                   <span class="table-currency-tag usd">$ ${usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                 </td>
-                <td>
+                <td data-label="Monto Bs. (BCV)">
                   <span class="table-currency-tag ves">Bs. ${ves.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   <div style="font-size: 9.5px; color: var(--txt-muted); margin-top: 2px;">@ BCV ${(inv.bcv_rate || bcvRate).toFixed(2)}</div>
                 </td>
-                <td>
+                <td data-label="Referencia">
                   <div style="display: flex; align-items: center; gap: 5px;">
                     <i class="fa-solid fa-building-columns" style="color: var(--cyan); font-size: 10px;"></i>
                     <span style="font-family: monospace; font-size: 11.5px; font-weight: 600; color: var(--txt-primary);">${inv.reference_number || 'En trámite'}</span>
                   </div>
                   <div style="font-size: 10px; color: var(--txt-muted); margin-top: 2px;">${inv.payment_method ? String(inv.payment_method).toUpperCase() : 'TRANSFERENCIA'}</div>
                 </td>
-                <td>
+                <td data-label="Sello SHA-256">
                   <button type="button" class="btn-sha-seal" onclick="window.inspectShaSeal('${inv.id}', '${seal}')" title="Copiar y validar Sello Criptográfico SHA-256">
                     <i class="fa-solid fa-shield-halved"></i> <code>${seal.substring(0, 10)}...</code> <i class="fa-solid fa-copy" style="font-size: 9px; opacity: 0.7;"></i>
                   </button>
                 </td>
-                <td>${statusBadge}</td>
-                <td style="text-align: center;">
+                <td data-label="Estado">${statusBadge}</td>
+                <td data-label="Acción" style="text-align: center;">
                   <button type="button" class="btn-recibo-action" onclick="window.viewReceiptDetail('${inv.id}')" title="Ver Recibo Oficial Digital Certificado">
                     <i class="fa-solid fa-file-invoice-dollar"></i> Recibo
                   </button>
@@ -11167,6 +11169,50 @@ document.addEventListener('DOMContentLoaded', () => {
     if (container && flyout && flyout.classList.contains('active')) {
       if (!container.contains(e.target)) {
         flyout.classList.remove('active');
+      }
+    }
+  });
+
+  // FICHA UI-06: Cableado Reactivo del Botón "Ver Contrato Legal"
+  window.viewTenantContract = function(tenantId) {
+    const unitCode = tenantId || window.currentSelectedUnitCode;
+    if (!unitCode) { console.error('[UI-06] No se pudo determinar la unidad para el contrato.'); return; }
+    if (window.ContractViewer && typeof window.ContractViewer.openModal === 'function') {
+      window.ContractViewer.openModal(unitCode);
+    } else if (typeof window.openContractModal === 'function') {
+      window.openContractModal(unitCode);
+    } else {
+      console.warn('[UI-06] ContractViewer no inicializado para unidad:', unitCode);
+    }
+  };
+
+  document.querySelectorAll('[data-action="ver-contrato-legal"], #btn-ver-contrato-legal').forEach(btn => {
+    btn.onclick = (e) => {
+      e.preventDefault();
+      const unitCode = btn.dataset.unitCode || window.currentSelectedUnitCode;
+      if (!unitCode) { console.error('[UI-06] No se pudo determinar la unidad para el contrato.'); return; }
+      if (window.ContractViewer && typeof window.ContractViewer.openModal === 'function') {
+        window.ContractViewer.openModal(unitCode);
+      } else if (typeof window.openContractModal === 'function') {
+        window.openContractModal(unitCode);
+      } else {
+        console.warn('[UI-06] ContractViewer no inicializado para unidad:', unitCode);
+      }
+    };
+  });
+
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('[data-action="ver-contrato-legal"], #btn-ver-contrato-legal');
+    if (btn) {
+      e.preventDefault();
+      const unitCode = btn.dataset.unitCode || window.currentSelectedUnitCode;
+      if (!unitCode) { console.error('[UI-06] No se pudo determinar la unidad para el contrato.'); return; }
+      if (window.ContractViewer && typeof window.ContractViewer.openModal === 'function') {
+        window.ContractViewer.openModal(unitCode);
+      } else if (typeof window.openContractModal === 'function') {
+        window.openContractModal(unitCode);
+      } else {
+        console.warn('[UI-06] ContractViewer no inicializado para unidad:', unitCode);
       }
     }
   });

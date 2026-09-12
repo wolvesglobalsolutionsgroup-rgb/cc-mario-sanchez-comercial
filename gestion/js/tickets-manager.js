@@ -121,48 +121,98 @@
     },
 
     /**
+     * Persiste ticket en Supabase con RLS o en localStorage según el modo activo
+     */
+    async crearTicket(ticketData) {
+      const usarSupabase = window.supabaseClient && window.CCMS_DEMO_MODE !== true;
+
+      if (usarSupabase) {
+        // Resolver el tenant_id real del usuario autenticado (requerido por la RLS de service_tickets)
+        const { data: { user } } = await window.supabaseClient.auth.getUser();
+        const { data: tenantRow, error: tenantError } = await window.supabaseClient
+          .from('tenants')
+          .select('id')
+          .eq('profile_id', user.id)
+          .single();
+        if (tenantError || !tenantRow) throw new Error('No se pudo resolver el tenant del usuario actual.');
+
+        const { data, error } = await window.supabaseClient
+          .from('service_tickets')
+          .insert([{
+            tenant_id: tenantRow.id,
+            unit_code: ticketData.unitCode,
+            category: ticketData.category || 'infraestructura',
+            priority: ticketData.priority || 'normal',
+            subject: ticketData.subject,
+            description: ticketData.description,
+            status: 'abierto'
+            // ticket_number se autogenera por DEFAULT en la BD (ver migración 20260912000400)
+          }])
+          .select();
+        if (error) throw error;
+        return data[0];
+      }
+
+      // Fallback offline/demo (solo si CCMS_DEMO_MODE === true)
+      const localTickets = JSON.parse(localStorage.getItem('ccms_tickets') || '[]');
+      const nuevoTicket = { ...ticketData, id: 'TCK-' + Date.now(), status: 'abierto' };
+      localTickets.unshift(nuevoTicket);
+      localStorage.setItem('ccms_tickets', JSON.stringify(localTickets));
+      return nuevoTicket;
+    },
+
+    /**
      * Procesa el envío de una nueva solicitud de servicio desde el inquilino
      */
-    handleTicketSubmit(e) {
+    async handleTicketSubmit(e) {
       e.preventDefault();
       const tenant = (window.AuthGuard && typeof window.AuthGuard.currentTenant === 'function')
         ? window.AuthGuard.currentTenant()
         : null;
 
-      const tickets = this.getTickets();
       const unitCode = tenant ? tenant.unit_code : (document.getElementById('tticket-unit')?.value || 'LOCAL');
-      const newTicket = {
-        id: 'tk-' + Date.now(),
-        ticket_number: `TK-2026-${String(tickets.length + 1).padStart(3, '0')}`,
+      const ticketData = {
+        unitCode: unitCode,
         tenant_id: tenant ? tenant.id : 'ten-current',
         tenant_name: tenant ? tenant.business_name : 'Inquilino Comercial',
-        unit_code: unitCode,
         priority: document.getElementById('tticket-priority')?.value || 'normal',
         category: document.getElementById('tticket-category')?.value || 'infraestructura',
         subject: document.getElementById('tticket-subject')?.value?.trim() || 'Solicitud de Mantenimiento',
         description: document.getElementById('tticket-description')?.value?.trim() || '',
-        status: 'abierto',
         technician: '',
-        admin_response: '',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        admin_response: ''
       };
 
-      tickets.unshift(newTicket);
-      this.saveTickets(tickets);
+      try {
+        const created = await this.crearTicket(ticketData);
+        // Sincronizar en memoria y almacenamiento local
+        const tickets = this.getTickets();
+        const existingIdx = tickets.findIndex(t => t.id === created.id || (created.ticket_number && t.ticket_number === created.ticket_number));
+        if (existingIdx === -1) {
+          tickets.unshift(created);
+          this.saveTickets(tickets);
+        }
 
-      if (window.CCMSTelemetry && typeof window.CCMSTelemetry.captureAction === 'function') {
-        window.CCMSTelemetry.captureAction('tenant_created_ticket', { ticket_number: newTicket.ticket_number, subject: newTicket.subject });
-      }
+        if (window.CCMSTelemetry && typeof window.CCMSTelemetry.captureAction === 'function') {
+          window.CCMSTelemetry.captureAction('tenant_created_ticket', { ticket_number: created.ticket_number, subject: created.subject });
+        }
 
-      this.closeNewTicketModal();
-      
-      if (typeof window.renderAlertsCenter === 'function') {
-        window.renderAlertsCenter();
-      }
+        this.closeNewTicketModal();
+        
+        if (typeof window.renderAlertsCenter === 'function') {
+          window.renderAlertsCenter();
+        }
 
-      if (typeof window.showToast === 'function') {
-        window.showToast(`Solicitud #${newTicket.ticket_number} registrada exitosamente. Se asignará personal para su pronta atención.`, 'success', 'Mesa de Ayuda CCMS');
+        if (typeof window.showToast === 'function') {
+          window.showToast(`Solicitud #${created.ticket_number || 'TCK'} registrada exitosamente. Se asignará personal para su pronta atención.`, 'success', 'Mesa de Ayuda CCMS');
+        }
+      } catch (err) {
+        console.error('[TicketsManager] Error creando ticket:', err);
+        if (typeof window.showToast === 'function') {
+          window.showToast('No se pudo registrar la solicitud: ' + err.message, 'error', 'Mesa de Ayuda CCMS');
+        } else {
+          alert('Error creando ticket: ' + err.message);
+        }
       }
     },
 

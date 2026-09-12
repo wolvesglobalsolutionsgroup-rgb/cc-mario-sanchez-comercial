@@ -5099,19 +5099,75 @@ html, body {
     box-sizing: border-box !important;
   }
 
-  /* TABLAS RESPONSIVAS CON SCROLL SUAVE */
+  /* TABLAS RESPONSIVAS: TRANSFORMACIÓN A TARJETAS VERTICALES (UI-01) */
   .data-card {
     max-width: 100% !important;
     overflow-x: hidden !important;
     box-sizing: border-box !important;
   }
 
+  .table-responsive {
+    border: none !important;
+    background: transparent !important;
+    overflow-x: visible !important;
+  }
+
   .modern-table {
     display: block !important;
-    max-width: 100% !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    white-space: nowrap !important;
+    width: 100% !important;
+  }
+
+  .modern-table thead {
+    display: none !important;
+  }
+
+  .modern-table tbody {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+
+  .modern-table tr {
+    display: flex !important;
+    flex-direction: column !important;
+    background: var(--bg-card, #1e293b) !important;
+    border: 1px solid var(--border-subtle, #334155) !important;
+    border-radius: 12px !important;
+    padding: 14px !important;
+    gap: 8px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+  }
+
+  .modern-table td {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 4px 0 !important;
+    border: none !important;
+    white-space: normal !important;
+    font-size: 12px !important;
+    gap: 10px !important;
+  }
+
+  .modern-table td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: var(--txt-secondary, #94a3b8);
+    text-transform: uppercase;
+    font-size: 10px;
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
+    margin-right: 12px;
+  }
+
+  .modern-table td:last-child {
+    border-top: 1px dashed var(--border-subtle, #334155) !important;
+    padding-top: 8px !important;
+    margin-top: 4px !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    flex-wrap: wrap;
   }
 
   /* FICHA DE INQUILINO / CLIENTE (.ttp-sheet-topbar) */
@@ -5371,50 +5427,74 @@ html, body {
     min-width: unset !important;
   }
 
-  /* COBRANZAS TAB RESPONSIVO SIN SCROLL HORIZONTAL */
-  #tab-cobranzas .table-responsive {
-    border: none !important;
-    background: transparent !important;
-    overflow-x: visible !important;
+  /* FICHA UI-03: AISLAMIENTO DE CAPAS DEL DRAWER LATERAL (Z-INDEX) */
+  body.sidebar-open .mobile-bottom-nav {
+    z-index: 900 !important;
+    pointer-events: none !important;
+    opacity: 0.3 !important;
+    transition: opacity 0.2s ease;
   }
-  #tab-cobranzas .modern-table {
-    display: block !important;
-    width: 100% !important;
+
+  .sidebar-backdrop, .sidebar-overlay {
+    z-index: 1100 !important;
   }
-  #tab-cobranzas .modern-table thead {
-    display: none !important;
+
+  .sidebar, .sidebar-mobile {
+    z-index: 1101 !important;
   }
-  #tab-cobranzas .modern-table tbody {
+
+  /* FICHA UI-07: SAFE-AREA Y PADDING INFERIOR SISTEMÁTICO */
+  #tab-dashboard,
+  #tab-inquilinos,
+  #tab-cobranzas,
+  #tab-calendario,
+  #tab-documentos,
+  #tab-configuracion,
+  .tab-view,
+  .modal-body {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .document-generator-actions,
+  .table-footer-legend,
+  .pagination-info {
+    margin-bottom: calc(84px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* FICHA UI-08: SCROLL INTERNO DE MODALES ANTE TECLADO VIRTUAL */
+  .modal-content, .modal-quick-register {
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* FICHA UI-09: TABS DE EXPEDIENTE CON SCROLL HORIZONTAL + ACCIONES APILADAS */
+  .expediente-tabs, .record-tabs {
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .expediente-modal-actions, .record-modal-actions {
+    position: sticky !important;
+    bottom: 0 !important;
+    background: var(--bg-card, #1e293b) !important;
     display: flex !important;
     flex-direction: column !important;
-    gap: 12px !important;
+    gap: 8px !important;
+    padding: 12px 0 !important;
+    border-top: 1px solid var(--border-subtle, #334155) !important;
+    z-index: 20 !important;
+  }
+  .expediente-modal-actions button, .record-modal-actions button {
     width: 100% !important;
   }
-  #tab-cobranzas .modern-table tr {
-    display: flex !important;
-    flex-direction: column !important;
-    background: var(--bg-card) !important;
-    border: 1px solid var(--border-subtle) !important;
-    border-radius: var(--radius-md) !important;
-    padding: 14px !important;
-    gap: 8px !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-  }
-  #tab-cobranzas .modern-table td {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    padding: 4px 0 !important;
-    border: none !important;
-    white-space: normal !important;
-    font-size: 12px !important;
-  }
-  #tab-cobranzas .modern-table td:last-child {
-    border-top: 1px dashed var(--border-subtle) !important;
-    padding-top: 8px !important;
-    margin-top: 4px !important;
-    justify-content: flex-end !important;
-    gap: 8px !important;
+
+  /* FICHA UI-10: PADDING DEFENSIVO PARA DATOS DE ARRENDATARIO */
+  .tenant-data-block, .arrendatario-info {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    box-sizing: border-box !important;
   }
 
   /* SIDEBAR USER AREA & FOOTER PADDING EN MÓVIL */

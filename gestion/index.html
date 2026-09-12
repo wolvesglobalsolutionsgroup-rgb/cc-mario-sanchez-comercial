@@ -27,7 +27,13 @@
   <link rel="stylesheet" href="css/dashboard.css?v=20260911_v45_ttp">
 
   <!-- Script Inmediato Anti-FOUC (Cero parpadeo entre Dark y Light Mode) -->
-  <script>window.CCMS_DEMO_MODE = true;</script>
+  <script>
+    window.CCMS_DEMO_MODE = (
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      localStorage.getItem('CCMS_FORCE_DEMO') === 'true'
+    );
+  </script>
   <script src="js/theme-init.js?v=20260911_v45_ttp"></script>
 
   <!-- Vercel Speed Insights -->
@@ -805,7 +811,7 @@
           </div>
 
           <div class="table-responsive" style="border-radius: 8px; overflow: hidden; border: 1px solid var(--border-subtle);">
-            <table class="data-table" id="tenant-profile-invoices-table">
+            <table class="data-table modern-table" id="tenant-profile-invoices-table">
               <thead>
                 <tr>
                   <th style="width: 14%;">N° Control / Recibo</th>
@@ -1775,46 +1781,46 @@
               </thead>
               <tbody>
                 <tr style="background: rgba(245, 158, 11, 0.04);">
-                  <td><strong style="color: var(--amber);"><i class="fa-solid fa-crown"></i> SUPERADMIN</strong></td>
-                  <td><span class="status-pill pill-success" style="font-size: 10px;">Bypass Total / Irrestricto</span><br><small style="color: var(--txt-secondary);">Edición plena de contratos, finanzas, inventario, tasas y usuarios.</small></td>
-                  <td>100% Auditoría & Trazabilidad completa</td>
-                  <td><span style="color: var(--emerald); font-weight: 700;">Sin restricciones (Control Maestro)</span></td>
-                  <td><code>superadmin@ccmariosanchez.com</code></td>
+                  <td data-label="Rol & Perfil"><strong style="color: var(--amber);"><i class="fa-solid fa-crown"></i> SUPERADMIN</strong></td>
+                  <td data-label="Facultades de Edición"><span class="status-pill pill-success" style="font-size: 10px;">Bypass Total / Irrestricto</span><br><small style="color: var(--txt-secondary);">Edición plena de contratos, finanzas, inventario, tasas y usuarios.</small></td>
+                  <td data-label="Acceso de Lectura">100% Auditoría & Trazabilidad completa</td>
+                  <td data-label="Restricciones de Sistema"><span style="color: var(--emerald); font-weight: 700;">Sin restricciones (Control Maestro)</span></td>
+                  <td data-label="Usuario Demo Oficial"><code>superadmin@ccmariosanchez.com</code></td>
                 </tr>
                 <tr>
-                  <td><strong style="color: var(--emerald);"><i class="fa-solid fa-coins"></i> Finanzas & Cobranzas</strong></td>
-                  <td>Cobranzas, recibos fiscales, conciliación bancaria, gastos de condominio ($2.540/mes).</td>
-                  <td>Inquilinos, contratos, cronograma, inventario general.</td>
-                  <td><span style="color: var(--rose);">Bloqueado:</span> No modifica contratos legales ni elimina bienes propios.</td>
-                  <td><code>finanzas@ccmariosanchez.com</code></td>
+                  <td data-label="Rol & Perfil"><strong style="color: var(--emerald);"><i class="fa-solid fa-coins"></i> Finanzas & Cobranzas</strong></td>
+                  <td data-label="Facultades de Edición">Cobranzas, recibos fiscales, conciliación bancaria, gastos de condominio ($2.540/mes).</td>
+                  <td data-label="Acceso de Lectura">Inquilinos, contratos, cronograma, inventario general.</td>
+                  <td data-label="Restricciones de Sistema"><span style="color: var(--rose);">Bloqueado:</span> No modifica contratos legales ni elimina bienes propios.</td>
+                  <td data-label="Usuario Demo Oficial"><code>finanzas@ccmariosanchez.com</code></td>
                 </tr>
                 <tr>
-                  <td><strong style="color: var(--cyan);"><i class="fa-solid fa-scale-balanced"></i> Legal & Contratos</strong></td>
-                  <td>Contratos mercantiles, adendas, prórrogas Art. 26 G.O. 40.418, solvencias y avisos formales.</td>
-                  <td>Cobranzas, estados de cuenta, facturación y directorio.</td>
-                  <td><span style="color: var(--rose);">Bloqueado:</span> No concilia pagos bancarios ni altera kardex de almacén.</td>
-                  <td><code>legal@ccmariosanchez.com</code></td>
+                  <td data-label="Rol & Perfil"><strong style="color: var(--cyan);"><i class="fa-solid fa-scale-balanced"></i> Legal & Contratos</strong></td>
+                  <td data-label="Facultades de Edición">Contratos mercantiles, adendas, prórrogas Art. 26 G.O. 40.418, solvencias y avisos formales.</td>
+                  <td data-label="Acceso de Lectura">Cobranzas, estados de cuenta, facturación y directorio.</td>
+                  <td data-label="Restricciones de Sistema"><span style="color: var(--rose);">Bloqueado:</span> No concilia pagos bancarios ni altera kardex de almacén.</td>
+                  <td data-label="Usuario Demo Oficial"><code>legal@ccmariosanchez.com</code></td>
                 </tr>
                 <tr>
-                  <td><strong style="color: #f97316;"><i class="fa-solid fa-wrench"></i> Mantenimiento</strong></td>
-                  <td>Kardex de entradas/salidas, inventario de consumibles, bitácora de activos mayores.</td>
-                  <td>Directorio de locales, cronograma de inspecciones técnicas.</td>
-                  <td><span style="color: var(--rose);">Bloqueado:</span> Sin acceso a recaudación de dinero, estados financieros ni contratos.</td>
-                  <td><code>mantenimiento@ccmariosanchez.com</code></td>
+                  <td data-label="Rol & Perfil"><strong style="color: #f97316;"><i class="fa-solid fa-wrench"></i> Mantenimiento</strong></td>
+                  <td data-label="Facultades de Edición">Kardex de entradas/salidas, inventario de consumibles, bitácora de activos mayores.</td>
+                  <td data-label="Acceso de Lectura">Directorio de locales, cronograma de inspecciones técnicas.</td>
+                  <td data-label="Restricciones de Sistema"><span style="color: var(--rose);">Bloqueado:</span> Sin acceso a recaudación de dinero, estados financieros ni contratos.</td>
+                  <td data-label="Usuario Demo Oficial"><code>mantenimiento@ccmariosanchez.com</code></td>
                 </tr>
                 <tr style="background: rgba(168, 85, 247, 0.04);">
-                  <td><strong style="color: var(--purple);"><i class="fa-solid fa-landmark"></i> Heredero (1/14 Cuota)</strong></td>
-                  <td><span class="status-pill pill-overdue" style="font-size: 10px;">0% Edición (Solo Lectura)</span></td>
-                  <td>Ingresos, egresos, liquidación mensual de utilidades, inventario y solvencia de locales.</td>
-                  <td><span style="color: var(--amber); font-weight: 700;">Solo Lectura:</span> No puede alterar contratos ni finanzas (evita conflictos de sucesión).</td>
-                  <td><code>heredero@ccmariosanchez.com</code></td>
+                  <td data-label="Rol & Perfil"><strong style="color: var(--purple);"><i class="fa-solid fa-landmark"></i> Heredero (1/14 Cuota)</strong></td>
+                  <td data-label="Facultades de Edición"><span class="status-pill pill-overdue" style="font-size: 10px;">0% Edición (Solo Lectura)</span></td>
+                  <td data-label="Acceso de Lectura">Ingresos, egresos, liquidación mensual de utilidades, inventario y solvencia de locales.</td>
+                  <td data-label="Restricciones de Sistema"><span style="color: var(--amber); font-weight: 700;">Solo Lectura:</span> No puede alterar contratos ni finanzas (evita conflictos de sucesión).</td>
+                  <td data-label="Usuario Demo Oficial"><code>heredero@ccmariosanchez.com</code></td>
                 </tr>
                 <tr>
-                  <td><strong style="color: var(--txt-primary);"><i class="fa-solid fa-store"></i> Inquilino Comercial</strong></td>
-                  <td>Consignación de transferencias/pagos y carga de comprobantes.</td>
-                  <td>Exclusivamente su propio local, cuotas vencidas y recibos emitidos.</td>
-                  <td><span style="color: var(--rose);">Aislamiento total:</span> Ningún inquilino ve información de otros locales ni de la directiva.</td>
-                  <td><code>J-30987123-4</code></td>
+                  <td data-label="Rol & Perfil"><strong style="color: var(--txt-primary);"><i class="fa-solid fa-store"></i> Inquilino Comercial</strong></td>
+                  <td data-label="Facultades de Edición">Consignación de transferencias/pagos y carga de comprobantes.</td>
+                  <td data-label="Acceso de Lectura">Exclusivamente su propio local, cuotas vencidas y recibos emitidos.</td>
+                  <td data-label="Restricciones de Sistema"><span style="color: var(--rose);">Aislamiento total:</span> Ningún inquilino ve información de otros locales ni de la directiva.</td>
+                  <td data-label="Usuario Demo Oficial"><code>J-30987123-4</code></td>
                 </tr>
               </tbody>
             </table>
@@ -4054,25 +4060,34 @@
 
 <!-- NAVEGACIÓN INFERIOR NATIVA PARA MÓVILES (BOTTOM NAVIGATION BAR) -->
 <nav class="mobile-bottom-nav" id="mobile-bottom-navbar" aria-label="Navegación Móvil">
-  <button type="button" class="mobile-nav-item active" data-bottom-tab="dashboard" onclick="window.switchTab('dashboard')">
-    <i class="fa-solid fa-chart-line"></i>
-    <span>Inicio</span>
+  <!-- Conjunto Administrativo -->
+  <button type="button" data-roles="admin" class="mobile-nav-item active" data-bottom-tab="dashboard" onclick="window.switchTab('dashboard')">
+    <i class="fa-solid fa-house"></i><span>Inicio</span>
   </button>
-  <button type="button" class="mobile-nav-item" data-bottom-tab="inquilinos" onclick="window.switchTab('inquilinos')">
-    <i class="fa-solid fa-store"></i>
-    <span>Locales</span>
+  <button type="button" data-roles="admin" class="mobile-nav-item" data-bottom-tab="inquilinos" onclick="window.switchTab('inquilinos')">
+    <i class="fa-solid fa-store"></i><span>Locales</span>
   </button>
-  <button type="button" class="mobile-nav-item" data-bottom-tab="cobranzas" onclick="window.switchTab('cobranzas')">
-    <i class="fa-solid fa-receipt"></i>
-    <span>Cobros</span>
+  <button type="button" data-roles="admin" class="mobile-nav-item" data-bottom-tab="cobranzas" onclick="window.switchTab('cobranzas')">
+    <i class="fa-solid fa-hand-holding-dollar"></i><span>Cobros</span>
   </button>
-  <button type="button" class="mobile-nav-item" data-bottom-tab="calendario" onclick="window.switchTab('calendario')">
-    <i class="fa-solid fa-calendar-days"></i>
-    <span>Agenda</span>
+  <button type="button" data-roles="admin" class="mobile-nav-item" data-bottom-tab="calendario" onclick="window.switchTab('calendario')">
+    <i class="fa-solid fa-calendar-days"></i><span>Agenda</span>
   </button>
+
+  <!-- Conjunto Inquilino -->
+  <button type="button" data-roles="tenant" class="mobile-nav-item active" data-bottom-tab="perfil-inquilino" onclick="window.switchTab('perfil-inquilino')" style="display:none;">
+    <i class="fa-solid fa-store"></i><span>Mi Local</span>
+  </button>
+  <button type="button" data-roles="tenant" class="mobile-nav-item" data-bottom-tab="cobranzas" onclick="window.switchTab('cobranzas')" style="display:none;">
+    <i class="fa-solid fa-file-invoice-dollar"></i><span>Recibos</span>
+  </button>
+  <button type="button" data-roles="tenant" class="mobile-nav-item" data-bottom-tab="alertas" onclick="window.switchTab('alertas')" style="display:none;">
+    <i class="fa-solid fa-bell"></i><span>Alertas</span>
+  </button>
+
+  <!-- Botón Global Menú Lateral (sin data-roles: visible para todos) -->
   <button type="button" class="mobile-nav-item" data-bottom-tab="menu" onclick="window.toggleSidebar()">
-    <i class="fa-solid fa-bars"></i>
-    <span>Menú</span>
+    <i class="fa-solid fa-bars"></i><span>Menú</span>
   </button>
 </nav>
 

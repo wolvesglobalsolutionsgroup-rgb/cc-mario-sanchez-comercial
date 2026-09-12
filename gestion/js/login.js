@@ -183,7 +183,11 @@ window.fillDemo = fillDemo;
 window.handleLogin = handleLogin;
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (!AuthGuard.demoEnabled) {
+  const demoSec = document.getElementById('demo-roles-section');
+  if (demoSec && window.CCMS_DEMO_MODE === true) {
+    demoSec.style.display = '';
+  }
+  if (!AuthGuard.demoEnabled && window.CCMS_DEMO_MODE !== true) {
     document.querySelectorAll('[data-demo-login]').forEach((el) => { el.style.display = 'none'; });
   }
   
