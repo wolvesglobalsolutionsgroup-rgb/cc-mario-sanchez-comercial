@@ -46,16 +46,19 @@
      * Resuelve el objeto de inquilino según ID o sesión actual
      */
     resolveTenant(tenantId) {
+      if (window.AuthGuard && typeof window.AuthGuard.currentTenant === 'function') {
+        const current = window.AuthGuard.currentTenant();
+        if (current && (!tenantId || current.id === tenantId || current.rif === tenantId || current.unit_code === tenantId)) {
+          return current;
+        }
+      }
       if (typeof dbService !== 'undefined' && dbService.getTenants) {
         const tenants = dbService.getTenants();
         if (tenantId) {
           const found = tenants.find(t => t.id === tenantId || t.rif === tenantId || t.unit_code === tenantId);
           if (found) return found;
         }
-      }
-      if (window.AuthGuard && typeof window.AuthGuard.currentTenant === 'function') {
-        const current = window.AuthGuard.currentTenant();
-        if (current) return current;
+        if (tenants && tenants.length > 0) return tenants[0];
       }
       return {
         id: 'ten-1',
@@ -67,8 +70,10 @@
         phone: '0414-8254190',
         email: 'administracion@muebleriajuncal.com',
         canon_usd: 450.00,
+        rent_usd: 450.00,
         alicuota_pct: 7.25,
-        deposit_held_usd: 900.00
+        deposit_held_usd: 900.00,
+        area_m2: 54.5
       };
     },
 
@@ -79,17 +84,35 @@
       if (typeof dbService !== 'undefined' && dbService.getContracts) {
         const contracts = dbService.getContracts();
         const found = contracts.find(c => c.tenant_id === tenant.id || c.unit_code === tenant.unit_code);
-        if (found) return found;
+        if (found) {
+          const cUsd = parseFloat(found.canon_usd ?? found.rent_usd ?? found.base_rent_usd ?? tenant.canon_usd ?? tenant.rent_usd ?? 450);
+          const aPct = parseFloat(found.alicuota_pct ?? tenant.alicuota_pct ?? (tenant.condo_aliquot ? tenant.condo_aliquot * 100 : 7.25));
+          return {
+            ...found,
+            contract_number: found.contract_number || tenant.contract_number || `CTR-2026-${tenant.unit_code || 'LOC-1'}`,
+            notary_entry: found.notary_entry || 'Tomo 14-A, Protocolo Primero, Asiento N° 42',
+            notary_office: found.notary_office || 'Notaría Pública Primera de Puerto La Cruz',
+            start_date: found.start_date || tenant.contract_start || '2026-01-01',
+            end_date: found.end_date || tenant.contract_end || '2026-12-31',
+            canon_usd: isNaN(cUsd) ? 450 : cUsd,
+            rent_usd: isNaN(cUsd) ? 450 : cUsd,
+            alicuota_pct: isNaN(aPct) ? 7.25 : aPct,
+            status: found.status || 'vigente'
+          };
+        }
       }
+      const canonVal = parseFloat(tenant.canon_usd ?? tenant.rent_usd ?? tenant.monthly_rent_usd ?? 450.00);
+      const aliVal = parseFloat(tenant.alicuota_pct ?? (tenant.condo_aliquot ? tenant.condo_aliquot * 100 : 7.25));
       return {
         id: 'ctr-canonical-1',
-        contract_number: `CTR-2026-${tenant.unit_code || 'LOC-1'}`,
+        contract_number: tenant.contract_number || `CTR-2026-${tenant.unit_code || 'LOC-1'}`,
         notary_entry: 'Tomo 14-A, Protocolo Primero, Asiento N° 42',
         notary_office: 'Notaría Pública Primera de Puerto La Cruz',
-        start_date: '2026-01-01',
-        end_date: '2026-12-31',
-        canon_usd: tenant.canon_usd || 450.00,
-        alicuota_pct: tenant.alicuota_pct || 7.25,
+        start_date: tenant.contract_start || '2026-01-01',
+        end_date: tenant.contract_end || '2026-12-31',
+        canon_usd: isNaN(canonVal) ? 450 : canonVal,
+        rent_usd: isNaN(canonVal) ? 450 : canonVal,
+        alicuota_pct: isNaN(aliVal) ? 7.25 : aliVal,
         status: 'vigente'
       };
     },
@@ -101,19 +124,20 @@
       const tenant = this.resolveTenant(tenantId);
       const contract = this.resolveContract(tenant);
       const bcvRate = (typeof financialEngine !== 'undefined' && financialEngine.getRates)
-        ? financialEngine.getRates().VES
+        ? (financialEngine.getRates().VES || 832.49)
         : 832.49;
 
-      const canonVes = contract.canon_usd * bcvRate;
-      const canonFormattedVes = canonVes.toLocaleString('es-VE', { minimumFractionDigits: 2 });
-      const canonFormattedUsd = contract.canon_usd.toLocaleString('en-US', { minimumFractionDigits: 2 });
+      const canonUsd = Number(contract.canon_usd || 450);
+      const canonVes = canonUsd * bcvRate;
+      const canonFormattedVes = canonVes.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const canonFormattedUsd = canonUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-      const sealPayload = `${contract.contract_number}|${tenant.rif}|${tenant.unit_code}|${contract.canon_usd}|${contract.start_date}|${contract.end_date}|GO_40418_ART26`;
+      const sealPayload = `${contract.contract_number}|${tenant.rif || 'J-00000000-0'}|${tenant.unit_code || 'LOC-1'}|${canonUsd}|${contract.start_date}|${contract.end_date}|GO_40418_ART26`;
       const cryptoSeal = await this.generateCryptoSeal(sealPayload);
 
       const modal = document.getElementById('modal-contract-viewer');
-      const body = document.getElementById('contract-viewer-body');
-      const title = document.getElementById('contract-viewer-title');
+      const body = document.getElementById('contract-document-wrapper') || document.getElementById('contract-viewer-body');
+      const title = (modal ? modal.querySelector('.modal-title') : null) || document.getElementById('contract-viewer-title');
 
       if (title) {
         title.innerHTML = `<i class="fa-solid fa-file-contract" style="color: var(--amber);"></i> Contrato Notariado Oficial (${escapeHtml(contract.contract_number)})`;

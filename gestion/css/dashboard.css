@@ -1307,6 +1307,7 @@ select.form-control optgroup {
 
 @media (max-width: 1024px) {
   .app-sidebar {
+    z-index: 1200 !important;
     transform: translateX(-100%);
     box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
   }
@@ -5486,8 +5487,8 @@ html, body {
     z-index: 1100 !important;
   }
 
-  .sidebar, .sidebar-mobile {
-    z-index: 1101 !important;
+  .app-sidebar, .sidebar, .sidebar-mobile {
+    z-index: 1200 !important;
   }
 
   /* FICHA UI-07: SAFE-AREA Y PADDING INFERIOR SISTEMÁTICO */
