@@ -687,41 +687,92 @@
     // Visibilidad de pestañas y elementos administrativos (respetando el estado de tab-view)
     root.querySelectorAll('[data-roles="admin"]').forEach(el => {
       if (el.classList.contains('tab-view')) {
-        if (!isBoardOrAdmin) el.style.display = 'none';
+        if (!isBoardOrAdmin) {
+          el.style.setProperty('display', 'none', 'important');
+          el.classList.add('hidden-by-role', 'is-hidden');
+        }
       } else {
-        el.style.display = isBoardOrAdmin ? '' : 'none';
+        if (isBoardOrAdmin) {
+          el.style.removeProperty('display');
+          el.classList.remove('hidden-by-role', 'is-hidden');
+        } else {
+          el.style.setProperty('display', 'none', 'important');
+          el.classList.add('hidden-by-role', 'is-hidden');
+        }
       }
     });
     root.querySelectorAll('[data-roles="tenant"]').forEach(el => {
       if (el.classList.contains('tab-view')) {
-        if (sess.role !== 'tenant') el.style.display = 'none';
+        if (sess.role !== 'tenant') {
+          el.style.setProperty('display', 'none', 'important');
+          el.classList.add('hidden-by-role', 'is-hidden');
+        }
       } else {
-        el.style.display = (sess.role === 'tenant') ? '' : 'none';
+        if (sess.role === 'tenant') {
+          el.style.removeProperty('display');
+          el.classList.remove('hidden-by-role', 'is-hidden');
+        } else {
+          el.style.setProperty('display', 'none', 'important');
+          el.classList.add('hidden-by-role', 'is-hidden');
+        }
       }
     });
     root.querySelectorAll('[data-roles="superadmin"]').forEach(el => {
       if (el.classList.contains('tab-view')) {
-        if (!isSuperAdmin) el.style.display = 'none';
+        if (!isSuperAdmin) {
+          el.style.setProperty('display', 'none', 'important');
+          el.classList.add('hidden-by-role', 'is-hidden');
+        }
       } else {
-        el.style.display = isSuperAdmin ? '' : 'none';
+        if (isSuperAdmin) {
+          el.style.removeProperty('display');
+          el.classList.remove('hidden-by-role', 'is-hidden');
+        } else {
+          el.style.setProperty('display', 'none', 'important');
+          el.classList.add('hidden-by-role', 'is-hidden');
+        }
       }
     });
 
     // Control departamental por atributo data-permission
     root.querySelectorAll('[data-permission="finances"]').forEach(el => {
       const can = isSuperAdmin || sess.role === 'admin' || sess.role === 'admin_finanzas';
-      el.style.display = can ? '' : 'none';
+      if (can) {
+        el.style.removeProperty('display');
+        el.classList.remove('hidden-by-role', 'is-hidden');
+      } else {
+        el.style.setProperty('display', 'none', 'important');
+        el.classList.add('hidden-by-role', 'is-hidden');
+      }
     });
     root.querySelectorAll('[data-permission="legal"]').forEach(el => {
       const can = isSuperAdmin || sess.role === 'admin' || sess.role === 'admin_legal';
-      el.style.display = can ? '' : 'none';
+      if (can) {
+        el.style.removeProperty('display');
+        el.classList.remove('hidden-by-role', 'is-hidden');
+      } else {
+        el.style.setProperty('display', 'none', 'important');
+        el.classList.add('hidden-by-role', 'is-hidden');
+      }
     });
     root.querySelectorAll('[data-permission="maintenance"]').forEach(el => {
       const can = isSuperAdmin || sess.role === 'admin' || sess.role === 'admin_mantenimiento';
-      el.style.display = can ? '' : 'none';
+      if (can) {
+        el.style.removeProperty('display');
+        el.classList.remove('hidden-by-role', 'is-hidden');
+      } else {
+        el.style.setProperty('display', 'none', 'important');
+        el.classList.add('hidden-by-role', 'is-hidden');
+      }
     });
     root.querySelectorAll('[data-permission="superadmin"]').forEach(el => {
-      el.style.display = isSuperAdmin ? '' : 'none';
+      if (isSuperAdmin) {
+        el.style.removeProperty('display');
+        el.classList.remove('hidden-by-role', 'is-hidden');
+      } else {
+        el.style.setProperty('display', 'none', 'important');
+        el.classList.add('hidden-by-role', 'is-hidden');
+      }
     });
 
     // Si es HEREDERO, ocultar botones de acción o mutación para garantizar el modo SOLO LECTURA
@@ -745,6 +796,36 @@
     } else {
       const readOnlyBanner = document.getElementById('ccms-heredero-readonly-banner');
       if (readOnlyBanner) readOnlyBanner.remove();
+    }
+
+    // Sincronización estricta de navegación móvil y menú lateral por rol
+    const mobileBottomNav = root.querySelector('#mobile-bottom-navbar') || document.getElementById('mobile-bottom-navbar');
+    if (mobileBottomNav) {
+      const isTenant = (sess.role === 'tenant');
+      mobileBottomNav.querySelectorAll('.mobile-nav-item[data-roles="admin"]').forEach(b => {
+        if (isTenant) {
+          b.style.setProperty('display', 'none', 'important');
+          b.classList.add('hidden-by-role', 'is-hidden');
+          b.classList.remove('active');
+        } else {
+          b.style.removeProperty('display');
+          b.classList.remove('hidden-by-role', 'is-hidden');
+        }
+      });
+      mobileBottomNav.querySelectorAll('.mobile-nav-item[data-roles="tenant"]').forEach(b => {
+        if (isTenant) {
+          b.style.removeProperty('display');
+          b.classList.remove('hidden-by-role', 'is-hidden');
+        } else {
+          b.style.setProperty('display', 'none', 'important');
+          b.classList.add('hidden-by-role', 'is-hidden');
+          b.classList.remove('active');
+        }
+      });
+    }
+
+    if (typeof window.syncNavigationUI === 'function') {
+      try { window.syncNavigationUI(sess.role); } catch(e) {}
     }
 
     root.querySelectorAll('[data-tenant-name]').forEach(el => {

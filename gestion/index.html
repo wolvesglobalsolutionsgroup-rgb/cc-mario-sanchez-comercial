@@ -59,14 +59,37 @@
     </div>
 
     <nav class="sidebar-nav">
-      <!-- ACCESO EXCLUSIVO INQUILINO: MI PERFIL Y MI LOCAL -->
-      <a href="#" class="nav-item active" data-tab="perfil-inquilino" data-roles="tenant" style="display: none;">
+      <!-- ================================================================ -->
+      <!-- SECCIÓN EXCLUSIVA: PORTAL DEL INQUILINO COMERCIAL               -->
+      <!-- ================================================================ -->
+      <div class="sidebar-section-header hidden-by-role" data-roles="tenant" style="margin: 6px 14px 4px; font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: var(--txt-muted); letter-spacing: 0.08em; display: none !important; align-items: center; gap: 6px;">
+        <i class="fa-solid fa-store" style="color: var(--amber); font-size: 9px;"></i>
+        <span>Portal del Inquilino</span>
+      </div>
+
+      <a href="#" class="nav-item hidden-by-role" data-tab="perfil-inquilino" data-roles="tenant" style="display: none !important;">
         <i class="fa-solid fa-id-card-clip" style="color: var(--amber);"></i>
         <span>Mi Perfil & Mi Local</span>
       </a>
+      <a href="#" class="nav-item hidden-by-role" data-tab="cobranzas" data-roles="tenant" style="display: none !important;">
+        <i class="fa-solid fa-receipt" style="color: var(--emerald);"></i>
+        <span>Mis Cuotas & Recibos</span>
+      </a>
+      <a href="#" class="nav-item hidden-by-role" data-tab="alertas" data-roles="tenant" style="display: none !important;">
+        <i class="fa-solid fa-bell" style="color: var(--rose);"></i>
+        <span>Mis Avisos & Notificaciones</span>
+      </a>
+      <a href="#" class="nav-item hidden-by-role" data-tab="ayuda" data-roles="tenant" style="display: none !important;">
+        <i class="fa-solid fa-circle-question" style="color: var(--cyan);"></i>
+        <span>Soporte & Ley Arrendamiento</span>
+      </a>
+
+      <!-- ================================================================ -->
+      <!-- SECCIONES ADMINISTRATIVAS & JUNTA DIRECTIVA                      -->
+      <!-- ================================================================ -->
 
       <!-- 1. GESTIÓN INMOBILIARIA & ARRENDAMIENTOS -->
-      <div style="margin: 6px 14px 4px; font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: var(--txt-muted); letter-spacing: 0.08em; display: flex; align-items: center; gap: 6px;" data-roles="admin">
+      <div class="sidebar-section-header" style="margin: 6px 14px 4px; font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: var(--txt-muted); letter-spacing: 0.08em; display: flex; align-items: center; gap: 6px;" data-roles="admin">
         <i class="fa-solid fa-building" style="color: var(--cyan); font-size: 9px;"></i>
         <span>Gestión Inmobiliaria</span>
       </div>
@@ -79,21 +102,20 @@
         <i class="fa-solid fa-store" style="color: var(--cyan);"></i>
         <span>Locales & Inquilinos</span>
       </a>
-      <a href="#" class="nav-item" data-tab="calendario" data-roles="any">
+      <a href="#" class="nav-item" data-tab="calendario" data-roles="admin">
         <i class="fa-solid fa-calendar-days" style="color: var(--amber);"></i>
         <span>Calendario & Vencimientos</span>
       </a>
 
       <!-- 2. FINANZAS & COBRANZAS -->
-      <div style="margin: 14px 14px 4px; padding-top: 8px; border-top: 1px solid var(--border-subtle); font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: var(--txt-muted); letter-spacing: 0.08em; display: flex; align-items: center; gap: 6px;">
+      <div class="sidebar-section-header" style="margin: 14px 14px 4px; padding-top: 8px; border-top: 1px solid var(--border-subtle); font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: var(--txt-muted); letter-spacing: 0.08em; display: flex; align-items: center; gap: 6px;" data-roles="admin">
         <i class="fa-solid fa-coins" style="color: var(--emerald); font-size: 9px;"></i>
         <span>Finanzas & Cobranzas</span>
       </div>
 
-      <a href="#" class="nav-item" data-tab="cobranzas" data-roles="any">
+      <a href="#" class="nav-item" data-tab="cobranzas" data-roles="admin">
         <i class="fa-solid fa-receipt" style="color: var(--emerald);"></i>
-        <span data-roles="admin">Cobranzas & Recibos</span>
-        <span data-roles="tenant" style="display:none;">Mis Cuotas & Recibos</span>
+        <span>Cobranzas & Recibos</span>
       </a>
       <a href="#" class="nav-item" data-tab="condominio" data-roles="admin">
         <i class="fa-solid fa-calculator" style="color: var(--purple);"></i>
@@ -105,7 +127,7 @@
       </a>
 
       <!-- 3. OPERACIONES & LOGÍSTICA -->
-      <div style="margin: 14px 14px 4px; padding-top: 8px; border-top: 1px solid var(--border-subtle); font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: var(--txt-muted); letter-spacing: 0.08em; display: flex; align-items: center; gap: 6px;">
+      <div class="sidebar-section-header" style="margin: 14px 14px 4px; padding-top: 8px; border-top: 1px solid var(--border-subtle); font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: var(--txt-muted); letter-spacing: 0.08em; display: flex; align-items: center; gap: 6px;" data-roles="admin">
         <i class="fa-solid fa-truck-ramp-box" style="color: var(--rose); font-size: 9px;"></i>
         <span>Operaciones & Logística</span>
       </div>
@@ -118,13 +140,13 @@
         <i class="fa-solid fa-boxes-stacked" style="color: var(--amber);"></i>
         <span>Bienes & Consumibles</span>
       </a>
-      <a href="#" class="nav-item" data-tab="alertas" data-roles="any">
+      <a href="#" class="nav-item" data-tab="alertas" data-roles="admin">
         <i class="fa-solid fa-bell" style="color: var(--rose);"></i>
         <span>Alertas & Avisos</span>
       </a>
 
       <!-- 4. ECOSISTEMA CCMS -->
-      <div style="margin: 14px 14px 4px; padding-top: 8px; border-top: 1px solid var(--border-subtle); font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: var(--txt-muted); letter-spacing: 0.08em; display: flex; align-items: center; gap: 6px;">
+      <div class="sidebar-section-header" style="margin: 14px 14px 4px; padding-top: 8px; border-top: 1px solid var(--border-subtle); font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: var(--txt-muted); letter-spacing: 0.08em; display: flex; align-items: center; gap: 6px;" data-roles="admin">
         <i class="fa-solid fa-network-wired" style="color: var(--cyan); font-size: 9px;"></i>
         <span>Ecosistema</span>
       </div>
@@ -133,17 +155,17 @@
         <i class="fa-solid fa-map-location-dot" style="color: var(--amber);"></i>
         <span>Planos GIS (Junta Directiva)</span>
       </a>
-      <a href="/alquiler.html" target="_blank" class="nav-item">
+      <a href="/alquiler.html" target="_blank" class="nav-item" data-roles="admin">
         <i class="fa-solid fa-shop" style="color: var(--emerald);"></i>
         <span>Portal de Alquiler</span>
       </a>
-      <a href="/" target="_blank" class="nav-item">
+      <a href="/" target="_blank" class="nav-item" data-roles="admin">
         <i class="fa-solid fa-globe" style="color: var(--cyan);"></i>
         <span>Web Comercial</span>
       </a>
 
       <!-- 5. GOBERNANZA & SOPORTE -->
-      <div style="margin: 14px 14px 4px; padding-top: 8px; border-top: 1px solid var(--border-subtle); font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: var(--txt-muted); letter-spacing: 0.08em; display: flex; align-items: center; gap: 6px;">
+      <div class="sidebar-section-header" style="margin: 14px 14px 4px; padding-top: 8px; border-top: 1px solid var(--border-subtle); font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: var(--txt-muted); letter-spacing: 0.08em; display: flex; align-items: center; gap: 6px;" data-roles="admin">
         <i class="fa-solid fa-shield-halved" style="color: var(--amber); font-size: 9px;"></i>
         <span>Gobernanza & Soporte</span>
       </div>
@@ -156,7 +178,7 @@
         <i class="fa-solid fa-clock-rotate-left" style="color: var(--cyan);"></i>
         <span>Historial de Auditoría</span>
       </a>
-      <a href="#" class="nav-item" data-tab="ayuda" data-roles="any" id="nav-tab-ayuda">
+      <a href="#" class="nav-item" data-tab="ayuda" data-roles="admin" id="nav-tab-ayuda">
         <i class="fa-solid fa-circle-question" style="color: var(--cyan);"></i>
         <span>Ayuda & Marco Legal (G.O. 40.418)</span>
       </a>
@@ -4060,7 +4082,7 @@
 
 <!-- NAVEGACIÓN INFERIOR NATIVA PARA MÓVILES (BOTTOM NAVIGATION BAR) -->
 <nav class="mobile-bottom-nav" id="mobile-bottom-navbar" aria-label="Navegación Móvil">
-  <!-- Conjunto Administrativo -->
+  <!-- Conjunto Administrativo & Directiva -->
   <button type="button" data-roles="admin" class="mobile-nav-item active" data-bottom-tab="dashboard" onclick="window.switchTab('dashboard')">
     <i class="fa-solid fa-house"></i><span>Inicio</span>
   </button>
@@ -4074,18 +4096,18 @@
     <i class="fa-solid fa-calendar-days"></i><span>Agenda</span>
   </button>
 
-  <!-- Conjunto Inquilino -->
-  <button type="button" data-roles="tenant" class="mobile-nav-item active" data-bottom-tab="perfil-inquilino" onclick="window.switchTab('perfil-inquilino')" style="display:none;">
+  <!-- Conjunto Exclusivo para Inquilino Comercial -->
+  <button type="button" data-roles="tenant" class="mobile-nav-item hidden-by-role" data-bottom-tab="perfil-inquilino" onclick="window.switchTab('perfil-inquilino')" style="display: none !important;">
     <i class="fa-solid fa-store"></i><span>Mi Local</span>
   </button>
-  <button type="button" data-roles="tenant" class="mobile-nav-item" data-bottom-tab="cobranzas" onclick="window.switchTab('cobranzas')" style="display:none;">
+  <button type="button" data-roles="tenant" class="mobile-nav-item hidden-by-role" data-bottom-tab="cobranzas" onclick="window.switchTab('cobranzas')" style="display: none !important;">
     <i class="fa-solid fa-file-invoice-dollar"></i><span>Recibos</span>
   </button>
-  <button type="button" data-roles="tenant" class="mobile-nav-item" data-bottom-tab="alertas" onclick="window.switchTab('alertas')" style="display:none;">
+  <button type="button" data-roles="tenant" class="mobile-nav-item hidden-by-role" data-bottom-tab="alertas" onclick="window.switchTab('alertas')" style="display: none !important;">
     <i class="fa-solid fa-bell"></i><span>Alertas</span>
   </button>
 
-  <!-- Botón Global Menú Lateral (sin data-roles: visible para todos) -->
+  <!-- Botón Global Menú Lateral (visible para todos) -->
   <button type="button" class="mobile-nav-item" data-bottom-tab="menu" onclick="window.toggleSidebar()">
     <i class="fa-solid fa-bars"></i><span>Menú</span>
   </button>

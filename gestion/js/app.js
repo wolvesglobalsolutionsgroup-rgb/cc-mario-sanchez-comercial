@@ -222,13 +222,79 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentCurrency = localStorage.getItem('ccms_active_currency') || 'USD'; // 'USD', 'EUR', 'VES', 'USDT'
   let currentTheme = localStorage.getItem('ccms_theme') || 'dark'; // 'dark' o 'light'
 
+  // Sincronización reactiva del Menú Lateral y Barra Inferior Móvil por Rol
+  function syncNavigationUI(role) {
+    const activeRole = role || currentRole;
+    const isTenant = (activeRole === 'tenant');
+
+    // 1. Ocultar o mostrar elementos en el Menú Lateral según rol
+    document.querySelectorAll('#app-sidebar [data-roles="admin"]').forEach(el => {
+      if (!isTenant) {
+        el.classList.remove('hidden-by-role', 'is-hidden');
+        el.style.removeProperty('display');
+      } else {
+        el.classList.add('hidden-by-role', 'is-hidden');
+        el.style.setProperty('display', 'none', 'important');
+      }
+    });
+
+    document.querySelectorAll('#app-sidebar [data-roles="tenant"]').forEach(el => {
+      if (isTenant) {
+        el.classList.remove('hidden-by-role', 'is-hidden');
+        el.style.removeProperty('display');
+      } else {
+        el.classList.add('hidden-by-role', 'is-hidden');
+        el.style.setProperty('display', 'none', 'important');
+      }
+    });
+
+    // 2. Ocultar o mostrar botones en la Barra Inferior Móvil según rol
+    const mobileBottomNav = document.getElementById('mobile-bottom-navbar');
+    if (mobileBottomNav) {
+      mobileBottomNav.querySelectorAll('.mobile-nav-item[data-roles="admin"]').forEach(b => {
+        if (!isTenant) {
+          b.classList.remove('hidden-by-role', 'is-hidden');
+          b.style.removeProperty('display');
+        } else {
+          b.classList.add('hidden-by-role', 'is-hidden');
+          b.style.setProperty('display', 'none', 'important');
+          b.classList.remove('active');
+        }
+      });
+      mobileBottomNav.querySelectorAll('.mobile-nav-item[data-roles="tenant"]').forEach(b => {
+        if (isTenant) {
+          b.classList.remove('hidden-by-role', 'is-hidden');
+          b.style.removeProperty('display');
+        } else {
+          b.classList.add('hidden-by-role', 'is-hidden');
+          b.style.setProperty('display', 'none', 'important');
+          b.classList.remove('active');
+        }
+      });
+
+      // 3. Activar pestaña activa únicamente en el botón visible
+      const targetBottomTab = currentTab || (isTenant ? 'perfil-inquilino' : 'dashboard');
+      mobileBottomNav.querySelectorAll('.mobile-nav-item').forEach(b => b.classList.remove('active'));
+      const activeBtn = mobileBottomNav.querySelector(`.mobile-nav-item:not(.hidden-by-role)[data-bottom-tab="${targetBottomTab}"]`);
+      if (activeBtn) {
+        activeBtn.classList.add('active');
+      }
+    }
+  }
+  window.syncNavigationUI = syncNavigationUI;
+
   // Configuración de pestaña de inicio según el rol del usuario:
   // - Inquilino: aterriza directamente en su perfil comercial integral (Mi Perfil & Mi Local)
   // - Administrador / Junta: aterriza en el Dashboard Ejecutivo aislado
   let currentTab = (currentRole === 'tenant') ? 'perfil-inquilino' : 'dashboard';
 
+  // Sincronizar menús y barra inmediatamente
+  syncNavigationUI(currentRole);
+
   // Activar de inmediato la pestaña correspondiente y ocultar las demás
-  const initialNav = document.querySelector(`.nav-item[data-tab="${currentTab}"]`);
+  const roleSelector = (currentRole === 'tenant') ? '[data-roles="tenant"]' : ':not([data-roles="tenant"])';
+  const initialNav = document.querySelector(`.nav-item${roleSelector}[data-tab="${currentTab}"]`) ||
+                     document.querySelector(`.nav-item[data-tab="${currentTab}"]`);
   if (initialNav) {
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     initialNav.classList.add('active');
@@ -481,7 +547,11 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.switchTab = function(tabName) {
-    const navItem = document.querySelector(`.nav-item[data-tab="${tabName}"]`);
+    const isTenant = (currentRole === 'tenant');
+    const roleSelector = isTenant ? '[data-roles="tenant"]' : ':not([data-roles="tenant"])';
+    const navItem = document.querySelector(`.nav-item${roleSelector}[data-tab="${tabName}"]`) ||
+                    document.querySelector(`.nav-item:not(.hidden-by-role)[data-tab="${tabName}"]`) ||
+                    document.querySelector(`.nav-item[data-tab="${tabName}"]`);
     if (navItem) {
       navItem.click();
     } else {
@@ -491,14 +561,12 @@ document.addEventListener('DOMContentLoaded', () => {
       currentTab = tabName;
       renderAll();
     }
-    // Sincronizar barra inferior móvil
-    document.querySelectorAll('.mobile-bottom-nav .mobile-nav-item').forEach(b => {
-      if (b.getAttribute('data-bottom-tab') === tabName) {
-        b.classList.add('active');
-      } else {
-        b.classList.remove('active');
-      }
-    });
+    // Sincronizar barra inferior móvil solo entre botones visibles para el rol activo
+    document.querySelectorAll('.mobile-bottom-nav .mobile-nav-item').forEach(b => b.classList.remove('active'));
+    const activeBottomBtn = document.querySelector(`.mobile-bottom-nav .mobile-nav-item:not(.hidden-by-role)[data-bottom-tab="${tabName}"]`);
+    if (activeBottomBtn) {
+      activeBottomBtn.classList.add('active');
+    }
     if (window.innerWidth <= 1024) {
       closeMobileSidebar();
     }
@@ -515,14 +583,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const activeView = document.getElementById(`tab-${currentTab}`);
       if (activeView) activeView.style.display = 'block';
 
-      // Sincronizar barra inferior móvil
-      document.querySelectorAll('.mobile-bottom-nav .mobile-nav-item').forEach(b => {
-        if (b.getAttribute('data-bottom-tab') === currentTab) {
-          b.classList.add('active');
-        } else {
-          b.classList.remove('active');
-        }
-      });
+      // Sincronizar barra inferior móvil solo entre botones visibles para el rol activo
+      document.querySelectorAll('.mobile-bottom-nav .mobile-nav-item').forEach(b => b.classList.remove('active'));
+      const activeBottomBtn = document.querySelector(`.mobile-bottom-nav .mobile-nav-item:not(.hidden-by-role)[data-bottom-tab="${currentTab}"]`);
+      if (activeBottomBtn) {
+        activeBottomBtn.classList.add('active');
+      }
 
       // Re-renderizar de inmediato para garantizar datos frescos y sincronizados al instante
       renderAll();

@@ -180,6 +180,32 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* REGLAS GLOBALES DE AISLAMIENTO ESTRICTO POR ROL (RBAC UI) */
+.hidden-by-role,
+.is-hidden,
+[data-roles].hidden-by-role,
+[data-roles].is-hidden,
+.mobile-nav-item.hidden-by-role,
+.mobile-nav-item.is-hidden,
+.nav-item.hidden-by-role,
+.nav-item.is-hidden,
+.sidebar-section-header.hidden-by-role,
+.sidebar-section-header.is-hidden {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  flex: 0 0 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  max-width: 0 !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+}
+
 /* APP SHELL */
 .app-container {
   display: flex;
@@ -4963,23 +4989,44 @@ html, body {
   }
 
   .mobile-nav-item {
-    flex: 1 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 3px !important;
-    background: transparent !important;
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: transparent;
+    border: none;
+    color: var(--txt-muted);
+    padding: 6px 0;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-size: 10px;
+    font-weight: 700;
+    font-family: var(--font-body);
+    position: relative;
+  }
+
+  /* AISLAMIENTO Y OCULTACIÓN ESTRICTA POR ROL EN MENÚ Y BARRA INFERIOR */
+  .mobile-nav-item.hidden-by-role,
+  .mobile-nav-item.is-hidden,
+  .mobile-nav-item[style*="display: none"],
+  .mobile-nav-item[style*="display:none"],
+  [data-roles].hidden-by-role,
+  [data-roles].is-hidden,
+  [data-roles][style*="display: none"],
+  [data-roles][style*="display:none"] {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    flex: 0 0 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
     border: none !important;
-    color: var(--txt-muted) !important;
-    padding: 6px 0 !important;
-    cursor: pointer !important;
-    text-decoration: none !important;
-    transition: all 0.2s ease !important;
-    font-size: 10px !important;
-    font-weight: 700 !important;
-    font-family: var(--font-body) !important;
-    position: relative !important;
   }
 
   .mobile-nav-item i {
