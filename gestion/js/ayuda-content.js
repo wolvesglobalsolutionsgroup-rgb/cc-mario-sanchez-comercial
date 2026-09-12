@@ -803,7 +803,7 @@ const HelpContent = {
             Marco Jurídico Inmobiliario Venezolano
           </h3>
           <p style="font-size: 13px; color: var(--txt-secondary); line-height: 1.7;">
-            Normativa aplicable: Decreto Ley N° 929 de Arrendamiento Comercial, Prórrogas Legales del Art. 25, Ley del BCV Art. 128 y Convenio Cambiario N° 1.
+            Normativa aplicable: Decreto Ley N° 929 de Arrendamiento Comercial, Prórrogas Legales del Art. 26, Ley del BCV Art. 128 y Convenio Cambiario N° 1.
           </p>
         </div>
       `,

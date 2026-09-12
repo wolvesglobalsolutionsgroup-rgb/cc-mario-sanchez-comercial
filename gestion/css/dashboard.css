@@ -4483,6 +4483,393 @@ select option {
 }
 
 /* ==========================================================================
+   SELECTOR DE CANAL PARA PLANTILLAS & VISTAS PREVIAS (WA, TG, EMAIL, SMS)
+   ========================================================================== */
+.template-channel-switcher {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-channel-tab {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--txt-secondary);
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.btn-channel-tab:hover {
+  color: var(--txt-primary);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-channel-tab.active {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--txt-primary);
+  border-color: var(--amber);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.15);
+}
+
+[data-theme="light"] .btn-channel-tab.active {
+  background: #ffffff;
+  border-color: var(--amber);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+}
+
+/* --- TELEGRAM PREVIEW --- */
+.telegram-chat-preview-card {
+  background: #0e1621;
+  border: 1px solid rgba(36, 129, 204, 0.4);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  font-family: var(--font-body);
+}
+
+[data-theme="light"] .telegram-chat-preview-card {
+  background: #99ba92;
+  border-color: #2481cc;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.tg-preview-header {
+  background: #17212b;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="light"] .tg-preview-header {
+  background: #517da2;
+  color: #ffffff;
+}
+
+.tg-sender-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tg-avatar-crest {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2aabee 0%, #229ed9 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 15px;
+}
+
+.tg-bubble-body {
+  padding: 16px;
+  display: flex;
+  justify-content: flex-start;
+  background: #0e1621;
+}
+
+[data-theme="light"] .tg-bubble-body {
+  background: #94b28c;
+}
+
+.tg-msg-bubble {
+  max-width: 90%;
+  background: #182533;
+  color: #f5f5f5;
+  border-radius: 12px 12px 12px 3px;
+  padding: 12px 16px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+  position: relative;
+}
+
+[data-theme="light"] .tg-msg-bubble {
+  background: #ffffff;
+  color: #000000;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+.tg-var-pill {
+  display: inline-block;
+  background: rgba(36, 129, 204, 0.18) !important;
+  border: 1px solid rgba(36, 129, 204, 0.45) !important;
+  color: #38bdf8 !important;
+  font-family: var(--font-heading);
+  font-weight: 800 !important;
+  font-size: 11px !important;
+  padding: 1px 6px !important;
+  border-radius: 4px !important;
+  margin: 0 2px;
+}
+
+[data-theme="light"] .tg-var-pill {
+  background: rgba(36, 129, 204, 0.12) !important;
+  border-color: #2481cc !important;
+  color: #0284c7 !important;
+}
+
+/* --- EMAIL PREVIEW (GMAIL / OUTLOOK) --- */
+.email-preview-card {
+  background: #1e293b;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  font-family: var(--font-body);
+}
+
+[data-theme="light"] .email-preview-card {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.email-preview-header {
+  background: rgba(0, 0, 0, 0.25);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 11.5px;
+}
+
+[data-theme="light"] .email-preview-header {
+  background: #f1f5f9;
+}
+
+.email-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.email-meta-label {
+  color: var(--txt-muted);
+  font-weight: 700;
+  width: 55px;
+  flex-shrink: 0;
+}
+
+.email-body-content {
+  padding: 18px 20px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--txt-primary);
+  background: var(--bg-card);
+}
+
+.email-var-pill {
+  display: inline-block;
+  background: rgba(245, 158, 11, 0.15) !important;
+  border: 1px solid rgba(245, 158, 11, 0.4) !important;
+  color: #f59e0b !important;
+  font-family: var(--font-heading);
+  font-weight: 800 !important;
+  font-size: 11px !important;
+  padding: 1px 6px !important;
+  border-radius: 4px !important;
+  margin: 0 2px;
+}
+
+/* --- SMS PREVIEW --- */
+.sms-preview-card {
+  background: #0b1120;
+  border: 1px solid rgba(14, 165, 233, 0.35);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  font-family: var(--font-body);
+}
+
+[data-theme="light"] .sms-preview-card {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.sms-preview-header {
+  background: rgba(14, 165, 233, 0.1);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.sms-bubble-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sms-msg-bubble {
+  max-width: 90%;
+  background: #1e293b;
+  color: #f1f5f9;
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-size: 12px;
+  line-height: 1.5;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] .sms-msg-bubble {
+  background: #e2e8f0;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.sms-var-pill {
+  display: inline-block;
+  background: rgba(14, 165, 233, 0.15) !important;
+  border: 1px solid rgba(14, 165, 233, 0.4) !important;
+  color: #0ea5e9 !important;
+  font-family: var(--font-heading);
+  font-weight: 800 !important;
+  font-size: 11px !important;
+  padding: 1px 6px !important;
+  border-radius: 4px !important;
+  margin: 0 2px;
+}
+
+/* ==========================================================================
+   MODAL CALENDARIO: RESUMEN DE VENCIMIENTOS DIARIOS (UI/UX REFINADO)
+   ========================================================================== */
+.day-summary-event-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  min-height: auto;
+  box-sizing: border-box;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+}
+
+[data-theme="light"] .day-summary-event-item {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.day-summary-event-item:hover {
+  transform: translateY(-2px);
+  border-color: rgba(245, 158, 11, 0.4);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="light"] .day-summary-event-item:hover {
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.15);
+}
+
+.day-summary-event-title {
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--txt-primary);
+  line-height: 1.4;
+}
+
+.day-summary-event-desc {
+  font-size: 12px;
+  color: var(--txt-secondary);
+  line-height: 1.45;
+  margin-top: 3px;
+  word-break: break-word;
+}
+
+/* ==========================================================================
+   MESA DE AYUDA: TABLERO KANBAN DE TICKETS Y RECLAMOS
+   ========================================================================== */
+.tickets-kanban-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+}
+
+@media (max-width: 900px) {
+  .tickets-kanban-board {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+.kanban-col {
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+[data-theme="light"] .kanban-col {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.kanban-col-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 4px;
+}
+
+.kanban-col-title {
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kanban-ticket-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.kanban-ticket-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="light"] .kanban-ticket-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+
+/* ==========================================================================
    5. CALENDARIO: BUSCADOR DE FECHAS & AGRUPACIÓN DE CUOTAS POR DÍA
    ========================================================================== */
 .calendar-search-box {

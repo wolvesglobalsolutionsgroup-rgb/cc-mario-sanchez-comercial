@@ -270,11 +270,92 @@
 
     downloadPDF() {
       window.print();
+    },
+
+    /**
+     * Renderiza el desglose formal del recibo con citas canónicas a la G.O. 40.418 y G.O. 6.687
+     * @param {Object} pago - Objeto del pago o cuota conciliada
+     * @param {Object} [liquidacionFiscal] - Resultado del cálculo de SeniatEngine.calcularLiquidacionFiscal
+     * @returns {string} Fragmento HTML con tabla y leyenda jurídica
+     */
+    renderDesgloseReciboHTML(pago, liquidacionFiscal = null) {
+      const montoBase = Number(liquidacionFiscal?.montoBaseUsd ?? pago?.rent_usd ?? pago?.amount_paid ?? 0);
+      const tasaBcv = Number(liquidacionFiscal?.tasaBcv ?? pago?.tasa_bcv_usada ?? pago?.snapshot?.bcv_rate_applied ?? 832.49);
+      const montoBaseBs = montoBase * tasaBcv;
+      const igtfAplica = Boolean(liquidacionFiscal ? liquidacionFiscal.igtfAplica : (pago?.igtf_aplica || (Number(pago?.igtf_monto_usd) > 0)));
+      const igtfMonto = Number(liquidacionFiscal?.igtfMontoUsd ?? pago?.igtf_monto_usd ?? (igtfAplica ? Math.round(montoBase * 0.03 * 100) / 100 : 0));
+      const condoUsd = Number(pago?.condo_usd ?? 0);
+      const totalUsd = Number(liquidacionFiscal?.totalPagarUsd ?? pago?.total_usd ?? pago?.monto_total_con_igtf_usd ?? (montoBase + condoUsd + igtfMonto));
+      const totalBs = totalUsd * tasaBcv;
+
+      return `
+        <div class="desglose-fiscal-oficial" style="margin: 14px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 11.5px; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden;">
+            <thead>
+              <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #1e293b;">
+                <th style="padding: 7px 10px; text-align: left;">Concepto Liquidado</th>
+                <th style="padding: 7px 10px; text-align: right;">Monto USD</th>
+                <th style="padding: 7px 10px; text-align: right;">Equivalente Oficial Bs. (BCV ${tasaBcv.toFixed(2)})</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 7px 10px;">
+                  <strong style="color: #0f172a;">Canon Fijo Mensual de Arrendamiento</strong>
+                  <div style="font-size: 10px; color: #64748b;">Decreto Ley N° 929 (G.O. 40.418, Art. 38) • Efecto liberatorio en Bs. a Tasa Oficial BCV</div>
+                </td>
+                <td style="padding: 7px 10px; text-align: right; font-weight: 600;">$${montoBase.toFixed(2)}</td>
+                <td style="padding: 7px 10px; text-align: right; font-family: monospace; font-weight: 600;">Bs. ${montoBaseBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+              </tr>
+              ${condoUsd > 0 ? `
+              <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 7px 10px;">
+                  <strong>Cuota de Participación en Gastos Comunes / Condominio</strong>
+                  <div style="font-size: 10px; color: #64748b;">Alícuota condominial de mantenimiento y servicios esenciales</div>
+                </td>
+                <td style="padding: 7px 10px; text-align: right; font-weight: 600;">$${condoUsd.toFixed(2)}</td>
+                <td style="padding: 7px 10px; text-align: right; font-family: monospace; font-weight: 600;">Bs. ${(condoUsd * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+              </tr>
+              ` : ''}
+              ${igtfAplica ? `
+              <tr style="border-bottom: 1px solid #e2e8f0; background: #fffbeb;">
+                <td style="padding: 7px 10px;">
+                  <strong style="color: #b45309;"><i class="fa-solid fa-percent" style="font-size: 10px;"></i> Percepción IGTF (3%)</strong>
+                  <div style="font-size: 10px; color: #92400e;">Gaceta Oficial Extraordinaria N° 6.687 • Pagos en divisa/cripto sin intermediación financiera nacional</div>
+                </td>
+                <td style="padding: 7px 10px; text-align: right; color: #b45309; font-weight: 700;">+$${igtfMonto.toFixed(2)}</td>
+                <td style="padding: 7px 10px; text-align: right; color: #b45309; font-family: monospace; font-weight: 700;">Bs. ${(igtfMonto * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+              </tr>
+              ` : `
+              <tr style="border-bottom: 1px solid #e2e8f0; background: #f0fdf4;">
+                <td style="padding: 7px 10px;">
+                  <strong style="color: #047857;"><i class="fa-solid fa-shield-check" style="font-size: 10px;"></i> Régimen IGTF (0% Exento)</strong>
+                  <div style="font-size: 10px; color: #047857;">Decreto Presidencial N° 4.647 / Providencia SNAT/2022/000013 • Pago en Bolívares vía banca nacional</div>
+                </td>
+                <td style="padding: 7px 10px; text-align: right; color: #047857; font-weight: 600;">$0.00</td>
+                <td style="padding: 7px 10px; text-align: right; color: #047857; font-family: monospace;">Bs. 0,00</td>
+              </tr>
+              `}
+              <tr style="background: #f8fafc; font-weight: 800; border-top: 2px solid #cbd5e1; font-size: 12px;">
+                <td style="padding: 9px 10px; color: #0f172a;">TOTAL COBRADO / LIQUIDADO:</td>
+                <td style="padding: 9px 10px; text-align: right; color: #047857; font-size: 13px;">$${totalUsd.toFixed(2)} USD</td>
+                <td style="padding: 9px 10px; text-align: right; color: #047857; font-family: monospace; font-size: 13px;">Bs. ${totalBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="margin-top: 8px; font-size: 9.5px; color: #64748b; line-height: 1.4; background: #f8fafc; padding: 7px 10px; border-radius: 4px; border: 1px dashed #cbd5e1; font-style: italic;">
+            Base imponible y régimen tarifario regulados por el Decreto con Rango, Valor y Fuerza de Ley de Regulación del Arrendamiento Inmobiliario para el Uso Comercial (G.O. 40.418, Art. 38 y Convenio Cambiario N° 1 BCV). Retención y régimen de IGTF aplicados conforme a la G.O. Extraordinaria 6.687 y Providencias Administrativas del SENIAT.
+          </div>
+        </div>
+      `;
     }
   };
 
-  // Exponer a nivel global
+  // Exponer a nivel global y CJS/ESM
   global.ContractViewer = ContractViewer;
+  global.renderDesgloseReciboHTML = function(pago, liquidacionFiscal) {
+    return ContractViewer.renderDesgloseReciboHTML(pago, liquidacionFiscal);
+  };
   global.openContractModal = function(tenantId) {
     ContractViewer.openModal(tenantId);
   };
@@ -294,4 +375,11 @@
     ContractViewer.downloadPDF();
   };
 
-})(typeof window !== 'undefined' ? window : this);
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = ContractViewer;
+    module.exports.ContractViewer = ContractViewer;
+    module.exports.renderDesgloseReciboHTML = ContractViewer.renderDesgloseReciboHTML;
+    module.exports.default = ContractViewer;
+  }
+
+})(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));

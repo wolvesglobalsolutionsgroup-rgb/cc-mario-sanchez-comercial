@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS contracts (
     cap_percentage NUMERIC(5, 2) DEFAULT 0.00, -- % sobre ventas brutas si aplica CAP (1% - 8%)
     deposit_months INT DEFAULT 3,              -- Límite máx legal de 3 meses según Art. 19
     deposit_amount_usd NUMERIC(12, 2) NOT NULL,-- Monto total en garantía
-    legal_extension_status VARCHAR(20) DEFAULT 'no_aplica', -- 'no_aplica', 'concedida', 'en_curso' (Art. 25)
+    legal_extension_status VARCHAR(20) DEFAULT 'no_aplica', -- 'no_aplica', 'concedida', 'en_curso' (Art. 26)
     legal_extension_months INT DEFAULT 0,      -- Meses calculados por antigüedad
     status VARCHAR(20) DEFAULT 'vigente',      -- 'vigente', 'por_vencer', 'vencido', 'resuelto'
     notes TEXT,

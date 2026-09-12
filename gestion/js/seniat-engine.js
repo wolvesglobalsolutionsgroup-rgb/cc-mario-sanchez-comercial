@@ -15,6 +15,67 @@
   'use strict';
 
   const SeniatEngine = {
+    IGTF_RATE: 0.03,
+
+    config: {
+      modo_fiscal: 'FLEXIBLE', // 'FLEXIBLE' | 'ESTRICTO'
+      igtf_habilitado: true
+    },
+
+    /**
+     * Determina si el medio de pago entra en el supuesto de divisa fuera del sistema bancario nacional.
+     * @param {string} medio - Medio de pago utilizado.
+     */
+    isMedioDivisaDirecta(medio) {
+      const metodos = ['efectivo_usd', 'efectivo_divisas', 'zelle', 'usdt', 'binance_pay', 'cripto', 'transferencia_exterior'];
+      return metodos.includes(String(medio || '').toLowerCase().trim());
+    },
+
+    /**
+     * Calcula la liquidación fiscal del pago permitiendo el tratamiento en Bolívares exento o percepción IGTF.
+     * @param {number} montoBaseUsd - Monto base en USD.
+     * @param {string} medioPago - Identificador del medio de pago.
+     * @param {boolean} liquidarComoBs - Si es true, declara la operación como contravalor en Bs a tasa BCV (Exenta de IGTF).
+     */
+    calcularLiquidacionFiscal(montoBaseUsd, medioPago, liquidarComoBs = false) {
+      const base = parseFloat(montoBaseUsd) || 0;
+      const esDivisa = this.isMedioDivisaDirecta(medioPago);
+
+      // Si no es divisa, o la administración decide liquidar en Bs a tasa oficial BCV, o IGTF está deshabilitado:
+      if (!esDivisa || liquidarComoBs || !this.config.igtf_habilitado) {
+        const concepto = 'Operación liquidada en moneda de curso legal (Bolívares) a tasa oficial BCV. Exenta de IGTF según Ley de Impuesto a las Grandes Transacciones Financieras (G.O. 6.687).';
+        return {
+          igtfAplica: false,
+          aplica_igtf: false,
+          tasa_igtf: 0,
+          igtfMontoUsd: 0,
+          monto_igtf_usd: 0,
+          montoBaseUsd: Number(base.toFixed(2)),
+          totalPagarUsd: Number(base.toFixed(2)),
+          monto_total_usd: Number(base.toFixed(2)),
+          conceptoFiscal: concepto,
+          concepto_fiscal: concepto
+        };
+      }
+
+      // Percepción de divisa directa sin intermediación financiera nacional (G.O. 6.687)
+      const igtfMonto = Number((base * this.IGTF_RATE).toFixed(2));
+      const totalConIgtf = Number((base + igtfMonto).toFixed(2));
+      const conceptoDivisa = 'Alícuota 3% IGTF percibida conforme a la Ley de Impuesto a las Grandes Transacciones Financieras (G.O. 6.687).';
+      return {
+        igtfAplica: true,
+        aplica_igtf: true,
+        tasa_igtf: this.IGTF_RATE,
+        igtfMontoUsd: igtfMonto,
+        monto_igtf_usd: igtfMonto,
+        montoBaseUsd: Number(base.toFixed(2)),
+        totalPagarUsd: totalConIgtf,
+        monto_total_usd: totalConIgtf,
+        conceptoFiscal: conceptoDivisa,
+        concepto_fiscal: conceptoDivisa
+      };
+    },
+
     /**
      * Genera el Libro de Ventas Fiscal del período solicitado.
      */
@@ -318,5 +379,7 @@
   global.SeniatEngine = SeniatEngine;
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = SeniatEngine;
+    module.exports.SeniatEngine = SeniatEngine;
+    module.exports.default = SeniatEngine;
   }
 })(typeof window !== 'undefined' ? window : globalThis);

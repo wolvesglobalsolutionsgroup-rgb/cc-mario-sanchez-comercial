@@ -138,6 +138,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  window.handlePagoMovilBankSelect = function(val) {
+    if (!val) return;
+    const parts = val.split('|');
+    const code = parts[0] || '0134';
+    const span = document.getElementById('span-selected-bank-code');
+    if (span) span.textContent = code;
+  };
+
+  window.copySelectedBankCode = function(btn) {
+    const sel = document.getElementById('pagomovil-bank-selector');
+    const val = sel ? sel.value : '0134|Banesco Banco Universal';
+    const code = val.split('|')[0] || '0134';
+    window.copyToClipboard(code, btn);
+  };
+
+  window.copySelectedBankName = function(btn) {
+    const sel = document.getElementById('pagomovil-bank-selector');
+    const val = sel ? sel.value : '0134|Banesco Banco Universal';
+    const name = val.split('|')[1] || val;
+    window.copyToClipboard(name, btn);
+  };
+
   function fallbackCopyText(text, cb) {
     const ta = document.createElement('textarea');
     ta.value = text;
@@ -638,13 +660,31 @@ document.addEventListener('DOMContentLoaded', () => {
               <i class="fa-regular fa-copy"></i> Copiar
             </button>
           </div>
-          <div class="bank-data-subrow" style="display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-top: 4px; background: rgba(255,255,255,0.02); padding: 5px 8px; border-radius: 6px; border: 1px solid var(--border-subtle);">
-            <div style="min-width: 0; flex: 1; font-size: 11px;">
-              <span style="color: var(--txt-muted);">Bancos:</span> <strong style="color: var(--txt-primary);">${escapeHtml(acc.bank_code || '0134 (Banesco) / 0102 (BDV)')}</strong>
+          <div style="margin-top: 6px; background: rgba(255,255,255,0.02); padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border-subtle); display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 10px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700;">
+                <i class="fa-solid fa-building-columns" style="color: var(--emerald);"></i> Banco Receptor Pago Móvil
+              </span>
+              <span style="font-size: 9.5px; color: var(--emerald); font-weight: 700; background: rgba(16, 185, 129, 0.1); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.3);">Interbancario</span>
             </div>
-            <button type="button" class="btn-copy-mini" onclick="window.copyToClipboard('0134', this)" title="Copiar Código Banco 0134">
-              <i class="fa-regular fa-copy"></i> 0134
-            </button>
+            <select id="pagomovil-bank-selector" class="form-control" style="font-size: 11.5px; padding: 6px 10px; height: auto; background: var(--bg-card); color: var(--txt-primary); border: 1px solid var(--border-subtle); border-radius: 6px; cursor: pointer;" onchange="window.handlePagoMovilBankSelect(this.value)">
+              <option value="0134|Banesco Banco Universal" selected>0134 — Banesco Banco Universal (Predeterminado)</option>
+              <option value="0102|Banco de Venezuela (BDV)">0102 — Banco de Venezuela (BDV)</option>
+              <option value="0105|Banco Mercantil">0105 — Banco Mercantil</option>
+              <option value="0108|BBVA Provincial">0108 — BBVA Provincial</option>
+              <option value="0172|Bancamiga Banco Universal">0172 — Bancamiga Banco Universal</option>
+              <option value="0114|Bancaribe">0114 — Bancaribe</option>
+              <option value="0163|Banco del Tesoro">0163 — Banco del Tesoro</option>
+              <option value="0115|Banco Exterior">0115 — Banco Exterior</option>
+            </select>
+            <div style="display: flex; gap: 6px; align-items: center; justify-content: flex-end; margin-top: 2px;">
+              <button type="button" class="btn-copy-mini" id="btn-copy-bank-code" onclick="window.copySelectedBankCode(this)" title="Copiar código de 4 dígitos">
+                <i class="fa-regular fa-copy"></i> Código: <strong id="span-selected-bank-code" style="margin-left: 2px;">0134</strong>
+              </button>
+              <button type="button" class="btn-copy-mini" id="btn-copy-bank-name" onclick="window.copySelectedBankName(this)" title="Copiar nombre del banco seleccionado">
+                <i class="fa-regular fa-copy"></i> Copiar Banco
+              </button>
+            </div>
           </div>
         `;
       } else if (acc.email) {
@@ -2966,7 +3006,7 @@ document.addEventListener('DOMContentLoaded', () => {
       cuota: { label: 'CUOTA DE ARRENDAMIENTO', badgeClass: 'pill-warning', iconClass: 'badge-amber', icon: 'fa-solid fa-coins' },
       condominio: { label: 'CORTE DE GASTOS COMUNES', badgeClass: 'pill-info', iconClass: 'badge-purple', icon: 'fa-solid fa-building-user' },
       contrato: { label: 'VENCIMIENTO DE CONTRATO', badgeClass: 'pill-active', iconClass: 'badge-cyan', icon: 'fa-solid fa-file-contract' },
-      prorroga: { label: 'PRÓRROGA LEGAL (ART. 25 G.O. 40.418)', badgeClass: 'pill-overdue', iconClass: 'badge-rose', icon: 'fa-solid fa-scale-balanced' }
+      prorroga: { label: 'PRÓRROGA LEGAL (ART. 26 G.O. 40.418)', badgeClass: 'pill-overdue', iconClass: 'badge-rose', icon: 'fa-solid fa-scale-balanced' }
     };
 
     const cfg = typeConfig[type] || typeConfig.cuota;
@@ -2991,13 +3031,88 @@ document.addEventListener('DOMContentLoaded', () => {
     window.closeModal('modal-calendar-detail');
   };
 
+  window._currentDaySummaryEvents = [];
+  window._currentDaySummaryDate = '';
+
+  window.renderDayEventsList = function(list) {
+    const container = document.getElementById('day-summary-events-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (!list || list.length === 0) {
+      container.innerHTML = `
+        <div style="padding: 36px 16px; text-align: center; color: var(--txt-muted);">
+          <i class="fa-solid fa-calendar-xmark" style="font-size: 32px; opacity: 0.45; margin-bottom: 10px;"></i>
+          <div style="font-size: 13.5px; font-weight: 700; color: var(--txt-primary);">No se encontraron vencimientos</div>
+          <div style="font-size: 11.5px; opacity: 0.8; margin-top: 4px;">No hay registros coincidentes con el criterio de búsqueda</div>
+        </div>
+      `;
+      return;
+    }
+
+    list.forEach(evt => {
+      const item = document.createElement('div');
+      item.className = 'day-summary-event-item';
+
+      const badgeClass = evt.type === 'cuota' ? 'cal-badge-cuota' : evt.type === 'condominio' ? 'cal-badge-condominio' : 'cal-badge-contrato';
+      const icon = evt.type === 'cuota' ? 'fa-receipt' : evt.type === 'condominio' ? 'fa-building-circle-check' : 'fa-file-signature';
+      const typeColor = evt.type === 'cuota' ? 'var(--amber)' : evt.type === 'condominio' ? 'var(--purple)' : 'var(--cyan)';
+
+      item.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 14px; min-width: 0; flex: 1;">
+          <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(245,158,11,0.12); display: flex; align-items: center; justify-content: center; color: ${typeColor}; flex-shrink: 0; font-size: 14px;">
+            <i class="fa-solid ${icon}"></i>
+          </div>
+          <div style="min-width: 0; flex: 1;">
+            <div class="day-summary-event-title">${escapeHtml(evt.title)}</div>
+            <div class="day-summary-event-desc">${escapeHtml(evt.desc || '')}</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+          <span class="status-pill ${badgeClass}" style="font-size: 10px; padding: 3px 8px;">${(evt.type || 'evento').toUpperCase()}</span>
+          <button type="button" class="btn-action-icon" style="color: var(--amber); border-color: var(--amber); width: 28px; height: 28px;" title="Ver detalle">
+            <i class="fa-solid fa-arrow-right" style="font-size: 11px;"></i>
+          </button>
+        </div>
+      `;
+
+      item.onclick = () => {
+        window.closeDayEventsModal();
+        showCalendarEventDetail(evt.title, evt.date, evt.type, evt.desc);
+      };
+
+      container.appendChild(item);
+    });
+  };
+
+  window.filterDayEventsList = function(query) {
+    const q = (query || '').toLowerCase().trim();
+    const list = window._currentDaySummaryEvents || [];
+    const filtered = !q ? list : list.filter(evt => {
+      const t = (evt.title || '').toLowerCase();
+      const d = (evt.desc || '').toLowerCase();
+      const tp = (evt.type || '').toLowerCase();
+      return t.includes(q) || d.includes(q) || tp.includes(q);
+    });
+
+    const badgeEl = document.getElementById('day-summary-total-badge');
+    if (badgeEl) {
+      badgeEl.textContent = `${filtered.length} ${filtered.length === 1 ? 'Vencimiento' : 'Vencimientos'}`;
+    }
+    window.renderDayEventsList(filtered);
+  };
+
   window.openDayEventsModal = function(dateStr, eventsList) {
     const modal = document.getElementById('modal-calendar-day-summary');
     const titleEl = document.getElementById('day-summary-title');
     const subtitleEl = document.getElementById('day-summary-subtitle');
     const badgeEl = document.getElementById('day-summary-total-badge');
-    const container = document.getElementById('day-summary-events-container');
-    if (!modal || !container) return;
+    const searchInput = document.getElementById('day-summary-search');
+    if (!modal) return;
+
+    window._currentDaySummaryEvents = eventsList || [];
+    window._currentDaySummaryDate = dateStr;
+    if (searchInput) searchInput.value = '';
 
     const parts = (dateStr || '').split('-');
     const formattedDate = (parts.length === 3) 
@@ -3014,48 +3129,7 @@ document.addEventListener('DOMContentLoaded', () => {
       badgeEl.textContent = `${eventsList.length} ${eventsList.length === 1 ? 'Vencimiento' : 'Vencimientos'}`;
     }
 
-    container.innerHTML = '';
-    eventsList.forEach(evt => {
-      const item = document.createElement('div');
-      item.className = 'data-card';
-      item.style.padding = '12px 16px';
-      item.style.cursor = 'pointer';
-      item.style.transition = 'transform 0.15s ease, border-color 0.15s ease';
-      item.style.display = 'flex';
-      item.style.alignItems = 'center';
-      item.style.justifyContent = 'space-between';
-      item.style.gap = '12px';
-
-      const badgeClass = evt.type === 'cuota' ? 'cal-badge-cuota' : evt.type === 'condominio' ? 'cal-badge-condominio' : 'cal-badge-contrato';
-      const icon = evt.type === 'cuota' ? 'fa-receipt' : evt.type === 'condominio' ? 'fa-building-circle-check' : 'fa-file-signature';
-      const typeColor = evt.type === 'cuota' ? 'var(--amber)' : evt.type === 'condominio' ? 'var(--purple)' : 'var(--cyan)';
-
-      item.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
-          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(245,158,11,0.1); display: flex; align-items: center; justify-content: center; color: ${typeColor}; flex-shrink: 0;">
-            <i class="fa-solid ${icon}"></i>
-          </div>
-          <div style="min-width: 0;">
-            <div style="font-weight: 700; font-size: 13px; color: var(--txt-primary);">${escapeHtml(evt.title)}</div>
-            <div style="font-size: 11.5px; color: var(--txt-secondary); margin-top: 2px;">${escapeHtml(evt.desc || '')}</div>
-          </div>
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-          <span class="status-pill ${badgeClass}" style="font-size: 10px;">${(evt.type || 'evento').toUpperCase()}</span>
-          <button type="button" class="btn-action-icon" style="color: var(--amber); border-color: var(--amber);" title="Ver detalle">
-            <i class="fa-solid fa-arrow-right"></i>
-          </button>
-        </div>
-      `;
-
-      item.onclick = () => {
-        window.closeDayEventsModal();
-        showCalendarEventDetail(evt.title, evt.date, evt.type, evt.desc);
-      };
-
-      container.appendChild(item);
-    });
-
+    window.renderDayEventsList(window._currentDaySummaryEvents);
     window.openModal('modal-calendar-day-summary');
   };
 
@@ -3668,78 +3742,181 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // Mesa de tickets para administración con KPIs y filtros ejecutivos
+    // Mesa de tickets para administración con KPIs, Tablero Kanban y filtros
     if (tickets.length > 0) {
       const ticketsAdminSection = document.createElement('div');
       ticketsAdminSection.style.marginTop = '28px';
 
-      const openCount = tickets.filter(t => t.status === 'abierto').length;
-      const inProgressCount = tickets.filter(t => t.status === 'en_atencion').length;
-      const resolvedCount = tickets.filter(t => t.status === 'resuelto').length;
+      const openTickets = tickets.filter(t => t.status === 'abierto');
+      const inProgressTickets = tickets.filter(t => t.status === 'en_atencion');
+      const resolvedTickets = tickets.filter(t => t.status === 'resuelto');
 
-      ticketsAdminSection.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+      const ticketViewMode = window._ticketViewMode || 'kanban';
+
+      window.setTicketViewMode = function(mode) {
+        window._ticketViewMode = mode;
+        renderAlertsCenter();
+      };
+
+      let headerHtml = `
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
           <div>
             <h4 style="font-family: var(--font-heading); font-size: 15px; font-weight: 800; color: var(--txt-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
-              <i class="fa-solid fa-headset" style="color: var(--cyan);"></i> Mesa de Ayuda: Reclamos y Solicitudes de Inquilinos (${tickets.length})
+              <i class="fa-solid fa-headset" style="color: var(--cyan);"></i> Mesa de Ayuda: Solicitudes y Reclamos (${tickets.length})
             </h4>
-            <div style="font-size: 11.5px; color: var(--txt-secondary); margin-top: 2px;">Gestión de incidencias de infraestructura, servicios y consultas de arrendatarios</div>
+            <div style="font-size: 11.5px; color: var(--txt-secondary); margin-top: 2px;">Gestión de incidencias de infraestructura, servicios y consultas de inquilinos</div>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <div class="status-pill pill-warning" style="font-size: 11px;"><i class="fa-solid fa-clock"></i> ${openCount} Abiertos</div>
-            <div class="status-pill pill-info" style="font-size: 11px;"><i class="fa-solid fa-screwdriver-wrench"></i> ${inProgressCount} En Atención</div>
-            <div class="status-pill pill-active" style="font-size: 11px;"><i class="fa-solid fa-check"></i> ${resolvedCount} Resueltos</div>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="status-pill pill-warning" style="font-size: 11px;"><i class="fa-solid fa-clock"></i> ${openTickets.length} Abiertos</span>
+              <span class="status-pill pill-info" style="font-size: 11px;"><i class="fa-solid fa-screwdriver-wrench"></i> ${inProgressTickets.length} En Atención</span>
+              <span class="status-pill pill-active" style="font-size: 11px;"><i class="fa-solid fa-check"></i> ${resolvedTickets.length} Resueltos</span>
+            </div>
+            <div style="display: inline-flex; border-radius: 8px; border: 1px solid var(--border-subtle); overflow: hidden; background: var(--bg-card);">
+              <button type="button" class="btn-channel-tab ${ticketViewMode === 'kanban' ? 'active' : ''}" style="border: none; border-radius: 0; padding: 6px 12px; font-size: 11px;" onclick="window.setTicketViewMode('kanban')">
+                <i class="fa-solid fa-table-columns"></i> Tablero
+              </button>
+              <button type="button" class="btn-channel-tab ${ticketViewMode === 'list' ? 'active' : ''}" style="border: none; border-radius: 0; padding: 6px 12px; font-size: 11px;" onclick="window.setTicketViewMode('list')">
+                <i class="fa-solid fa-list"></i> Lista
+              </button>
+            </div>
           </div>
         </div>
       `;
 
-      tickets.forEach(tk => {
-        const itemCard = document.createElement('div');
-        itemCard.className = 'data-card';
-        itemCard.style.padding = '18px 20px';
-        itemCard.style.marginBottom = '12px';
-        itemCard.style.border = '1px solid var(--border-subtle)';
+      let contentHtml = '';
 
-        const stBadge = tk.status === 'resuelto'
-          ? '<span class="status-pill pill-active"><i class="fa-solid fa-check"></i> Resuelto</span>'
-          : (tk.status === 'en_atencion'
-              ? '<span class="status-pill pill-info"><i class="fa-solid fa-screwdriver-wrench"></i> En Atención</span>'
-              : '<span class="status-pill pill-warning"><i class="fa-solid fa-clock"></i> Abierto</span>');
+      if (ticketViewMode === 'kanban') {
+        const renderKanbanCard = (tk) => {
+          const prioColor = tk.priority === 'urgente' ? 'var(--rose)' : (tk.priority === 'alta' ? 'var(--amber)' : 'var(--emerald)');
+          let quickBtn = '';
+          if (tk.status === 'abierto') {
+            quickBtn = `<button type="button" class="btn-currency-toggle" style="font-size: 10px; padding: 4px 8px; color: var(--cyan); border-color: var(--cyan);" onclick="window.adminUpdateTicketStatus('${tk.id}', 'en_atencion')" title="Atender ticket"><i class="fa-solid fa-play"></i> Atender</button>`;
+          } else if (tk.status === 'en_atencion') {
+            quickBtn = `<button type="button" class="btn-currency-toggle" style="font-size: 10px; padding: 4px 8px; color: var(--emerald); border-color: var(--emerald);" onclick="window.adminUpdateTicketStatus('${tk.id}', 'resuelto')" title="Marcar como resuelto"><i class="fa-solid fa-check"></i> Resolver</button>`;
+          } else {
+            quickBtn = `<button type="button" class="btn-currency-toggle" style="font-size: 10px; padding: 4px 8px; color: var(--amber); border-color: var(--amber);" onclick="window.adminUpdateTicketStatus('${tk.id}', 'abierto')" title="Reabrir"><i class="fa-solid fa-rotate-left"></i> Reabrir</button>`;
+          }
 
-        const prioColor = tk.priority === 'urgente' ? 'var(--rose)' : (tk.priority === 'alta' ? 'var(--amber)' : 'var(--emerald)');
-
-        itemCard.innerHTML = `
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px;">
-            <div style="flex: 1; min-width: 260px;">
-              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                ${stBadge}
-                <span style="font-size: 10px; font-weight: 800; color: ${prioColor}; text-transform: uppercase; background: rgba(255,255,255,0.04); padding: 2px 6px; border-radius: 4px; border: 1px solid ${prioColor}40;">
-                  Prioridad ${escapeHtml(tk.priority || 'normal')}
+          return `
+            <div class="kanban-ticket-card">
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px;">
+                <span class="status-pill" style="font-size: 9.5px; font-weight: 800; background: rgba(255,255,255,0.06); color: var(--txt-primary); border: 1px solid var(--border-subtle); padding: 2px 6px;">
+                  ${escapeHtml(tk.unit_code)}
                 </span>
-                <strong style="color: var(--txt-primary); font-size: 13.5px;">${escapeHtml(tk.tenant_name || 'Inquilino')} (${escapeHtml(tk.unit_code)})</strong>
-                <span style="font-family: monospace; font-size: 11px; color: var(--txt-muted);">${escapeHtml(tk.ticket_number)}</span>
+                <span style="font-size: 9px; font-weight: 800; color: ${prioColor}; text-transform: uppercase; background: rgba(255,255,255,0.04); padding: 2px 6px; border-radius: 4px; border: 1px solid ${prioColor}40;">
+                  ${escapeHtml(tk.priority || 'normal')}
+                </span>
               </div>
-              <h5 style="font-family: var(--font-heading); font-size: 14px; font-weight: 700; color: var(--txt-primary); margin: 8px 0 4px;">${escapeHtml(tk.subject)}</h5>
-              <p style="font-size: 12px; color: var(--txt-secondary); margin: 0; line-height: 1.5;">${escapeHtml(tk.description)}</p>
-              ${tk.technician ? `<div style="font-size: 11.5px; margin-top: 6px; color: var(--amber);"><i class="fa-solid fa-user-gear"></i> <strong>Técnico Asignado:</strong> ${escapeHtml(tk.technician)}</div>` : ''}
-              ${tk.admin_response ? `<div style="font-size: 11.5px; margin-top: 4px; color: var(--cyan);"><i class="fa-solid fa-comment-dots"></i> <strong>Respuesta Oficial:</strong> ${escapeHtml(tk.admin_response)}</div>` : ''}
+              <div>
+                <div style="font-size: 11px; font-weight: 700; color: var(--txt-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(tk.tenant_name || 'Inquilino')}</div>
+                <h6 style="font-family: var(--font-heading); font-size: 12.5px; font-weight: 700; color: var(--txt-primary); margin: 3px 0 4px; line-height: 1.35;">${escapeHtml(tk.subject)}</h6>
+                <p style="font-size: 11px; color: var(--txt-muted); margin: 0; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                  ${escapeHtml(tk.description)}
+                </p>
+              </div>
+              ${tk.technician ? `<div style="font-size: 10.5px; color: var(--amber); background: rgba(245,158,11,0.08); padding: 3px 7px; border-radius: 5px; border: 1px solid rgba(245,158,11,0.2);"><i class="fa-solid fa-user-gear"></i> ${escapeHtml(tk.technician)}</div>` : ''}
+              ${tk.admin_response ? `<div style="font-size: 10.5px; color: var(--cyan); background: rgba(14,165,233,0.08); padding: 3px 7px; border-radius: 5px; border: 1px solid rgba(14,165,233,0.2);"><i class="fa-solid fa-comment-dots"></i> ${escapeHtml(tk.admin_response)}</div>` : ''}
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--border-subtle); gap: 6px;">
+                <span style="font-family: monospace; font-size: 10px; color: var(--txt-muted);">${escapeHtml(tk.ticket_number)}</span>
+                <div style="display: flex; gap: 4px;">
+                  <button type="button" class="btn-recibo-action" style="font-size: 10px; padding: 3px 7px; background: rgba(14, 165, 233, 0.12); border-color: var(--cyan); color: var(--cyan);" onclick="window.openAdminTicketModal('${tk.id}')" title="Gestionar / Asignar técnico">
+                    <i class="fa-solid fa-headset"></i> Gestionar
+                  </button>
+                  ${quickBtn}
+                </div>
+              </div>
             </div>
-            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
-              <span style="font-size: 10.5px; color: var(--txt-muted);"><i class="fa-regular fa-clock"></i> ${new Date(tk.created_at).toLocaleDateString('es-VE')}</span>
-              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                <button type="button" class="btn-recibo-action" style="background: rgba(14, 165, 233, 0.15); border-color: var(--cyan); color: var(--cyan); font-size: 11.5px; padding: 6px 12px;" onclick="window.openAdminTicketModal('${tk.id}')">
-                  <i class="fa-solid fa-headset"></i> Gestionar Solicitud
-                </button>
-                <button type="button" class="btn-currency-toggle" style="font-size: 11px; padding: 5px 10px; color: var(--emerald); border-color: var(--emerald);" onclick="window.adminUpdateTicketStatus('${tk.id}', 'resuelto')">
-                  <i class="fa-solid fa-check"></i> Resolver
-                </button>
+          `;
+        };
+
+        const renderColCards = (list, emptyMsg) => {
+          if (!list || list.length === 0) {
+            return `<div style="padding: 24px 10px; text-align: center; color: var(--txt-muted); font-size: 11.5px; font-style: italic;">${emptyMsg}</div>`;
+          }
+          return list.map(renderKanbanCard).join('');
+        };
+
+        contentHtml = `
+          <div class="tickets-kanban-board">
+            <!-- COLUMNA 1: ABIERTOS -->
+            <div class="kanban-col" style="border-top: 3px solid var(--amber);">
+              <div class="kanban-col-header">
+                <div class="kanban-col-title" style="color: var(--amber);">
+                  <i class="fa-solid fa-clock"></i> Abiertos
+                </div>
+                <span class="status-pill pill-warning" style="font-size: 10px;">${openTickets.length}</span>
               </div>
+              ${renderColCards(openTickets, 'Sin tickets pendientes de asignación')}
+            </div>
+
+            <!-- COLUMNA 2: EN ATENCIÓN -->
+            <div class="kanban-col" style="border-top: 3px solid var(--cyan);">
+              <div class="kanban-col-header">
+                <div class="kanban-col-title" style="color: var(--cyan);">
+                  <i class="fa-solid fa-screwdriver-wrench"></i> En Atención
+                </div>
+                <span class="status-pill pill-info" style="font-size: 10px;">${inProgressTickets.length}</span>
+              </div>
+              ${renderColCards(inProgressTickets, 'Sin tickets actualmente en atención técnica')}
+            </div>
+
+            <!-- COLUMNA 3: RESUELTOS -->
+            <div class="kanban-col" style="border-top: 3px solid var(--emerald);">
+              <div class="kanban-col-header">
+                <div class="kanban-col-title" style="color: var(--emerald);">
+                  <i class="fa-solid fa-check-circle"></i> Resueltos
+                </div>
+                <span class="status-pill pill-active" style="font-size: 10px;">${resolvedTickets.length}</span>
+              </div>
+              ${renderColCards(resolvedTickets, 'No hay incidencias resueltas aún')}
             </div>
           </div>
         `;
-        ticketsAdminSection.appendChild(itemCard);
-      });
+      } else {
+        // Vista de lista tradicional
+        contentHtml = tickets.map(tk => {
+          const stBadge = tk.status === 'resuelto'
+            ? '<span class="status-pill pill-active"><i class="fa-solid fa-check"></i> Resuelto</span>'
+            : (tk.status === 'en_atencion'
+                ? '<span class="status-pill pill-info"><i class="fa-solid fa-screwdriver-wrench"></i> En Atención</span>'
+                : '<span class="status-pill pill-warning"><i class="fa-solid fa-clock"></i> Abierto</span>');
 
+          const prioColor = tk.priority === 'urgente' ? 'var(--rose)' : (tk.priority === 'alta' ? 'var(--amber)' : 'var(--emerald)');
+
+          return `
+            <div class="data-card" style="padding: 16px 18px; margin-bottom: 10px; border: 1px solid var(--border-subtle);">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px;">
+                <div style="flex: 1; min-width: 260px;">
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    ${stBadge}
+                    <span style="font-size: 10px; font-weight: 800; color: ${prioColor}; text-transform: uppercase; background: rgba(255,255,255,0.04); padding: 2px 6px; border-radius: 4px; border: 1px solid ${prioColor}40;">
+                      Prioridad ${escapeHtml(tk.priority || 'normal')}
+                    </span>
+                    <strong style="color: var(--txt-primary); font-size: 13.5px;">${escapeHtml(tk.tenant_name || 'Inquilino')} (${escapeHtml(tk.unit_code)})</strong>
+                    <span style="font-family: monospace; font-size: 11px; color: var(--txt-muted);">${escapeHtml(tk.ticket_number)}</span>
+                  </div>
+                  <h5 style="font-family: var(--font-heading); font-size: 13.5px; font-weight: 700; color: var(--txt-primary); margin: 6px 0 4px;">${escapeHtml(tk.subject)}</h5>
+                  <p style="font-size: 12px; color: var(--txt-secondary); margin: 0; line-height: 1.5;">${escapeHtml(tk.description)}</p>
+                  ${tk.technician ? `<div style="font-size: 11px; margin-top: 6px; color: var(--amber);"><i class="fa-solid fa-user-gear"></i> <strong>Técnico:</strong> ${escapeHtml(tk.technician)}</div>` : ''}
+                  ${tk.admin_response ? `<div style="font-size: 11px; margin-top: 4px; color: var(--cyan);"><i class="fa-solid fa-comment-dots"></i> <strong>Respuesta:</strong> ${escapeHtml(tk.admin_response)}</div>` : ''}
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                  <span style="font-size: 10.5px; color: var(--txt-muted);"><i class="fa-regular fa-clock"></i> ${new Date(tk.created_at).toLocaleDateString('es-VE')}</span>
+                  <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    <button type="button" class="btn-recibo-action" style="background: rgba(14, 165, 233, 0.15); border-color: var(--cyan); color: var(--cyan); font-size: 11px; padding: 5px 10px;" onclick="window.openAdminTicketModal('${tk.id}')">
+                      <i class="fa-solid fa-headset"></i> Gestionar Solicitud
+                    </button>
+                    ${tk.status !== 'resuelto' ? `<button type="button" class="btn-currency-toggle" style="font-size: 11px; padding: 5px 10px; color: var(--emerald); border-color: var(--emerald);" onclick="window.adminUpdateTicketStatus('${tk.id}', 'resuelto')"><i class="fa-solid fa-check"></i> Resolver</button>` : ''}
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      ticketsAdminSection.innerHTML = headerHtml + contentHtml;
       alertsContainer.appendChild(ticketsAdminSection);
     }
   }
@@ -3817,7 +3994,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.open(url, '_blank');
   };
 
-  // 2. Calculadora de Prórroga Legal (Art. 25 G.O. 40.418) Modal
+  // 2. Calculadora de Prórroga Legal (Art. 26 G.O. 40.418) Modal
   window.openProrrogaModal = function(unitCode) {
     const unit = dbService.getUnits().find(u => u.code === unitCode);
     const modal = document.getElementById('modal-prorroga');
@@ -4020,13 +4197,90 @@ document.addEventListener('DOMContentLoaded', () => {
       if (iconEl && proofToDisplay.type && proofToDisplay.type.includes('pdf')) iconEl.className = 'fa-solid fa-file-pdf';
     }
     
+    // Configurar tratamiento fiscal por defecto según política del inquilino o pago pendiente
+    const tenantFiscalPolicy = activeTenantObj.politica_fiscal_default || 'flexible';
+    let defaultTreatment = 'bs_exento';
+    if (pending && pending.tratamiento_fiscal) {
+      defaultTreatment = pending.tratamiento_fiscal;
+    } else if (pending && pending.igtf_aplica) {
+      defaultTreatment = 'divisa_igtf';
+    } else if (tenantFiscalPolicy === 'siempre_divisa') {
+      defaultTreatment = 'divisa_igtf';
+    } else if (tenantFiscalPolicy === 'siempre_bs') {
+      defaultTreatment = 'bs_exento';
+    } else {
+      const curVal = document.getElementById('pay-currency-select')?.value || 'USD';
+      const metVal = document.getElementById('pay-method')?.value || '';
+      defaultTreatment = (curVal === 'VES' || metVal.includes('Pago Móvil') || metVal.includes('Transferencia Bancaria Bs')) ? 'bs_exento' : 'divisa_igtf';
+    }
+    
     updatePaymentEquivalents();
+    window.onFiscalTreatmentChange(defaultTreatment);
     window.openModal('modal-payment');
+  };
+
+  // Manejo de tratamiento fiscal e IGTF según Decreto 4.647 / G.O. 6.687 / G.O. 40.418
+  window.onFiscalTreatmentChange = function(treatment) {
+    const radioBs = document.getElementById('fiscal-treatment-bs');
+    const radioDivisa = document.getElementById('fiscal-treatment-divisa');
+    const lblBs = document.getElementById('lbl-fiscal-bs');
+    const lblDivisa = document.getElementById('lbl-fiscal-divisa');
+
+    const selectedTreatment = treatment || (radioBs && radioBs.checked ? 'bs_exento' : 'divisa_igtf');
+    if (radioBs && radioDivisa) {
+      radioBs.checked = (selectedTreatment === 'bs_exento');
+      radioDivisa.checked = (selectedTreatment === 'divisa_igtf');
+    }
+    if (lblBs && lblDivisa) {
+      if (selectedTreatment === 'bs_exento') {
+        lblBs.classList.add('active');
+        lblBs.style.border = '1px solid var(--emerald)';
+        lblBs.style.background = 'rgba(16, 185, 129, 0.12)';
+        lblBs.style.color = 'var(--txt-primary)';
+        lblDivisa.classList.remove('active');
+        lblDivisa.style.border = '1px solid var(--border-subtle)';
+        lblDivisa.style.background = 'transparent';
+        lblDivisa.style.color = 'var(--txt-secondary)';
+      } else {
+        lblDivisa.classList.add('active');
+        lblDivisa.style.border = '1px solid var(--amber)';
+        lblDivisa.style.background = 'rgba(245, 158, 11, 0.12)';
+        lblDivisa.style.color = 'var(--txt-primary)';
+        lblBs.classList.remove('active');
+        lblBs.style.border = '1px solid var(--border-subtle)';
+        lblBs.style.background = 'transparent';
+        lblBs.style.color = 'var(--txt-secondary)';
+      }
+    }
+
+    const rawAmount = parseFloat(document.getElementById('input-pago-monto-usd')?.value || document.getElementById('pay-amount')?.value || 0);
+    const cur = document.getElementById('pay-currency-select')?.value || 'USD';
+    const medio = document.getElementById('select-medio-pago')?.value || document.getElementById('pay-method')?.value || '';
+    const liquidarComoBs = (selectedTreatment === 'bs_exento');
+
+    const usdEq = (typeof financialEngine !== 'undefined' && financialEngine.convert) 
+      ? financialEngine.convert(rawAmount, cur, 'USD') 
+      : rawAmount;
+
+    const engine = window.SeniatEngine || (typeof SeniatEngine !== 'undefined' ? SeniatEngine : null);
+    if (!engine) return;
+
+    const result = engine.calcularLiquidacionFiscal(usdEq, medio, liquidarComoBs);
+
+    const igtfBox = document.getElementById('resumen-igtf-monto');
+    const totalBox = document.getElementById('resumen-total-pagar');
+    const baseBox = document.getElementById('resumen-base-usd');
+    const leyendaBox = document.getElementById('leyenda-fiscal-recibo');
+
+    if (baseBox) baseBox.innerText = `$${result.montoBaseUsd.toFixed(2)}`;
+    if (igtfBox) igtfBox.innerText = `$${result.igtfMontoUsd.toFixed(2)} (${result.igtfAplica ? '3%' : '0%'})`;
+    if (totalBox) totalBox.innerText = `$${result.totalPagarUsd.toFixed(2)}`;
+    if (leyendaBox) leyendaBox.innerText = result.conceptoFiscal;
   };
 
   // Actualización dinámica de equivalencias y campos condicionales en el modal de pago
   window.updatePaymentEquivalents = function() {
-    const amount = parseFloat(document.getElementById('pay-amount').value) || 0;
+    const amount = parseFloat(document.getElementById('pay-amount')?.value || document.getElementById('input-pago-monto-usd')?.value || 0);
     const cur = document.getElementById('pay-currency-select').value;
     const method = document.getElementById('pay-method').value;
 
@@ -4060,6 +4314,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const txidGroup = document.getElementById('pay-txid-group');
     if (txidGroup) {
       txidGroup.style.display = isCrypto ? 'block' : 'none';
+    }
+
+    // Recalcular fiscalmente con la selección activa
+    const activeFiscalRadio = document.querySelector('input[name="fiscal_treatment"]:checked');
+    const currentTreatment = activeFiscalRadio ? activeFiscalRadio.value : (cur === 'VES' || (!isZelle && !isCrypto && !method.includes('Efectivo USD') && !method.includes('Transferencia Divisas')) ? 'bs_exento' : 'divisa_igtf');
+    if (typeof window.onFiscalTreatmentChange === 'function') {
+      window.onFiscalTreatmentChange(currentTreatment);
     }
   };
 
@@ -4147,8 +4408,19 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       try {
-        // Crear snapshot financiero
+        // Crear snapshot financiero y liquidación fiscal SENIAT (G.O. 6.687 / G.O. 40.418)
         const snapshot = financialEngine.createPaymentSnapshot(amount, currency);
+        const fiscalRadio = document.querySelector('input[name="fiscal_treatment"]:checked');
+        const selectedFiscalTreatment = fiscalRadio ? fiscalRadio.value : 'bs_exento';
+        const seniat = window.SeniatEngine || (typeof SeniatEngine !== 'undefined' ? SeniatEngine : null);
+        const baseUsd = financialEngine.convert(amount, currency, 'USD');
+        const fiscalLiq = seniat ? seniat.calcularLiquidacionFiscal(baseUsd, method, selectedFiscalTreatment === 'bs_exento') : {
+          igtfAplica: selectedFiscalTreatment === 'divisa_igtf',
+          igtfMontoUsd: selectedFiscalTreatment === 'divisa_igtf' ? Math.round(baseUsd * 0.03 * 100) / 100 : 0,
+          totalPagarUsd: baseUsd + (selectedFiscalTreatment === 'divisa_igtf' ? Math.round(baseUsd * 0.03 * 100) / 100 : 0),
+          tasaBcv: financialEngine.getRates().VES,
+          conceptoFiscal: selectedFiscalTreatment === 'divisa_igtf' ? 'Operación en divisa sujeta a percepción de 3% IGTF (G.O. 6.687)' : 'Operación exenta de IGTF conforme a Decreto N° 4.647 / Providencia SNAT/2022/000013'
+        };
 
         const paymentPayload = {
           payment_method: method,
@@ -4163,6 +4435,12 @@ document.addEventListener('DOMContentLoaded', () => {
           origin_name: senderName,
           zelle_holder: zelleHolder,
           zelle_email: zelleEmail,
+          tratamiento_fiscal: selectedFiscalTreatment,
+          igtf_aplica: fiscalLiq.igtfAplica,
+          igtf_monto_usd: fiscalLiq.igtfMontoUsd,
+          tasa_bcv_usada: fiscalLiq.tasaBcv,
+          concepto_fiscal: fiscalLiq.conceptoFiscal,
+          monto_total_con_igtf_usd: fiscalLiq.totalPagarUsd,
           snapshot: snapshot,
           receipt_proof: currentUploadedProof,
           submitted_by: AuthGuard.currentUser()?.identifier
@@ -4440,6 +4718,34 @@ document.addEventListener('DOMContentLoaded', () => {
     window.updateTemplateLivePreview();
   };
 
+  window.activeTemplatePreviewChannel = 'whatsapp';
+
+  window.setTemplatePreviewChannel = function(channel) {
+    window.activeTemplatePreviewChannel = channel;
+    const tabs = document.querySelectorAll('#template-channel-tabs .btn-channel-tab');
+    tabs.forEach(tab => {
+      if (tab.getAttribute('data-channel') === channel) {
+        tab.classList.add('active');
+      } else {
+        tab.classList.remove('active');
+      }
+    });
+
+    const channelNames = {
+      whatsapp: 'WhatsApp',
+      telegram: 'Telegram',
+      email: 'Correo Electrónico',
+      sms: 'SMS'
+    };
+    const cName = channelNames[channel] || 'WhatsApp';
+    const lblPrev = document.getElementById('lbl-preview-preventive');
+    const lblMora = document.getElementById('lbl-preview-mora');
+    if (lblPrev) lblPrev.textContent = `Vista Previa (${cName}):`;
+    if (lblMora) lblMora.textContent = `Vista Previa (${cName}):`;
+
+    window.updateTemplateLivePreview();
+  };
+
   window.updateTemplateLivePreview = function() {
     const sampleData = {
       '{inquilino}': 'Inversiones FarmaPlus C.A.',
@@ -4456,15 +4762,139 @@ document.addEventListener('DOMContentLoaded', () => {
       '{total_con_mora_bs}': 'Bs. 17,357.76'
     };
 
+    const channel = window.activeTemplatePreviewChannel || 'whatsapp';
+
     const renderSample = (tpl) => {
       if (!tpl || !tpl.trim()) {
-        return '<div style="padding: 16px; color: var(--txt-muted); font-style: italic; text-align: center;">Escriba una plantilla para visualizar la simulación de WhatsApp...</div>';
+        return '<div style="padding: 16px; color: var(--txt-muted); font-style: italic; text-align: center;">Escriba una plantilla para visualizar la simulación...</div>';
       }
+
+      if (channel === 'telegram') {
+        let res = escapeHtml(tpl);
+        for (const [key, val] of Object.entries(sampleData)) {
+          res = res.split(key).join(`<span class="tg-var-pill">${val}</span>`);
+        }
+        res = res.replace(/\*(.*?)\*/g, '<strong style="font-weight: 800;">$1</strong>');
+        res = res.replace(/\n/g, '<br>');
+
+        return `
+          <div class="telegram-chat-preview-card">
+            <div class="tg-preview-header">
+              <div class="tg-sender-info">
+                <div class="tg-avatar-crest">
+                  <i class="fa-brands fa-telegram"></i>
+                </div>
+                <div>
+                  <div style="font-size: 12.5px; font-weight: 800; display: flex; align-items: center; gap: 5px;">
+                    <span>CC Mario Sánchez Bot</span>
+                    <span class="badge-legal-pill" style="font-size: 9px; padding: 1px 5px; background: rgba(36,129,204,0.25); color: #38bdf8; border-color: rgba(36,129,204,0.5);">BOT OFICIAL</span>
+                  </div>
+                  <div style="font-size: 10px; opacity: 0.85;">@CCMSanchezBot • Notificaciones en tiempo real</div>
+                </div>
+              </div>
+              <div style="font-size: 11px; opacity: 0.8;">
+                <i class="fa-solid fa-paper-plane" style="font-size: 10px;"></i> Telegram API
+              </div>
+            </div>
+            <div class="tg-bubble-body">
+              <div class="tg-msg-bubble">
+                <div>${res}</div>
+                <div class="wa-time-meta" style="color: #6c7883;">
+                  <span>10:42 AM</span>
+                  <i class="fa-solid fa-check-double" style="color: #53bdeb; font-size: 10px; margin-left: 4px;"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      if (channel === 'email') {
+        let res = escapeHtml(tpl);
+        for (const [key, val] of Object.entries(sampleData)) {
+          res = res.split(key).join(`<span class="email-var-pill">${val}</span>`);
+        }
+        res = res.replace(/\*(.*?)\*/g, '<strong style="font-weight: 800;">$1</strong>');
+        res = res.replace(/\n/g, '<br>');
+
+        return `
+          <div class="email-preview-card">
+            <div class="email-preview-header">
+              <div class="email-meta-row">
+                <span class="email-meta-label">De:</span>
+                <span style="color: var(--txt-primary); font-weight: 600;">Administración CC Mario Sánchez &lt;cobranzas@ccmariosanchez.com&gt;</span>
+              </div>
+              <div class="email-meta-row">
+                <span class="email-meta-label">Para:</span>
+                <span style="color: var(--txt-primary); font-weight: 600;">Inversiones FarmaPlus C.A. &lt;administracion@farmaplus.com&gt;</span>
+              </div>
+              <div class="email-meta-row">
+                <span class="email-meta-label">Asunto:</span>
+                <span style="color: var(--amber); font-weight: 700;">[NOTIFICACIÓN OFICIAL] Estado de Cuenta y Cobranza - CC Mario Sánchez</span>
+              </div>
+            </div>
+            <div class="email-body-content">
+              <div style="display: flex; align-items: center; gap: 10px; padding-bottom: 12px; margin-bottom: 14px; border-bottom: 1px solid var(--border-subtle);">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(245,158,11,0.15); display: flex; align-items: center; justify-content: center; color: var(--amber); font-weight: 900; font-size: 12px;">
+                  MS
+                </div>
+                <div>
+                  <strong style="font-family: var(--font-heading); font-size: 13px; color: var(--txt-primary); text-transform: uppercase;">Centro Comercial Mario Sánchez</strong>
+                  <div style="font-size: 10.5px; color: var(--txt-muted);">Dpto. de Cobranzas, Legal & Facturación Oficial</div>
+                </div>
+              </div>
+              <div style="margin-bottom: 16px;">${res}</div>
+              <div style="margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--border-subtle); font-size: 11px; color: var(--txt-muted); line-height: 1.5;">
+                <strong>Centro Comercial Mario Sánchez, C.A. • RIF J-30211544-2</strong><br>
+                Avenida Municipal, Sector Casco Central, Puerto La Cruz, Edo. Anzoátegui.<br>
+                Este es un mensaje institucional automatizado por la plataforma CCMS ERP.
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      if (channel === 'sms') {
+        let res = escapeHtml(tpl);
+        for (const [key, val] of Object.entries(sampleData)) {
+          res = res.split(key).join(`<span class="sms-var-pill">${val}</span>`);
+        }
+        res = res.replace(/\*(.*?)\*/g, '<strong>$1</strong>');
+        res = res.replace(/\n/g, '<br>');
+
+        const rawCharCount = tpl.length;
+        const smsSegments = Math.ceil(rawCharCount / 160) || 1;
+
+        return `
+          <div class="sms-preview-card">
+            <div class="sms-preview-header">
+              <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--txt-primary);">
+                <i class="fa-solid fa-comment-sms" style="color: var(--cyan);"></i>
+                <span>CC-SANCHEZ</span>
+              </div>
+              <div style="font-size: 10.5px; color: var(--txt-muted);">
+                <i class="fa-solid fa-signal"></i> 4G • Movistar / Digitel
+              </div>
+            </div>
+            <div class="sms-bubble-body">
+              <div class="sms-msg-bubble">
+                <div>${res}</div>
+                <div style="font-size: 10px; color: var(--txt-muted); text-align: right; margin-top: 6px;">10:42 AM</div>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; color: var(--txt-muted); padding: 0 4px;">
+                <span><i class="fa-solid fa-calculator"></i> ${rawCharCount} caracteres</span>
+                <span class="badge-legal-pill" style="font-size: 9.5px; background: rgba(14,165,233,0.12); color: var(--cyan); border-color: rgba(14,165,233,0.3);">${smsSegments} SMS (${smsSegments === 1 ? '160 car. máx' : smsSegments * 160 + ' car. máx'})</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Default: WhatsApp
       let res = escapeHtml(tpl);
       for (const [key, val] of Object.entries(sampleData)) {
         res = res.split(key).join(`<span class="wa-var-pill">${val}</span>`);
       }
-      // Reemplazo básico de asteriscos para simular negrita en WhatsApp
       res = res.replace(/\*(.*?)\*/g, '<strong style="font-weight: 800;">$1</strong>');
       res = res.replace(/\n/g, '<br>');
 
@@ -7711,7 +8141,10 @@ document.addEventListener('DOMContentLoaded', () => {
           ${receipt.txid ? `<div style="grid-column: 1 / -1;"><strong>Hash Cripto TxID:</strong> <span style="font-family: monospace; font-size: 10px; color: #047857; word-break: break-all;">${escapeHtml(receipt.txid)}</span></div>` : ''}
         </div>
 
-        <!-- DETALLE DE CONCEPTOS ARRENDATICIOS CON IGTF DESGLOSADO -->
+        <!-- DESGLOSE FISCAL OFICIAL CON CITAS CANÓNICAS (G.O. 40.418 Y G.O. 6.687) -->
+        ${(window.ContractViewer && typeof window.ContractViewer.renderDesgloseReciboHTML === 'function')
+          ? window.ContractViewer.renderDesgloseReciboHTML(receipt, receipt.liquidacionFiscal)
+          : `
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 11.5px;">
           <thead>
             <tr style="background: #f1f5f9; border-top: 1px solid #cbd5e1; border-bottom: 2px solid #cbd5e1;">
@@ -7721,7 +8154,7 @@ document.addEventListener('DOMContentLoaded', () => {
           </thead>
           <tbody>
             <tr style="border-bottom: 1px solid #e2e8f0;">
-              <td style="padding: 6px 8px;">Canon Fijo Mensual de Arrendamiento (CAF Art. 32 G.O. 40.418)</td>
+              <td style="padding: 6px 8px;">Canon Fijo Mensual de Arrendamiento (CAF Art. 38 G.O. 40.418)</td>
               <td style="padding: 6px 8px; text-align: right;">$${rentVal.toFixed(2)}</td>
             </tr>
             <tr style="border-bottom: 1px solid #e2e8f0;">
@@ -7746,8 +8179,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         <!-- LEYENDA TRIBUTARIA SENIAT G.O. 6.687 & LEY DE ARRENDAMIENTO -->
         <div style="font-size: 9.5px; color: #64748b; margin-bottom: 12px; font-style: italic; line-height: 1.35; background: #f8fafc; padding: 6px 10px; border-radius: 4px; border: 1px dashed #cbd5e1;">
-          ${igtfVal > 0 ? '• Alícuota 3% IGTF percibida conforme a la G.O. 6.687 sobre operaciones en divisas/criptoactivos sin intermediación del sistema financiero nacional. ' : ''}Comprobante oficial emitido bajo el marco del Decreto Ley N° 929 de Regulación del Arrendamiento Inmobiliario para el Uso Comercial (Gaceta Oficial N° 40.418) y las providencias administrativas del SENIAT.
+          ${igtfVal > 0 ? '• Alícuota 3% IGTF percibida conforme a la G.O. 6.687 sobre operaciones en divisas/criptoactivos sin intermediación del sistema financiero nacional. ' : ''}Base imponible y régimen tarifario regulados por el Decreto con Rango, Valor y Fuerza de Ley de Regulación del Arrendamiento Inmobiliario para el Uso Comercial (G.O. 40.418, Art. 38 y Convenio Cambiario N° 1 BCV). Retención y régimen de IGTF aplicados conforme a la G.O. Extraordinaria 6.687 y Providencias Administrativas del SENIAT.
         </div>
+        `}
 
         <!-- SNAPSHOT MULTIMONEDA A LA FECHA VALOR -->
         <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 8px 12px; font-size: 10.5px; margin-bottom: 12px;">

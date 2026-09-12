@@ -1356,7 +1356,7 @@
               <option value="cuota">Vencimiento de Cuotas</option>
               <option value="condominio">Corte de Condominio</option>
               <option value="contrato">Vencimiento de Contratos</option>
-              <option value="prorroga">Prórrogas Legales (Art. 25)</option>
+              <option value="prorroga">Prórrogas Legales (Art. 26)</option>
               <option value="asamblea">Asambleas & Reuniones</option>
               <option value="mantenimiento">Mantenimientos Preventivos</option>
             </select>
@@ -1627,12 +1627,32 @@
             </div>
           </div>
 
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; padding: 10px 14px; background: rgba(255,255,255,0.02); border-radius: 10px; border: 1px solid var(--border-subtle);">
+            <span style="font-size: 11px; font-weight: 800; color: var(--txt-secondary); text-transform: uppercase; letter-spacing: 0.5px;">
+              <i class="fa-solid fa-satellite-dish" style="color: var(--amber);"></i> Canal de Notificación & Vista Previa
+            </span>
+            <div class="template-channel-switcher" id="template-channel-tabs" style="margin-bottom: 0;">
+              <button type="button" class="btn-channel-tab active" data-channel="whatsapp" onclick="window.setTemplatePreviewChannel('whatsapp')">
+                <i class="fa-brands fa-whatsapp" style="color: #25d366;"></i> WhatsApp
+              </button>
+              <button type="button" class="btn-channel-tab" data-channel="telegram" onclick="window.setTemplatePreviewChannel('telegram')">
+                <i class="fa-brands fa-telegram" style="color: #2481cc;"></i> Telegram
+              </button>
+              <button type="button" class="btn-channel-tab" data-channel="email" onclick="window.setTemplatePreviewChannel('email')">
+                <i class="fa-regular fa-envelope" style="color: var(--amber);"></i> Correo
+              </button>
+              <button type="button" class="btn-channel-tab" data-channel="sms" onclick="window.setTemplatePreviewChannel('sms')">
+                <i class="fa-solid fa-comment-sms" style="color: var(--cyan);"></i> SMS
+              </button>
+            </div>
+          </div>
+
           <form id="form-config-mensajes" data-submit="saveMensajesConfig(event)" style="display: flex; flex-direction: column; gap: 16px;">
             <div class="form-group">
-              <label><i class="fa-solid fa-comment-dots" style="color: var(--amber);"></i> Plantilla: Aviso Preventivo de Cobro (WhatsApp / Correo)</label>
+              <label><i class="fa-solid fa-comment-dots" style="color: var(--amber);"></i> Plantilla: Aviso Preventivo de Cobro</label>
               <textarea class="form-control" id="cfg-msg-preventive" rows="4" style="font-family: monospace; font-size: 12px; resize: vertical;" data-input="updateTemplateLivePreview()" data-focus="window.activeTemplateTextarea = this" required></textarea>
               <div style="margin-top: 4px;">
-                <span style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Vista Previa del Mensaje:</span>
+                <span style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;" id="lbl-preview-preventive">Vista Previa (WhatsApp):</span>
                 <div id="preview-msg-preventive" class="template-preview-box"></div>
               </div>
             </div>
@@ -1641,7 +1661,7 @@
               <label><i class="fa-solid fa-triangle-exclamation" style="color: var(--rose);"></i> Plantilla: Alerta de Retraso o Mora Legal (G.O. 40.418)</label>
               <textarea class="form-control" id="cfg-msg-mora" rows="4" style="font-family: monospace; font-size: 12px; resize: vertical;" data-input="updateTemplateLivePreview()" data-focus="window.activeTemplateTextarea = this" required></textarea>
               <div style="margin-top: 4px;">
-                <span style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Vista Previa del Mensaje:</span>
+                <span style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;" id="lbl-preview-mora">Vista Previa (WhatsApp):</span>
                 <div id="preview-msg-mora" class="template-preview-box"></div>
               </div>
             </div>
@@ -1770,7 +1790,7 @@
                 </tr>
                 <tr>
                   <td><strong style="color: var(--cyan);"><i class="fa-solid fa-scale-balanced"></i> Legal & Contratos</strong></td>
-                  <td>Contratos mercantiles, adendas, prórrogas Art. 25 G.O. 40.418, solvencias y avisos formales.</td>
+                  <td>Contratos mercantiles, adendas, prórrogas Art. 26 G.O. 40.418, solvencias y avisos formales.</td>
                   <td>Cobranzas, estados de cuenta, facturación y directorio.</td>
                   <td><span style="color: var(--rose);">Bloqueado:</span> No concilia pagos bancarios ni altera kardex de almacén.</td>
                   <td><code>legal@ccmariosanchez.com</code></td>
@@ -2079,6 +2099,41 @@
           <option value="Cripto USDT (TRC20)">Cripto USDT (Red TRON - TRC20)</option>
           <option value="Cripto Binance Pay">Binance Pay (ID de Pago)</option>
         </select>
+      </div>
+
+      <!-- TRATAMIENTO FISCAL & IGTF (SENIAT G.O. 6.687 / G.O. 40.418) -->
+      <div class="form-group fiscal-treatment-container" style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+        <label style="font-weight: 700; font-size: 11.5px; color: var(--txt-primary); display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <span><i class="fa-solid fa-scale-balanced" style="color: var(--emerald);"></i> Tratamiento Fiscal / IGTF (SENIAT)</span>
+          <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: var(--emerald); font-size: 9.5px; padding: 2px 6px; border-radius: 10px;">G.O. 6.687</span>
+        </label>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <label id="lbl-fiscal-bs" class="pay-origin-pill active" style="cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 11px; padding: 7px 10px; border: 1px solid var(--emerald); border-radius: 6px; background: rgba(16, 185, 129, 0.12); color: var(--txt-primary); font-weight: 600;">
+            <input type="radio" name="fiscal_treatment" id="fiscal-treatment-bs" value="bs_exento" checked onchange="window.onFiscalTreatmentChange(this.value)" data-change="onFiscalTreatmentChange(this.value)" style="accent-color: var(--emerald); cursor: pointer;">
+            <span>Pago en Bs / Exento (0%)</span>
+          </label>
+          <label id="lbl-fiscal-divisa" class="pay-origin-pill" style="cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 11px; padding: 7px 10px; border: 1px solid var(--border-subtle); border-radius: 6px; background: transparent; color: var(--txt-secondary); font-weight: 600;">
+            <input type="radio" name="fiscal_treatment" id="fiscal-treatment-divisa" value="divisa_igtf" onchange="window.onFiscalTreatmentChange(this.value)" data-change="onFiscalTreatmentChange(this.value)" style="accent-color: var(--amber); cursor: pointer;">
+            <span>Divisa / IGTF (3%)</span>
+          </label>
+        </div>
+        <div id="fiscal-breakdown-box" style="margin-top: 10px; font-size: 11.5px; color: var(--txt-secondary); background: var(--bg-card); border-radius: 6px; padding: 8px 12px; border-left: 3px solid var(--emerald);">
+          <div style="display: flex; justify-content: space-between;">
+            <span>Monto Base (USD):</span>
+            <strong id="resumen-base-usd" style="color: var(--txt-primary);">$0.00</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-top: 2px;">
+            <span>IGTF (3%):</span>
+            <strong id="resumen-igtf-monto" style="color: var(--amber);">$0.00</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-top: 2px; font-weight: 700; color: var(--txt-primary);">
+            <span>Total a Liquidar:</span>
+            <strong id="resumen-total-pagar" style="color: var(--emerald);">$0.00</strong>
+          </div>
+          <div id="leyenda-fiscal-recibo" style="margin-top: 6px; font-size: 10px; color: var(--txt-muted); font-style: italic; line-height: 1.35;">
+            Liquidación en Bolívares exenta de IGTF conforme al Decreto N° 4.647 y Providencia SNAT/2022/000013. Tasa Oficial BCV.
+          </div>
+        </div>
       </div>
 
       <!-- SELECCIÓN DE BANCO EMISOR Y ORIGEN DEL PAGO (ESTILO CASHEA) -->
@@ -2401,7 +2456,7 @@
         </div>
 
         <div style="margin-top: 12px; font-size: 12px; color: var(--txt-secondary); border-top: 1px dashed var(--border-subtle); padding-top: 10px;">
-          <i class="fa-solid fa-clock-rotate-left" style="color: var(--amber);"></i> Prórroga Legal Asignada (Art. 25): 
+          <i class="fa-solid fa-clock-rotate-left" style="color: var(--amber);"></i> Prórroga Legal Asignada (Art. 26): 
           <span id="dossier-legal-extension" style="color: var(--amber); font-weight: 700;"></span>
         </div>
 
@@ -2784,7 +2839,7 @@
   </div>
 </div>
 
-<!-- MODAL 3: CALCULADORA LEGAL DE PRÓRROGA (ART. 25 G.O. 40.418) -->
+<!-- MODAL 3: CALCULADORA LEGAL DE PRÓRROGA (ART. 26 G.O. 40.418) -->
 <div class="modal-overlay" id="modal-prorroga">
   <div class="modal-window">
     <div class="modal-header">
@@ -2793,7 +2848,7 @@
     </div>
     <div class="modal-body">
       <p style="font-size: 12.5px; color: var(--txt-secondary);">
-        Determinación obligatoria de permanencia legal conforme al <strong>Artículo 25 de la Ley de Arrendamiento Inmobiliario para Uso Comercial (Gaceta Oficial N° 40.418)</strong> para la unidad <strong id="pror-unit-code" style="color: var(--amber);"></strong>.
+        Determinación obligatoria de permanencia legal conforme al <strong>Artículo 26 de la Ley de Arrendamiento Inmobiliario para Uso Comercial (Gaceta Oficial N° 40.418)</strong> para la unidad <strong id="pror-unit-code" style="color: var(--amber);"></strong>.
       </p>
 
       <div class="form-group">
