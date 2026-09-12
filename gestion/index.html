@@ -220,6 +220,45 @@
           <button class="cur-pill" data-cur="USDT"><i class="fa-solid fa-coins" style="font-size: 10px; color: var(--emerald);"></i> USDT</button>
         </div>
 
+        <!-- BOTÓN Y CAMPANA DE NOTIFICACIONES (ESTILO FACEBOOK / SAAS PRO) -->
+        <div class="notification-bell-container" id="header-notif-container">
+          <button type="button" class="header-notification-btn" id="header-notification-bell" onclick="window.toggleNotificationFlyout(event)" title="Notificaciones & Novedades">
+            <i class="fa-solid fa-bell"></i>
+            <span class="notification-pulse-dot" id="header-notif-dot"></span>
+            <span class="notification-badge-count" id="header-notif-badge">3</span>
+          </button>
+
+          <!-- FLYOUT DE NOTIFICACIONES -->
+          <div class="notification-flyout" id="header-notification-flyout">
+            <div class="notif-flyout-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-bell" style="color: var(--amber);"></i>
+                <h4 style="margin: 0; font-family: var(--font-heading); font-size: 14px; font-weight: 800; color: var(--txt-primary);">Notificaciones</h4>
+                <span class="notif-count-pill" id="flyout-unread-count">3 nuevas</span>
+              </div>
+              <button type="button" class="btn-mark-all-read" onclick="window.markAllNotificationsRead()">
+                <i class="fa-solid fa-check-double"></i> Marcar leídas
+              </button>
+            </div>
+
+            <div class="notif-flyout-tabs">
+              <button type="button" class="notif-tab-btn active" id="notif-tab-all" onclick="window.filterFlyoutNotifications('all')">Todas</button>
+              <button type="button" class="notif-tab-btn" id="notif-tab-cobranzas" onclick="window.filterFlyoutNotifications('cobranzas')">Cobranzas</button>
+              <button type="button" class="notif-tab-btn" id="notif-tab-servicio" onclick="window.filterFlyoutNotifications('servicio')">Servicio</button>
+            </div>
+
+            <div class="notif-flyout-body" id="notif-flyout-list">
+              <!-- Inyectado dinámicamente por app.js -->
+            </div>
+
+            <div class="notif-flyout-footer">
+              <a href="javascript:void(0)" onclick="window.goToBuzonAlertas()" class="notif-view-all-link">
+                <i class="fa-solid fa-inbox"></i> Ver Buzón de Notificaciones Completo
+              </a>
+            </div>
+          </div>
+        </div>
+
         <!-- BOTÓN DE ACCESO DIRECTO A CONFIGURACIÓN (SOLO ADMIN) -->
         <button class="btn-theme-toggle" data-roles="admin" data-click="openConfigTab()" title="Configuración de la App (Cuotas, Alertas y Mensajes)">
           <i class="fa-solid fa-gear" style="color: var(--amber);"></i>
@@ -729,31 +768,31 @@
         </div>
 
         <!-- TABLA DE HISTORIAL DE CUOTAS Y RECIBOS OFICIALES -->
-        <div class="data-card" style="padding: 20px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+        <div class="tenant-invoices-card">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
             <div>
               <h3 style="font-family: var(--font-heading); font-size: 15px; font-weight: 800; color: var(--txt-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
                 <i class="fa-solid fa-clock-rotate-left" style="color: var(--amber);"></i> Historial de Cuotas, Pagos & Recibos Arrendaticios
               </h3>
-              <div style="font-size: 12px; color: var(--txt-secondary);">Recibos digitales inmutables con sello de verificación criptográfico SHA-256 (G.O. 40.418)</div>
+              <div style="font-size: 12px; color: var(--txt-secondary); margin-top: 2px;">Recibos digitales inmutables con sello de verificación criptográfico SHA-256 (G.O. 40.418)</div>
             </div>
             <button type="button" class="btn-onboarding-cta" onclick="window.openTenantReportPaymentModal()" style="font-size: 12px; padding: 6px 14px; background: var(--emerald); border-color: var(--emerald); color: #fff;">
               <i class="fa-solid fa-plus"></i> Reportar Nuevo Pago
             </button>
           </div>
 
-          <div class="table-responsive">
+          <div class="table-responsive" style="border-radius: 8px; overflow: hidden; border: 1px solid var(--border-subtle);">
             <table class="data-table" id="tenant-profile-invoices-table">
               <thead>
                 <tr>
-                  <th>N° Control / Recibo</th>
-                  <th>Período / Concepto</th>
-                  <th>Monto USD</th>
-                  <th>Monto Bs. (BCV)</th>
-                  <th>Referencia Bancaria</th>
-                  <th>Sello SHA-256</th>
-                  <th>Estado</th>
-                  <th>Acción</th>
+                  <th style="width: 14%;">N° Control / Recibo</th>
+                  <th style="width: 20%;">Período / Concepto</th>
+                  <th style="width: 13%;">Monto USD</th>
+                  <th style="width: 15%;">Monto Bs. (BCV)</th>
+                  <th style="width: 13%;">Referencia</th>
+                  <th style="width: 11%;">Sello SHA-256</th>
+                  <th style="width: 8%;">Estado</th>
+                  <th style="width: 6%; text-align: center;">Acción</th>
                 </tr>
               </thead>
               <tbody id="tenant-profile-invoices-body">
@@ -1313,6 +1352,13 @@
                 <i class="fa-solid fa-chevron-right"></i>
               </button>
             </div>
+
+            <!-- BUSCADOR INTERACTIVO Y SALTO DE FECHAS -->
+            <div class="calendar-search-box" id="cal-search-box-wrap" title="Buscar por fecha, local comercial o tipo de cuota">
+              <i class="fa-solid fa-magnifying-glass" style="color: var(--amber); font-size: 12px;"></i>
+              <input type="text" id="cal-search-input" placeholder="Buscar fecha, local o evento..." oninput="window.handleCalendarSearchInput(this.value)">
+            </div>
+
             <div class="calendar-legend-container" style="display: flex; align-items: center; gap: 12px; font-size: 11.5px; flex-wrap: wrap;">
               <div style="display: flex; align-items: center; gap: 5px;"><span style="width: 10px; height: 10px; border-radius: 2px; background: var(--amber);"></span> <span>Vencimiento Cuota</span></div>
               <div style="display: flex; align-items: center; gap: 5px;"><span style="width: 10px; height: 10px; border-radius: 2px; background: var(--purple);"></span> <span>Corte Condominio</span></div>
@@ -3140,6 +3186,45 @@
   </div>
 </div>
 
+<!-- MODAL 10B: RESUMEN AGRUPADO DE EVENTOS Y CUOTAS POR DÍA (FIN A LA TORRE DE EVENTOS) -->
+<div class="modal-overlay" id="modal-calendar-day-summary">
+  <div class="modal-window" style="max-width: 680px; max-height: 85vh; display: flex; flex-direction: column;">
+    <div class="modal-header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div class="kpi-icon-badge badge-amber" style="width: 38px; height: 38px; font-size: 16px;">
+          <i class="fa-solid fa-calendar-day"></i>
+        </div>
+        <div>
+          <h3 class="modal-title" id="day-summary-modal-title" style="margin: 0; font-size: 16px;">Vencimientos & Eventos del Día</h3>
+          <span id="day-summary-modal-subtitle" style="font-size: 11.5px; color: var(--txt-muted);">Cánones, cuotas y actividades programadas</span>
+        </div>
+      </div>
+      <button class="modal-close" onclick="window.closeDayEventsModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <!-- CONTROLES Y BUSCADOR INTERNO DEL DÍA -->
+    <div style="padding: 12px 20px; background: rgba(0,0,0,0.03); border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: 8px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 6px 12px; flex: 1; min-width: 200px;">
+        <i class="fa-solid fa-magnifying-glass" style="color: var(--txt-muted); font-size: 12px;"></i>
+        <input type="text" id="day-summary-search" placeholder="Filtrar por local, inquilino o cuota..." oninput="window.filterDayEventsList(this.value)" style="background: transparent; border: none; outline: none; color: var(--txt-primary); font-size: 12px; width: 100%;">
+      </div>
+      <span class="badge-legal-pill" id="day-summary-total-badge" style="background: rgba(245,158,11,0.12); color: var(--amber); border-color: rgba(245,158,11,0.35);">
+        39 Vencimientos
+      </span>
+    </div>
+
+    <!-- LISTADO DE EVENTOS DEL DÍA -->
+    <div class="modal-body" id="day-summary-events-container" style="padding: 16px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; max-height: 55vh;">
+      <!-- Inyectado dinámicamente -->
+    </div>
+
+    <div class="modal-footer" style="padding: 12px 20px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+      <span style="font-size: 11px; color: var(--txt-muted);">CCMS ERP • Control de Vencimientos</span>
+      <button type="button" class="btn-currency-toggle" onclick="window.closeDayEventsModal()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL 10B: AGREGAR NUEVO RECORDATORIO / EVENTO EN CALENDARIO -->
 <div class="modal-overlay" id="modal-add-calendar-event">
   <div class="modal-window" style="max-width: 520px;">
@@ -3241,13 +3326,13 @@
       <button class="modal-close" data-click="closeInventoryModal()"><i class="fa-solid fa-xmark"></i></button>
     </div>
 
-    <!-- TABS INTERNOS DEL MODAL: NUEVO CONSUMIBLE vs REGISTRO DE MOVIMIENTO KARDEX -->
-    <div style="display: flex; border-bottom: 1px solid var(--border-subtle); padding: 0 20px; background: rgba(0,0,0,0.15);">
-      <button type="button" id="tab-btn-modal-consumible" data-click="switchInvModalMode('consumible')" style="padding: 10px 16px; font-size: 12px; font-weight: 700; border: none; background: transparent; color: var(--amber); border-bottom: 2px solid var(--amber); cursor: pointer;">
-        <i class="fa-solid fa-dolly"></i> Registrar Insumo
+    <!-- TABS INTERNOS DEL MODAL: SEGMENTED PILL CONTROL DE ALTA GAMA -->
+    <div class="modal-segmented-bar">
+      <button type="button" class="modal-segment-btn active" id="tab-btn-modal-consumible" data-click="switchInvModalMode('consumible')">
+        <i class="fa-solid fa-cart-shopping"></i> <span>Registrar Insumo</span>
       </button>
-      <button type="button" id="tab-btn-modal-kardex" data-click="switchInvModalMode('kardex')" style="padding: 10px 16px; font-size: 12px; font-weight: 700; border: none; background: transparent; color: var(--txt-muted); border-bottom: 2px solid transparent; cursor: pointer;">
-        <i class="fa-solid fa-right-left"></i> Asentar Entrada / Salida
+      <button type="button" class="modal-segment-btn" id="tab-btn-modal-kardex" data-click="switchInvModalMode('kardex')">
+        <i class="fa-solid fa-right-left"></i> <span>Asentar Entrada / Salida</span>
       </button>
     </div>
 
@@ -3640,6 +3725,68 @@
 </div>
 
 <!-- ========================================================================= -->
+<!-- MODAL: NUEVA SOLICITUD DE SERVICIO / RECLAMO (INQUILINO & MESA DE AYUDA)  -->
+<!-- ========================================================================= -->
+<div class="modal-overlay" id="modal-tenant-new-ticket" style="display: none;" onclick="if(event.target===this) window.closeTenantNewTicketModal()">
+  <div class="modal-window" style="max-width: 620px; width: 95%;">
+    <div class="modal-header">
+      <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-headset" style="color: var(--amber);"></i>
+        <span>Nueva Solicitud de Servicio / Reclamo</span>
+      </h3>
+      <button type="button" class="modal-close" onclick="window.closeTenantNewTicketModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form id="tenant-ticket-form" onsubmit="window.handleTenantTicketSubmit(event)" style="padding: 20px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Local Comercial</label>
+          <input type="text" class="form-control" id="tticket-unit" readonly style="background: var(--bg-card); font-weight: 700; color: var(--amber);">
+        </div>
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Nivel de Prioridad</label>
+          <select class="form-control" id="tticket-priority" required>
+            <option value="normal" selected>🟢 Normal (Atención programada)</option>
+            <option value="alta">🟡 Alta (Afecta operatividad parcial)</option>
+            <option value="urgente">🔴 Urgente (Fuga, corte de luz, riesgo)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 14px;">
+        <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Categoría del Requerimiento</label>
+        <select class="form-control" id="tticket-category" required>
+          <option value="infraestructura">Infraestructura & Pasillos Comunes (Paredes, Pisos, Techos)</option>
+          <option value="electricidad">Suministro Eléctrico / Luminarias / Breakers</option>
+          <option value="agua">Agua Potable, Filtración o Drenaje</option>
+          <option value="seguridad">Seguridad, Accesos, Llaves & Vigilancia</option>
+          <option value="facturacion">Consultas de Facturación, Recibos & Condominio</option>
+          <option value="otro">Otras Solicitudes Generales</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 14px;">
+        <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Asunto Breve</label>
+        <input type="text" class="form-control" id="tticket-subject" placeholder="Ej: Filtración en pasillo frente al local / Falla en luminaria" required>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 14px;">
+        <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Descripción Detallada</label>
+        <textarea class="form-control" id="tticket-description" rows="4" placeholder="Describa con exactitud la situación para que el equipo de mantenimiento o administración asigne los recursos..." required style="font-size: 12.5px; resize: vertical;"></textarea>
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end; border-top: 1px dashed var(--border-subtle); padding-top: 14px;">
+        <button type="button" class="btn-cancel" onclick="window.closeTenantNewTicketModal()" style="padding: 8px 16px; border-radius: 8px; font-size: 12px;">
+          Cancelar
+        </button>
+        <button type="submit" class="btn-onboarding-cta" style="background: var(--amber); border-color: var(--amber); color: #000; font-weight: 800; padding: 8px 20px; font-size: 12px; border-radius: 8px;">
+          <i class="fa-solid fa-paper-plane"></i> Enviar a Administración
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
 <!-- MODAL: GLOBAL SEARCH OMNIBOX COMMAND-K (CTRL+K / CMD+K)                  -->
 <!-- ========================================================================= -->
 <div class="modal-overlay" id="modal-command-k" style="display: none;" onclick="if(event.target===this) window.closeCommandKModal()">
@@ -3767,8 +3914,34 @@
   </div>
 </div>
 
+<!-- NAVEGACIÓN INFERIOR NATIVA PARA MÓVILES (BOTTOM NAVIGATION BAR) -->
+<nav class="mobile-bottom-nav" id="mobile-bottom-navbar" aria-label="Navegación Móvil">
+  <button type="button" class="mobile-nav-item active" data-bottom-tab="dashboard" onclick="window.switchTab('dashboard')">
+    <i class="fa-solid fa-chart-line"></i>
+    <span>Inicio</span>
+  </button>
+  <button type="button" class="mobile-nav-item" data-bottom-tab="inquilinos" onclick="window.switchTab('inquilinos')">
+    <i class="fa-solid fa-store"></i>
+    <span>Locales</span>
+  </button>
+  <button type="button" class="mobile-nav-item" data-bottom-tab="cobranzas" onclick="window.switchTab('cobranzas')">
+    <i class="fa-solid fa-receipt"></i>
+    <span>Cobros</span>
+  </button>
+  <button type="button" class="mobile-nav-item" data-bottom-tab="calendario" onclick="window.switchTab('calendario')">
+    <i class="fa-solid fa-calendar-days"></i>
+    <span>Agenda</span>
+  </button>
+  <button type="button" class="mobile-nav-item" data-bottom-tab="menu" onclick="window.toggleSidebar()">
+    <i class="fa-solid fa-bars"></i>
+    <span>Menú</span>
+  </button>
+</nav>
+
 <!-- SCRIPTS DE ARQUITECTURA (100% GRATUITOS - DEFERRED NON-BLOCKING) -->
 <script src="js/security.js?v=20260911_v50_e2e_verified" defer></script>
+<script src="js/telemetry.js?v=20260911_v50_e2e_verified" defer></script>
+<script src="js/datepicker.js?v=20260911_v50_e2e_verified" defer></script>
 <script src="js/auth-guard.js?v=20260911_v50_e2e_verified" defer></script>
 <script src="js/tenant-loader.js?v=20260911_v50_e2e_verified" defer></script>
 <script src="js/venezuela-legal.js?v=20260911_v50_e2e_verified" defer></script>

@@ -107,6 +107,54 @@ document.addEventListener('DOMContentLoaded', () => {
   window.closeDocPreviewModal = function() { window.closeModal('modal-doc-preview'); };
   window.closeAgreementModal = function() { window.closeModal('modal-agreement-editor'); };
   window.closePaymentProofModal = function() { window.closeModal('modal-payment-proof-viewer'); };
+  window.closeDayEventsModal = function() { window.closeModal('modal-calendar-day-summary'); };
+
+  window.copyToClipboard = function(text, btn) {
+    if (!text) return;
+    const cleanText = String(text).trim();
+    const handleSuccess = () => {
+      if (btn) {
+        const origHtml = btn.innerHTML;
+        btn.classList.add('copied');
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> ¡Copiado!';
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          btn.innerHTML = origHtml;
+        }, 2000);
+      }
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast(`Copiado al portapapeles: ${cleanText}`, 'info', 'Portapapeles');
+      }
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(cleanText)
+        .then(handleSuccess)
+        .catch(() => {
+          fallbackCopyText(cleanText, handleSuccess);
+        });
+    } else {
+      fallbackCopyText(cleanText, handleSuccess);
+    }
+  };
+
+  function fallbackCopyText(text, cb) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    ta.style.top = '-9999px';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try {
+      document.execCommand('copy');
+      if (cb) cb();
+    } catch (e) {
+      console.warn('Fallback copy failed', e);
+    }
+    document.body.removeChild(ta);
+  }
 
   /**
    * Genera sello SHA-256 REAL de 256 bits vía WebCrypto API
@@ -408,6 +456,30 @@ document.addEventListener('DOMContentLoaded', () => {
     if (configNav) configNav.click();
   };
 
+  window.switchTab = function(tabName) {
+    const navItem = document.querySelector(`.nav-item[data-tab="${tabName}"]`);
+    if (navItem) {
+      navItem.click();
+    } else {
+      document.querySelectorAll('.tab-view').forEach(v => v.style.display = 'none');
+      const activeView = document.getElementById(`tab-${tabName}`);
+      if (activeView) activeView.style.display = 'block';
+      currentTab = tabName;
+      renderAll();
+    }
+    // Sincronizar barra inferior móvil
+    document.querySelectorAll('.mobile-bottom-nav .mobile-nav-item').forEach(b => {
+      if (b.getAttribute('data-bottom-tab') === tabName) {
+        b.classList.add('active');
+      } else {
+        b.classList.remove('active');
+      }
+    });
+    if (window.innerWidth <= 1024) {
+      closeMobileSidebar();
+    }
+  };
+
   document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault();
@@ -418,6 +490,15 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.tab-view').forEach(v => v.style.display = 'none');
       const activeView = document.getElementById(`tab-${currentTab}`);
       if (activeView) activeView.style.display = 'block';
+
+      // Sincronizar barra inferior móvil
+      document.querySelectorAll('.mobile-bottom-nav .mobile-nav-item').forEach(b => {
+        if (b.getAttribute('data-bottom-tab') === currentTab) {
+          b.classList.add('active');
+        } else {
+          b.classList.remove('active');
+        }
+      });
 
       // Re-renderizar de inmediato para garantizar datos frescos y sincronizados al instante
       renderAll();
@@ -463,6 +544,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try { renderInvoicesTable(); } catch (e) { console.error('[RenderError] InvoicesTable:', e); }
     try { renderCalendarView(); } catch (e) { console.error('[RenderError] CalendarView:', e); }
     try { renderAlertsCenter(); } catch (e) { console.error('[RenderError] AlertsCenter:', e); }
+    try { if (typeof window.renderNotificationFlyout === 'function') window.renderNotificationFlyout(); } catch(e) { console.error('[RenderError] NotifFlyout:', e); }
     if (isMasterAdmin) {
       try { renderAdminBankAccounts(); } catch (e) { console.error('[RenderError] AdminBankAccounts:', e); }
       try { renderUserApprovalsTable(); } catch (e) { console.error('[RenderError] UserApprovals:', e); }
@@ -499,52 +581,110 @@ document.addEventListener('DOMContentLoaded', () => {
 
     accounts.forEach(acc => {
       const el = document.createElement('div');
-      el.style.background = 'var(--bg-card)';
-      el.style.border = '1px solid var(--border-subtle)';
-      el.style.borderRadius = '8px';
-      el.style.padding = '12px 14px';
-      el.style.display = 'flex';
-      el.style.flexDirection = 'column';
-      el.style.gap = '6px';
-      el.style.fontSize = '12px';
+      
+      let cardClass = 'card-banesco-usd';
+      if (acc.id === 'acc-pagomovil' || acc.phone) cardClass = 'card-pagomovil';
+      else if (acc.id === 'acc-banesco-bs' || (acc.bank && acc.bank.includes('Universal'))) cardClass = 'card-banesco-bs';
+      else if (acc.id === 'acc-zelle' || (acc.bank && acc.bank.includes('Zelle'))) cardClass = 'card-zelle';
+      else if (acc.id === 'acc-usdt' || acc.wallet_address) cardClass = 'card-crypto';
 
-      let detailsHtml = '';
+      el.className = `luxury-bank-card ${cardClass}`;
+
+      let dataBoxesHtml = '';
       if (acc.account_number) {
-        detailsHtml = `
-          <div>Cuenta: <strong style="font-family: monospace; color: var(--txt-primary);">${acc.account_number}</strong></div>
-          <div style="font-size: 11px; color: var(--txt-muted);">Titular: ${acc.beneficiary} • RIF: ${acc.rif}</div>
+        dataBoxesHtml = `
+          <div class="bank-data-value-box">
+            <div>
+              <div style="font-size: 10px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700;">Número de Cuenta (20 Dígitos)</div>
+              <div class="bank-code-strong">${acc.account_number}</div>
+            </div>
+            <button type="button" class="btn-copy-account" onclick="window.copyToClipboard('${acc.account_number}', this)" title="Copiar número de cuenta">
+              <i class="fa-regular fa-copy"></i> Copiar
+            </button>
+          </div>
+          <div style="font-size: 11.5px; color: var(--txt-secondary); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
+            <span>Titular: <strong style="color: var(--txt-primary);">${escapeHtml(acc.beneficiary)}</strong></span>
+            <span>RIF: <strong style="color: var(--txt-primary);">${escapeHtml(acc.rif)}</strong></span>
+          </div>
         `;
       } else if (acc.phone) {
-        detailsHtml = `
-          <div>Teléfono: <strong style="color: var(--txt-primary);">${acc.phone}</strong> | RIF: ${acc.rif}</div>
-          <div style="font-size: 11px; color: var(--txt-muted);">Bancos: ${acc.bank_code}</div>
+        dataBoxesHtml = `
+          <div class="bank-data-value-box">
+            <div>
+              <div style="font-size: 10px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700;">Teléfono Pago Móvil</div>
+              <div class="bank-code-strong">${acc.phone}</div>
+            </div>
+            <button type="button" class="btn-copy-account" onclick="window.copyToClipboard('${acc.phone}', this)" title="Copiar teléfono">
+              <i class="fa-regular fa-copy"></i> Copiar
+            </button>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11.5px; color: var(--txt-secondary);">
+            <div>RIF: <strong style="color: var(--txt-primary);">${escapeHtml(acc.rif)}</strong></div>
+            <div>Bancos: <strong style="color: var(--txt-primary);">${escapeHtml(acc.bank_code)}</strong></div>
+          </div>
         `;
       } else if (acc.email) {
-        detailsHtml = `
-          <div>Email: <strong style="color: var(--amber);">${acc.email}</strong></div>
-          <div style="font-size: 11px; color: var(--txt-muted);">Beneficiario: ${acc.beneficiary}</div>
+        dataBoxesHtml = `
+          <div class="bank-data-value-box">
+            <div>
+              <div style="font-size: 10px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700;">Correo Zelle Registrado</div>
+              <div class="bank-code-strong" style="color: var(--purple);">${acc.email}</div>
+            </div>
+            <button type="button" class="btn-copy-account" onclick="window.copyToClipboard('${acc.email}', this)" title="Copiar correo Zelle">
+              <i class="fa-regular fa-copy"></i> Copiar
+            </button>
+          </div>
+          <div style="font-size: 11.5px; color: var(--txt-secondary);">
+            Beneficiario: <strong style="color: var(--txt-primary);">${escapeHtml(acc.beneficiary)}</strong>
+          </div>
         `;
       } else if (acc.wallet_address) {
-        detailsHtml = `
-          <div>Wallet TRC20: <strong style="font-family: monospace; font-size: 10.5px; color: var(--emerald); word-break: break-all;">${acc.wallet_address}</strong></div>
-          <div style="font-size: 11px; color: var(--txt-muted);">Binance Pay ID: <strong>${acc.binance_pay_id}</strong></div>
+        dataBoxesHtml = `
+          <div class="bank-data-value-box">
+            <div style="min-width: 0; flex: 1;">
+              <div style="font-size: 10px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700;">Dirección Wallet TRC20 (Red TRON)</div>
+              <div class="bank-code-strong" style="font-size: 11px; word-break: break-all; color: var(--emerald);">${acc.wallet_address}</div>
+            </div>
+            <button type="button" class="btn-copy-account" onclick="window.copyToClipboard('${acc.wallet_address}', this)" title="Copiar dirección TRC20">
+              <i class="fa-regular fa-copy"></i> Copiar
+            </button>
+          </div>
+          ${acc.binance_pay_id ? `
+          <div class="bank-data-value-box" style="margin-top: 4px;">
+            <div>
+              <div style="font-size: 10px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700;">Binance Pay ID</div>
+              <div class="bank-code-strong">${acc.binance_pay_id}</div>
+            </div>
+            <button type="button" class="btn-copy-account" onclick="window.copyToClipboard('${acc.binance_pay_id}', this)" title="Copiar Binance Pay ID">
+              <i class="fa-regular fa-copy"></i> Copiar
+            </button>
+          </div>` : ''}
         `;
       }
 
       el.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <strong style="color: var(--txt-primary); display: flex; align-items: center; gap: 6px;">
-            <i class="${acc.icon}" style="color: var(--amber);"></i> ${acc.bank}
-          </strong>
-          <span class="status-pill pill-info" style="font-size: 10px; padding: 2px 6px;">${acc.badge}</span>
+        <div class="bank-card-header">
+          <div class="bank-brand-title">
+            <i class="${acc.icon || 'fa-solid fa-building-columns'}" style="font-size: 16px; color: var(--amber);"></i>
+            <span>${escapeHtml(acc.bank)}</span>
+          </div>
+          <span class="bank-badge-pill" style="background: rgba(245, 158, 11, 0.15); color: var(--amber); border: 1px solid rgba(245, 158, 11, 0.3);">${escapeHtml(acc.badge || 'Oficial')}</span>
         </div>
-        <div style="margin-top: 2px;">
-          ${detailsHtml}
+
+        <div style="font-size: 11px; color: var(--txt-muted); font-weight: 600;">
+          ${escapeHtml(acc.type || '')}
         </div>
-        <div style="font-size: 10.5px; color: var(--txt-secondary); margin-top: 4px; border-top: 1px dashed var(--border-subtle); padding-top: 4px;">
-          ${acc.instructions}
+
+        <div style="display: flex; flex-direction: column; gap: 6px; margin: 4px 0;">
+          ${dataBoxesHtml}
+        </div>
+
+        <div class="bank-card-footer-notes">
+          <i class="fa-solid fa-circle-info" style="color: var(--amber); margin-right: 4px;"></i>
+          ${escapeHtml(acc.instructions || 'Consignar comprobante luego de efectuar la operación.')}
         </div>
       `;
+
       grid.appendChild(el);
     });
   }
@@ -2822,6 +2962,104 @@ document.addEventListener('DOMContentLoaded', () => {
     window.closeModal('modal-calendar-detail');
   };
 
+  window.openDayEventsModal = function(dateStr, eventsList) {
+    const modal = document.getElementById('modal-calendar-day-summary');
+    const titleEl = document.getElementById('day-summary-title');
+    const subtitleEl = document.getElementById('day-summary-subtitle');
+    const badgeEl = document.getElementById('day-summary-total-badge');
+    const container = document.getElementById('day-summary-events-container');
+    if (!modal || !container) return;
+
+    const parts = (dateStr || '').split('-');
+    const formattedDate = (parts.length === 3) 
+      ? `${parts[2]}/${parts[1]}/${parts[0]}`
+      : dateStr;
+
+    if (titleEl) {
+      titleEl.innerHTML = `<i class="fa-solid fa-calendar-day" style="color: var(--amber);"></i> <span>Vencimientos: ${formattedDate}</span>`;
+    }
+    if (subtitleEl) {
+      subtitleEl.textContent = `${eventsList.length} registros y obligaciones para esta fecha`;
+    }
+    if (badgeEl) {
+      badgeEl.textContent = `${eventsList.length} ${eventsList.length === 1 ? 'Vencimiento' : 'Vencimientos'}`;
+    }
+
+    container.innerHTML = '';
+    eventsList.forEach(evt => {
+      const item = document.createElement('div');
+      item.className = 'data-card';
+      item.style.padding = '12px 16px';
+      item.style.cursor = 'pointer';
+      item.style.transition = 'transform 0.15s ease, border-color 0.15s ease';
+      item.style.display = 'flex';
+      item.style.alignItems = 'center';
+      item.style.justifyContent = 'space-between';
+      item.style.gap = '12px';
+
+      const badgeClass = evt.type === 'cuota' ? 'cal-badge-cuota' : evt.type === 'condominio' ? 'cal-badge-condominio' : 'cal-badge-contrato';
+      const icon = evt.type === 'cuota' ? 'fa-receipt' : evt.type === 'condominio' ? 'fa-building-circle-check' : 'fa-file-signature';
+      const typeColor = evt.type === 'cuota' ? 'var(--amber)' : evt.type === 'condominio' ? 'var(--purple)' : 'var(--cyan)';
+
+      item.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(245,158,11,0.1); display: flex; align-items: center; justify-content: center; color: ${typeColor}; flex-shrink: 0;">
+            <i class="fa-solid ${icon}"></i>
+          </div>
+          <div style="min-width: 0;">
+            <div style="font-weight: 700; font-size: 13px; color: var(--txt-primary);">${escapeHtml(evt.title)}</div>
+            <div style="font-size: 11.5px; color: var(--txt-secondary); margin-top: 2px;">${escapeHtml(evt.desc || '')}</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+          <span class="status-pill ${badgeClass}" style="font-size: 10px;">${(evt.type || 'evento').toUpperCase()}</span>
+          <button type="button" class="btn-action-icon" style="color: var(--amber); border-color: var(--amber);" title="Ver detalle">
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+      `;
+
+      item.onclick = () => {
+        window.closeDayEventsModal();
+        showCalendarEventDetail(evt.title, evt.date, evt.type, evt.desc);
+      };
+
+      container.appendChild(item);
+    });
+
+    window.openModal('modal-calendar-day-summary');
+  };
+
+  window.handleCalendarSearchInput = function(query) {
+    const q = (query || '').toLowerCase().trim();
+    const cells = document.querySelectorAll('#calendar-month-grid .cal-cell:not(.empty)');
+    cells.forEach(cell => {
+      if (!q) {
+        cell.style.opacity = '1';
+        cell.style.boxShadow = '';
+        return;
+      }
+      const text = cell.innerText.toLowerCase();
+      if (text.includes(q)) {
+        cell.style.opacity = '1';
+        cell.style.boxShadow = '0 0 0 2px var(--amber)';
+      } else {
+        cell.style.opacity = '0.3';
+        cell.style.boxShadow = '';
+      }
+    });
+
+    const eventItems = document.querySelectorAll('#calendar-events-list .timeline-item');
+    eventItems.forEach(item => {
+      if (!q) {
+        item.style.display = '';
+        return;
+      }
+      const text = item.innerText.toLowerCase();
+      item.style.display = text.includes(q) ? '' : 'none';
+    });
+  };
+
   // --- GESTIÓN DE RECORDATORIOS / EVENTOS PERSONALIZADOS DEL CALENDARIO ---
   const CUSTOM_EVENTS_STORAGE_KEY = 'ccms_custom_calendar_events';
 
@@ -3038,9 +3276,10 @@ document.addEventListener('DOMContentLoaded', () => {
         badgeContainer.style.display = 'flex';
         badgeContainer.style.flexDirection = 'column';
         badgeContainer.style.gap = '2px';
-        badgeContainer.style.overflowY = 'auto';
+        badgeContainer.style.overflow = 'hidden';
 
-        dayEvents.forEach(evt => {
+        const visibleEvents = dayEvents.slice(0, 2);
+        visibleEvents.forEach(evt => {
           const badge = document.createElement('div');
           const badgeClass = evt.type === 'cuota' ? 'cal-badge-cuota' : evt.type === 'condominio' ? 'cal-badge-condominio' : 'cal-badge-contrato';
           badge.className = `cal-event-badge ${badgeClass}`;
@@ -3053,11 +3292,25 @@ document.addEventListener('DOMContentLoaded', () => {
           badgeContainer.appendChild(badge);
         });
 
+        if (dayEvents.length > 2) {
+          const moreBtn = document.createElement('div');
+          moreBtn.className = 'cal-event-badge-more';
+          moreBtn.innerHTML = `<i class="fa-solid fa-layer-group"></i> +${dayEvents.length - 2} más`;
+          moreBtn.title = `Ver los ${dayEvents.length} eventos y cuotas del día`;
+          moreBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            window.openDayEventsModal(dateStr, dayEvents);
+          });
+          badgeContainer.appendChild(moreBtn);
+        }
+
         cell.appendChild(badgeContainer);
 
-        // Clic en la celda: Si tiene eventos abre el primero, si está vacía abre el creador de eventos con esa fecha
+        // Clic en la celda: Si tiene más de 2 eventos abre el resumen del día, si tiene 1-2 abre el detalle, si está vacía crea uno nuevo
         cell.addEventListener('click', () => {
-          if (dayEvents.length > 0) {
+          if (dayEvents.length > 2) {
+            window.openDayEventsModal(dateStr, dayEvents);
+          } else if (dayEvents.length > 0) {
             const firstEvt = dayEvents[0];
             showCalendarEventDetail(firstEvt.title, firstEvt.date, firstEvt.type, firstEvt.desc);
           } else {
@@ -3127,69 +3380,308 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Ajustar título de la sección
     const sectionTitle = document.querySelector('#tab-alertas .section-title');
-    if (sectionTitle) {
-      if (currentRole === 'tenant') {
-        sectionTitle.innerHTML = '<i class="fa-solid fa-bell" style="color: var(--rose);"></i> Mis Avisos de Cobro y Alertas de Mora';
-      } else {
-        sectionTitle.innerHTML = '<i class="fa-solid fa-bell" style="color: var(--rose);"></i> Centro de Avisos de Cobro y Alertas de Mora';
-      }
+    const sectionSubtitle = document.querySelector('#tab-alertas .section-head span');
+
+    if (currentRole === 'tenant') {
+      if (sectionTitle) sectionTitle.innerHTML = '<i class="fa-solid fa-inbox" style="color: var(--amber);"></i> Buzón de Notificaciones, Avisos & Mesa de Servicio';
+      if (sectionSubtitle) sectionSubtitle.textContent = 'Canal oficial bidireccional entre su local comercial y la Administración del CCMS';
+    } else {
+      if (sectionTitle) sectionTitle.innerHTML = '<i class="fa-solid fa-bell" style="color: var(--rose);"></i> Centro de Avisos de Cobro & Mesa de Solicitudes';
+      if (sectionSubtitle) sectionSubtitle.textContent = 'Despacho de cobranzas oficiales (WhatsApp / Gmail) y atención de reclamos de inquilinos';
     }
 
-    // CESE INMEDIATO DE ALERTAS: Si la cuota está 'pagado' o 'verificando', cesan las notificaciones
-    const pending = invoices.filter(i => i.status !== 'pagado' && i.status !== 'verificando');
-    if (pending.length === 0) {
-      alertsContainer.innerHTML = `<div class="data-card" style="padding:32px;text-align:center;color:var(--txt-muted);font-style:italic;">${currentRole === 'tenant' ? 'No tiene cuotas pendientes ni en mora. ¡Está al día!' : 'No hay alertas pendientes. Todas las cuotas están solventes o con comprobante en verificación.'}</div>`;
+    const tickets = typeof window.getServiceTickets === 'function' ? window.getServiceTickets() : [];
+
+    if (currentRole === 'tenant') {
+      const tenantObj = (window.AuthGuard && typeof window.AuthGuard.currentTenant === 'function') ? window.AuthGuard.currentTenant() : null;
+      const myInvoices = invoices.filter(i => tenantObj && (i.tenant_id === tenantObj.id || i.tenant_rif === tenantObj.rif || i.unit_code === tenantObj.unit_code));
+      const myPending = myInvoices.filter(i => i.status !== 'pagado');
+      const myTickets = tickets.filter(t => !tenantObj || t.tenant_id === tenantObj.id || t.unit_code === tenantObj.unit_code);
+
+      // Top action bar for tenant
+      const topBar = document.createElement('div');
+      topBar.style.display = 'flex';
+      topBar.style.justifyContent = 'space-between';
+      topBar.style.alignItems = 'center';
+      topBar.style.flexWrap = 'wrap';
+      topBar.style.gap = '12px';
+      topBar.style.marginBottom = '20px';
+      topBar.style.padding = '14px 18px';
+      topBar.style.background = 'var(--bg-card)';
+      topBar.style.border = '1px solid var(--border-subtle)';
+      topBar.style.borderRadius = 'var(--radius-md)';
+      topBar.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span class="status-pill pill-active"><i class="fa-solid fa-store"></i> ${escapeHtml(tenantObj ? tenantObj.unit_code : 'Mi Local')}</span>
+          <span style="font-size: 13px; font-weight: 700; color: var(--txt-primary);">${escapeHtml(tenantObj ? tenantObj.business_name : 'Arrendatario')}</span>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn-onboarding-cta" onclick="window.openTenantReportPaymentModal()" style="font-size: 12px; padding: 7px 16px; background: var(--emerald); border-color: var(--emerald); color: #fff;">
+            <i class="fa-solid fa-receipt"></i> Reportar Pago
+          </button>
+          <button type="button" class="btn-currency-toggle" onclick="window.openTenantNewTicketModal('${tenantObj ? tenantObj.unit_code : ''}')" style="font-size: 12px; padding: 7px 14px; border-color: var(--amber); color: var(--amber);">
+            <i class="fa-solid fa-headset"></i> + Nueva Solicitud o Reclamo
+          </button>
+        </div>
+      `;
+      alertsContainer.appendChild(topBar);
+
+      // Sección 1: Avisos de Cuotas y Solvencia
+      const cuotasSection = document.createElement('div');
+      cuotasSection.style.marginBottom = '24px';
+      cuotasSection.innerHTML = `
+        <h4 style="font-family: var(--font-heading); font-size: 14px; font-weight: 800; color: var(--txt-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-file-invoice-dollar" style="color: var(--emerald);"></i> Estado de Cuotas & Avisos de Pago
+        </h4>
+      `;
+
+      if (myPending.length === 0) {
+        cuotasSection.innerHTML += `
+          <div class="data-card" style="padding: 24px; text-align: center; color: var(--emerald); background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: var(--radius-md);">
+            <i class="fa-solid fa-circle-check" style="font-size: 24px; margin-bottom: 8px; display: block;"></i>
+            <div style="font-weight: 700; font-size: 14px;">¡Usted se encuentra al día y solvente!</div>
+            <div style="font-size: 12px; color: var(--txt-secondary); margin-top: 4px;">No posee cuotas vencidas ni pendientes de pago en los registros contables del CCMS.</div>
+          </div>
+        `;
+      } else {
+        myPending.forEach(inv => {
+          const moraInfo = financialEngine.calculateMora(inv, null, appSettings);
+          const cCard = document.createElement('div');
+          cCard.className = 'data-card';
+          cCard.style.padding = '16px 20px';
+          cCard.style.marginBottom = '12px';
+          cCard.style.borderLeft = moraInfo.inMora ? '4px solid var(--rose)' : '4px solid var(--amber)';
+
+          const statusBadge = moraInfo.inMora
+            ? `<span class="status-pill pill-overdue"><i class="fa-solid fa-triangle-exclamation"></i> En Mora (${moraInfo.daysOverdue} días)</span>`
+            : (moraInfo.isWithinGrace
+                ? `<span class="status-pill pill-warning"><i class="fa-solid fa-hourglass-half"></i> Período de Gracia (${moraInfo.graceDaysRemaining}d restantes)</span>`
+                : `<span class="status-pill pill-warning"><i class="fa-solid fa-clock"></i> Cuota Pendiente</span>`);
+
+          cCard.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  ${statusBadge}
+                  <strong style="font-size: 14px; color: var(--txt-primary);">Cuota Período ${inv.period_month}/${inv.period_year}</strong>
+                  <span style="font-size: 11px; color: var(--txt-muted);">Vence el: ${inv.due_date || 'N/A'}</span>
+                </div>
+                <div style="font-size: 12px; color: var(--txt-secondary); margin-top: 6px;">
+                  Canon Base: <strong>$ ${(inv.total_usd || 0).toFixed(2)} USD</strong> 
+                  ${moraInfo.inMora ? `• <span style="color: var(--rose); font-weight: 700;">Recargo Mora Legal (Art. 30): +$ ${moraInfo.moraUsd.toFixed(2)} USD</span>` : ''}
+                  • <strong style="color: var(--txt-primary);">Total Exigible: $ ${moraInfo.totalDueUsd.toFixed(2)} USD (Bs. ${moraInfo.totalDueVes.toLocaleString('es-VE', { minimumFractionDigits: 2 })})</strong>
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn-onboarding-cta" onclick="window.openTenantReportPaymentModal()" style="font-size: 12px; padding: 6px 14px; background: var(--emerald); border-color: var(--emerald); color: #fff;">
+                  <i class="fa-solid fa-receipt"></i> Reportar Comprobante
+                </button>
+                <button type="button" class="btn-currency-toggle" onclick="window.openTenantNewTicketModal('${inv.unit_code}')" style="font-size: 12px; padding: 6px 12px;">
+                  <i class="fa-solid fa-headset" style="color: var(--amber);"></i> Consultar
+                </button>
+              </div>
+            </div>
+          `;
+          cuotasSection.appendChild(cCard);
+        });
+      }
+      alertsContainer.appendChild(cuotasSection);
+
+      // Sección 2: Mis Solicitudes & Reclamos de Servicio
+      const ticketsSection = document.createElement('div');
+      ticketsSection.style.marginBottom = '24px';
+      ticketsSection.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h4 style="font-family: var(--font-heading); font-size: 14px; font-weight: 800; color: var(--txt-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-headset" style="color: var(--cyan);"></i> Mis Solicitudes & Reclamos Registrados
+          </h4>
+          <span style="font-size: 11px; color: var(--txt-muted);">${myTickets.length} solicitud(es) registrada(s)</span>
+        </div>
+      `;
+
+      if (myTickets.length === 0) {
+        ticketsSection.innerHTML += `
+          <div class="data-card" style="padding: 20px; text-align: center; color: var(--txt-muted); font-size: 12px; border-radius: var(--radius-md);">
+            No ha presentado solicitudes de servicio o reclamos. Puede crear una pulsando en "+ Nueva Solicitud o Reclamo".
+          </div>
+        `;
+      } else {
+        myTickets.forEach(tk => {
+          const stBadge = tk.status === 'resuelto'
+            ? '<span class="status-pill pill-active"><i class="fa-solid fa-check"></i> Resuelto</span>'
+            : (tk.status === 'en_atencion'
+                ? '<span class="status-pill pill-info"><i class="fa-solid fa-screwdriver-wrench"></i> En Atención</span>'
+                : '<span class="status-pill pill-warning"><i class="fa-solid fa-clock"></i> Abierto</span>');
+
+          const prioColor = tk.priority === 'urgente' ? 'var(--rose)' : (tk.priority === 'alta' ? 'var(--amber)' : 'var(--emerald)');
+
+          const tCard = document.createElement('div');
+          tCard.className = 'data-card';
+          tCard.style.padding = '16px 18px';
+          tCard.style.marginBottom = '10px';
+          tCard.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  ${stBadge}
+                  <span style="font-family: monospace; font-size: 11px; font-weight: 700; color: var(--txt-muted);">${escapeHtml(tk.ticket_number)}</span>
+                  <span style="font-size: 10.5px; font-weight: 700; color: ${prioColor}; text-transform: uppercase;">[Prioridad ${escapeHtml(tk.priority)}]</span>
+                </div>
+                <h5 style="font-family: var(--font-heading); font-size: 13.5px; font-weight: 700; color: var(--txt-primary); margin: 6px 0 2px;">${escapeHtml(tk.subject)}</h5>
+                <p style="font-size: 12px; color: var(--txt-secondary); margin: 0; line-height: 1.4;">${escapeHtml(tk.description)}</p>
+                ${tk.admin_response ? `
+                  <div style="margin-top: 8px; padding: 8px 12px; background: rgba(14, 165, 233, 0.08); border-left: 3px solid var(--cyan); border-radius: 4px; font-size: 11.5px; color: var(--txt-primary);">
+                    <strong style="color: var(--cyan);"><i class="fa-solid fa-reply"></i> Respuesta de Administración CCMS:</strong> ${escapeHtml(tk.admin_response)}
+                  </div>
+                ` : ''}
+              </div>
+              <div style="font-size: 10.5px; color: var(--txt-muted); white-space: nowrap;">
+                ${new Date(tk.created_at).toLocaleDateString('es-VE')}
+              </div>
+            </div>
+          `;
+          ticketsSection.appendChild(tCard);
+        });
+      }
+      alertsContainer.appendChild(ticketsSection);
+
+      // Sección 3: Comunicados Oficiales
+      const newsSection = document.createElement('div');
+      newsSection.innerHTML = `
+        <h4 style="font-family: var(--font-heading); font-size: 14px; font-weight: 800; color: var(--txt-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-bullhorn" style="color: var(--purple);"></i> Comunicaciones Oficiales de la Administración
+        </h4>
+        <div class="data-card" style="padding: 16px 20px; border-left: 4px solid var(--purple); margin-bottom: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <strong style="font-size: 13px; color: var(--txt-primary);">Plan Preventivo de Subestación Eléctrica & Planta de Emergencia</strong>
+            <span style="font-size: 10.5px; color: var(--txt-muted);">10 Mar 2026</span>
+          </div>
+          <p style="font-size: 12px; color: var(--txt-secondary); margin: 0;">Se informa a la comunidad de arrendatarios que se llevará a cabo el mantenimiento semestral del banco de transformadores el próximo domingo de 06:00 a 09:00 hrs. El respaldo de la planta cubrirá áreas comunes y pasillos.</p>
+        </div>
+      `;
+      alertsContainer.appendChild(newsSection);
       return;
     }
 
-    pending.forEach(inv => {
-      const tenant = tenants.find(t => t.id === inv.tenant_id);
-      if (!tenant) return;
+    // --- VISTA ADMINISTRADOR (COBRANZAS & MESA DE ENTRADA) ---
+    const pending = invoices.filter(i => i.status !== 'pagado' && i.status !== 'verificando');
+    if (pending.length === 0 && tickets.length === 0) {
+      alertsContainer.innerHTML = `<div class="data-card" style="padding:32px;text-align:center;color:var(--txt-muted);font-style:italic;">No hay alertas de cobro pendientes ni tickets abiertos. Todas las cuotas están solventes.</div>`;
+      return;
+    }
 
-      const moraInfo = financialEngine.calculateMora(inv, null, appSettings);
+    if (pending.length > 0) {
+      const cobroTitle = document.createElement('h4');
+      cobroTitle.style.fontFamily = 'var(--font-heading)';
+      cobroTitle.style.fontSize = '14px';
+      cobroTitle.style.fontWeight = '800';
+      cobroTitle.style.color = 'var(--txt-primary)';
+      cobroTitle.style.marginBottom = '12px';
+      cobroTitle.innerHTML = '<i class="fa-solid fa-paper-plane" style="color: var(--rose);"></i> Notificaciones de Cobranza Pendientes de Despacho';
+      alertsContainer.appendChild(cobroTitle);
 
-      const card = document.createElement('div');
-      card.className = 'data-card';
-      card.style.padding = '18px 20px';
-      card.style.marginBottom = '14px';
+      pending.forEach(inv => {
+        const tenant = tenants.find(t => t.id === inv.tenant_id);
+        if (!tenant) return;
 
-      const waMsg = buildMultiCurrencyWhatsAppMessage(tenant, inv);
-      const waUrl = GoogleWorkspace.createWhatsAppUrl(tenant.whatsapp, waMsg);
-      const gmailUrl = GoogleWorkspace.createGmailUrl(tenant.email, `Aviso de Cobro Cuota ${inv.period_month}/${inv.period_year} — CC Mario Sánchez`, waMsg);
+        const moraInfo = financialEngine.calculateMora(inv, null, appSettings);
 
-      const statusBadge = moraInfo.inMora
-        ? `<span class="status-pill pill-overdue"><i class="fa-solid fa-triangle-exclamation"></i> En Mora (${moraInfo.daysOverdue} días)</span>`
-        : (moraInfo.isWithinGrace
-            ? `<span class="status-pill pill-warning"><i class="fa-solid fa-hourglass-half"></i> Período de Gracia (${moraInfo.graceDaysRemaining}d restantes)</span>`
-            : `<span class="status-pill pill-warning"><i class="fa-solid fa-clock"></i> Aviso Preventivo</span>`);
+        const card = document.createElement('div');
+        card.className = 'data-card';
+        card.style.padding = '18px 20px';
+        card.style.marginBottom = '14px';
 
-      const breakdownText = moraInfo.inMora
-        ? `Base: $ ${moraInfo.baseAmountUsd.toFixed(2)} • <strong style="color: var(--rose);">Recargo Mora (${moraInfo.moraRatePct}%): +$ ${moraInfo.moraUsd.toFixed(2)}</strong> • <strong>Total: $ ${moraInfo.totalDueUsd.toFixed(2)} USD (Bs. ${moraInfo.totalDueVes.toLocaleString('es-VE', { minimumFractionDigits: 2 })})</strong>`
-        : `Cuota Base: $ ${inv.total_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })} • Bs. ${financialEngine.convert(inv.total_usd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 })} • USDT ${inv.total_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+        const waMsg = buildMultiCurrencyWhatsAppMessage(tenant, inv);
+        const waUrl = GoogleWorkspace.createWhatsAppUrl(tenant.whatsapp, waMsg);
+        const gmailUrl = GoogleWorkspace.createGmailUrl(tenant.email, `Aviso de Cobro Cuota ${inv.period_month}/${inv.period_year} — CC Mario Sánchez`, waMsg);
 
-      card.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
-          <div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              ${statusBadge}
-              <strong style="font-size: 14px; color: var(--txt-primary);">${escapeHtml(tenant.business_name)} (${escapeHtml(inv.unit_code)})</strong>
+        const statusBadge = moraInfo.inMora
+          ? `<span class="status-pill pill-overdue"><i class="fa-solid fa-triangle-exclamation"></i> En Mora (${moraInfo.daysOverdue} días)</span>`
+          : (moraInfo.isWithinGrace
+              ? `<span class="status-pill pill-warning"><i class="fa-solid fa-hourglass-half"></i> Período de Gracia (${moraInfo.graceDaysRemaining}d restantes)</span>`
+              : `<span class="status-pill pill-warning"><i class="fa-solid fa-clock"></i> Aviso Preventivo</span>`);
+
+        const breakdownText = moraInfo.inMora
+          ? `Base: $ ${moraInfo.baseAmountUsd.toFixed(2)} • <strong style="color: var(--rose);">Recargo Mora (${moraInfo.moraRatePct}%): +$ ${moraInfo.moraUsd.toFixed(2)}</strong> • <strong>Total: $ ${moraInfo.totalDueUsd.toFixed(2)} USD (Bs. ${moraInfo.totalDueVes.toLocaleString('es-VE', { minimumFractionDigits: 2 })})</strong>`
+          : `Cuota Base: $ ${inv.total_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })} • Bs. ${financialEngine.convert(inv.total_usd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 })} • USDT ${inv.total_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
+        card.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                ${statusBadge}
+                <strong style="font-size: 14px; color: var(--txt-primary);">${escapeHtml(tenant.business_name)} (${escapeHtml(inv.unit_code)})</strong>
+              </div>
+              <p style="font-size: 12px; color: var(--txt-secondary); margin-top: 4px;">
+                ${breakdownText}
+              </p>
             </div>
-            <p style="font-size: 12px; color: var(--txt-secondary); margin-top: 4px;">
-              ${breakdownText}
-            </p>
+            <div style="display: flex; gap: 10px;">
+              <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="btn-action-icon btn-wa-action" style="width: auto; padding: 6px 14px; gap: 6px; font-weight: 700; text-decoration: none;">
+                <i class="fa-brands fa-whatsapp"></i> <span>Enviar WhatsApp</span>
+              </a>
+              <a href="${gmailUrl}" target="_blank" rel="noopener noreferrer" class="btn-action-icon" style="width: auto; padding: 6px 14px; gap: 6px; font-weight: 700; text-decoration: none;">
+                <i class="fa-regular fa-envelope"></i> <span>Gmail</span>
+              </a>
+            </div>
           </div>
-          <div style="display: flex; gap: 10px;">
-            <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="btn-action-icon btn-wa-action" style="width: auto; padding: 6px 14px; gap: 6px; font-weight: 700; text-decoration: none;">
-              <i class="fa-brands fa-whatsapp"></i> <span>Enviar WhatsApp</span>
-            </a>
-            <a href="${gmailUrl}" target="_blank" rel="noopener noreferrer" class="btn-action-icon" style="width: auto; padding: 6px 14px; gap: 6px; font-weight: 700; text-decoration: none;">
-              <i class="fa-regular fa-envelope"></i> <span>Gmail</span>
-            </a>
-          </div>
-        </div>
+        `;
+        alertsContainer.appendChild(card);
+      });
+    }
+
+    // Mesa de tickets para administración
+    if (tickets.length > 0) {
+      const ticketsAdminSection = document.createElement('div');
+      ticketsAdminSection.style.marginTop = '28px';
+      ticketsAdminSection.innerHTML = `
+        <h4 style="font-family: var(--font-heading); font-size: 14px; font-weight: 800; color: var(--txt-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-headset" style="color: var(--cyan);"></i> Mesa de Ayuda: Reclamos y Solicitudes de Inquilinos (${tickets.length})
+        </h4>
       `;
-      alertsContainer.appendChild(card);
-    });
+
+      tickets.forEach(tk => {
+        const itemCard = document.createElement('div');
+        itemCard.className = 'data-card';
+        itemCard.style.padding = '16px 18px';
+        itemCard.style.marginBottom = '12px';
+
+        const stBadge = tk.status === 'resuelto'
+          ? '<span class="status-pill pill-active"><i class="fa-solid fa-check"></i> Resuelto</span>'
+          : (tk.status === 'en_atencion'
+              ? '<span class="status-pill pill-info"><i class="fa-solid fa-screwdriver-wrench"></i> En Atención</span>'
+              : '<span class="status-pill pill-warning"><i class="fa-solid fa-clock"></i> Abierto</span>');
+
+        itemCard.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
+            <div style="flex: 1; min-width: 260px;">
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                ${stBadge}
+                <strong style="color: var(--txt-primary); font-size: 13px;">${escapeHtml(tk.tenant_name || 'Inquilino')} (${escapeHtml(tk.unit_code)})</strong>
+                <span style="font-family: monospace; font-size: 11px; color: var(--txt-muted);">${escapeHtml(tk.ticket_number)}</span>
+              </div>
+              <h5 style="font-family: var(--font-heading); font-size: 13.5px; font-weight: 700; color: var(--txt-primary); margin: 6px 0 4px;">${escapeHtml(tk.subject)}</h5>
+              <p style="font-size: 12px; color: var(--txt-secondary); margin: 0;">${escapeHtml(tk.description)}</p>
+              ${tk.admin_response ? `<div style="font-size: 11.5px; margin-top: 6px; color: var(--cyan);"><strong>Respuesta previa:</strong> ${escapeHtml(tk.admin_response)}</div>` : ''}
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+              <span style="font-size: 10.5px; color: var(--txt-muted);">${new Date(tk.created_at).toLocaleDateString('es-VE')}</span>
+              <div style="display: flex; gap: 6px;">
+                <button type="button" class="btn-currency-toggle" style="font-size: 11px; padding: 4px 10px; color: var(--cyan); border-color: var(--cyan);" onclick="window.adminUpdateTicketStatus('${tk.id}', 'en_atencion')">
+                  <i class="fa-solid fa-wrench"></i> En Atención
+                </button>
+                <button type="button" class="btn-currency-toggle" style="font-size: 11px; padding: 4px 10px; color: var(--emerald); border-color: var(--emerald);" onclick="window.adminUpdateTicketStatus('${tk.id}', 'resuelto')">
+                  <i class="fa-solid fa-check"></i> Resolver
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+        ticketsAdminSection.appendChild(itemCard);
+      });
+
+      alertsContainer.appendChild(ticketsAdminSection);
+    }
   }
 
   // --- GENERADOR DE MENSAJE MULTIMONEDA PARA WHATSAPP ---
@@ -3906,15 +4398,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const renderSample = (tpl) => {
       if (!tpl || !tpl.trim()) {
-        return '<span style="color:#64748b;font-style:italic;">Escriba una plantilla para visualizar la vista previa...</span>';
+        return '<div style="padding: 16px; color: var(--txt-muted); font-style: italic; text-align: center;">Escriba una plantilla para visualizar la simulación de WhatsApp...</div>';
       }
       let res = escapeHtml(tpl);
       for (const [key, val] of Object.entries(sampleData)) {
-        res = res.split(key).join(`<span style="background:rgba(217,119,6,0.25);color:#fbbf24;padding:1px 5px;border-radius:4px;font-weight:700;">${val}</span>`);
+        res = res.split(key).join(`<span class="wa-var-pill">${val}</span>`);
       }
       // Reemplazo básico de asteriscos para simular negrita en WhatsApp
-      res = res.replace(/\*(.*?)\*/g, '<strong>$1</strong>');
-      return res.replace(/\n/g, '<br>');
+      res = res.replace(/\*(.*?)\*/g, '<strong style="font-weight: 800;">$1</strong>');
+      res = res.replace(/\n/g, '<br>');
+
+      return `
+        <div class="whatsapp-chat-preview-card">
+          <div class="wa-preview-header">
+            <div class="wa-sender-info">
+              <div class="wa-avatar-crest">
+                <i class="fa-solid fa-building"></i>
+              </div>
+              <div>
+                <div style="font-size: 12.5px; font-weight: 800; display: flex; align-items: center; gap: 5px;">
+                  <span>CC Mario Sánchez</span>
+                  <i class="fa-solid fa-circle-check" style="color: #25d366; font-size: 11px;" title="Canal Oficial Verificado"></i>
+                </div>
+                <div style="font-size: 10px; opacity: 0.85;">Dpto. Cobranzas & Administración • En línea</div>
+              </div>
+            </div>
+            <div style="font-size: 11px; opacity: 0.8;">
+              <i class="fa-solid fa-lock" style="font-size: 9px;"></i> Cifrado E2E
+            </div>
+          </div>
+          <div class="wa-bubble-body">
+            <div class="wa-msg-bubble">
+              <div>${res}</div>
+              <div class="wa-time-meta">
+                <span>10:42 AM</span>
+                <i class="fa-solid fa-check-double" style="color: #53bdeb; font-size: 10px;"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
     };
 
     const prevEl = document.getElementById('cfg-msg-preventive');
@@ -7842,17 +8365,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const formKdx = document.getElementById('form-inv-kardex');
 
     if (mode === 'consumible') {
-      if (tabCon) { tabCon.style.color = 'var(--amber)'; tabCon.style.borderBottom = '2px solid var(--amber)'; }
-      if (tabKdx) { tabKdx.style.color = 'var(--txt-muted)'; tabKdx.style.borderBottom = '2px solid transparent'; }
+      if (tabCon) { tabCon.classList.add('active'); tabCon.style.color = ''; tabCon.style.borderBottom = ''; }
+      if (tabKdx) { tabKdx.classList.remove('active'); tabKdx.style.color = ''; tabKdx.style.borderBottom = ''; }
       if (formCon) formCon.style.display = 'flex';
       if (formKdx) formKdx.style.display = 'none';
-      document.getElementById('inv-modal-title').innerText = 'Gestión de Insumo / Consumible';
+      const t = document.getElementById('inv-modal-title');
+      if (t) t.innerText = 'Registrar Nuevo Insumo / Consumible';
     } else {
-      if (tabKdx) { tabKdx.style.color = 'var(--amber)'; tabKdx.style.borderBottom = '2px solid var(--amber)'; }
-      if (tabCon) { tabCon.style.color = 'var(--txt-muted)'; tabCon.style.borderBottom = '2px solid transparent'; }
+      if (tabKdx) { tabKdx.classList.add('active'); tabKdx.style.color = ''; tabKdx.style.borderBottom = ''; }
+      if (tabCon) { tabCon.classList.remove('active'); tabCon.style.color = ''; tabCon.style.borderBottom = ''; }
       if (formCon) formCon.style.display = 'none';
       if (formKdx) formKdx.style.display = 'flex';
-      document.getElementById('inv-modal-title').innerText = 'Asentar Movimiento en Kardex';
+      const t = document.getElementById('inv-modal-title');
+      if (t) t.innerText = 'Asentar Movimiento en Kardex';
       populateKardexItemSelect();
     }
   };
@@ -9015,9 +9540,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  let _activeCommandPaletteItems = [];
+
   window.closeCommandKModal = function() {
     const modal = document.getElementById('modal-command-k');
     if (modal) modal.style.display = 'none';
+  };
+
+  window.executeCommandPaletteItem = function(idx) {
+    const item = _activeCommandPaletteItems[idx];
+    if (!item) return;
+    window.closeCommandKModal();
+    if (typeof item.run === 'function') {
+      try {
+        item.run();
+      } catch (err) {
+        console.error('[CommandK Run Error]', err);
+      }
+    }
   };
 
   window.handleCommandKInput = function(query) {
@@ -9029,93 +9569,228 @@ document.addEventListener('DOMContentLoaded', () => {
     const tenants = dbService.getTenants ? dbService.getTenants() : [];
     const invoices = dbService.getInvoices ? dbService.getInvoices() : [];
 
-    const actions = [
-      { title: 'Nuevo Inquilino (Onboarding)', category: 'Acciones Rápidas', icon: 'fa-solid fa-user-plus', color: 'var(--amber)', run: "window.location.href='onboarding.html'" },
-      { title: 'Registrar Pago / Cobranza', category: 'Acciones Rápidas', icon: 'fa-solid fa-receipt', color: 'var(--emerald)', run: "document.querySelector('.nav-item[data-tab=\"cobranzas\"]').click()" },
-      { title: 'Ver Gastos Comunes (Condominio)', category: 'Módulos', icon: 'fa-solid fa-calculator', color: 'var(--purple)', run: "document.querySelector('.nav-item[data-tab=\"condominio\"]').click()" },
-      { title: 'Informes & Contabilidad Oficial', category: 'Módulos', icon: 'fa-solid fa-book', color: 'var(--cyan)', run: "document.querySelector('.nav-item[data-tab=\"reportes\"]').click()" },
-      { title: 'Calendario & Vencimientos', category: 'Módulos', icon: 'fa-solid fa-calendar', color: 'var(--amber)', run: "document.querySelector('.nav-item[data-tab=\"calendario\"]').click()" },
-      { title: 'Inventario de Bienes & Kardex', category: 'Módulos', icon: 'fa-solid fa-boxes-stacked', color: 'var(--rose)', run: "document.querySelector('.nav-item[data-tab=\"inventario\"]').click()" },
-      { title: 'Centro de Ayuda & Marco Legal (G.O. 40.418)', category: 'Soporte', icon: 'fa-solid fa-scale-balanced', color: 'var(--cyan)', run: "document.querySelector('.nav-item[data-tab=\"ayuda\"]').click()" }
+    const actionList = [
+      {
+        title: 'Nuevo Inquilino (Onboarding)',
+        sub: 'Registrar nuevo contrato comercial y ficha técnica',
+        category: 'Acciones Rápidas',
+        icon: 'fa-solid fa-user-plus',
+        color: 'var(--amber)',
+        bg: 'rgba(245, 158, 11, 0.12)',
+        keywords: 'inquilino inquilinos contrato contratos onboarding registro nuevo local',
+        run: () => { window.location.href = 'onboarding.html'; }
+      },
+      {
+        title: 'Registrar Pago / Cobranza',
+        sub: 'Reportar o conciliar pago de canon y condominio',
+        category: 'Acciones Rápidas',
+        icon: 'fa-solid fa-receipt',
+        color: 'var(--emerald)',
+        bg: 'rgba(16, 185, 129, 0.12)',
+        keywords: 'cobranza cobranzas cobro cobros pago pagos canon cuota cuotas bcv recibo recibos',
+        run: () => {
+          const el = document.querySelector('.nav-item[data-tab="cobranzas"]');
+          if (el) el.click();
+        }
+      },
+      {
+        title: 'Módulo de Cobranzas & Morosidad',
+        sub: 'Control de mora, avisos legales G.O. 40.418 y conciliación',
+        category: 'Módulos',
+        icon: 'fa-solid fa-money-bill-trend-up',
+        color: 'var(--emerald)',
+        bg: 'rgba(16, 185, 129, 0.12)',
+        keywords: 'cobranza cobranzas cobros morosidad moras deudas avisos recibos',
+        run: () => {
+          const el = document.querySelector('.nav-item[data-tab="cobranzas"]');
+          if (el) el.click();
+        }
+      },
+      {
+        title: 'Gastos Comunes & Condominio',
+        sub: 'Control de egresos, alícuotas y libro mensual',
+        category: 'Módulos',
+        icon: 'fa-solid fa-calculator',
+        color: 'var(--purple)',
+        bg: 'rgba(168, 85, 247, 0.12)',
+        keywords: 'condominio condominios alicuota alicuotas gastos expensas egresos alicuota',
+        run: () => {
+          const el = document.querySelector('.nav-item[data-tab="condominio"]');
+          if (el) el.click();
+        }
+      },
+      {
+        title: 'Informes & Contabilidad Oficial',
+        sub: 'Recaudación, libros SENIAT y dividendos sucesorales',
+        category: 'Módulos',
+        icon: 'fa-solid fa-book',
+        color: 'var(--cyan)',
+        bg: 'rgba(14, 165, 233, 0.12)',
+        keywords: 'reportes reportes seniat contabilidad informes dividendos estados balances libros',
+        run: () => {
+          const el = document.querySelector('.nav-item[data-tab="reportes"]');
+          if (el) el.click();
+        }
+      },
+      {
+        title: 'Calendario & Vencimientos',
+        sub: 'Cronograma de pagos, prórrogas y contratos',
+        category: 'Módulos',
+        icon: 'fa-solid fa-calendar',
+        color: 'var(--amber)',
+        bg: 'rgba(245, 158, 11, 0.12)',
+        keywords: 'calendario calendarios cronograma vencimiento vencimientos fechas mora plazos',
+        run: () => {
+          const el = document.querySelector('.nav-item[data-tab="calendario"]');
+          if (el) el.click();
+        }
+      },
+      {
+        title: 'Inventario de Bienes & Kardex',
+        sub: 'Activos fijos, insumos de mantenimiento y stock',
+        category: 'Módulos',
+        icon: 'fa-solid fa-boxes-stacked',
+        color: 'var(--rose)',
+        bg: 'rgba(244, 63, 94, 0.12)',
+        keywords: 'inventario kardex bienes activos insumos stock repuestos materiales',
+        run: () => {
+          const el = document.querySelector('.nav-item[data-tab="inventario"]');
+          if (el) el.click();
+        }
+      },
+      {
+        title: 'Centro de Ayuda & Marco Legal',
+        sub: 'Gaceta Oficial N° 40.418, cálculos CAF y normativas',
+        category: 'Soporte',
+        icon: 'fa-solid fa-scale-balanced',
+        color: 'var(--cyan)',
+        bg: 'rgba(14, 165, 233, 0.12)',
+        keywords: 'ayuda soporte legal gaceta normativa leyes articulos caf',
+        run: () => {
+          const el = document.querySelector('.nav-item[data-tab="ayuda"]');
+          if (el) el.click();
+        }
+      }
     ];
 
-    let results = [];
+    const quickActions = [];
+    const modules = [];
+    const tenantMatches = [];
+    const invoiceMatches = [];
 
-    actions.forEach(a => {
-      if (!q || a.title.toLowerCase().includes(q) || a.category.toLowerCase().includes(q)) {
-        results.push({
-          type: 'action',
-          title: a.title,
-          sub: a.category,
-          icon: a.icon,
-          color: a.color,
-          action: a.run
-        });
-      }
-    });
+    const qTokens = q ? q.split(/\s+/).filter(Boolean) : [];
 
-    tenants.forEach(t => {
-      if (q && ((t.business_name || '').toLowerCase().includes(q) || (t.trade_name || '').toLowerCase().includes(q) || (t.rif || '').toLowerCase().includes(q) || (t.unit_code || '').toLowerCase().includes(q))) {
-        results.push({
-          type: 'tenant',
-          title: `${t.business_name} (${t.unit_code || 'Local'})`,
-          sub: `RIF: ${t.rif} • ${t.commercial_activity || 'Comercial'} • ${t.status === 'moroso' ? 'EN MORA' : 'SOLVENTE'}`,
-          icon: 'fa-solid fa-store',
-          color: t.status === 'moroso' ? 'var(--rose)' : 'var(--emerald)',
-          action: `window.closeCommandKModal(); window.openTenantFullProfile('${t.id}')`
-        });
-      }
-    });
-
-    units.forEach(u => {
-      if (q && ((u.code || '').toLowerCase().includes(q) || (u.name || '').toLowerCase().includes(q) || (u.category || '').toLowerCase().includes(q))) {
-        results.push({
-          type: 'unit',
-          title: `Local ${u.code}: ${u.name}`,
-          sub: `${u.area_m2} m² • ${u.category || 'Local'} • ${u.status.toUpperCase()}`,
-          icon: 'fa-solid fa-door-open',
-          color: 'var(--cyan)',
-          action: `window.closeCommandKModal(); document.querySelector('.nav-item[data-tab="inquilinos"]').click();`
-        });
+    actionList.forEach(a => {
+      const fullText = `${a.title} ${a.sub} ${a.category} ${a.keywords || ''}`.toLowerCase();
+      const matches = !q || qTokens.every(tok => fullText.includes(tok) || (tok.endsWith('s') && fullText.includes(tok.slice(0, -1))));
+      if (matches) {
+        if (a.category === 'Acciones Rápidas') quickActions.push(a);
+        else modules.push(a);
       }
     });
 
     if (q) {
+      tenants.forEach(t => {
+        if ((t.business_name || '').toLowerCase().includes(q) || (t.trade_name || '').toLowerCase().includes(q) || (t.rif || '').toLowerCase().includes(q) || (t.unit_code || '').toLowerCase().includes(q)) {
+          tenantMatches.push({
+            title: `${t.business_name} (${t.unit_code || 'Local'})`,
+            sub: `RIF: ${t.rif} • ${t.commercial_activity || 'Comercio'} • ${t.status === 'moroso' ? 'EN MORA' : 'SOLVENTE'}`,
+            icon: 'fa-solid fa-store',
+            color: t.status === 'moroso' ? 'var(--rose)' : 'var(--emerald)',
+            bg: t.status === 'moroso' ? 'rgba(244, 63, 94, 0.12)' : 'rgba(16, 185, 129, 0.12)',
+            run: () => {
+              if (typeof window.openTenantFullProfile === 'function') {
+                window.openTenantFullProfile(t.id);
+              } else {
+                const el = document.querySelector('.nav-item[data-tab="inquilinos"]');
+                if (el) el.click();
+              }
+            }
+          });
+        }
+      });
+
+      units.forEach(u => {
+        if ((u.code || '').toLowerCase().includes(q) || (u.name || '').toLowerCase().includes(q) || (u.category || '').toLowerCase().includes(q)) {
+          tenantMatches.push({
+            title: `Local ${u.code}: ${u.name || 'Local Comercial'}`,
+            sub: `${u.area_m2 || u.surface_m2 || 45} m² • ${u.category || 'Local'} • ${String(u.status || 'disponible').toUpperCase()}`,
+            icon: 'fa-solid fa-door-open',
+            color: 'var(--cyan)',
+            bg: 'rgba(14, 165, 233, 0.12)',
+            run: () => {
+              const el = document.querySelector('.nav-item[data-tab="inquilinos"]');
+              if (el) el.click();
+            }
+          });
+        }
+      });
+
       invoices.forEach(inv => {
-        if ((inv.invoice_number || '').toLowerCase().includes(q) || (inv.unit_code || '').toLowerCase().includes(q)) {
-          results.push({
-            type: 'invoice',
-            title: `Factura ${inv.invoice_number} (${inv.unit_code})`,
-            sub: `Monto: $${(inv.total_usd || 0).toFixed(2)} • Vence: ${inv.due_date} • ${inv.status.toUpperCase()}`,
+        if ((inv.invoice_number || '').toLowerCase().includes(q) || (inv.receipt_number || '').toLowerCase().includes(q) || (inv.unit_code || '').toLowerCase().includes(q)) {
+          invoiceMatches.push({
+            title: `Recibo ${inv.receipt_number || inv.invoice_number} (${inv.unit_code})`,
+            sub: `Monto: $${(inv.total_usd || 0).toFixed(2)} • Vence: ${inv.due_date || 'N/A'} • ${String(inv.status || 'pendiente').toUpperCase()}`,
             icon: 'fa-solid fa-file-invoice-dollar',
             color: inv.status === 'pagado' ? 'var(--emerald)' : 'var(--amber)',
-            action: `window.closeCommandKModal(); document.querySelector('.nav-item[data-tab="cobranzas"]').click();`
+            bg: inv.status === 'pagado' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+            run: () => {
+              const el = document.querySelector('.nav-item[data-tab="cobranzas"]');
+              if (el) el.click();
+            }
           });
         }
       });
     }
 
-    if (results.length === 0) {
+    _activeCommandPaletteItems = [];
+    let html = '';
+
+    const appendSection = (title, items) => {
+      if (!items || items.length === 0) return;
+      html += `<div class="command-k-section-title">${escapeHtml(title)}</div>`;
+      items.forEach(item => {
+        const itemIdx = _activeCommandPaletteItems.length;
+        _activeCommandPaletteItems.push(item);
+        const isFirst = itemIdx === 0;
+        html += `
+          <div class="command-k-item ${isFirst ? 'selected' : ''}" data-index="${itemIdx}" onclick="window.executeCommandPaletteItem(${itemIdx})">
+            <div class="command-k-item-left">
+              <div class="command-k-item-icon-wrap" style="background: ${item.bg}; color: ${item.color};">
+                <i class="${item.icon}"></i>
+              </div>
+              <div class="command-k-item-info">
+                <div class="command-k-item-title">${escapeHtml(item.title)}</div>
+                <div class="command-k-item-sub">${escapeHtml(item.sub)}</div>
+              </div>
+            </div>
+            <div class="command-k-kbd-enter">
+              <i class="fa-solid fa-arrow-turn-down" style="font-size: 10px; transform: rotate(90deg);"></i>
+            </div>
+          </div>
+        `;
+      });
+    };
+
+    appendSection('Acciones Rápidas', quickActions);
+    appendSection('Módulos de Gestión', modules);
+    if (tenantMatches.length > 0) appendSection('Inquilinos & Locales', tenantMatches.slice(0, 6));
+    if (invoiceMatches.length > 0) appendSection('Recibos & Facturas', invoiceMatches.slice(0, 6));
+
+    if (_activeCommandPaletteItems.length === 0) {
       container.innerHTML = `
-        <div style="padding: 28px 14px; text-align: center; color: var(--txt-muted);">
-          <i class="fa-solid fa-magnifying-glass" style="font-size: 24px; opacity: 0.4; margin-bottom: 8px; display: block;"></i>
-          <div style="font-size: 13px; font-weight: 700; color: var(--txt-primary);">No se encontraron resultados para "${escapeHtml(query)}"</div>
-          <div style="font-size: 11.5px; margin-top: 4px;">Intente buscando por nombre de cliente, código de local (ej. L-01), RIF o número de recibo.</div>
+        <div style="padding: 36px 16px; text-align: center; color: var(--txt-muted);">
+          <i class="fa-solid fa-magnifying-glass" style="font-size: 26px; opacity: 0.35; margin-bottom: 10px; display: block; color: var(--amber);"></i>
+          <div style="font-size: 14px; font-weight: 700; color: var(--txt-primary);">No se encontraron resultados para "${escapeHtml(query)}"</div>
+          <div style="font-size: 12px; margin-top: 6px; max-width: 380px; margin-left: auto; margin-right: auto; line-height: 1.4;">
+            Intente buscando por nombre de cliente, código de local (ej. LOC-01), RIF o número de recibo.
+          </div>
         </div>
       `;
       return;
     }
 
-    container.innerHTML = results.slice(0, 15).map((r, i) => `
-      <div class="command-k-item ${i === 0 ? 'selected' : ''}" data-action="${escapeHtml(r.action)}" onclick="eval(this.getAttribute('data-action'))">
-        <i class="${r.icon} command-k-item-icon" style="color: ${r.color};"></i>
-        <div class="command-k-item-info">
-          <div class="command-k-item-title">${escapeHtml(r.title)}</div>
-          <div class="command-k-item-sub">${escapeHtml(r.sub)}</div>
-        </div>
-        <i class="fa-solid fa-arrow-turn-down" style="color: var(--txt-muted); font-size: 11px; transform: rotate(90deg);"></i>
-      </div>
-    `).join('');
+    container.innerHTML = html;
   };
 
   window.handleCommandKKeydown = function(e) {
@@ -9141,9 +9816,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (selectedIdx >= 0 && items[selectedIdx]) {
-        const action = items[selectedIdx].getAttribute('data-action');
-        if (action) {
-          eval(action);
+        const idx = parseInt(items[selectedIdx].getAttribute('data-index'), 10);
+        if (!isNaN(idx)) {
+          window.executeCommandPaletteItem(idx);
         }
       }
     } else if (e.key === 'Escape') {
@@ -9324,7 +9999,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const tableBody = document.getElementById('tenant-profile-invoices-body');
       if (tableBody) {
         if (tenantInvoices.length === 0) {
-          tableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--txt-muted); padding: 20px;">No posee registros de facturación aún.</td></tr>`;
+          tableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--txt-muted); padding: 24px; font-style: italic;">No posee registros de facturación aún.</td></tr>`;
         } else {
           tableBody.innerHTML = tenantInvoices.map(inv => {
             const usd = parseFloat(inv.total_usd || 0);
@@ -9338,20 +10013,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
             return `
               <tr>
-                <td><strong style="color: var(--txt-primary); font-family: monospace;">${inv.receipt_number || inv.control_number || 'REC-' + inv.id}</strong></td>
-                <td>${inv.concept || 'Canon Arrendamiento'}</td>
-                <td style="font-weight: 700; color: var(--txt-primary);">${formatMoney(usd)}</td>
-                <td style="font-size: 11px; color: var(--txt-muted);">${(financialEngine && typeof financialEngine.format === 'function' ? financialEngine.format(ves, 'VES') : 'Bs. ' + ves.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}</td>
-                <td><span style="font-family: monospace; font-size: 11px; color: var(--cyan);">${inv.reference_number || 'N/A'}</span></td>
                 <td>
-                  <span style="font-family: monospace; font-size: 10px; color: var(--amber); background: rgba(245,158,11,0.08); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(245,158,11,0.2);" title="${seal}">
-                    ${seal.substring(0, 14)}...
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-file-invoice" style="color: var(--amber); font-size: 11px;"></i>
+                    <strong style="color: var(--txt-primary); font-family: monospace; font-size: 12px;">${inv.receipt_number || inv.control_number || 'REC-' + inv.id}</strong>
+                  </div>
+                  <div style="font-size: 10px; color: var(--txt-muted); margin-top: 2px;">Control: ${inv.control_number || '00-' + String(inv.id).slice(-6)}</div>
+                </td>
+                <td>
+                  <div style="font-weight: 700; color: var(--txt-primary);">${escapeHtml(inv.concept || 'Canon Arrendamiento')}</div>
+                  <div style="font-size: 11px; color: var(--txt-muted); margin-top: 2px;">Período: ${inv.period_month || 3}/${inv.period_year || 2026} • Vence: ${inv.due_date || 'N/A'}</div>
+                </td>
+                <td>
+                  <span class="table-currency-tag usd">$ ${usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                </td>
+                <td>
+                  <span class="table-currency-tag ves">Bs. ${ves.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  <div style="font-size: 9.5px; color: var(--txt-muted); margin-top: 2px;">@ BCV ${(inv.bcv_rate || bcvRate).toFixed(2)}</div>
+                </td>
+                <td>
+                  <div style="display: flex; align-items: center; gap: 5px;">
+                    <i class="fa-solid fa-building-columns" style="color: var(--cyan); font-size: 10px;"></i>
+                    <span style="font-family: monospace; font-size: 11.5px; font-weight: 600; color: var(--txt-primary);">${inv.reference_number || 'En trámite'}</span>
+                  </div>
+                  <div style="font-size: 10px; color: var(--txt-muted); margin-top: 2px;">${inv.payment_method ? String(inv.payment_method).toUpperCase() : 'TRANSFERENCIA'}</div>
+                </td>
+                <td>
+                  <span style="font-family: monospace; font-size: 9.5px; color: var(--amber); background: rgba(245,158,11,0.08); padding: 3px 6px; border-radius: 4px; border: 1px solid rgba(245,158,11,0.2); display: inline-flex; align-items: center; gap: 4px;" title="${seal}">
+                    <i class="fa-solid fa-shield-halved" style="font-size: 9px;"></i> ${seal.substring(0, 12)}...
                   </span>
                 </td>
                 <td>${statusBadge}</td>
-                <td>
-                  <button type="button" class="btn-action-icon" onclick="window.viewReceiptDetail('${inv.id}')" title="Ver Recibo Oficial con Sello SHA-256">
-                    <i class="fa-solid fa-file-invoice"></i>
+                <td style="text-align: center;">
+                  <button type="button" class="btn-currency-toggle" onclick="window.viewReceiptDetail('${inv.id}')" title="Ver Recibo Oficial Certificado" style="font-size: 11px; padding: 4px 10px; border-color: var(--cyan); color: var(--cyan);">
+                    <i class="fa-solid fa-eye"></i> Ver
                   </button>
                 </td>
               </tr>
@@ -9363,6 +10058,141 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('[renderTenantSelfProfile Error]', err);
     }
   }
+
+  // =========================================================================
+  // CONTROLADOR: VISOR DE RECIBO OFICIAL PARA EL INQUILINO
+  // =========================================================================
+  window.viewReceiptDetail = function(invoiceId) {
+    const invoices = (typeof dbService !== 'undefined' && dbService.getInvoices) ? dbService.getInvoices() : [];
+    const inv = invoices.find(i => i.id === invoiceId) || invoices[0];
+    if (!inv) return;
+    const tenants = (typeof dbService !== 'undefined' && dbService.getTenants) ? dbService.getTenants() : [];
+    const tenant = tenants.find(t => t.id === inv.tenant_id || t.rif === inv.tenant_rif) || {
+      business_name: inv.tenant_name || 'Inquilino',
+      rif: inv.tenant_rif || 'J-30211544-2',
+      unit_code: inv.unit_code || 'LOC-01'
+    };
+
+    const receiptObj = {
+      receipt_number: inv.receipt_number || inv.control_number || `REC-${inv.id}`,
+      control_number: inv.control_number || `00-${String(inv.id).slice(-6)}`,
+      tenant_name: tenant.business_name,
+      tenant_rif: tenant.rif,
+      unit_code: inv.unit_code || tenant.unit_code,
+      period_month: inv.period_month || (new Date().getMonth() + 1),
+      period_year: inv.period_year || new Date().getFullYear(),
+      rent_usd: inv.base_rent_usd || inv.rent_usd || inv.total_usd || 450,
+      condo_usd: inv.condo_usd || 0,
+      total_usd: inv.total_usd || 450,
+      payment_method: inv.payment_method || 'transferencia',
+      reference_number: inv.reference_number || 'REF-VERIFIED-BCV',
+      payment_date: inv.payment_date || inv.due_date || new Date().toISOString().split('T')[0],
+      snapshot: { bcv_rate_applied: inv.bcv_rate || 832.49 }
+    };
+
+    if (typeof window.openReceiptPreview === 'function') {
+      window.openReceiptPreview(receiptObj);
+    } else {
+      alert(`Recibo Oficial ${receiptObj.receipt_number} - Monto: $${receiptObj.total_usd}`);
+    }
+  };
+
+  // =========================================================================
+  // SISTEMA DE TICKETS, RECLAMOS & SOLICITUDES DE SERVICIO (INQUILINOS & ADMIN)
+  // =========================================================================
+  window.openTenantNewTicketModal = function(unitCode = null) {
+    const tenant = (window.AuthGuard && typeof window.AuthGuard.currentTenant === 'function')
+      ? window.AuthGuard.currentTenant()
+      : null;
+    const unitInput = document.getElementById('tticket-unit');
+    if (unitInput) {
+      unitInput.value = unitCode || (tenant ? `${tenant.unit_code} - ${tenant.business_name}` : 'Local Comercial');
+    }
+    const form = document.getElementById('tenant-ticket-form');
+    if (form) form.reset();
+    if (unitInput) {
+      unitInput.value = unitCode || (tenant ? `${tenant.unit_code} - ${tenant.business_name}` : 'Local Comercial');
+    }
+    window.openModal('modal-tenant-new-ticket');
+  };
+
+  window.closeTenantNewTicketModal = function() {
+    window.closeModal('modal-tenant-new-ticket');
+  };
+
+  window.getServiceTickets = function() {
+    try {
+      const data = localStorage.getItem('ccms_service_tickets');
+      if (data) return JSON.parse(data);
+    } catch (e) {}
+    return [
+      {
+        id: 'tk-1',
+        ticket_number: 'TK-2026-001',
+        tenant_id: 'ten-1',
+        tenant_name: 'Mueblería Juncal, C.A.',
+        unit_code: 'LOC-01',
+        category: 'electricidad',
+        priority: 'alta',
+        subject: 'Parpadeo en reflector exterior del pasillo PB',
+        description: 'El reflector que ilumina la entrada del local LOC-01 presenta intermitencia desde el día de ayer.',
+        status: 'en_atencion',
+        admin_response: 'Técnico electricista asignado para revisión hoy a las 14:00 hrs.',
+        created_at: '2026-03-01T10:30:00Z'
+      }
+    ];
+  };
+
+  window.saveServiceTickets = function(tickets) {
+    localStorage.setItem('ccms_service_tickets', JSON.stringify(tickets));
+  };
+
+  window.handleTenantTicketSubmit = function(e) {
+    e.preventDefault();
+    const tenant = (window.AuthGuard && typeof window.AuthGuard.currentTenant === 'function')
+      ? window.AuthGuard.currentTenant()
+      : null;
+
+    const tickets = window.getServiceTickets();
+    const newTicket = {
+      id: 'tk-' + Date.now(),
+      ticket_number: `TK-2026-${String(tickets.length + 1).padStart(3, '0')}`,
+      tenant_id: tenant ? tenant.id : 'tenant-current',
+      tenant_name: tenant ? tenant.business_name : 'Inquilino',
+      unit_code: tenant ? tenant.unit_code : (document.getElementById('tticket-unit').value || 'LOCAL'),
+      priority: document.getElementById('tticket-priority').value,
+      category: document.getElementById('tticket-category').value,
+      subject: document.getElementById('tticket-subject').value.trim(),
+      description: document.getElementById('tticket-description').value.trim(),
+      status: 'abierto',
+      admin_response: '',
+      created_at: new Date().toISOString()
+    };
+
+    tickets.unshift(newTicket);
+    window.saveServiceTickets(tickets);
+
+    if (window.CCMSTelemetry && typeof window.CCMSTelemetry.captureAction === 'function') {
+      window.CCMSTelemetry.captureAction('tenant_created_ticket', { ticket_number: newTicket.ticket_number, subject: newTicket.subject });
+    }
+
+    window.closeTenantNewTicketModal();
+    renderAlertsCenter();
+    alert(`Su solicitud #${newTicket.ticket_number} fue remitida formalmente a la Administración del CCMS. Se asignará personal para su pronta atención.`);
+  };
+
+  window.adminUpdateTicketStatus = function(ticketId, newStatus) {
+    const tickets = window.getServiceTickets();
+    const ticket = tickets.find(t => t.id === ticketId);
+    if (!ticket) return;
+    ticket.status = newStatus;
+    const responsePrompt = prompt('Ingrese comentario o respuesta de Administración para el inquilino (opcional):', ticket.admin_response || '');
+    if (responsePrompt !== null) {
+      ticket.admin_response = responsePrompt.trim();
+    }
+    window.saveServiceTickets(tickets);
+    renderAlertsCenter();
+  };
 
   // =========================================================================
   // CONTROLADOR: REGISTRO RÁPIDO DE INQUILINO (MODAL RÁPIDO EN PÁGINA)
@@ -9382,16 +10212,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (opt) {
           const c = opt.getAttribute('data-canon');
           const a = opt.getAttribute('data-alicuota');
-          const canonInp = document.getElementById('qadd-canon-usd');
-          const aliInp = document.getElementById('qadd-alicuota');
-          if (canonInp && c) canonInp.value = c;
-          if (aliInp && a) aliInp.value = a;
+          if (document.getElementById('qadd-canon')) document.getElementById('qadd-canon').value = c || 400;
+          if (document.getElementById('qadd-alicuota')) document.getElementById('qadd-alicuota').value = a || 5.0;
         }
       };
-      if (select.onchange) select.onchange();
+      select.dispatchEvent(new Event('change'));
     }
-    const dateInp = document.getElementById('qadd-start-date');
-    if (dateInp) dateInp.value = new Date().toISOString().split('T')[0];
     window.openModal('modal-quick-add-client');
   };
 
@@ -9401,49 +10227,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.handleQuickAddClientSubmit = function(e) {
     e.preventDefault();
-    const unitCode = document.getElementById('qadd-unit-select').value;
-    const category = document.getElementById('qadd-category').value.trim();
     const bName = document.getElementById('qadd-business-name').value.trim();
-    const rif = document.getElementById('qadd-rif').value.trim().toUpperCase();
-    const repName = document.getElementById('qadd-rep-name').value.trim();
-    const repCi = document.getElementById('qadd-rep-ci').value.trim();
+    const rif = document.getElementById('qadd-rif').value.trim();
     const phone = document.getElementById('qadd-phone').value.trim();
-    const email = document.getElementById('qadd-email').value.trim();
-    const canonUsd = parseFloat(document.getElementById('qadd-canon-usd').value) || 400;
-    const alicuota = parseFloat(document.getElementById('qadd-alicuota').value) || 5;
-    const depMonths = parseInt(document.getElementById('qadd-deposit-months').value) || 2;
-    const startDate = document.getElementById('qadd-start-date').value;
-    const durationMonths = parseInt(document.getElementById('qadd-contract-duration').value) || 12;
+    const unitCode = document.getElementById('qadd-unit-select').value;
+    const canonUsd = parseFloat(document.getElementById('qadd-canon').value) || 400;
+    const alicuota = parseFloat(document.getElementById('qadd-alicuota').value) || 5.0;
+    const repName = document.getElementById('qadd-rep-name').value.trim();
+    const repDni = document.getElementById('qadd-rep-dni').value.trim();
 
-    const newId = 't-' + Date.now();
+    const tenants = (typeof dbService !== 'undefined' && dbService.getTenants) ? dbService.getTenants() : [];
+    const newId = 'ten-' + Date.now();
     const newTenant = {
       id: newId,
-      unit_code: unitCode,
       business_name: bName,
+      trade_name: bName,
       rif: rif,
-      category: category,
-      legal_representative: repName,
-      id_doc: repCi,
       phone: phone,
-      email: email,
+      whatsapp: phone,
+      email: `${rif.toLowerCase().replace(/[^a-z0-9]/g, '')}@ejemplo.com`,
+      unit_code: unitCode,
       canon_usd: canonUsd,
       monthly_rent_usd: canonUsd,
       alicuota_pct: alicuota,
-      deposit_held_usd: canonUsd * depMonths,
-      contract_number: `CTR-2026-${unitCode}`,
-      contract_start: startDate,
-      contract_end: new Date(new Date(startDate).setMonth(new Date(startDate).getMonth() + durationMonths)).toISOString().split('T')[0],
+      legal_rep_name: repName || 'Representante Legal',
+      legal_rep_dni: repDni || 'V-00000000',
       status: 'solvente',
+      contract_start: new Date().toISOString().split('T')[0],
+      contract_end: new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString().split('T')[0],
+      contract_number: `CTR-2026-${unitCode}`,
+      deposit_held_usd: canonUsd * 2,
       created_at: new Date().toISOString()
     };
 
-    const tenants = (typeof dbService !== 'undefined' && dbService.getTenants) ? dbService.getTenants() : [];
     tenants.push(newTenant);
-    if (typeof dbService !== 'undefined' && typeof dbService.saveTenants === 'function') {
-      dbService.saveTenants(tenants);
-    } else {
-      localStorage.setItem('ccms_tenants_v5', JSON.stringify(tenants));
-    }
+    if (typeof dbService.saveTenants === 'function') dbService.saveTenants(tenants);
+    else localStorage.setItem('ccms_tenants_v5', JSON.stringify(tenants));
 
     const units = (typeof dbService !== 'undefined' && dbService.getUnits) ? dbService.getUnits() : [];
     const targetUnit = units.find(u => u.code === unitCode);
@@ -9596,72 +10415,69 @@ document.addEventListener('DOMContentLoaded', () => {
     alert(`Su reporte de pago con referencia #${ref} fue enviado exitosamente al departamento de Cobranzas del CCMS. Se encuentra en proceso de validación.`);
   };
 
-  window.downloadTenantSolvencyCertificate = function() {
+  // =========================================================================
+  // CONTROLADOR: EMISIÓN DE SOLVENCIA ARRENDATICIA CORPORATIVA (G.O. 40.418)
+  // =========================================================================
+  window.downloadTenantSolvencyCertificate = async function() {
     const tenant = (window.AuthGuard && typeof window.AuthGuard.currentTenant === 'function') 
       ? window.AuthGuard.currentTenant() 
       : null;
-    if (!tenant) return;
-
-    const invoices = (typeof dbService !== 'undefined' && dbService.getInvoices) ? dbService.getInvoices() : [];
-    const overdueList = invoices.filter(i => (i.tenant_id === tenant.id || i.tenant_rif === tenant.rif) && i.status === 'en_mora');
-
-    if (overdueList.length > 0) {
-      alert(`No es posible emitir la Solvencia Arrendaticia: Posee ${overdueList.length} cuota(s) en mora.`);
+    if (!tenant) {
+      alert('Debe iniciar sesión como arrendatario para emitir la Solvencia.');
       return;
     }
 
-    const dateStr = new Date().toLocaleDateString('es-VE', { year: 'numeric', month: 'long', day: 'numeric' });
-    const seal = `CCMS-SOLV-SHA256-${Date.now().toString(16).toUpperCase()}-VERIFIED`;
+    const invoices = (typeof dbService !== 'undefined' && dbService.getInvoices) ? dbService.getInvoices() : [];
+    const overdueList = invoices.filter(i => (i.tenant_id === tenant.id || i.tenant_rif === tenant.rif || i.unit_code === tenant.unit_code) && i.status === 'en_mora');
 
-    const certHtml = `
-      <div style="font-family: 'Times New Roman', Georgia, serif; max-width: 750px; margin: 0 auto; padding: 40px; color: #000; background: #fff; border: 2px solid #b8860b; border-radius: 8px;">
-        <div style="text-align: center; border-bottom: 2px solid #b8860b; padding-bottom: 16px; margin-bottom: 24px;">
-          <h2 style="margin: 0; font-size: 20px; text-transform: uppercase; color: #111;">Centro Comercial Mario Sánchez C.A.</h2>
-          <div style="font-size: 12px; color: #555;">RIF: J-30211544-2 • Administración Inmobiliaria & Condominio</div>
-          <div style="font-size: 11px; color: #777;">Gaceta Oficial de la República Bolivariana de Venezuela N° 40.418</div>
-        </div>
+    if (overdueList.length > 0) {
+      alert(`No es posible emitir la Solvencia Arrendaticia: Posee ${overdueList.length} cuota(s) en mora. Por favor regularice sus pagos.`);
+      return;
+    }
 
-        <h3 style="text-align: center; font-size: 18px; text-transform: uppercase; margin: 24px 0; color: #854d0e; letter-spacing: 0.1em;">
-          Constancia de Solvencia Arrendaticia
-        </h3>
+    const units = (typeof dbService !== 'undefined' && dbService.getUnits) ? dbService.getUnits() : [];
+    const unit = units.find(u => u.code === tenant.unit_code) || {
+      code: tenant.unit_code || 'LOC-01',
+      name: tenant.business_name || 'Local Comercial',
+      area_m2: 54.50,
+      condo_aliquot: 0.0725
+    };
 
-        <p style="font-size: 14px; line-height: 1.8; text-align: justify;">
-          Por medio de la presente, la Administración del <strong>CENTRO COMERCIAL MARIO SÁNCHEZ C.A.</strong> hace constar que la sociedad mercantil 
-          <strong>${escapeHtml(tenant.business_name)}</strong>, titular del Registro de Información Fiscal <strong>RIF ${escapeHtml(tenant.rif)}</strong>, 
-          en su condición de Arrendatario del <strong>Local Comercial N° ${escapeHtml(tenant.unit_code)}</strong>, se encuentra a la fecha de emisión del presente documento:
-        </p>
-
-        <div style="text-align: center; margin: 24px 0;">
-          <span style="font-size: 18px; font-weight: bold; color: #166534; border: 2px solid #166534; padding: 8px 30px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.08em; display: inline-block;">
-            Completamente Solvente
-          </span>
-        </div>
-
-        <p style="font-size: 14px; line-height: 1.8; text-align: justify;">
-          Habiendo cumplido a cabalidad con el pago de todos los cánones de arrendamiento, cuotas de gastos comunes de condominio y demás obligaciones contractuales vinculadas a su relación arrendaticia.
-        </p>
-
-        <p style="font-size: 13px; line-height: 1.6; margin-top: 20px;">
-          Constancia que se expide a solicitud de la parte interesada, en la ciudad de Puerto La Cruz, a los ${dateStr}.
-        </p>
-
-        <div style="margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-end;">
-          <div style="text-align: center; width: 220px; border-top: 1px solid #333; padding-top: 6px; font-size: 12px;">
-            <strong>Administración CCMS</strong><br>
-            Firma y Sello de la Empresa
-          </div>
-          <div style="text-align: right; font-size: 10px; color: #555; font-family: monospace;">
-            <div>SELLO DIGITAL CRIPTOGRÁFICO:</div>
-            <div style="color: #854d0e; font-weight: bold;">${seal}</div>
-            <div>VERIFICABLE CONFORME A LEY</div>
-          </div>
-        </div>
-      </div>
-    `;
+    let certHtml = '';
+    if (typeof VenezuelaLegal !== 'undefined' && typeof VenezuelaLegal.generateSolvenciaHTML === 'function') {
+      certHtml = await VenezuelaLegal.generateSolvenciaHTML(tenant, unit, invoices, {
+        issueDate: new Date().toLocaleDateString('es-VE', { day: '2-digit', month: 'long', year: 'numeric' }),
+        validityDate: '30 días continuos a partir de su emisión',
+        destination: 'A QUIEN PUEDA INTERESAR'
+      });
+    } else {
+      certHtml = renderOfficialReportHeaderHTML('CONSTANCIA DE SOLVENCIA ARRENDATARIA', `SOLV-${unit.code}-2026`);
+    }
 
     const printWin = window.open('', '_blank');
     if (printWin) {
-      printWin.document.write(`<html><head><title>Solvencia Arrendaticia - ${tenant.business_name}</title></head><body style="margin: 20px;">${certHtml}<script>window.onload = function() { window.print(); };<\/script></body></html>`);
+      printWin.document.write(`
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+          <meta charset="UTF-8">
+          <title>Solvencia Arrendaticia Oficial — ${tenant.business_name}</title>
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+          <style>
+            body { margin: 24px; background: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+            @media print { body { margin: 0; background: #fff; } }
+          </style>
+        </head>
+        <body>
+          ${certHtml}
+          <script>
+            window.onload = function() {
+              setTimeout(function() { window.print(); }, 400);
+            };
+          <\/script>
+        </body>
+        </html>
+      `);
       printWin.document.close();
     }
   };
@@ -9673,6 +10489,229 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!tenant) return;
     window.openContractModal(tenant.id);
   };
+
+  // =========================================================================
+  // SISTEMA DE NOTIFICACIONES FLOTANTE (ESTILO FACEBOOK / SAAS PRO)
+  // =========================================================================
+  let activeFlyoutFilter = 'all';
+
+  function getFlyoutNotifications() {
+    const readIds = JSON.parse(localStorage.getItem('ccms_read_notifications') || '[]');
+    const list = [];
+    const invoices = (typeof dbService !== 'undefined' && dbService.getInvoices) ? dbService.getInvoices() : [];
+    const tickets = typeof window.getServiceTickets === 'function' ? window.getServiceTickets() : [];
+
+    if (currentRole === 'tenant') {
+      const tenantObj = (window.AuthGuard && typeof window.AuthGuard.currentTenant === 'function') ? window.AuthGuard.currentTenant() : null;
+      const myInvoices = invoices.filter(i => tenantObj && (i.tenant_id === tenantObj.id || i.tenant_rif === tenantObj.rif || i.unit_code === tenantObj.unit_code));
+      
+      myInvoices.filter(i => i.status !== 'pagado').forEach(inv => {
+        const isMora = inv.status === 'en_mora';
+        list.push({
+          id: `notif-inv-${inv.id}`,
+          category: 'cobranzas',
+          type: isMora ? 'danger' : 'warning',
+          icon: isMora ? 'fa-triangle-exclamation' : 'fa-clock',
+          title: isMora ? `Cuota en Mora — ${inv.invoice_number}` : `Cuota Pendiente — ${inv.invoice_number}`,
+          desc: `Período ${inv.period_month}/${inv.period_year} por $${parseFloat(inv.total_usd || 0).toFixed(2)} USD (${inv.unit_code}).`,
+          time: inv.due_date ? `Vence: ${inv.due_date}` : 'Reciente',
+          actionTab: 'cobranzas'
+        });
+      });
+
+      const myTickets = tickets.filter(t => !tenantObj || t.tenant_id === tenantObj.id || t.unit_code === tenantObj.unit_code);
+      myTickets.forEach(tk => {
+        list.push({
+          id: `notif-tk-${tk.id}`,
+          category: 'servicio',
+          type: tk.status === 'resuelto' ? 'success' : 'info',
+          icon: 'fa-headset',
+          title: `Solicitud: ${tk.subject}`,
+          desc: tk.admin_response ? `Respuesta CCMS: ${tk.admin_response.slice(0, 65)}...` : `Estatus: ${(tk.status || '').toUpperCase()}`,
+          time: new Date(tk.created_at || Date.now()).toLocaleDateString('es-VE'),
+          actionTab: 'alertas'
+        });
+      });
+    } else {
+      // Admin
+      invoices.filter(i => i.status === 'verificando').forEach(inv => {
+        list.push({
+          id: `notif-vfy-${inv.id}`,
+          category: 'cobranzas',
+          type: 'warning',
+          icon: 'fa-receipt',
+          title: `Comprobante por Validar — ${inv.unit_code}`,
+          desc: `Recibo ${inv.invoice_number} por $${parseFloat(inv.total_usd || 0).toFixed(2)} USD reportado por arrendatario.`,
+          time: 'Pendiente',
+          actionTab: 'cobranzas'
+        });
+      });
+
+      invoices.filter(i => i.status === 'en_mora').slice(0, 6).forEach(inv => {
+        list.push({
+          id: `notif-mora-${inv.id}`,
+          category: 'cobranzas',
+          type: 'danger',
+          icon: 'fa-circle-exclamation',
+          title: `Alerta Mora — ${inv.unit_code}`,
+          desc: `${inv.tenant_name || 'Inquilino'}: $${parseFloat(inv.total_usd || 0).toFixed(2)} USD vencido el ${inv.due_date}.`,
+          time: inv.due_date || 'Atrasada',
+          actionTab: 'alertas'
+        });
+      });
+
+      tickets.filter(t => t.status === 'abierto' || t.status === 'en_proceso').slice(0, 6).forEach(tk => {
+        list.push({
+          id: `notif-tk-${tk.id}`,
+          category: 'servicio',
+          type: tk.priority === 'urgente' ? 'danger' : 'info',
+          icon: 'fa-headset',
+          title: `Mesa de Ayuda: ${tk.unit_code}`,
+          desc: `${tk.subject} — Prioridad ${(tk.priority || '').toUpperCase()}`,
+          time: new Date(tk.created_at || Date.now()).toLocaleDateString('es-VE'),
+          actionTab: 'alertas'
+        });
+      });
+    }
+
+    return list.map(item => ({
+      ...item,
+      is_read: readIds.includes(item.id)
+    }));
+  }
+
+  window.toggleNotificationFlyout = function(e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const flyout = document.getElementById('header-notification-flyout');
+    if (!flyout) return;
+    const isCurrentlyActive = flyout.classList.contains('active');
+    if (isCurrentlyActive) {
+      flyout.classList.remove('active');
+    } else {
+      flyout.classList.add('active');
+      window.renderNotificationFlyout(activeFlyoutFilter);
+    }
+  };
+
+  window.closeNotificationFlyout = function() {
+    const flyout = document.getElementById('header-notification-flyout');
+    if (flyout) flyout.classList.remove('active');
+  };
+
+  window.filterFlyoutNotifications = function(cat) {
+    activeFlyoutFilter = cat;
+    ['all', 'cobranzas', 'servicio'].forEach(t => {
+      const btn = document.getElementById(`notif-tab-${t}`);
+      if (btn) {
+        if (t === cat) btn.classList.add('active');
+        else btn.classList.remove('active');
+      }
+    });
+    window.renderNotificationFlyout(cat);
+  };
+
+  window.markAllNotificationsRead = function() {
+    const notifications = getFlyoutNotifications();
+    const readIds = JSON.parse(localStorage.getItem('ccms_read_notifications') || '[]');
+    notifications.forEach(n => {
+      if (!readIds.includes(n.id)) readIds.push(n.id);
+    });
+    localStorage.setItem('ccms_read_notifications', JSON.stringify(readIds));
+    window.renderNotificationFlyout(activeFlyoutFilter);
+    if (window.SecuritySuite && window.SecuritySuite.toast) {
+      window.SecuritySuite.toast('Todas las notificaciones fueron marcadas como leídas', 'info', 'Notificaciones');
+    }
+  };
+
+  window.renderNotificationFlyout = function(cat = activeFlyoutFilter) {
+    const listEl = document.getElementById('notif-flyout-list');
+    const badgeEl = document.getElementById('header-notif-badge');
+    const dotEl = document.getElementById('header-notif-dot');
+    const unreadCountEl = document.getElementById('flyout-unread-count');
+    if (!listEl) return;
+
+    const allNotifs = getFlyoutNotifications();
+    const unreadCount = allNotifs.filter(n => !n.is_read).length;
+
+    if (badgeEl) {
+      badgeEl.textContent = unreadCount > 9 ? '9+' : unreadCount;
+      badgeEl.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+    }
+    if (dotEl) {
+      dotEl.style.display = unreadCount > 0 ? 'block' : 'none';
+    }
+    if (unreadCountEl) {
+      unreadCountEl.textContent = `${unreadCount} ${unreadCount === 1 ? 'nueva' : 'nuevas'}`;
+    }
+
+    const filtered = cat === 'all' 
+      ? allNotifs 
+      : allNotifs.filter(n => n.category === cat);
+
+    listEl.innerHTML = '';
+    if (filtered.length === 0) {
+      listEl.innerHTML = `
+        <div class="notif-empty-state">
+          <i class="fa-solid fa-bell-slash notif-empty-icon"></i>
+          <div style="font-weight: 700; color: var(--txt-primary); font-size: 13px;">No hay notificaciones</div>
+          <div style="font-size: 11.5px; color: var(--txt-secondary); margin-top: 3px;">Está al día con todas las novedades del centro comercial.</div>
+        </div>
+      `;
+      return;
+    }
+
+    filtered.forEach(item => {
+      const row = document.createElement('div');
+      row.className = `notif-item ${item.is_read ? 'read' : 'unread'}`;
+
+      let iconColor = 'var(--cyan)';
+      if (item.type === 'danger') iconColor = 'var(--rose)';
+      else if (item.type === 'warning') iconColor = 'var(--amber)';
+      else if (item.type === 'success') iconColor = 'var(--emerald)';
+
+      row.innerHTML = `
+        <div class="notif-icon-wrap" style="color: ${iconColor};">
+          <i class="fa-solid ${item.icon}"></i>
+        </div>
+        <div class="notif-text-col">
+          <div class="notif-item-title">${escapeHtml(item.title)}</div>
+          <div class="notif-item-desc">${escapeHtml(item.desc)}</div>
+          <div class="notif-item-time">${escapeHtml(item.time)}</div>
+        </div>
+      `;
+
+      row.onclick = () => {
+        const readIds = JSON.parse(localStorage.getItem('ccms_read_notifications') || '[]');
+        if (!readIds.includes(item.id)) {
+          readIds.push(item.id);
+          localStorage.setItem('ccms_read_notifications', JSON.stringify(readIds));
+        }
+        window.closeNotificationFlyout();
+        if (typeof window.switchTab === 'function') {
+          window.switchTab(item.actionTab);
+        }
+      };
+
+      listEl.appendChild(row);
+    });
+  };
+
+  window.goToBuzonAlertas = function() {
+    window.closeNotificationFlyout();
+    if (typeof window.switchTab === 'function') {
+      window.switchTab('alertas');
+    }
+  };
+
+  document.addEventListener('click', function(e) {
+    const container = document.getElementById('header-notif-container');
+    const flyout = document.getElementById('header-notification-flyout');
+    if (container && flyout && flyout.classList.contains('active')) {
+      if (!container.contains(e.target)) {
+        flyout.classList.remove('active');
+      }
+    }
+  });
 
   // Render inicial
   renderAll();

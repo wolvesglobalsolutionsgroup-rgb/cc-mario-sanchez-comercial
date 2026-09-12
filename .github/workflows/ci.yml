@@ -1,0 +1,41 @@
+﻿name: CI & 5 Pilares de Estabilidad Operativa
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  validate-and-test:
+    name: Validar Pilares & Estabilidad
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x]
+
+    steps:
+      - name: Checkout Código Fuente
+        uses: actions/checkout@v4
+
+      - name: Configurar Entorno Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Instalar Dependencias
+        run: npm ci --prefer-offline || npm install
+
+      - name: Pilar 5 - Verificación Estricta de Sintaxis
+        run: node scripts/check-syntax.js
+
+      - name: Pilar 5 - Linter Defensivo y Análisis de Seguridad
+        run: node scripts/lint-guard.js
+
+      - name: Pilar 3 - Guardrail Anti-Destrucción de BD
+        run: node scripts/db-guardrail.js "SELECT 1"
+
+      - name: Pilar 1 a 5 - Suite de Pruebas de Estabilidad Operativa
+        run: npm test

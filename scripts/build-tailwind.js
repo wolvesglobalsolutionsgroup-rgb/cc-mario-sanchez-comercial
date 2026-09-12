@@ -1,7 +1,7 @@
 const fs = require('fs');
 const { execSync } = require('child_process');
 
-fs.writeFileSync('css/input.css', @import "tailwindcss";
+fs.writeFileSync('css/input.css', `@import "tailwindcss";
 @theme {
   --color-brand-void: #04070d;
   --color-brand-surface: #080d17;
@@ -16,7 +16,7 @@ fs.writeFileSync('css/input.css', @import "tailwindcss";
   --font-heading: Outfit, sans-serif;
   --font-body: Manrope, sans-serif;
 }
-);
+`);
 
 execSync('npx @tailwindcss/cli -i css/input.css -o css/tailwind-built.min.css --minify', { stdio: 'inherit' });
 console.log('Tailwind compiled successfully!');
