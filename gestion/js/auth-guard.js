@@ -163,7 +163,8 @@
   const SESSION_KEY = 'ccms_session';
   const THEME_KEY = 'ccms_theme';
   const CURRENCY_KEY = 'ccms_active_currency';
-  const DEMO_ENABLED = global.CCMS_DEMO_MODE !== false;
+  // Aislamiento de Entorno: Modo DEMO explícitamente opt-in.
+  const DEMO_ENABLED = (global.CCMS_DEMO_MODE === true);
 
   // --- 2. CRIPTOGRAFÍA: PBKDF2 CON SALT ---------------------------------------
 
@@ -239,12 +240,14 @@
       return storedHash === 'PLAIN:' + password;
     }
 
-    // Acceso determinista para credenciales demo oficiales en entornos sin WebCrypto / HTTP
-    if (password === 'Admin2026*' && storedHash === DEFAULT_USERS[0].password_sha256) {
-      return true;
-    }
-    if (password === 'Demo2026*' && (storedHash === DEFAULT_USERS[1].password_sha256 || storedHash === DEFAULT_USERS[2].password_sha256)) {
-      return true;
+    // Acceso determinista para credenciales demo oficiales EXCLUSIVAMENTE si DEMO_ENABLED está activo
+    if (DEMO_ENABLED) {
+      if (password === 'Admin2026*' && storedHash === DEFAULT_USERS[0].password_sha256) {
+        return true;
+      }
+      if (password === 'Demo2026*' && (storedHash === DEFAULT_USERS[1].password_sha256 || storedHash === DEFAULT_USERS[2].password_sha256)) {
+        return true;
+      }
     }
 
     // Formato nuevo: PBKDF2 con salt
@@ -256,7 +259,7 @@
         return false;
       }
       if (!global.crypto || !global.crypto.subtle) {
-        return (password === 'Admin2026*' || password === 'Demo2026*');
+        return DEMO_ENABLED && (password === 'Admin2026*' || password === 'Demo2026*');
       }
       try {
         const salt = hexToBytes(saltHex);
@@ -282,7 +285,7 @@
         return diff === 0;
       } catch (e) {
         console.error('[AUTH] verifyPassword PBKDF2 falló:', e);
-        return (password === 'Admin2026*' || password === 'Demo2026*');
+        return DEMO_ENABLED && (password === 'Admin2026*' || password === 'Demo2026*');
       }
     }
 
@@ -333,7 +336,29 @@
       localStorage.removeItem('ccms_session');
       sessionStorage.removeItem(SESSION_KEY);
       sessionStorage.removeItem('ccms_session');
-    } catch (e) {}
+
+      // Purga de CacheStorage (PWA-01: prevención de fuga de datos en equipos compartidos)
+      if (typeof caches !== 'undefined') {
+        caches.keys().then(keys => {
+          keys.forEach(k => caches.delete(k));
+        }).catch(() => {});
+      }
+
+      // Purga de IndexedDB en logout
+      if (typeof indexedDB !== 'undefined' && indexedDB.databases) {
+        indexedDB.databases().then(dbs => {
+          if (Array.isArray(dbs)) {
+            dbs.forEach(db => {
+              if (db.name && db.name.startsWith('ccms')) {
+                indexedDB.deleteDatabase(db.name);
+              }
+            });
+          }
+        }).catch(() => {});
+      }
+    } catch (e) {
+      console.warn('[AUTH] Error purgando estado local en logout:', e);
+    }
   }
 
   function loginPath() {

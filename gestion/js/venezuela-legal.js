@@ -44,13 +44,13 @@ const VenezuelaLegal = {
 
   calculateLegalExtension(durationYears) {
     if (durationYears <= 1) {
-      return { months: 6, description: 'Hasta 6 meses de prórroga legal obligatoria (Art. 25, literal a).' };
+      return { months: 6, description: 'Hasta 6 meses de prórroga legal obligatoria (Art. 26, Decreto Ley N° 929, G.O. 40.418).' };
     } else if (durationYears <= 5) {
-      return { months: 12, description: 'Hasta 1 año de prórroga legal obligatoria (Art. 25, literal b).' };
+      return { months: 12, description: 'Hasta 1 año de prórroga legal obligatoria (Art. 26, Decreto Ley N° 929, G.O. 40.418).' };
     } else if (durationYears <= 10) {
-      return { months: 24, description: 'Hasta 2 años de prórroga legal obligatoria (Art. 25, literal c).' };
+      return { months: 24, description: 'Hasta 2 años de prórroga legal obligatoria (Art. 26, Decreto Ley N° 929, G.O. 40.418).' };
     } else {
-      return { months: 36, description: 'Hasta 3 años de prórroga legal obligatoria (Art. 25, literal d).' };
+      return { months: 36, description: 'Hasta 3 años de prórroga legal obligatoria (Art. 26, Decreto Ley N° 929, G.O. 40.418).' };
     }
   },
 
@@ -192,7 +192,7 @@ const VenezuelaLegal = {
 
         <h4 style="font-size: 13px; text-transform: uppercase; margin: 16px 0 6px; font-weight: bold;">CLÁUSULA SÉPTIMA: PRÓRROGA LEGAL OBLIGATORIA</h4>
         <p>
-          Al vencimiento del presente contrato, si LA ARRENDATARIA se encontrare solvente en el cumplimiento de sus obligaciones patrimoniales, tendrá derecho a la Prórroga Legal obligatoria estipulada en el <strong>Artículo 25 de la Ley especial</strong>, correspondiéndole a la fecha un lapso máximo de: <strong>${prorroga.months} MESES (${esc(prorroga.description)})</strong>.
+          Al vencimiento del presente contrato, si LA ARRENDATARIA se encontrare solvente en el cumplimiento de sus obligaciones patrimoniales, tendrá derecho a la Prórroga Legal obligatoria estipulada en el <strong>Artículo 26 del Decreto Ley N° 929 (G.O. 40.418)</strong>, correspondiéndole a la fecha un lapso máximo de: <strong>${prorroga.months} MESES (${esc(prorroga.description)})</strong>.
         </p>
 
         <h4 style="font-size: 13px; text-transform: uppercase; margin: 16px 0 6px; font-weight: bold;">CLÁUSULA OCTAVA: PROHIBICIÓN DE CESIÓN Y SUBARRENDAMIENTO</h4>

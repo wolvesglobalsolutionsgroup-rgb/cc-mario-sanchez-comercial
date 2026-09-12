@@ -236,9 +236,14 @@
                 <h4 style="margin: 0; font-family: var(--font-heading); font-size: 14px; font-weight: 800; color: var(--txt-primary);">Notificaciones</h4>
                 <span class="notif-count-pill" id="flyout-unread-count">3 nuevas</span>
               </div>
-              <button type="button" class="btn-mark-all-read" onclick="window.markAllNotificationsRead()">
-                <i class="fa-solid fa-check-double"></i> Marcar leídas
-              </button>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button type="button" class="btn-mark-all-read" onclick="window.markAllNotificationsRead()" title="Marcar todas como leídas">
+                  <i class="fa-solid fa-check-double"></i> Marcar leídas
+                </button>
+                <button type="button" class="btn-flyout-close" onclick="window.closeNotificationFlyout()" title="Cerrar notificaciones">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
             </div>
 
             <div class="notif-flyout-tabs">
@@ -743,26 +748,43 @@
             </div>
           </div>
 
-          <!-- TARJETA 4: CUENTAS BANCARIAS RECEPTORAS DE CCMS -->
+          <!-- TARJETA 4: CUENTAS BANCARIAS RECEPTORAS DE CCMS (MULTI-FIELD 1-CLICK COPY) -->
           <div class="data-card" style="padding: 18px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
-            <div style="font-size: 11px; font-weight: 800; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-              <i class="fa-solid fa-building-columns" style="color: var(--purple);"></i> Cuentas Receptoras CCMS
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <div style="font-size: 11px; font-weight: 800; color: var(--txt-muted); text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-building-columns" style="color: var(--purple);"></i> Cuentas Receptoras CCMS
+              </div>
+              <button type="button" class="btn-currency-toggle" onclick="window.switchTab('cobranzas')" style="font-size: 10px; padding: 2px 7px; color: var(--amber); border-color: var(--amber);" title="Ver todas las cuentas y tasas">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Ver Cuentas
+              </button>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); padding: 5px 8px; border-radius: 4px;">
-                <span><strong>Banesco:</strong> 0134-0001-11-0012345678</span>
-                <button type="button" class="btn-copy-code" onclick="navigator.clipboard.writeText('01340001110012345678'); alert('Cuenta Banesco copiada')" title="Copiar cuenta" style="background: none; border: none; color: var(--amber); cursor: pointer;"><i class="fa-regular fa-copy"></i></button>
+            <div style="display: flex; flex-direction: column; gap: 5px; font-size: 11px;">
+              <div class="bank-data-subrow" style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border-subtle);">
+                <div style="min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  <span style="color: var(--txt-muted);">Banesco:</span> <strong style="font-family: monospace; font-size: 10.5px; color: var(--txt-primary);">0134-0001-11-0012345678</strong>
+                </div>
+                <button type="button" class="btn-copy-mini" onclick="window.copyToClipboard('01340001110012345678', this)" title="Copiar cuenta Banesco"><i class="fa-regular fa-copy"></i></button>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); padding: 5px 8px; border-radius: 4px;">
-                <span><strong>Pago Móvil:</strong> Banesco • 0414-5551234</span>
-                <button type="button" class="btn-copy-code" onclick="navigator.clipboard.writeText('04145551234'); alert('Teléfono copiado')" title="Copiar teléfono" style="background: none; border: none; color: var(--amber); cursor: pointer;"><i class="fa-regular fa-copy"></i></button>
+              <div class="bank-data-subrow" style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border-subtle);">
+                <div style="min-width: 0; flex: 1;">
+                  <span style="color: var(--txt-muted);">Pago Móvil:</span> <strong style="color: var(--txt-primary);">0414-5551234</strong>
+                </div>
+                <button type="button" class="btn-copy-mini" onclick="window.copyToClipboard('04145551234', this)" title="Copiar teléfono Pago Móvil"><i class="fa-regular fa-copy"></i></button>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); padding: 5px 8px; border-radius: 4px;">
-                <span><strong>Binance Pay:</strong> ID 88291044 (USDT)</span>
-                <button type="button" class="btn-copy-code" onclick="navigator.clipboard.writeText('88291044'); alert('Binance Pay ID copiado')" title="Copiar Pay ID" style="background: none; border: none; color: var(--amber); cursor: pointer;"><i class="fa-regular fa-copy"></i></button>
+              <div class="bank-data-subrow" style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border-subtle);">
+                <div style="min-width: 0; flex: 1;">
+                  <span style="color: var(--txt-muted);">RIF CCMS:</span> <strong style="color: var(--txt-primary);">J-30211544-2</strong>
+                </div>
+                <button type="button" class="btn-copy-mini" onclick="window.copyToClipboard('J-30211544-2', this)" title="Copiar RIF CCMS"><i class="fa-regular fa-copy"></i></button>
+              </div>
+              <div class="bank-data-subrow" style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border-subtle);">
+                <div style="min-width: 0; flex: 1;">
+                  <span style="color: var(--txt-muted);">Binance Pay ID:</span> <strong style="font-family: monospace; color: var(--amber);">88291044</strong>
+                </div>
+                <button type="button" class="btn-copy-mini" onclick="window.copyToClipboard('88291044', this)" title="Copiar Binance Pay ID"><i class="fa-regular fa-copy"></i></button>
               </div>
             </div>
-            <div style="font-size: 10px; color: var(--txt-muted); margin-top: 6px;">Titular: Centro Comercial Mario Sánchez C.A. • RIF J-30211544-2</div>
+            <div style="font-size: 9.5px; color: var(--txt-muted); margin-top: 5px;">Titular: Centro Comercial Mario Sánchez C.A.</div>
           </div>
 
         </div>
@@ -1389,6 +1411,7 @@
         <div id="calendar-events-list">
           <!-- Injected via JS -->
         </div>
+        <div id="pagination-calendario" class="pagination-bar" style="margin-top: 12px;"></div>
       </section>
 
       <!-- TAB 5: ALERTAS WHATSAPP & GMAIL -->
@@ -3787,6 +3810,65 @@
 </div>
 
 <!-- ========================================================================= -->
+<!-- MODAL: ATENCIÓN & RESOLUCIÓN DE RECLAMOS POR ADMINISTRACIÓN (PUNTO 6)     -->
+<!-- ========================================================================= -->
+<div class="modal-overlay" id="modal-admin-ticket-respond" style="display: none;" onclick="if(event.target===this) window.closeAdminTicketModal()">
+  <div class="modal-window" style="max-width: 650px; width: 95%; border-radius: 16px;">
+    <div class="modal-header">
+      <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-headset" style="color: var(--cyan);"></i>
+        <span>Atención y Resolución de Solicitud de Inquilino</span>
+      </h3>
+      <button type="button" class="modal-close" onclick="window.closeAdminTicketModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form id="admin-ticket-form" onsubmit="window.handleAdminTicketResolutionSubmit(event)" style="padding: 20px;">
+      <input type="hidden" id="admin-ticket-id">
+      
+      <!-- Resumen del Ticket -->
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 6px;">
+          <span style="font-family: monospace; font-size: 11px; font-weight: 800; color: var(--amber);" id="admin-tk-number">TK-2026-001</span>
+          <span id="admin-tk-tenant" style="font-weight: 700; color: var(--txt-primary); font-size: 12.5px;">Mueblería Juncal (LOC-1)</span>
+          <span id="admin-tk-prio-badge"></span>
+        </div>
+        <div style="font-weight: 700; font-size: 13px; color: var(--txt-primary); margin-bottom: 4px;" id="admin-tk-subject"></div>
+        <p style="font-size: 12px; color: var(--txt-secondary); margin: 0; line-height: 1.4;" id="admin-tk-desc"></p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Estado de la Solicitud</label>
+          <select class="form-control" id="admin-tk-status" required>
+            <option value="abierto">🟡 Abierto (En espera de asignación)</option>
+            <option value="en_atencion" selected>🔵 En Atención (Técnico / Cuadrilla asignada)</option>
+            <option value="resuelto">🟢 Resuelto (Trabajo o consulta culminada)</option>
+            <option value="rechazado">🔴 Desestimado / No Procede</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Personal / Cuadrilla Asignada</label>
+          <input type="text" class="form-control" id="admin-tk-technician" placeholder="Ej: Ing. Electricista / Cuadrilla A">
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Respuesta Oficial de Administración al Inquilino</label>
+        <textarea class="form-control" id="admin-tk-response" rows="3" placeholder="Redacte la respuesta o estatus de atención que se reflejará en el buzón del inquilino..." required style="font-size: 12.5px;"></textarea>
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end; border-top: 1px dashed var(--border-subtle); padding-top: 14px;">
+        <button type="button" class="btn-cancel" onclick="window.closeAdminTicketModal()" style="padding: 8px 16px; border-radius: 8px; font-size: 12px;">
+          Cancelar
+        </button>
+        <button type="submit" class="btn-onboarding-cta" style="background: var(--cyan); border-color: var(--cyan); color: #000; font-weight: 800; padding: 8px 20px; font-size: 12px; border-radius: 8px;">
+          <i class="fa-solid fa-check"></i> Actualizar y Notificar al Inquilino
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
 <!-- MODAL: GLOBAL SEARCH OMNIBOX COMMAND-K (CTRL+K / CMD+K)                  -->
 <!-- ========================================================================= -->
 <div class="modal-overlay" id="modal-command-k" style="display: none;" onclick="if(event.target===this) window.closeCommandKModal()">
@@ -3952,6 +4034,8 @@
 <script src="js/notifications.js?v=20260911_v50_e2e_verified" defer></script>
 <script src="js/seed-data-39.js?v=20260911_v50_e2e_verified" defer></script>
 <script src="js/supabase-client.js?v=20260911_v50_e2e_verified" defer></script>
+<script src="js/contract-viewer.js?v=20260912_v51" defer></script>
+<script src="js/tickets-manager.js?v=20260912_v51" defer></script>
 <script src="js/ayuda-content.js?v=20260911_v50_e2e_verified" defer></script>
 <script src="js/app.js?v=20260911_v50_e2e_verified" defer></script>
 </body>

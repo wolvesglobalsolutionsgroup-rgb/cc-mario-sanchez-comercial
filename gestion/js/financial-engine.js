@@ -171,6 +171,16 @@ class FinancialEngine {
     if (isNaN(num)) return 0;
     if (fromCur === toCur) return num;
 
+    // Liquidación directa USDT <-> VES con tasa de mercado Binance P2P (FIN-03)
+    if (fromCur === 'USDT' && toCur === 'VES') {
+      const p2pRate = (this.rates.USDT_VES && this.rates.USDT_VES > 0) ? this.rates.USDT_VES : this.rates.VES;
+      return num * p2pRate;
+    }
+    if (fromCur === 'VES' && toCur === 'USDT') {
+      const p2pRate = (this.rates.USDT_VES && this.rates.USDT_VES > 0) ? this.rates.USDT_VES : this.rates.VES;
+      return num / p2pRate;
+    }
+
     // 1. Convertir moneda origen a USD (Base común)
     let amountInUsd = 0;
     if (fromCur === 'USD' || fromCur === 'USDT') {

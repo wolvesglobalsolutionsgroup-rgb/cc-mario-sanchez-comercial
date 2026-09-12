@@ -282,6 +282,36 @@
       });
 
       return lines.join('\r\n');
+    },
+
+    /**
+     * Determina si un medio de pago está sujeto a IGTF 3% (G.O. 6.687).
+     * Gravados: Divisas en efectivo, Zelle, cuentas en el exterior, USDT / criptoactivos.
+     * Exentos: Bolívares pagados dentro del sistema financiero nacional (Pago Móvil, Transferencia bancaria local).
+     */
+    isPagoGravadoIGTF(medioPago) {
+      const gravados = ['efectivo_usd', 'efectivo_divisas', 'zelle', 'usdt', 'binance_pay', 'cripto', 'transferencia_exterior'];
+      return gravados.includes(String(medioPago || '').toLowerCase().trim());
+    },
+
+    /**
+     * Calcula la alícuota del IGTF (3%) sobre una transacción en divisas.
+     * @param {number} montoBaseUsd - Monto base pactado o recibido en USD
+     * @param {string} medioPago - Medio o canal de pago utilizado
+     * @returns {{ aplica: boolean, tasa: number, montoIgtfUsd: number, montoTotalUsd: number, baseUsd: number }}
+     */
+    calcularIGTF(montoBaseUsd, medioPago) {
+      const base = parseFloat(montoBaseUsd) || 0;
+      const aplica = this.isPagoGravadoIGTF(medioPago);
+      const tasa = aplica ? 0.03 : 0;
+      const montoIgtfUsd = aplica ? Math.round(base * tasa * 100) / 100 : 0;
+      return {
+        aplica,
+        tasa,
+        baseUsd: base,
+        montoIgtfUsd,
+        montoTotalUsd: Math.round((base + montoIgtfUsd) * 100) / 100
+      };
     }
   };
 

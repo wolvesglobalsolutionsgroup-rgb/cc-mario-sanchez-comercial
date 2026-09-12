@@ -594,68 +594,96 @@ document.addEventListener('DOMContentLoaded', () => {
       if (acc.account_number) {
         dataBoxesHtml = `
           <div class="bank-data-value-box">
-            <div>
-              <div style="font-size: 10px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700;">Número de Cuenta (20 Dígitos)</div>
-              <div class="bank-code-strong">${acc.account_number}</div>
+            <div style="min-width: 0; flex: 1;">
+              <div style="font-size: 9.5px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700;">Número de Cuenta (20 Dígitos)</div>
+              <div class="bank-code-strong" style="font-size: 13px;">${acc.account_number}</div>
             </div>
             <button type="button" class="btn-copy-account" onclick="window.copyToClipboard('${acc.account_number}', this)" title="Copiar número de cuenta">
               <i class="fa-regular fa-copy"></i> Copiar
             </button>
           </div>
-          <div style="font-size: 11.5px; color: var(--txt-secondary); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
-            <span>Titular: <strong style="color: var(--txt-primary);">${escapeHtml(acc.beneficiary)}</strong></span>
-            <span>RIF: <strong style="color: var(--txt-primary);">${escapeHtml(acc.rif)}</strong></span>
+          <div class="bank-data-subrow" style="display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-top: 4px; background: rgba(255,255,255,0.02); padding: 5px 8px; border-radius: 6px; border: 1px solid var(--border-subtle);">
+            <div style="min-width: 0; flex: 1; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              <span style="color: var(--txt-muted);">Titular:</span> <strong style="color: var(--txt-primary);">${escapeHtml(acc.beneficiary)}</strong>
+            </div>
+            <button type="button" class="btn-copy-mini" onclick="window.copyToClipboard('${escapeHtml(acc.beneficiary)}', this)" title="Copiar Titular">
+              <i class="fa-regular fa-copy"></i> Copiar
+            </button>
+          </div>
+          <div class="bank-data-subrow" style="display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-top: 4px; background: rgba(255,255,255,0.02); padding: 5px 8px; border-radius: 6px; border: 1px solid var(--border-subtle);">
+            <div style="min-width: 0; flex: 1; font-size: 11px;">
+              <span style="color: var(--txt-muted);">RIF:</span> <strong style="color: var(--txt-primary);">${escapeHtml(acc.rif)}</strong>
+            </div>
+            <button type="button" class="btn-copy-mini" onclick="window.copyToClipboard('${escapeHtml(acc.rif)}', this)" title="Copiar RIF">
+              <i class="fa-regular fa-copy"></i> Copiar
+            </button>
           </div>
         `;
       } else if (acc.phone) {
         dataBoxesHtml = `
           <div class="bank-data-value-box">
-            <div>
-              <div style="font-size: 10px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700;">Teléfono Pago Móvil</div>
-              <div class="bank-code-strong">${acc.phone}</div>
+            <div style="min-width: 0; flex: 1;">
+              <div style="font-size: 9.5px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700;">Teléfono Pago Móvil</div>
+              <div class="bank-code-strong" style="font-size: 14px;">${acc.phone}</div>
             </div>
-            <button type="button" class="btn-copy-account" onclick="window.copyToClipboard('${acc.phone}', this)" title="Copiar teléfono">
+            <button type="button" class="btn-copy-account" onclick="window.copyToClipboard('${acc.phone}', this)" title="Copiar Teléfono">
               <i class="fa-regular fa-copy"></i> Copiar
             </button>
           </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11.5px; color: var(--txt-secondary);">
-            <div>RIF: <strong style="color: var(--txt-primary);">${escapeHtml(acc.rif)}</strong></div>
-            <div>Bancos: <strong style="color: var(--txt-primary);">${escapeHtml(acc.bank_code)}</strong></div>
+          <div class="bank-data-subrow" style="display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-top: 4px; background: rgba(255,255,255,0.02); padding: 5px 8px; border-radius: 6px; border: 1px solid var(--border-subtle);">
+            <div style="min-width: 0; flex: 1; font-size: 11px;">
+              <span style="color: var(--txt-muted);">RIF:</span> <strong style="color: var(--txt-primary);">${escapeHtml(acc.rif)}</strong>
+            </div>
+            <button type="button" class="btn-copy-mini" onclick="window.copyToClipboard('${escapeHtml(acc.rif)}', this)" title="Copiar RIF">
+              <i class="fa-regular fa-copy"></i> Copiar
+            </button>
+          </div>
+          <div class="bank-data-subrow" style="display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-top: 4px; background: rgba(255,255,255,0.02); padding: 5px 8px; border-radius: 6px; border: 1px solid var(--border-subtle);">
+            <div style="min-width: 0; flex: 1; font-size: 11px;">
+              <span style="color: var(--txt-muted);">Bancos:</span> <strong style="color: var(--txt-primary);">${escapeHtml(acc.bank_code || '0134 (Banesco) / 0102 (BDV)')}</strong>
+            </div>
+            <button type="button" class="btn-copy-mini" onclick="window.copyToClipboard('0134', this)" title="Copiar Código Banco 0134">
+              <i class="fa-regular fa-copy"></i> 0134
+            </button>
           </div>
         `;
       } else if (acc.email) {
         dataBoxesHtml = `
           <div class="bank-data-value-box">
-            <div>
-              <div style="font-size: 10px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700;">Correo Zelle Registrado</div>
-              <div class="bank-code-strong" style="color: var(--purple);">${acc.email}</div>
+            <div style="min-width: 0; flex: 1;">
+              <div style="font-size: 9.5px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700;">Correo Zelle Registrado</div>
+              <div class="bank-code-strong" style="font-size: 12.5px; color: var(--purple);">${acc.email}</div>
             </div>
-            <button type="button" class="btn-copy-account" onclick="window.copyToClipboard('${acc.email}', this)" title="Copiar correo Zelle">
+            <button type="button" class="btn-copy-account" onclick="window.copyToClipboard('${acc.email}', this)" title="Copiar Correo Zelle">
               <i class="fa-regular fa-copy"></i> Copiar
             </button>
           </div>
-          <div style="font-size: 11.5px; color: var(--txt-secondary);">
-            Beneficiario: <strong style="color: var(--txt-primary);">${escapeHtml(acc.beneficiary)}</strong>
+          <div class="bank-data-subrow" style="display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-top: 4px; background: rgba(255,255,255,0.02); padding: 5px 8px; border-radius: 6px; border: 1px solid var(--border-subtle);">
+            <div style="min-width: 0; flex: 1; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              <span style="color: var(--txt-muted);">Beneficiario:</span> <strong style="color: var(--txt-primary);">${escapeHtml(acc.beneficiary)}</strong>
+            </div>
+            <button type="button" class="btn-copy-mini" onclick="window.copyToClipboard('${escapeHtml(acc.beneficiary)}', this)" title="Copiar Beneficiario">
+              <i class="fa-regular fa-copy"></i> Copiar
+            </button>
           </div>
         `;
       } else if (acc.wallet_address) {
         dataBoxesHtml = `
           <div class="bank-data-value-box">
             <div style="min-width: 0; flex: 1;">
-              <div style="font-size: 10px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700;">Dirección Wallet TRC20 (Red TRON)</div>
+              <div style="font-size: 9.5px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700;">Dirección TRC20 (Red TRON)</div>
               <div class="bank-code-strong" style="font-size: 11px; word-break: break-all; color: var(--emerald);">${acc.wallet_address}</div>
             </div>
-            <button type="button" class="btn-copy-account" onclick="window.copyToClipboard('${acc.wallet_address}', this)" title="Copiar dirección TRC20">
+            <button type="button" class="btn-copy-account" onclick="window.copyToClipboard('${acc.wallet_address}', this)" title="Copiar Dirección TRC20">
               <i class="fa-regular fa-copy"></i> Copiar
             </button>
           </div>
           ${acc.binance_pay_id ? `
-          <div class="bank-data-value-box" style="margin-top: 4px;">
-            <div>
-              <div style="font-size: 10px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700;">Binance Pay ID</div>
-              <div class="bank-code-strong">${acc.binance_pay_id}</div>
+          <div class="bank-data-subrow" style="display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-top: 4px; background: rgba(255,255,255,0.02); padding: 5px 8px; border-radius: 6px; border: 1px solid var(--border-subtle);">
+            <div style="min-width: 0; flex: 1; font-size: 11px;">
+              <span style="color: var(--txt-muted);">Binance Pay ID:</span> <strong style="color: var(--amber); font-family: monospace;">${acc.binance_pay_id}</strong>
             </div>
-            <button type="button" class="btn-copy-account" onclick="window.copyToClipboard('${acc.binance_pay_id}', this)" title="Copiar Binance Pay ID">
+            <button type="button" class="btn-copy-mini" onclick="window.copyToClipboard('${acc.binance_pay_id}', this)" title="Copiar Binance Pay ID">
               <i class="fa-regular fa-copy"></i> Copiar
             </button>
           </div>` : ''}
@@ -1132,7 +1160,8 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         `;
       } else {
-        filteredUnits.forEach((unit, idx) => {
+        const pagedUnitsForCards = (typeof getPagedItems === 'function') ? getPagedItems('inquilinos', filteredUnits) : filteredUnits;
+        pagedUnitsForCards.forEach((unit, idx) => {
           const tenant = tenants.find(t => t.id === unit.tenant_id);
           const contract = contracts.find(c => c.unit_code === unit.code);
           const tenantInvoices = tenant ? allInvoices.filter(i => i.tenant_id === tenant.id) : [];
@@ -3186,7 +3215,7 @@ document.addEventListener('DOMContentLoaded', () => {
         date: '2026-03-31',
         day: 31, month: 2, year: 2026,
         type: 'contrato',
-        desc: 'Cumple 1 año de contrato. Arrendatario con opción a Prórroga Legal obligatoria (Art. 25 G.O. 40.418).'
+        desc: 'Cumple 1 año de contrato. Arrendatario con opción a Prórroga Legal obligatoria (Art. 26 G.O. 40.418).'
       },
       {
         title: 'Término de Prórroga Legal El Faro Market (Local 04)',
@@ -3322,7 +3351,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // 2. RENDERIZAR LISTA DE HITOS
+    // 2. RENDERIZAR LISTA DE HITOS CON PAGINACIÓN DINÁMICA
     if (listEl) {
       listEl.innerHTML = '';
       const filteredEvents = filterCalendarType === 'all'
@@ -3331,10 +3360,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (filteredEvents.length === 0) {
         listEl.innerHTML = `<div class="data-card" style="padding:24px;text-align:center;color:var(--txt-muted);font-style:italic;">No hay eventos para el filtro seleccionado.</div>`;
+        if (typeof renderPaginationControls === 'function') {
+          renderPaginationControls('calendario', 0);
+        }
         return;
       }
 
-      filteredEvents.forEach(evt => {
+      const pagedEvents = (typeof getPagedItems === 'function') ? getPagedItems('calendario', filteredEvents) : filteredEvents;
+
+      pagedEvents.forEach(evt => {
         const card = document.createElement('div');
         card.className = 'data-card';
         card.style.padding = '16px 20px';
@@ -3365,6 +3399,10 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         listEl.appendChild(card);
       });
+
+      if (typeof renderPaginationControls === 'function') {
+        renderPaginationControls('calendario', filteredEvents.length);
+      }
     }
   }
 
@@ -3630,21 +3668,37 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // Mesa de tickets para administración
+    // Mesa de tickets para administración con KPIs y filtros ejecutivos
     if (tickets.length > 0) {
       const ticketsAdminSection = document.createElement('div');
       ticketsAdminSection.style.marginTop = '28px';
+
+      const openCount = tickets.filter(t => t.status === 'abierto').length;
+      const inProgressCount = tickets.filter(t => t.status === 'en_atencion').length;
+      const resolvedCount = tickets.filter(t => t.status === 'resuelto').length;
+
       ticketsAdminSection.innerHTML = `
-        <h4 style="font-family: var(--font-heading); font-size: 14px; font-weight: 800; color: var(--txt-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-          <i class="fa-solid fa-headset" style="color: var(--cyan);"></i> Mesa de Ayuda: Reclamos y Solicitudes de Inquilinos (${tickets.length})
-        </h4>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+          <div>
+            <h4 style="font-family: var(--font-heading); font-size: 15px; font-weight: 800; color: var(--txt-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-headset" style="color: var(--cyan);"></i> Mesa de Ayuda: Reclamos y Solicitudes de Inquilinos (${tickets.length})
+            </h4>
+            <div style="font-size: 11.5px; color: var(--txt-secondary); margin-top: 2px;">Gestión de incidencias de infraestructura, servicios y consultas de arrendatarios</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <div class="status-pill pill-warning" style="font-size: 11px;"><i class="fa-solid fa-clock"></i> ${openCount} Abiertos</div>
+            <div class="status-pill pill-info" style="font-size: 11px;"><i class="fa-solid fa-screwdriver-wrench"></i> ${inProgressCount} En Atención</div>
+            <div class="status-pill pill-active" style="font-size: 11px;"><i class="fa-solid fa-check"></i> ${resolvedCount} Resueltos</div>
+          </div>
+        </div>
       `;
 
       tickets.forEach(tk => {
         const itemCard = document.createElement('div');
         itemCard.className = 'data-card';
-        itemCard.style.padding = '16px 18px';
+        itemCard.style.padding = '18px 20px';
         itemCard.style.marginBottom = '12px';
+        itemCard.style.border = '1px solid var(--border-subtle)';
 
         const stBadge = tk.status === 'resuelto'
           ? '<span class="status-pill pill-active"><i class="fa-solid fa-check"></i> Resuelto</span>'
@@ -3652,25 +3706,31 @@ document.addEventListener('DOMContentLoaded', () => {
               ? '<span class="status-pill pill-info"><i class="fa-solid fa-screwdriver-wrench"></i> En Atención</span>'
               : '<span class="status-pill pill-warning"><i class="fa-solid fa-clock"></i> Abierto</span>');
 
+        const prioColor = tk.priority === 'urgente' ? 'var(--rose)' : (tk.priority === 'alta' ? 'var(--amber)' : 'var(--emerald)');
+
         itemCard.innerHTML = `
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px;">
             <div style="flex: 1; min-width: 260px;">
               <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                 ${stBadge}
-                <strong style="color: var(--txt-primary); font-size: 13px;">${escapeHtml(tk.tenant_name || 'Inquilino')} (${escapeHtml(tk.unit_code)})</strong>
+                <span style="font-size: 10px; font-weight: 800; color: ${prioColor}; text-transform: uppercase; background: rgba(255,255,255,0.04); padding: 2px 6px; border-radius: 4px; border: 1px solid ${prioColor}40;">
+                  Prioridad ${escapeHtml(tk.priority || 'normal')}
+                </span>
+                <strong style="color: var(--txt-primary); font-size: 13.5px;">${escapeHtml(tk.tenant_name || 'Inquilino')} (${escapeHtml(tk.unit_code)})</strong>
                 <span style="font-family: monospace; font-size: 11px; color: var(--txt-muted);">${escapeHtml(tk.ticket_number)}</span>
               </div>
-              <h5 style="font-family: var(--font-heading); font-size: 13.5px; font-weight: 700; color: var(--txt-primary); margin: 6px 0 4px;">${escapeHtml(tk.subject)}</h5>
-              <p style="font-size: 12px; color: var(--txt-secondary); margin: 0;">${escapeHtml(tk.description)}</p>
-              ${tk.admin_response ? `<div style="font-size: 11.5px; margin-top: 6px; color: var(--cyan);"><strong>Respuesta previa:</strong> ${escapeHtml(tk.admin_response)}</div>` : ''}
+              <h5 style="font-family: var(--font-heading); font-size: 14px; font-weight: 700; color: var(--txt-primary); margin: 8px 0 4px;">${escapeHtml(tk.subject)}</h5>
+              <p style="font-size: 12px; color: var(--txt-secondary); margin: 0; line-height: 1.5;">${escapeHtml(tk.description)}</p>
+              ${tk.technician ? `<div style="font-size: 11.5px; margin-top: 6px; color: var(--amber);"><i class="fa-solid fa-user-gear"></i> <strong>Técnico Asignado:</strong> ${escapeHtml(tk.technician)}</div>` : ''}
+              ${tk.admin_response ? `<div style="font-size: 11.5px; margin-top: 4px; color: var(--cyan);"><i class="fa-solid fa-comment-dots"></i> <strong>Respuesta Oficial:</strong> ${escapeHtml(tk.admin_response)}</div>` : ''}
             </div>
             <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
-              <span style="font-size: 10.5px; color: var(--txt-muted);">${new Date(tk.created_at).toLocaleDateString('es-VE')}</span>
-              <div style="display: flex; gap: 6px;">
-                <button type="button" class="btn-currency-toggle" style="font-size: 11px; padding: 4px 10px; color: var(--cyan); border-color: var(--cyan);" onclick="window.adminUpdateTicketStatus('${tk.id}', 'en_atencion')">
-                  <i class="fa-solid fa-wrench"></i> En Atención
+              <span style="font-size: 10.5px; color: var(--txt-muted);"><i class="fa-regular fa-clock"></i> ${new Date(tk.created_at).toLocaleDateString('es-VE')}</span>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button type="button" class="btn-recibo-action" style="background: rgba(14, 165, 233, 0.15); border-color: var(--cyan); color: var(--cyan); font-size: 11.5px; padding: 6px 12px;" onclick="window.openAdminTicketModal('${tk.id}')">
+                  <i class="fa-solid fa-headset"></i> Gestionar Solicitud
                 </button>
-                <button type="button" class="btn-currency-toggle" style="font-size: 11px; padding: 4px 10px; color: var(--emerald); border-color: var(--emerald);" onclick="window.adminUpdateTicketStatus('${tk.id}', 'resuelto')">
+                <button type="button" class="btn-currency-toggle" style="font-size: 11px; padding: 5px 10px; color: var(--emerald); border-color: var(--emerald);" onclick="window.adminUpdateTicketStatus('${tk.id}', 'resuelto')">
                   <i class="fa-solid fa-check"></i> Resolver
                 </button>
               </div>
@@ -5889,7 +5949,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <h3 style="margin: 0; font-size: 16px; font-weight: 900; text-transform: uppercase; color: #0f172a;">
             CERTIFICADO OFICIAL DE SOLVENCIA CONDOMINIAL & ARRENDATARIA
           </h3>
-          <span style="font-size: 11px; color: #64748b;">De conformidad con el Artículo 25 y 32 de la Gaceta Oficial N° 40.418</span>
+          <span style="font-size: 11px; color: #64748b;">De conformidad con el Artículo 26 y 32 de la Gaceta Oficial N° 40.418</span>
         </div>
 
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 14px; font-size: 12px; margin-bottom: 20px; line-height: 1.6;">
@@ -7488,39 +7548,47 @@ document.addEventListener('DOMContentLoaded', () => {
   // MÓDULO 3: VISOR & GENERADOR DE CONTRATOS LEGALES (G.O. 40.418)
   // =========================================================================
   window.viewTenantContract = async function(tenantId) {
+    if (window.ContractViewer && typeof window.ContractViewer.openModal === 'function') {
+      return window.ContractViewer.openModal(tenantId);
+    }
     const modal = document.getElementById('modal-contract-viewer');
     const docWrapper = document.getElementById('contract-document-wrapper');
     if (!modal || !docWrapper) return;
 
-    const tenant = dbService.getTenants().find(t => t.id === tenantId);
+    let tenant = tenantId ? dbService.getTenants().find(t => t.id === tenantId || t.unit_code === tenantId) : null;
+    if (!tenant) {
+      tenant = (window.AuthGuard && typeof window.AuthGuard.currentTenant === 'function') 
+        ? window.AuthGuard.currentTenant() 
+        : dbService.getTenants()[0];
+    }
     if (!tenant) {
       showToast('No se encontró el inquilino seleccionado.', 'error', 'Inquilino No Encontrado');
       return;
     }
 
-    const contract = dbService.getContracts().find(c => c.tenant_id === tenantId) || {
+    const contract = dbService.getContracts().find(c => c.tenant_id === tenant.id) || {
       contract_number: `CCMS-CTR-2026-${tenant.unit_code}`,
       tenant_id: tenant.id,
       unit_code: tenant.unit_code,
       start_date: '2026-01-01',
       end_date: '2027-01-01',
-      rent_usd: 1200,
+      rent_usd: tenant.rent_usd || 450,
       rent_method: 'CAF (Canon Fijo Art. 32)',
-      deposit_usd: 3600,
-      deposit_months: 3,
+      deposit_usd: (tenant.rent_usd || 450) * 2,
+      deposit_months: 2,
       status: 'vigente'
     };
 
     const unit = dbService.getUnits().find(u => u.code === tenant.unit_code) || {
       code: tenant.unit_code,
       name: `Local Comercial ${tenant.unit_code}`,
-      area_m2: 120,
-      condo_aliquot: 0.08,
+      area_m2: tenant.area_m2 || 54.5,
+      condo_aliquot: 0.0725,
       base_rent_usd: contract.rent_usd
     };
 
     if (window.VenezuelaLegal && typeof window.VenezuelaLegal.generateContractHTML === 'function') {
-      // async: generateContractHTML ahora usa SHA-256 real vía WebCrypto
+      // async: generateContractHTML ahora usa SHA-256 real vía WebCrypto y Art. 26
       docWrapper.innerHTML = await window.VenezuelaLegal.generateContractHTML(contract, tenant, unit);
     } else {
       docWrapper.innerHTML = `<div style="padding:20px;">Generador de contratos no disponible temporalmente.</div>`;
@@ -7529,7 +7597,17 @@ document.addEventListener('DOMContentLoaded', () => {
     window.openModal(modal);
   };
 
+  window.openContractModal = function(tenantId) {
+    if (window.ContractViewer && typeof window.ContractViewer.openModal === 'function') {
+      return window.ContractViewer.openModal(tenantId);
+    }
+    window.viewTenantContract(tenantId);
+  };
+
   window.closeContractModal = function() {
+    if (window.ContractViewer && typeof window.ContractViewer.closeModal === 'function') {
+      return window.ContractViewer.closeModal();
+    }
     window.closeModal('modal-contract-viewer');
   };
 
@@ -7567,11 +7645,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const rentVal = parseFloat(receipt.rent_usd || 0) || 0;
     const condoVal = parseFloat(receipt.condo_usd || 0) || 0;
-    const totalVal = parseFloat(receipt.total_usd || 0) || (rentVal + condoVal);
+    
+    // Tratamiento Contable del IGTF 3% (G.O. 6.687 / FIN-01)
+    const payMethod = String(receipt.payment_method || '').toLowerCase();
+    const isDivisaOrCrypto = receipt.igtf_aplica === true || 
+                             (receipt.igtf_monto_usd && receipt.igtf_monto_usd > 0) ||
+                             ['usdt', 'crypto', 'zelle', 'binance', 'efectivo_usd', 'efectivo_eur', 'transferencia_usd', 'divisa'].some(m => payMethod.includes(m));
+    const igtfVal = isDivisaOrCrypto ? (parseFloat(receipt.igtf_monto_usd) || Math.round(rentVal * 0.03 * 100) / 100) : 0;
+    const totalVal = parseFloat(receipt.total_usd || 0) || (rentVal + condoVal + igtfVal);
 
     const bcvRate = (receipt.snapshot && receipt.snapshot.bcv_rate_applied)
-      ? (parseFloat(receipt.snapshot.bcv_rate_applied) || 48.5).toFixed(2)
-      : ((typeof financialEngine !== 'undefined' && financialEngine.getRates) ? parseFloat(financialEngine.getRates().VES).toFixed(2) : '48.50');
+      ? (parseFloat(receipt.snapshot.bcv_rate_applied) || 832.49).toFixed(2)
+      : ((typeof financialEngine !== 'undefined' && financialEngine.getRates) ? parseFloat(financialEngine.getRates().VES).toFixed(2) : '832.49');
 
     const totalBs = financialEngine.convert(totalVal, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
     const totalEur = financialEngine.convert(totalVal, 'USD', 'EUR').toLocaleString('de-DE', { minimumFractionDigits: 2 });
@@ -7626,7 +7711,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ${receipt.txid ? `<div style="grid-column: 1 / -1;"><strong>Hash Cripto TxID:</strong> <span style="font-family: monospace; font-size: 10px; color: #047857; word-break: break-all;">${escapeHtml(receipt.txid)}</span></div>` : ''}
         </div>
 
-        <!-- DETALLE DE CONCEPTOS (TIME TO PROGRAM COMPACT TABLE) -->
+        <!-- DETALLE DE CONCEPTOS ARRENDATICIOS CON IGTF DESGLOSADO -->
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 11.5px;">
           <thead>
             <tr style="background: #f1f5f9; border-top: 1px solid #cbd5e1; border-bottom: 2px solid #cbd5e1;">
@@ -7643,12 +7728,26 @@ document.addEventListener('DOMContentLoaded', () => {
               <td style="padding: 6px 8px;">Cuota de Participación en Gastos Comunes / Condominio</td>
               <td style="padding: 6px 8px; text-align: right;">$${condoVal.toFixed(2)}</td>
             </tr>
+            ${igtfVal > 0 ? `
+            <tr style="border-bottom: 1px solid #e2e8f0; background: #fffbeb;">
+              <td style="padding: 6px 8px;">
+                <strong style="color: #b45309;"><i class="fa-solid fa-percent" style="font-size: 10px;"></i> Percepción IGTF 3% (G.O. 6.687)</strong>
+                <div style="font-size: 9.5px; color: #92400e;">Operación en divisas/criptoactivos sobre base imponible canon ($${rentVal.toFixed(2)} USD)</div>
+              </td>
+              <td style="padding: 6px 8px; text-align: right; color: #b45309; font-weight: 700;">+$${igtfVal.toFixed(2)}</td>
+            </tr>
+            ` : ''}
             <tr style="font-weight: 800; background: #f8fafc; font-size: 12px; border-top: 2px solid #cbd5e1;">
               <td style="padding: 8px;">TOTAL PAGADO & CONCILIADO:</td>
               <td style="padding: 8px; text-align: right; color: #047857; font-size: 12.5px;">$${totalVal.toFixed(2)} USD</td>
             </tr>
           </tbody>
         </table>
+
+        <!-- LEYENDA TRIBUTARIA SENIAT G.O. 6.687 & LEY DE ARRENDAMIENTO -->
+        <div style="font-size: 9.5px; color: #64748b; margin-bottom: 12px; font-style: italic; line-height: 1.35; background: #f8fafc; padding: 6px 10px; border-radius: 4px; border: 1px dashed #cbd5e1;">
+          ${igtfVal > 0 ? '• Alícuota 3% IGTF percibida conforme a la G.O. 6.687 sobre operaciones en divisas/criptoactivos sin intermediación del sistema financiero nacional. ' : ''}Comprobante oficial emitido bajo el marco del Decreto Ley N° 929 de Regulación del Arrendamiento Inmobiliario para el Uso Comercial (Gaceta Oficial N° 40.418) y las providencias administrativas del SENIAT.
+        </div>
 
         <!-- SNAPSHOT MULTIMONEDA A LA FECHA VALOR -->
         <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 8px 12px; font-size: 10.5px; margin-bottom: 12px;">
@@ -9240,7 +9339,8 @@ document.addEventListener('DOMContentLoaded', () => {
     inquilinos: { page: 1, pageSize: 10 },
     cobranzas: { page: 1, pageSize: 10 },
     condominio: { page: 1, pageSize: 10 },
-    inventario: { page: 1, pageSize: 10 }
+    inventario: { page: 1, pageSize: 10 },
+    calendario: { page: 1, pageSize: 10 }
   };
 
   function getPagedItems(moduleKey, items) {
@@ -9319,6 +9419,7 @@ document.addEventListener('DOMContentLoaded', () => {
     else if (moduleKey === 'cobranzas') renderInvoicesTable();
     else if (moduleKey === 'condominio') renderCondoExpenses();
     else if (moduleKey === 'inventario') renderInventory();
+    else if (moduleKey === 'calendario') renderCalendarView();
   };
 
   window.changeTablePageSize = function(moduleKey, size) {
@@ -9329,6 +9430,7 @@ document.addEventListener('DOMContentLoaded', () => {
     else if (moduleKey === 'cobranzas') renderInvoicesTable();
     else if (moduleKey === 'condominio') renderCondoExpenses();
     else if (moduleKey === 'inventario') renderInventory();
+    else if (moduleKey === 'calendario') renderCalendarView();
   };
 
   // =========================================================================
@@ -10039,14 +10141,14 @@ document.addEventListener('DOMContentLoaded', () => {
                   <div style="font-size: 10px; color: var(--txt-muted); margin-top: 2px;">${inv.payment_method ? String(inv.payment_method).toUpperCase() : 'TRANSFERENCIA'}</div>
                 </td>
                 <td>
-                  <span style="font-family: monospace; font-size: 9.5px; color: var(--amber); background: rgba(245,158,11,0.08); padding: 3px 6px; border-radius: 4px; border: 1px solid rgba(245,158,11,0.2); display: inline-flex; align-items: center; gap: 4px;" title="${seal}">
-                    <i class="fa-solid fa-shield-halved" style="font-size: 9px;"></i> ${seal.substring(0, 12)}...
-                  </span>
+                  <button type="button" class="btn-sha-seal" onclick="window.inspectShaSeal('${inv.id}', '${seal}')" title="Copiar y validar Sello Criptográfico SHA-256">
+                    <i class="fa-solid fa-shield-halved"></i> <code>${seal.substring(0, 10)}...</code> <i class="fa-solid fa-copy" style="font-size: 9px; opacity: 0.7;"></i>
+                  </button>
                 </td>
                 <td>${statusBadge}</td>
                 <td style="text-align: center;">
-                  <button type="button" class="btn-currency-toggle" onclick="window.viewReceiptDetail('${inv.id}')" title="Ver Recibo Oficial Certificado" style="font-size: 11px; padding: 4px 10px; border-color: var(--cyan); color: var(--cyan);">
-                    <i class="fa-solid fa-eye"></i> Ver
+                  <button type="button" class="btn-recibo-action" onclick="window.viewReceiptDetail('${inv.id}')" title="Ver Recibo Oficial Digital Certificado">
+                    <i class="fa-solid fa-file-invoice-dollar"></i> Recibo
                   </button>
                 </td>
               </tr>
@@ -10058,6 +10160,21 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('[renderTenantSelfProfile Error]', err);
     }
   }
+
+  // =========================================================================
+  // INSPECTOR DE SELLO CRIPTOGRÁFICO NOTARIAL (SHA-256)
+  // =========================================================================
+  window.inspectShaSeal = function(invoiceId, seal) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(seal).then(() => {
+        showToast(`Sello SHA-256 copiado al portapapeles:\n${seal}\nCertificación inmutable bajo Ley de Arrendamiento Comercial (G.O. 40.418).`, 'success', 'Sello Criptográfico SHA-256');
+      }).catch(() => {
+        showToast(`Sello SHA-256: ${seal}`, 'info', 'Sello Criptográfico SHA-256');
+      });
+    } else {
+      showToast(`Sello SHA-256: ${seal}`, 'info', 'Sello Criptográfico SHA-256');
+    }
+  };
 
   // =========================================================================
   // CONTROLADOR: VISOR DE RECIBO OFICIAL PARA EL INQUILINO
@@ -10098,101 +10215,9 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // =========================================================================
-  // SISTEMA DE TICKETS, RECLAMOS & SOLICITUDES DE SERVICIO (INQUILINOS & ADMIN)
+  // SISTEMA DE TICKETS, RECLAMOS & SOLICITUDES DE SERVICIO
+  // Desacoplado y gestionado modularmente por tickets-manager.js (TicketsManager)
   // =========================================================================
-  window.openTenantNewTicketModal = function(unitCode = null) {
-    const tenant = (window.AuthGuard && typeof window.AuthGuard.currentTenant === 'function')
-      ? window.AuthGuard.currentTenant()
-      : null;
-    const unitInput = document.getElementById('tticket-unit');
-    if (unitInput) {
-      unitInput.value = unitCode || (tenant ? `${tenant.unit_code} - ${tenant.business_name}` : 'Local Comercial');
-    }
-    const form = document.getElementById('tenant-ticket-form');
-    if (form) form.reset();
-    if (unitInput) {
-      unitInput.value = unitCode || (tenant ? `${tenant.unit_code} - ${tenant.business_name}` : 'Local Comercial');
-    }
-    window.openModal('modal-tenant-new-ticket');
-  };
-
-  window.closeTenantNewTicketModal = function() {
-    window.closeModal('modal-tenant-new-ticket');
-  };
-
-  window.getServiceTickets = function() {
-    try {
-      const data = localStorage.getItem('ccms_service_tickets');
-      if (data) return JSON.parse(data);
-    } catch (e) {}
-    return [
-      {
-        id: 'tk-1',
-        ticket_number: 'TK-2026-001',
-        tenant_id: 'ten-1',
-        tenant_name: 'Mueblería Juncal, C.A.',
-        unit_code: 'LOC-01',
-        category: 'electricidad',
-        priority: 'alta',
-        subject: 'Parpadeo en reflector exterior del pasillo PB',
-        description: 'El reflector que ilumina la entrada del local LOC-01 presenta intermitencia desde el día de ayer.',
-        status: 'en_atencion',
-        admin_response: 'Técnico electricista asignado para revisión hoy a las 14:00 hrs.',
-        created_at: '2026-03-01T10:30:00Z'
-      }
-    ];
-  };
-
-  window.saveServiceTickets = function(tickets) {
-    localStorage.setItem('ccms_service_tickets', JSON.stringify(tickets));
-  };
-
-  window.handleTenantTicketSubmit = function(e) {
-    e.preventDefault();
-    const tenant = (window.AuthGuard && typeof window.AuthGuard.currentTenant === 'function')
-      ? window.AuthGuard.currentTenant()
-      : null;
-
-    const tickets = window.getServiceTickets();
-    const newTicket = {
-      id: 'tk-' + Date.now(),
-      ticket_number: `TK-2026-${String(tickets.length + 1).padStart(3, '0')}`,
-      tenant_id: tenant ? tenant.id : 'tenant-current',
-      tenant_name: tenant ? tenant.business_name : 'Inquilino',
-      unit_code: tenant ? tenant.unit_code : (document.getElementById('tticket-unit').value || 'LOCAL'),
-      priority: document.getElementById('tticket-priority').value,
-      category: document.getElementById('tticket-category').value,
-      subject: document.getElementById('tticket-subject').value.trim(),
-      description: document.getElementById('tticket-description').value.trim(),
-      status: 'abierto',
-      admin_response: '',
-      created_at: new Date().toISOString()
-    };
-
-    tickets.unshift(newTicket);
-    window.saveServiceTickets(tickets);
-
-    if (window.CCMSTelemetry && typeof window.CCMSTelemetry.captureAction === 'function') {
-      window.CCMSTelemetry.captureAction('tenant_created_ticket', { ticket_number: newTicket.ticket_number, subject: newTicket.subject });
-    }
-
-    window.closeTenantNewTicketModal();
-    renderAlertsCenter();
-    alert(`Su solicitud #${newTicket.ticket_number} fue remitida formalmente a la Administración del CCMS. Se asignará personal para su pronta atención.`);
-  };
-
-  window.adminUpdateTicketStatus = function(ticketId, newStatus) {
-    const tickets = window.getServiceTickets();
-    const ticket = tickets.find(t => t.id === ticketId);
-    if (!ticket) return;
-    ticket.status = newStatus;
-    const responsePrompt = prompt('Ingrese comentario o respuesta de Administración para el inquilino (opcional):', ticket.admin_response || '');
-    if (responsePrompt !== null) {
-      ticket.admin_response = responsePrompt.trim();
-    }
-    window.saveServiceTickets(tickets);
-    renderAlertsCenter();
-  };
 
   // =========================================================================
   // CONTROLADOR: REGISTRO RÁPIDO DE INQUILINO (MODAL RÁPIDO EN PÁGINA)
@@ -10486,8 +10511,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tenant = (window.AuthGuard && typeof window.AuthGuard.currentTenant === 'function') 
       ? window.AuthGuard.currentTenant() 
       : null;
-    if (!tenant) return;
-    window.openContractModal(tenant.id);
+    window.openContractModal(tenant ? tenant.id : null);
   };
 
   // =========================================================================

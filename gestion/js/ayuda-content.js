@@ -382,7 +382,7 @@ const HelpContent = {
 
             <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); padding: 18px; border-radius: 8px;">
               <h4 style="margin: 0 0 8px; color: var(--emerald); font-size: 14px;">
-                <i class="fa-solid fa-clock-rotate-left"></i> Prórroga Legal Obligatoria (Artículo 25)
+                <i class="fa-solid fa-clock-rotate-left"></i> Prórroga Legal Obligatoria (Artículo 26)
               </h4>
               <p style="font-size: 12.5px; color: var(--txt-secondary); line-height: 1.7; margin-bottom: 10px;">
                 Al vencerse el contrato de arrendamiento a tiempo determinado, el arrendatario que esté solvente tiene derecho a una prórroga legal automática según su antigüedad:
