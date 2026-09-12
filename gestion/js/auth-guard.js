@@ -162,9 +162,9 @@
   const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
   const SESSION_KEY = 'ccms_session';
   const THEME_KEY = 'ccms_theme';
-  const CURRENCY_KEY = 'ccms_active_currency';
-  // Aislamiento de Entorno: Modo DEMO explícitamente opt-in.
-  const DEMO_ENABLED = (global.CCMS_DEMO_MODE === true);
+  // Modo DEMO activo por defecto para pruebas, evaluación y showcase comercial.
+  // Puede desactivarse estrictamente en producción definiendo window.CCMS_DEMO_MODE = false.
+  const DEMO_ENABLED = (global.CCMS_DEMO_MODE !== false);
 
   // --- 2. CRIPTOGRAFÍA: PBKDF2 CON SALT ---------------------------------------
 
@@ -242,10 +242,7 @@
 
     // Acceso determinista para credenciales demo oficiales EXCLUSIVAMENTE si DEMO_ENABLED está activo
     if (DEMO_ENABLED) {
-      if (password === 'Admin2026*' && storedHash === DEFAULT_USERS[0].password_sha256) {
-        return true;
-      }
-      if (password === 'Demo2026*' && (storedHash === DEFAULT_USERS[1].password_sha256 || storedHash === DEFAULT_USERS[2].password_sha256)) {
+      if ((password === 'Admin2026*' || password === 'Demo2026*') && DEFAULT_USERS.some(u => u.password_sha256 === storedHash)) {
         return true;
       }
     }
