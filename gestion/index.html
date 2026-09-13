@@ -218,7 +218,7 @@
         </button>
 
         <!-- MULTI-CURRENCY TICKER (USD BCV + EUR BCV + BINANCE P2P USDT) CON SINCRONIZACIÓN EN VIVO -->
-        <div class="bcv-ticker" title="Tasas oficiales y de mercado en tiempo real: BCV y Binance P2P" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <div class="bcv-ticker" title="Tasas oficiales y de mercado en tiempo real: BCV y Binance P2P" style="display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch;">
           <div style="display: flex; align-items: center; gap: 5px;">
             <span class="bcv-label"><i class="fa-solid fa-landmark"></i> USD BCV:</span>
             <span class="bcv-value" id="bcv-rate-val">Cargando...</span>
@@ -247,6 +247,12 @@
 
       <div class="top-actions">
         
+        <!-- ASISTENTE IA JURÍDICO & TRIBUTARIO (GEMINI) -->
+        <button type="button" class="btn-theme-toggle" id="btn-gemini-assistant-trigger" onclick="window.openGeminiAssistantModal()" title="Asistente Legal & Tributario con Inteligencia Artificial (G.O. 40.418, SENIAT y LOCAT)" style="width: auto; padding: 0 12px; gap: 6px; border-radius: 20px; font-size: 12px; font-weight: 700; border-color: rgba(14, 165, 233, 0.4); background: rgba(14, 165, 233, 0.08); color: var(--cyan);">
+          <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--cyan);"></i>
+          <span>Asistente IA</span>
+        </button>
+
         <!-- BUSCADOR GLOBAL COMMAND-K (CTRL+K) -->
         <button type="button" class="btn-theme-toggle" id="btn-command-k-trigger" onclick="window.openCommandKModal()" title="Búsqueda Global y Comandos Rápidos (Ctrl + K)" style="width: auto; padding: 0 14px; gap: 8px; border-radius: 20px; font-size: 12px; font-weight: 700; border-color: var(--border-subtle);">
           <i class="fa-solid fa-magnifying-glass" style="color: var(--amber);"></i>
@@ -386,6 +392,15 @@
           </div>
           <div class="kpi-val" id="kpi-netprofit">$0.00</div>
           <div class="kpi-sub">Recaudado - Egresos</div>
+        </div>
+
+        <div class="kpi-card" id="card-kpi-fruto-patrimonial" onclick="window.navigateToFrutoPatrimonial()" style="cursor: pointer; border-color: rgba(14, 165, 233, 0.35); background: linear-gradient(180deg, rgba(14, 22, 38, 0.7) 0%, rgba(14, 165, 233, 0.05) 100%);" title="Liquidación de Frutos Civiles Sucesorales (14 Herederos) — Clic para ver informe desglosado">
+          <div class="kpi-top">
+            <span class="kpi-title" style="color: var(--cyan);">Fruto Patrimonial (Sucesión)</span>
+            <div class="kpi-icon-badge badge-cyan"><i class="fa-solid fa-scale-balanced"></i></div>
+          </div>
+          <div class="kpi-val" id="kpi-fruto-patrimonial" style="color: var(--cyan);">$0.00</div>
+          <div class="kpi-sub" id="kpi-fruto-patrimonial-sub">14 cuotas • Clic para desglose</div>
         </div>
       </section>
 
@@ -1544,7 +1559,104 @@
         </div>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
-          
+
+          <!-- TARJETA A: PERFIL TRIBUTARIO & CLASIFICACIÓN DE SUJETO PASIVO (SENIAT) -->
+          <div class="data-card" style="padding: 22px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">
+              <div class="kpi-icon-badge badge-cyan"><i class="fa-solid fa-landmark"></i></div>
+              <div>
+                <h4 style="font-family: var(--font-heading); font-size: 15px; color: var(--txt-primary);">Perfil Tributario & Régimen Fiscal</h4>
+                <p style="font-size: 11px; color: var(--txt-secondary);">Clasificación SENIAT, alícuotas de retención y razón social</p>
+              </div>
+            </div>
+
+            <form id="form-config-tributario" onsubmit="window.saveTaxProfileConfig(event)" data-submit="saveTaxProfileConfig(event)" style="display: flex; flex-direction: column; gap: 14px;">
+              <div class="form-group">
+                <label>Tipo de Contribuyente (SENIAT)</label>
+                <select class="form-control" id="cfg-tax-contributor-type" required>
+                  <option value="especial" selected>Contribuyente Especial (Sujeto Pasivo Especial - Agente de Retención)</option>
+                  <option value="ordinario">Contribuyente Ordinario (No designado Sujeto Pasivo Especial)</option>
+                </select>
+                <span style="font-size: 10.5px; color: var(--txt-muted);">Define la obligatoriedad de retener IVA (75%/100%) e ISLR (2%).</span>
+              </div>
+
+              <div class="form-group">
+                <label>Alícuota Retención IVA a Proveedores (%)</label>
+                <select class="form-control" id="cfg-tax-iva-withhold" required>
+                  <option value="75" selected>75% — Estándar Oficial (Providencia SNAT/2015/0049)</option>
+                  <option value="100">100% — Proveedores sin RIF o facturación irregular</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Alícuota Retención ISLR por Servicios (%)</label>
+                <input type="number" step="0.5" min="1" max="10" class="form-control" id="cfg-tax-islr-withhold" value="2.0" required>
+                <span style="font-size: 10.5px; color: var(--txt-muted);">Art. 9 Nral. 11 Decreto 1.808 (Honorarios y Servicios a PJ Domiciliadas).</span>
+              </div>
+
+              <div class="form-group">
+                <label>Razón Social Oficial Administradora</label>
+                <input type="text" class="form-control" id="cfg-tax-company-name" value="CENTRO COMERCIAL MARIO SÁNCHEZ, C.A." required>
+              </div>
+
+              <div class="form-group">
+                <label>RIF de la Sociedad Administradora</label>
+                <input type="text" class="form-control" id="cfg-tax-company-rif" value="J-30211544-2" required>
+              </div>
+
+              <button type="submit" class="btn-onboarding-cta" style="justify-content: center; margin-top: 6px;">
+                <i class="fa-solid fa-shield-halved"></i> <span>Guardar Régimen Tributario</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- TARJETA B: GASTOS OPERATIVOS, ASEO URBANO & FRUTO PATRIMONIAL -->
+          <div class="data-card" style="padding: 22px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">
+              <div class="kpi-icon-badge badge-emerald"><i class="fa-solid fa-coins"></i></div>
+              <div>
+                <h4 style="font-family: var(--font-heading); font-size: 15px; color: var(--txt-primary);">Gastos Operativos & Fruto Sucesoral</h4>
+                <p style="font-size: 11px; color: var(--txt-secondary);">Parámetros de aseo, reservas y liquidación a los 14 herederos</p>
+              </div>
+            </div>
+
+            <form id="form-config-gastos-fruto" onsubmit="window.saveExpensesFrutoConfig(event)" data-submit="saveExpensesFrutoConfig(event)" style="display: flex; flex-direction: column; gap: 14px;">
+              <div class="form-group">
+                <label>Gasto Operativo Mensual Base Referencial ($/mes)</label>
+                <input type="number" step="10" min="0" class="form-control" id="cfg-base-expenses" value="2540" required>
+                <span style="font-size: 10.5px; color: var(--txt-muted);">Presupuesto mensual auditable base para liquidaciones y dividendos sucesorales.</span>
+              </div>
+
+              <div class="form-group">
+                <label>Aseo Urbano Comercial Estimado ($/mes)</label>
+                <input type="number" step="5" min="0" class="form-control" id="cfg-aseo-urbano" value="120" required>
+                <span style="font-size: 10.5px; color: var(--txt-muted);">Tasa estimada de aseo comercial e inmuebles urbanos (base 2.450 m²).</span>
+              </div>
+
+              <div class="form-group">
+                <label>Fondo de Reserva Legal / Mantenimiento (% s/ ingresos)</label>
+                <input type="number" step="1" min="0" max="30" class="form-control" id="cfg-reserve-fund-pct" value="10" required>
+                <span style="font-size: 10.5px; color: var(--txt-muted);">Deducción para contingencias mayores y reserva sucesoral (Arts. 552 y 768 C.C.).</span>
+              </div>
+
+              <div class="form-group">
+                <label>Honorarios de Administración (% s/ ingresos)</label>
+                <input type="number" step="0.5" min="0" max="25" class="form-control" id="cfg-admin-fee-pct" value="5" required>
+                <span style="font-size: 10.5px; color: var(--txt-muted);">Honorarios de gestión y cobranzas de la Sociedad Administradora.</span>
+              </div>
+
+              <div class="form-group">
+                <label>Alícuota Municipal ISAE Base (% s/ canon)</label>
+                <input type="number" step="0.1" min="0.5" max="10" class="form-control" id="cfg-isae-rate-pct" value="2.0" required>
+                <span style="font-size: 10.5px; color: var(--txt-muted);">Alícuota del Impuesto sobre Actividades Económicas (LOCAT Municipio Sotillo).</span>
+              </div>
+
+              <button type="submit" class="btn-onboarding-cta" style="justify-content: center; margin-top: 6px;">
+                <i class="fa-solid fa-floppy-disk"></i> <span>Guardar Parámetros de Gastos & Fruto</span>
+              </button>
+            </form>
+          </div>
+
           <!-- TARJETA 1: PARÁMETROS DE CUOTAS Y CÁNONES -->
           <div class="data-card" style="padding: 22px;">
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">
@@ -1958,7 +2070,6 @@
             <p style="font-size: 12px; color: var(--txt-secondary); margin: 0;">Arrastre y suelte su archivo de respaldo <code>.json</code> aquí o haga clic para examinar</p>
             <span style="font-size: 10.5px; color: var(--txt-muted);">Validación automática de integridad, esquemas de 39 unidades y base de datos relacional.</span>
           </div>
-        </div>
         </div>
 
       </section>
@@ -4112,6 +4223,64 @@
         </button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- MODAL: ASISTENTE LEGAL & TRIBUTARIO INTELIGENTE (GEMINI FLASH) -->
+<div class="modal-overlay" id="modal-gemini-assistant" style="display: none;" onclick="if(event.target===this) window.closeGeminiAssistantModal()">
+  <div class="modal-window" style="max-width: 680px; width: 94%; max-height: 90vh; display: flex; flex-direction: column;">
+    <div class="modal-header" style="border-bottom: 1px solid var(--border-subtle); padding: 16px 20px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div class="kpi-icon-badge" style="background: rgba(14, 165, 233, 0.15); color: var(--cyan);"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+        <div>
+          <h3 style="margin: 0; font-family: var(--font-heading); font-size: 16px; color: var(--txt-primary);">Asistente Jurídico & Tributario con IA</h3>
+          <span style="font-size: 11px; color: var(--txt-secondary);">Consultor normativo fundamentado en G.O. 40.418, SENIAT, LOCAT y Código Civil</span>
+        </div>
+      </div>
+      <button type="button" class="btn-close-modal" onclick="window.closeGeminiAssistantModal()" title="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div class="modal-body" style="padding: 18px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 14px;">
+      <!-- CHIPS DE CONSULTAS PREDEFINIDAS -->
+      <div>
+        <div style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 8px;">
+          <i class="fa-solid fa-bolt" style="color: var(--amber);"></i> Consultas Frecuentes Rápidas:
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+          <button type="button" class="btn-currency-toggle" style="font-size: 11px; padding: 5px 10px;" onclick="window.askGeminiQuick('¿Cuál es el régimen de retenciones de IVA (75% o 100%) e ISLR (2%) para la administradora de un centro comercial según la Providencia SNAT/2015/0049 y Decreto 1.808?')">
+            📑 Retenciones IVA / ISLR
+          </button>
+          <button type="button" class="btn-currency-toggle" style="font-size: 11px; padding: 5px 10px;" onclick="window.askGeminiQuick('¿Cómo se fundamenta jurídicamente la segregación del canon de arrendamiento comercial frente a los gastos comunes de condominio ante la Alcaldía según la LOCAT y el Art. 1684 del Código Civil?')">
+            🏛️ Segregación ISAE / LOCAT
+          </button>
+          <button type="button" class="btn-currency-toggle" style="font-size: 11px; padding: 5px 10px;" onclick="window.askGeminiQuick('Explica cómo se calculan y liquidan los frutos civiles para los 14 coherederos de la Sucesión Mario Sánchez tras deducir gastos comunes, reserva del 10% y administración del 5% bajo los artículos 552 y 768 del Código Civil Venezolano.')">
+            ⚖️ Frutos Sucesorales (14 Herederos)
+          </button>
+          <button type="button" class="btn-currency-toggle" style="font-size: 11px; padding: 5px 10px;" onclick="window.askGeminiQuick('¿Qué requisitos exige el Decreto Ley de Arrendamiento Comercial (Gaceta Oficial 40.418) para la redacción de una adenda por mejoras u obras locativas autorizadas?')">
+            🏗️ Adenda Obras (G.O. 40.418)
+          </button>
+        </div>
+      </div>
+
+      <!-- ÁREA DE CHAT / RESPUESTA -->
+      <div id="gemini-assistant-response" style="min-height: 140px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 14px; font-size: 12.5px; line-height: 1.6; color: var(--txt-primary); white-space: pre-wrap; word-break: break-word;">
+        <div style="color: var(--txt-muted); text-align: center; padding: 24px 10px;">
+          <i class="fa-solid fa-scale-balanced" style="font-size: 28px; margin-bottom: 8px; opacity: 0.5;"></i>
+          <p style="margin: 0; font-size: 12px;">Seleccione una consulta predefinida o escriba su pregunta legal/financiera a continuación.</p>
+        </div>
+      </div>
+
+      <!-- ENTRADA DE TEXTO -->
+      <div style="display: flex; gap: 8px;">
+        <textarea id="gemini-assistant-input" class="form-control" rows="2" placeholder="Escriba su consulta legal, fiscal o inmobiliaria..." style="font-size: 12.5px; resize: none;"></textarea>
+        <button type="button" id="btn-gemini-assistant-send" class="btn-onboarding-cta" onclick="window.submitGeminiAssistant()" style="width: auto; padding: 0 18px; align-self: stretch; justify-content: center; background: var(--cyan); border-color: var(--cyan); color: #000;">
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </div>
+      <div style="font-size: 10px; color: var(--txt-muted); text-align: center;">
+        Respuestas generadas por Gemini Flash mediante proxy seguro de servidor. Conforme al marco jurídico venezolano.
+      </div>
+    </div>
   </div>
 </div>
 

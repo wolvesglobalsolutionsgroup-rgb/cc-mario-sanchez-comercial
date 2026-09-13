@@ -1,7 +1,7 @@
 # ÍNDICE MAESTRO DE FUENTES PRIMARIAS, GACETAS OFICIALES Y FORMULARIOS ORIGINALES (PDF)
 **Directorio Local de Archivos Físicos:** [`cc-mario-sanchez-comercial/docs/corpus_notebooklm/pdfs/`](file:///c:/Users/Administrator/Desktop/Memoria/cc-mario-sanchez-comercial/docs/corpus_notebooklm/pdfs/)  
-**Destino de Ingesta en Google NotebookLM:** [`https://notebooklm.google.com/notebook/3914afb9-a48b-4130-8890-7eaed1fddb28`](https://notebooklm.google.com/notebook/3914afb9-a48b-4130-8890-7eaed1fddb28)  
-**Objetivo:** Eliminar el 100% de alucinaciones en el modelo de lenguaje alimentando exclusivamente los documentos oficiales emitidos por la Asamblea Nacional, la Imprenta Nacional y el SENIAT.
+**Marco Normativo:** Compendio de instrumentos legales vigentes descargados en físico para auditoría jurídica y tributaria.
+**Objetivo:** Garantizar máxima precisión en cálculos inmobiliarios y fiscales conforme a los instrumentos oficiales emitidos por los Poderes Públicos venezolanos y el SENIAT.
 
 ---
 
@@ -23,7 +23,7 @@ Todos los siguientes archivos reposan descargados e íntegros en tu disco local 
 
 ## 📋 2. Manuales Técnicos y Estructura de Datos Complementarios (Markdown)
 
-Además de los 7 PDFs oficiales, este repositorio incluye los manuales operativos estructurados para ingesta rápida en NotebookLM:
+Además de los instrumentos oficiales, este repositorio incluye los manuales operativos estructurados para consulta y validación del sistema:
 
 1. **[`08_SENIAT_INSTRUCTIVO_TECNICO_TXT_16_COLUMNAS.md`](file:///c:/Users/Administrator/Desktop/Memoria/cc-mario-sanchez-comercial/docs/corpus_notebooklm/08_SENIAT_INSTRUCTIVO_TECNICO_TXT_16_COLUMNAS.md):**  
    Transcripción fidedigna del Instructivo `RI_DRIVA2020-IT01V3_0_0` del SENIAT con el desglose exacto de las 16 columnas tabuladas, tipos de datos, códigos de error y formato del período `AAAAMM`.
@@ -34,14 +34,8 @@ Además de los 7 PDFs oficiales, este repositorio incluye los manuales operativo
 
 ---
 
-## 🚀 3. Instrucciones para Subir los Archivos a NotebookLM
+## 🏛️ 3. Gobernanza Jurídica y Aplicación en la Plataforma
 
-1. Abre en tu navegador tu cuaderno de NotebookLM:  
-   👉 **[`https://notebooklm.google.com/notebook/3914afb9-a48b-4130-8890-7eaed1fddb28`](https://notebooklm.google.com/notebook/3914afb9-a48b-4130-8890-7eaed1fddb28)**
-2. Haz clic en el botón **"+ Añadir fuentes"** (o "Add sources").
-3. Selecciona **"Subir archivos"** (o arrastra y suelta).
-4. Ve a la carpeta local de tu proyecto:  
-   `c:\Users\Administrator\Desktop\Memoria\cc-mario-sanchez-comercial\docs\corpus_notebooklm\pdfs\`
-5. Selecciona los 7 archivos PDF y haz clic en **Abrir**.
-6. *(Opcional)* Añade también los archivos `.md` de la carpeta `corpus_notebooklm/` (como el archivo del instructivo de 16 columnas).
-7. ¡Listo! NotebookLM indexará el 100% de la legislación física oficial venezolana en cuestión de segundos, sin depender de páginas web caídas ni sufrir alucinaciones de IA.
+1. **Inmutabilidad y Cero Alucinaciones:** Todos los motores de cálculo (alícuotas, mora, retenciones SENIAT, ISAE LOCAT) referencian artículos taxativos de las gacetas citadas.
+2. **Respaldo Físico:** Cada transacción emitida por la plataforma (recibos de condominio, certificados de solvencia, actas de finiquito y autoliquidaciones) cuenta con sello criptográfico WebCrypto SHA-256 contrastable contra estos instrumentos normativos.
+

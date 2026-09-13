@@ -232,7 +232,7 @@
             </p>
 
             <!-- SECCIÓN DE FIRMAS Y REGISTRO -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 36px; padding-top: 20px; border-top: 1px dashed #cbd5e1; text-align: center;">
+            <div class="report-signatures-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-top: 36px; padding-top: 20px; border-top: 1px dashed #cbd5e1; text-align: center;">
               <div>
                 <div style="font-family: monospace; font-size: 11px; color: #64748b; margin-bottom: 30px;">[FIRMADO DIGITALMENTE POR LA ARRENDADORA]</div>
                 <div style="border-top: 1px solid #111827; padding-top: 6px;">

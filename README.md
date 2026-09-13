@@ -39,8 +39,8 @@ cc-mario-sanchez-comercial/
 │   ├── js/ayuda-content.js                  # Centro de documentación interactiva, fórmulas y marco legal
 │   └── css/dashboard.css                    # Sistema de diseño con variables CSS y tema dual
 │
-├── 📚 4. CORPUS LEGAL VENEZOLANO & DATASET NOTEBOOKLM (/docs/corpus_notebooklm/)
-│   ├── pdfs/                                # 7 Archivos PDF oficiales físicos originales descargados
+├── 📚 4. CORPUS LEGAL VENEZOLANO (/docs/corpus_notebooklm/)
+│   ├── pdfs/                                # Colección oficial de Gacetas y Decretos descargados
 │   │   ├── 01_Gaceta_Oficial_40418_Decreto_929_Arrendamiento_Comercial.pdf (0.91 MB)
 │   │   ├── 02_Gaceta_Oficial_6755_LOCAT_Armonizacion_Tributaria.pdf (0.92 MB)
 │   │   ├── 03_Gaceta_Oficial_6507_Codigo_Organico_Tributario.pdf (1.99 MB)
@@ -93,13 +93,12 @@ $$\text{IGTF} = \text{Cobro en Divisas Efectivo / Cripto / Zelle} \times 3.00\%$
 
 ---
 
-## 🤖 Base de Conocimiento para Google NotebookLM (Ground Truth)
+## 📚 Base Normativa & Corpus Legal Oficial Venezolano
 
-Para eliminar cualquier alucinación en modelos de IA y asistentes cognitivos, el proyecto cuenta con un conjunto de datos verificado listo para cargar en NotebookLM:
+El sistema integra y valida el cumplimiento estricto del marco jurídico venezolano vinculante:
 
-* **URL del Cuaderno:** [`https://notebooklm.google.com/notebook/3914afb9-a48b-4130-8890-7eaed1fddb28`](https://notebooklm.google.com/notebook/3914afb9-a48b-4130-8890-7eaed1fddb28)
-* **Fuentes Físicas:** Reposan localmente en `docs/corpus_notebooklm/pdfs/` (7 gacetas y reglamentos oficiales que suman 27 MB).
-* **Guía de Carga:** Abre NotebookLM, selecciona "Añadir fuentes" -> "Subir archivos" y selecciona los 7 archivos PDF de la carpeta `pdfs/` más los resúmenes técnicos en markdown.
+* **Repositorio Normativo Local:** Respaldo documental oficial en `docs/corpus_notebooklm/pdfs/` (Leyes, Decretos y Gacetas Oficiales autenticadas).
+* **Fundamentación:** Normas de orden público de arrendamiento comercial (G.O. 40.418), armonización tributaria municipal (LOCAT G.O. Ext. 6.755) y deberes formales tributarios (COT y Providencias SENIAT).
 
 ---
 

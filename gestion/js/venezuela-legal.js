@@ -295,7 +295,7 @@ const VenezuelaLegal = {
         </div>
 
         <!-- 2-COLUMN METADATA GRID (TIME TO PROGRAM STYLE) -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+        <div class="report-metadata-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-bottom: 12px;">
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px; font-size: 11.5px;">
             <div style="font-size: 10px; text-transform: uppercase; font-weight: 700; color: #64748b; margin-bottom: 4px; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px;">
               DATOS DEL ARRENDATARIO / TITULAR
@@ -330,7 +330,7 @@ const VenezuelaLegal = {
         </div>
 
         <!-- SIGNATURES GRID -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 24px; padding-top: 8px;">
+        <div class="report-signatures-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-top: 24px; padding-top: 8px;">
           <div style="text-align: center; border-top: 1px solid #0f172a; padding-top: 6px;">
             <div style="font-weight: 800; font-size: 11.5px; color: #0f172a;">ADMINISTRACIÓN GENERAL</div>
             <div style="font-size: 10px; color: #64748b;">${esc(companyLegalName)} • R.I.F. ${esc(companyRif)}</div>
@@ -413,7 +413,7 @@ const VenezuelaLegal = {
         </div>
 
         <!-- 2-COLUMN METADATA GRID -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+        <div class="report-metadata-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-bottom: 10px;">
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 12px; font-size: 11px;">
             <div><strong>Destinatario / Titular:</strong> ${esc(tenant.business_name)}</div>
             <div><strong>R.I.F.:</strong> <span style="font-family: monospace; font-weight: 700;">${esc(tenant.rif)}</span></div>
@@ -427,42 +427,44 @@ const VenezuelaLegal = {
         </div>
 
         <!-- TABLE OF DEBTS (TIME TO PROGRAM MODERN COMPACT TABLE) -->
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 11px;">
-          <thead>
-            <tr style="background: #f1f5f9; border-top: 1px solid #cbd5e1; border-bottom: 2px solid #cbd5e1; text-align: left;">
-              <th style="padding: 5px 8px;">N° Recibo / Período</th>
-              <th style="padding: 5px 8px;">Concepto</th>
-              <th style="padding: 5px 8px;">Vencimiento</th>
-              <th style="padding: 5px 8px; text-align: right;">Monto USD</th>
-              <th style="padding: 5px 8px; text-align: right;">Equiv. Bs. BCV</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${unpaidInvoices.length === 0 ? `
-              <tr><td colspan="5" style="text-align: center; padding: 8px; color: #64748b;">No existen cuotas vencidas registradas.</td></tr>
-            ` : unpaidInvoices.map(i => `
-              <tr style="border-bottom: 1px solid #e2e8f0;">
-                <td style="padding: 5px 8px; font-weight: 700; font-family: monospace;">${esc(i.invoice_number || i.id)}</td>
-                <td style="padding: 5px 8px;">${esc(i.concept || 'Canon Fijo + Condominio')}</td>
-                <td style="padding: 5px 8px;">${esc(i.due_date || 'Vencido')}</td>
-                <td style="padding: 5px 8px; text-align: right; font-weight: 700; color: #b91c1c;">${formatMoney(i.total_usd)}</td>
-                <td style="padding: 5px 8px; text-align: right; color: #854d0e;">${formatBs(i.total_usd * bcvRate)}</td>
+        <div class="table-responsive" style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 10px;">
+          <table style="width: 100%; min-width: 500px; border-collapse: collapse; margin-bottom: 0; font-size: 11px;">
+            <thead>
+              <tr style="background: #f1f5f9; border-top: 1px solid #cbd5e1; border-bottom: 2px solid #cbd5e1; text-align: left;">
+                <th style="padding: 5px 8px;">N° Recibo / Período</th>
+                <th style="padding: 5px 8px;">Concepto</th>
+                <th style="padding: 5px 8px;">Vencimiento</th>
+                <th style="padding: 5px 8px; text-align: right;">Monto USD</th>
+                <th style="padding: 5px 8px; text-align: right;">Equiv. Bs. BCV</th>
               </tr>
-            `).join('')}
-            <tr style="background: #fef2f2; font-weight: 800; border-top: 2px solid #f87171;">
-              <td colspan="3" style="padding: 6px 8px; text-transform: uppercase;">TOTAL ADEUDADO AL CORTE:</td>
-              <td style="padding: 6px 8px; text-align: right; color: #b91c1c; font-size: 12px;">${formatMoney(totalOwedUsd)}</td>
-              <td style="padding: 6px 8px; text-align: right; color: #854d0e; font-size: 12px;">${formatBs(totalOwedVes)}</td>
-            </tr>
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              ${unpaidInvoices.length === 0 ? `
+                <tr><td colspan="5" style="text-align: center; padding: 8px; color: #64748b;">No existen cuotas vencidas registradas.</td></tr>
+              ` : unpaidInvoices.map(i => `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                  <td style="padding: 5px 8px; font-weight: 700; font-family: monospace;">${esc(i.invoice_number || i.id)}</td>
+                  <td style="padding: 5px 8px;">${esc(i.concept || 'Canon Fijo + Condominio')}</td>
+                  <td style="padding: 5px 8px;">${esc(i.due_date || 'Vencido')}</td>
+                  <td style="padding: 5px 8px; text-align: right; font-weight: 700; color: #b91c1c;">${formatMoney(i.total_usd)}</td>
+                  <td style="padding: 5px 8px; text-align: right; color: #854d0e;">${formatBs(i.total_usd * bcvRate)}</td>
+                </tr>
+              `).join('')}
+              <tr style="background: #fef2f2; font-weight: 800; border-top: 2px solid #f87171;">
+                <td colspan="3" style="padding: 6px 8px; text-transform: uppercase;">TOTAL ADEUDADO AL CORTE:</td>
+                <td style="padding: 6px 8px; text-align: right; color: #b91c1c; font-size: 12px;">${formatMoney(totalOwedUsd)}</td>
+                <td style="padding: 6px 8px; text-align: right; color: #854d0e; font-size: 12px;">${formatBs(totalOwedVes)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
         <div style="font-size: 10.5px; color: #334155; line-height: 1.4; text-align: justify; margin-bottom: 12px;">
           En virtud de lo dispuesto en la <strong>Ley de Regulación del Arrendamiento Inmobiliario para el Uso Comercial (G.O. 40.418)</strong> y el contrato suscrito, se le intima a efectuar y reportar la cancelación inmediata en los canales autorizados. De haber cancelado previamente, consigne el comprobante bancario para su conciliación.
         </div>
 
         <!-- SIGNATURES -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px;">
+        <div class="report-signatures-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-top: 20px;">
           <div style="text-align: center; border-top: 1px solid #0f172a; padding-top: 4px;">
             <div style="font-weight: 700; font-size: 11px;">POR LA ADMINISTRACIÓN</div>
             <div style="font-size: 9.5px; color: #64748b;">Dpto. de Cobranzas y Consultoría Legal</div>
@@ -531,7 +533,7 @@ const VenezuelaLegal = {
         </div>
 
         <!-- 2-COLUMN METADATA GRID -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+        <div class="report-metadata-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-bottom: 14px;">
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px; font-size: 11.5px;">
             <div style="font-size: 10px; text-transform: uppercase; font-weight: 700; color: #64748b; margin-bottom: 4px; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px;">
               DATOS DE LA EMPRESA ARRENDATARIA
@@ -562,7 +564,7 @@ const VenezuelaLegal = {
         </div>
 
         <!-- SIGNATURES -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 28px;">
+        <div class="report-signatures-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-top: 28px;">
           <div style="text-align: center; border-top: 1px solid #0f172a; padding-top: 6px;">
             <div style="font-weight: 800; font-size: 11.5px;">ADMINISTRACIÓN GENERAL</div>
             <div style="font-size: 10px; color: #64748b;">${esc(companyLegalName)} • R.I.F. ${esc(companyRif)}</div>
@@ -630,7 +632,7 @@ const VenezuelaLegal = {
         </div>
 
         <!-- 2-COLUMN METADATA GRID -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+        <div class="report-metadata-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-bottom: 10px;">
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 12px; font-size: 11px;">
             <div><strong>Arrendatario:</strong> ${esc(tenant.business_name)} (R.I.F. ${esc(tenant.rif)})</div>
             <div><strong>Representante:</strong> ${esc(tenant.legal_rep_name)} (C.I. ${esc(tenant.legal_rep_dni)})</div>
@@ -646,7 +648,7 @@ const VenezuelaLegal = {
           <div style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: #0f172a; margin-bottom: 6px; border-bottom: 1px solid #cbd5e1; padding-bottom: 3px;">
             INVENTARIO & ESTADO FÍSICO DE ENTREGA
           </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 11px;">
+          <div class="report-metadata-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 6px; font-size: 11px;">
             <div>• <strong>Paredes y Pintura:</strong> Óptimas condiciones higiénicas. <span style="color:#047857;font-weight:700;">[✓ Conforme]</span></div>
             <div>• <strong>Pisos y Cerámica:</strong> Sin fracturas ni desgastes. <span style="color:#047857;font-weight:700;">[✓ Conforme]</span></div>
             <div>• <strong>Tablero Eléctrico:</strong> Breakers y acometida operativos. <span style="color:#047857;font-weight:700;">[✓ Operativo]</span></div>
@@ -660,7 +662,7 @@ const VenezuelaLegal = {
         </div>
 
         <!-- SIGNATURES -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 22px;">
+        <div class="report-signatures-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-top: 22px;">
           <div style="text-align: center; border-top: 1px solid #0f172a; padding-top: 4px;">
             <div style="font-weight: 700; font-size: 11px;">POR LA ADMINISTRADORA</div>
             <div style="font-size: 9.5px; color: #64748b;">Dpto. de Operaciones & Mantenimiento</div>
@@ -725,7 +727,7 @@ const VenezuelaLegal = {
         </div>
 
         <!-- 2-COLUMN METADATA GRID -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+        <div class="report-metadata-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-bottom: 12px;">
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px; font-size: 11px;">
             <div><strong>Arrendatario:</strong> ${esc(tenant.business_name)}</div>
             <div><strong>R.I.F.:</strong> <span style="font-family: monospace; font-weight: 700;">${esc(tenant.rif)}</span></div>
@@ -748,7 +750,7 @@ const VenezuelaLegal = {
         </div>
 
         <!-- SIGNATURES -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 24px;">
+        <div class="report-signatures-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-top: 24px;">
           <div style="text-align: center; border-top: 1px solid #0f172a; padding-top: 4px;">
             <div style="font-weight: 700; font-size: 11px;">POR LA ARRENDADORA</div>
             <div style="font-size: 9.5px; color: #64748b;">${esc(companyLegalName)}</div>

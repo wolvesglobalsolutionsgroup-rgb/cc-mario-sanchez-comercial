@@ -356,4 +356,164 @@ describe("PILAR 8: CONEXIÓN REAL A SUPABASE, CONFIGURACIÓN SERVERLESS & CONTRO
   });
 });
 
+describe("PILAR 9: INTEGRACIÓN DE IA RESILIENTE (GEMINI FLASH) & CONFIGURACIÓN FISCAL/PARAMÉTRICA", () => {
+  const geminiHandler = require("../api/gemini.js");
+
+  test("Proxy Gemini: Validación defensiva de métodos HTTP y cuerpo de la petición", async () => {
+    let statusCode = 0;
+    let jsonResult = null;
+    const mockRes = {
+      setHeader: () => {},
+      status: (c) => { statusCode = c; return mockRes; },
+      json: (d) => { jsonResult = d; return mockRes; }
+    };
+
+    // GET debe ser rechazado con 405
+    await geminiHandler({ method: "GET" }, mockRes);
+    assert.strictEqual(statusCode, 405, "Debe retornar 405 para peticiones GET");
+
+    // POST con body vacío debe retornar 400
+    await geminiHandler({ method: "POST", headers: { "x-forwarded-for": "10.0.0.1" }, body: {} }, mockRes);
+    assert.strictEqual(statusCode, 400, "Debe retornar 400 si el prompt está ausente");
+
+    // POST con prompt superior a 4000 caracteres debe retornar 400
+    await geminiHandler({ method: "POST", headers: { "x-forwarded-for": "10.0.0.2" }, body: { prompt: "X".repeat(4001) } }, mockRes);
+    assert.strictEqual(statusCode, 400, "Debe rechazar prompts de más de 4000 caracteres con 400");
+    assert.ok(jsonResult.error.includes("4.000"), "Debe notificar el límite de 4.000 caracteres");
+  });
+
+  test("Proxy Gemini: Rate Limiter por ventana deslizante debe bloquear abusos con HTTP 429", async () => {
+    const https = require("https");
+    const originalRequest = https.request;
+    https.request = (url, options, callback) => {
+      const { EventEmitter } = require("events");
+      const reqMock = new EventEmitter();
+      reqMock.write = () => {};
+      reqMock.end = () => {
+        const resMock = new EventEmitter();
+        resMock.statusCode = 200;
+        process.nextTick(() => {
+          callback(resMock);
+          resMock.emit("data", JSON.stringify({ candidates: [{ content: { parts: [{ text: "Respuesta legal simulada" }] } }] }));
+          resMock.emit("end");
+        });
+      };
+      return reqMock;
+    };
+
+    const testIp = "192.168.99.100";
+    let lastCode = 0;
+    let lastJson = null;
+    const headers = {};
+    const mockRes = {
+      setHeader: (k, v) => { headers[k] = v; },
+      status: (c) => { lastCode = c; return mockRes; },
+      json: (d) => { lastJson = d; return mockRes; }
+    };
+
+    try {
+      // Ejecutar ráfaga de peticiones para agotar la cuota
+      for (let i = 0; i < 20; i++) {
+        await geminiHandler({
+          method: "POST",
+          headers: { "x-forwarded-for": testIp },
+          body: { prompt: "Consulta legal de prueba" }
+        }, mockRes);
+      }
+    } finally {
+      https.request = originalRequest;
+    }
+
+    assert.strictEqual(lastCode, 429, "Debe retornar HTTP 429 cuando se excede la tasa por IP");
+    assert.ok(headers["Retry-After"] !== undefined, "Debe incluir cabecera Retry-After");
+    assert.ok(lastJson.error.includes("Límite de solicitudes"), "Debe devolver mensaje informativo de límite excedido");
+  });
+
+  test("Seguridad e Inmunidad de Credenciales: .gitignore y no exposición de llaves de API", () => {
+    const gitignorePath = path.join(rootDir, ".gitignore");
+    assert.ok(fs.existsSync(gitignorePath), ".gitignore debe existir");
+    const gitignoreContent = fs.readFileSync(gitignorePath, "utf8");
+    assert.ok(gitignoreContent.includes(".env"), ".gitignore debe ignorar .env");
+
+    // Verificar que los archivos cliente en gestion/js no contengan la clave de API real de Gemini en texto plano
+    const clientFiles = ["app.js", "supabase-client.js", "venezuela-legal.js", "contract-viewer.js", "ayuda-content.js"];
+    for (const f of clientFiles) {
+      const filePath = path.join(rootDir, "gestion", "js", f);
+      if (fs.existsSync(filePath)) {
+        const content = fs.readFileSync(filePath, "utf8");
+        assert.ok(!content.includes("AIzaSy"), `El archivo cliente ${f} no debe contener la clave privada de Google AI en texto plano`);
+      }
+    }
+  });
+
+  test("Contenido de Ayuda e Informes: Sin jerga de desarrollo interno y con respaldo legal oficial", () => {
+    const ayudaPath = path.join(rootDir, "gestion", "js", "ayuda-content.js");
+    assert.ok(fs.existsSync(ayudaPath), "ayuda-content.js debe existir");
+    const ayudaContent = fs.readFileSync(ayudaPath, "utf8");
+
+    // Prohibir términos informales o de desarrollo interno
+    assert.ok(!ayudaContent.includes("NotebookLM"), "No debe mencionar NotebookLM");
+    assert.ok(!ayudaContent.includes("Colab"), "No debe mencionar Colab");
+    assert.ok(!ayudaContent.includes("7 archivos"), "No debe mencionar '7 archivos'");
+    assert.ok(!ayudaContent.includes("no tenemos respaldo"), "No debe mencionar 'no tenemos respaldo'");
+
+    // Exigir referencias normativas oficiales
+    assert.ok(ayudaContent.includes("40.418"), "Debe citar el Decreto Ley de Arrendamiento Comercial G.O. 40.418");
+    assert.ok(ayudaContent.includes("LOCAT"), "Debe citar la Ley Orgánica de Coordinación y Armonización Tributaria (LOCAT)");
+    assert.ok(ayudaContent.includes("Código Civil"), "Debe citar el Código Civil Venezolano (Arts. 552 y 768)");
+  });
+
+  test("Configuración Paramétrica: Valores por defecto y persistencia de perfil tributario y gastos", () => {
+    // Probar instancia con mock de localStorage
+    global.localStorage = {
+      _store: {},
+      getItem(k) { return this._store[k] || null; },
+      setItem(k, v) { this._store[k] = String(v); },
+      removeItem(k) { delete this._store[k]; }
+    };
+    if (!global.window) global.window = {};
+
+    require("../gestion/js/supabase-client.js");
+    const dbService = global.window.dbService;
+    const settings = dbService.getSettings();
+
+    // Valores por defecto
+    assert.strictEqual(settings.tax_contributor_type, "especial", "Tipo de contribuyente por defecto debe ser especial");
+    assert.strictEqual(settings.tax_iva_withhold_pct, 75, "Retención IVA por defecto debe ser 75%");
+    assert.strictEqual(settings.tax_islr_withhold_pct, 2.0, "Retención ISLR por defecto debe ser 2.0%");
+    assert.strictEqual(settings.base_monthly_expenses_usd, 2540.00, "Gasto mensual base por defecto debe ser $2,540.00");
+    assert.strictEqual(settings.reserve_fund_pct, 10.0, "Fondo de reserva por defecto debe ser 10.0%");
+    assert.strictEqual(settings.admin_fee_pct, 5.0, "Gasto de administración por defecto debe ser 5.0%");
+
+    // Guardado y actualización
+    const updated = dbService.saveSettings({
+      base_monthly_expenses_usd: 2800.00,
+      reserve_fund_pct: 12.0
+    });
+    assert.strictEqual(updated.base_monthly_expenses_usd, 2800.00, "Debe persistir el nuevo gasto base");
+    assert.strictEqual(updated.reserve_fund_pct, 12.0, "Debe persistir el nuevo porcentaje de fondo de reserva");
+
+    // Restaurar a valores iniciales
+    dbService.saveSettings({
+      base_monthly_expenses_usd: 2540.00,
+      reserve_fund_pct: 10.0
+    });
+  });
+
+  test("Diseño Responsive Móvil: Estructura de documentos y clases oficiales de visualización", () => {
+    const cssContent = fs.readFileSync(path.join(rootDir, "gestion", "css", "dashboard.css"), "utf8");
+    const indexContent = fs.readFileSync(path.join(rootDir, "gestion", "index.html"), "utf8");
+
+    // Clases CSS añadidas para documentos oficiales
+    assert.ok(cssContent.includes(".report-official-header"), "dashboard.css debe incluir .report-official-header");
+    assert.ok(cssContent.includes(".report-signatures-grid"), "dashboard.css debe incluir .report-signatures-grid");
+    assert.ok(cssContent.includes(".report-metadata-grid"), "dashboard.css debe incluir .report-metadata-grid");
+
+    // Elementos UI en HTML
+    assert.ok(indexContent.includes("id=\"card-kpi-fruto-patrimonial\""), "index.html debe contener la tarjeta KPI de Fruto Patrimonial");
+    assert.ok(indexContent.includes("id=\"modal-gemini-assistant\""), "index.html debe contener el modal del Asistente Gemini");
+    assert.ok(indexContent.includes("btn-gemini-assistant-trigger"), "index.html debe contener el botón disparador del asistente IA");
+  });
+});
+
 

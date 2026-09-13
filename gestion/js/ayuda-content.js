@@ -111,19 +111,21 @@ const HelpContent = {
         btn.style.background = 'var(--cyan-glow)';
         btn.style.color = 'var(--cyan)';
         btn.style.borderColor = 'var(--cyan)';
+        HelpContent.activeTab = btn.dataset.helpTab;
         HelpContent.renderTab(btn.dataset.helpTab);
       });
     });
 
-    // Renderizar pestaña inicial según rol
+    // Renderizar pestaña inicial según rol o preservar la activa
     const initialTab = isTenant ? 'welcome_tenant' : 'welcome';
-    const activeBtn = document.querySelector(`.help-nav-btn[data-help-tab="${initialTab}"]`) || document.querySelector('.help-nav-btn');
+    const targetTab = HelpContent.activeTab || initialTab;
+    const activeBtn = document.querySelector(`.help-nav-btn[data-help-tab="${targetTab}"]`) || document.querySelector('.help-nav-btn');
     if (activeBtn) {
       activeBtn.style.background = 'var(--cyan-glow)';
       activeBtn.style.color = 'var(--cyan)';
       activeBtn.style.borderColor = 'var(--cyan)';
     }
-    HelpContent.renderTab(initialTab);
+    HelpContent.renderTab(targetTab);
   },
 
   /**
@@ -723,17 +725,17 @@ const HelpContent = {
           <!-- SECCIÓN 2: GASTOS COMUNES Y ALÍCUOTAS -->
           <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 20px; margin-bottom: 20px;">
             <h4 style="color: var(--purple); margin: 0 0 10px; font-size: 15px; display: flex; align-items: center; gap: 8px;">
-              <i class="fa-solid fa-chart-pie"></i> 2. Alícuota Condominial y Prorrateo de Gastos Comunes ($2,540.00/mes)
+              <i class="fa-solid fa-chart-pie"></i> 2. Alícuota Condominial y Prorrateo Dinámico de Gastos Comunes
             </h4>
             <p style="font-size: 12.5px; color: var(--txt-secondary); line-height: 1.6; margin-bottom: 12px;">
-              Los egresos comunes (vigilancia $1,200, aseo $350, áreas comunes $400, servicios $250, hidroneumáticos $180, insumos $100, imprevistos $60) se prorratean en estricta proporción a la superficie de cada unidad sobre el área total arrendable:
+              Los egresos comunes (vigilancia, aseo urbano comercial, áreas comunes, servicios, hidroneumáticos, insumos y mantenimiento) se basan en un <strong>presupuesto operativo totalmente configurable</strong> (con un valor base referencial de $2,540.00/mes para el modelo piloto, ajustable desde la pestaña de <em>Configuración</em> según la realidad mensual). Cada concepto se prorratea en estricta proporción a la superficie de cada unidad sobre el área total arrendable:
             </p>
             <div style="background: #0f172a; color: #c084fc; padding: 14px 18px; border-radius: 8px; font-family: monospace; font-size: 13px; margin-bottom: 12px; border-left: 4px solid var(--purple);">
               Alícuota Inmueble (%) = (Área Local m² / Área Total Arrendable m²) × 100<br>
-              Cuota Mensual Gastos = Presupuesto Común Mensual ($2,540.00) × Alícuota Inmueble (%)
+              Cuota Mensual Gastos = Presupuesto Común Mensual Configurado ($) × Alícuota Inmueble (%)
             </div>
             <div style="font-size: 11.5px; color: var(--txt-muted);">
-              <strong>Base Jurídica:</strong> Artículos 13 y 19 de la Ley de Arrendamiento Comercial (Gaceta Oficial N° 40.418).
+              <strong>Base Jurídica & Parametrización:</strong> Artículos 13 y 19 de la Ley de Arrendamiento Comercial (Gaceta Oficial N° 40.418). Los montos fijos, tarifas de aseo y tipo de contribuyente pueden ser editados en el panel de Configuración y recalculan automáticamente todas las alícuotas del sistema.
             </div>
           </div>
 
@@ -762,8 +764,11 @@ const HelpContent = {
               La liquidación de dividendos / utilidades se distribuye equitativamente entre las 14 estirpes o coherederos de la sucesión (RIF: J-30211544-2) tras deducir los costos operativos y reservas legales:
             </p>
             <div style="background: #0f172a; color: #4ade80; padding: 14px 18px; border-radius: 8px; font-family: monospace; font-size: 13px; margin-bottom: 12px; border-left: 4px solid var(--emerald);">
-              Utilidad Neta Repartible = Ingresos Cobrados - Egresos Comunes ($2,540) - Fondo Reserva (10%) - Gasto Adm (5%)<br>
+              Utilidad Neta Repartible = Ingresos Cobrados - Egresos Comunes Operativos - Fondo de Reserva - Honorarios Administración<br>
               Cuota por Coheredero = Utilidad Neta Repartible / 14  (7.142857% por estirpe indivisa)
+            </div>
+            <div style="background: rgba(14, 165, 233, 0.08); border-left: 3px solid var(--cyan); padding: 8px 12px; border-radius: 4px; font-size: 11px; color: var(--txt-secondary); margin-bottom: 12px;">
+              <strong>Nota Paramétrica:</strong> Los montos de gasto base ($2,540 USD de referencia inicial), tasa de aseo urbano ($120 USD), porcentaje de Fondo de Reserva (10%) y Gastos de Administración (5%) constituyen parámetros iniciales de referencia de la administración de Mario Sánchez, los cuales pueden ajustarse y configurarse dinámicamente en cualquier momento desde la pestaña de <strong>Configuración</strong> según las decisiones de la Junta de Condominio o la Sucesión.
             </div>
             <div style="font-size: 11.5px; color: var(--txt-muted);">
               <strong>Base Jurídica:</strong> Artículos 552 (Frutos Civiles de Bienes Inmuebles) y 768 (Comunidad Indivisa) del Código Civil de la República Bolivariana de Venezuela.
@@ -861,69 +866,75 @@ Col 4: Operación (C=Compra)        Col 8: Número de Control           Col 12: 
             <div>
               <h3 style="font-family: var(--font-heading); font-size: 22px; color: var(--txt-primary); margin: 0 0 4px;">
                 <i class="fa-solid fa-scale-balanced" style="color: var(--purple);"></i>
-                Marco Jurídico & Fuentes Originales en PDF
+                Marco Jurídico & Fundamentación Legal Venezolana
               </h3>
               <p style="font-size: 13px; color: var(--txt-secondary); margin: 0;">
-                Corpus legal venezolano verificado, descargado físicamente en el repositorio para auditar y alimentar Google NotebookLM sin alucinaciones.
+                Compendio de legislación mercantil, civil y tributaria vinculante aplicable a la administración inmobiliaria y condominio comercial.
               </p>
             </div>
             <span class="status-pill pill-active" style="font-size: 11px;">
-              <i class="fa-solid fa-file-pdf"></i> 7 PDFs Oficiales en Disco
+              <i class="fa-solid fa-shield-check"></i> Marco Normativo Vigente
             </span>
           </div>
 
           <div style="overflow-x: auto; margin-bottom: 20px;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: left;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
               <thead>
                 <tr style="border-bottom: 1px solid var(--border-subtle); color: var(--txt-muted);">
-                  <th style="padding: 10px;">Norma / Documento Oficial</th>
-                  <th style="padding: 10px;">Gaceta / Emisor</th>
-                  <th style="padding: 10px;">Tamaño</th>
-                  <th style="padding: 10px;">Ubicación Local</th>
+                  <th style="padding: 10px;">Norma / Instrumento Legal</th>
+                  <th style="padding: 10px;">Gaceta Oficial / Emisor</th>
+                  <th style="padding: 10px;">Materia Regulada</th>
+                  <th style="padding: 10px;">Aplicación en la Plataforma</th>
                 </tr>
               </thead>
               <tbody style="color: var(--txt-secondary);">
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
-                  <td style="padding: 10px; color: var(--txt-primary); font-weight: 600;">Ley de Arrendamiento Inmobiliario Comercial (Decreto 929)</td>
+                  <td style="padding: 10px; color: var(--txt-primary); font-weight: 600;">Ley de Regulación del Arrendamiento Comercial (Decreto N° 929)</td>
                   <td style="padding: 10px;">G.O. N° 40.418 (2014)</td>
-                  <td style="padding: 10px;">0.91 MB</td>
-                  <td style="padding: 10px;"><code>docs/corpus_notebooklm/pdfs/01_...</code></td>
+                  <td style="padding: 10px;">Métodos CAF, CAV, CAM; topes variables (8%); depósito en garantía (máx 3 meses en cuenta remunerada); prórroga legal (Art. 26).</td>
+                  <td style="padding: 10px; color: var(--cyan);">Liquidación de cánones, contratos y finiquitos</td>
                 </tr>
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
-                  <td style="padding: 10px; color: var(--txt-primary); font-weight: 600;">LOCAT - Armonización Tributaria Estados y Municipios</td>
+                  <td style="padding: 10px; color: var(--txt-primary); font-weight: 600;">LOCAT - Armonización de Potestades Tributarias</td>
                   <td style="padding: 10px;">G.O. Ext. N° 6.755 (2023)</td>
-                  <td style="padding: 10px;">0.92 MB</td>
-                  <td style="padding: 10px;"><code>docs/corpus_notebooklm/pdfs/02_...</code></td>
+                  <td style="padding: 10px;">Clasificador Único (CIIU 6810-01), tope alícuota ISAE (3.0%), no sujeción del condominio en mandato y TCMMV.</td>
+                  <td style="padding: 10px; color: var(--emerald);">Declaración ISAE y segregación del condominio</td>
                 </tr>
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
                   <td style="padding: 10px; color: var(--txt-primary); font-weight: 600;">Código Orgánico Tributario (COT)</td>
                   <td style="padding: 10px;">G.O. Ext. N° 6.507 (2020)</td>
-                  <td style="padding: 10px;">1.99 MB</td>
-                  <td style="padding: 10px;"><code>docs/corpus_notebooklm/pdfs/03_...</code></td>
+                  <td style="padding: 10px;">Régimen de deberes formales, sanciones pecuniarias indexadas al tipo de cambio oficial de mayor valor y fiscalización.</td>
+                  <td style="padding: 10px; color: var(--amber);">Control de mora y auditoría fiscal preventiva</td>
                 </tr>
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
                   <td style="padding: 10px; color: var(--txt-primary); font-weight: 600;">Ley de Reforma del IGTF (3% Divisas)</td>
                   <td style="padding: 10px;">G.O. Ext. N° 6.687 (2022)</td>
-                  <td style="padding: 10px;">1.87 MB</td>
-                  <td style="padding: 10px;"><code>docs/corpus_notebooklm/pdfs/04_...</code></td>
+                  <td style="padding: 10px;">Percepción del 3% sobre pagos recibidos en divisas o moneda extranjera sin intermediación bancaria nacional.</td>
+                  <td style="padding: 10px; color: var(--rose);">Cobranzas en efectivo divisas y comprobantes</td>
                 </tr>
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
-                  <td style="padding: 10px; color: var(--txt-primary); font-weight: 600;">Reglamento Retenciones ISLR (Decreto 1808)</td>
+                  <td style="padding: 10px; color: var(--txt-primary); font-weight: 600;">Reglamento de Retenciones de ISLR (Decreto 1808)</td>
                   <td style="padding: 10px;">G.O. N° 36.203 (1997)</td>
-                  <td style="padding: 10px;">13.04 MB</td>
-                  <td style="padding: 10px;"><code>docs/corpus_notebooklm/pdfs/05_...</code></td>
+                  <td style="padding: 10px;">Retención en la fuente sobre cánones de arrendamiento: 5% a personas jurídicas y 3% a personas naturales.</td>
+                  <td style="padding: 10px; color: var(--purple);">Comprobantes oficiales de retención de ISLR</td>
                 </tr>
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
                   <td style="padding: 10px; color: var(--txt-primary); font-weight: 600;">Agentes de Retención IVA Sujetos Especiales</td>
                   <td style="padding: 10px;">G.O. N° 40.720 (2015)</td>
-                  <td style="padding: 10px;">3.42 MB</td>
-                  <td style="padding: 10px;"><code>docs/corpus_notebooklm/pdfs/06_...</code></td>
+                  <td style="padding: 10px;">Retención de IVA (75% y 100%), emisión del comprobante digital y enteramiento quincenal en portal SENIAT.</td>
+                  <td style="padding: 10px; color: var(--cyan);">Comprobantes de IVA y Libro de Compras</td>
                 </tr>
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
-                  <td style="padding: 10px; color: var(--txt-primary); font-weight: 600;">Providencia 0071 Emisión de Facturas y Libros Fiscales</td>
+                  <td style="padding: 10px; color: var(--txt-primary); font-weight: 600;">Providencia SNAT/2011/0071 Facturación y Libros</td>
                   <td style="padding: 10px;">G.O. N° 39.795 (2011)</td>
-                  <td style="padding: 10px;">5.59 MB</td>
-                  <td style="padding: 10px;"><code>docs/corpus_notebooklm/pdfs/07_...</code></td>
+                  <td style="padding: 10px;">Requisitos formales de facturas, notas de débito/crédito, numeración consecutiva y Libros de Compras y Ventas.</td>
+                  <td style="padding: 10px; color: var(--emerald);">Libros fiscales con correlativo y control</td>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                  <td style="padding: 10px; color: var(--txt-primary); font-weight: 600;">Código Civil Venezolano (Arts. 552 y 768)</td>
+                  <td style="padding: 10px;">G.O. Ext. N° 2.990 (1982)</td>
+                  <td style="padding: 10px;">Régimen de frutos civiles derivados de bienes inmuebles en comunidad indivisa y partición entre coherederos.</td>
+                  <td style="padding: 10px; color: var(--purple);">Liquidación de Frutos Patrimoniales (14 Estirpes)</td>
                 </tr>
               </tbody>
             </table>
@@ -931,12 +942,10 @@ Col 4: Operación (C=Compra)        Col 8: Número de Control           Col 12: 
 
           <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 16px;">
             <div style="font-weight: 700; font-size: 13px; color: var(--emerald); margin-bottom: 6px;">
-              <i class="fa-solid fa-cloud-arrow-up"></i> Ingesta Directa en Google NotebookLM:
+              <i class="fa-solid fa-shield-halved"></i> Seguridad Jurídica & Blindaje Fiscal:
             </div>
             <p style="font-size: 12px; color: var(--txt-secondary); margin: 0; line-height: 1.6;">
-              Puedes subir estos 7 archivos PDF descargados directamente a tu cuaderno: 
-              <a href="https://notebooklm.google.com/notebook/3914afb9-a48b-4130-8890-7eaed1fddb28" target="_blank" rel="noopener noreferrer" style="color: var(--cyan); text-decoration: underline; font-weight: 600;">Abrir NotebookLM en el Navegador</a>. 
-              Al subirlos desde la carpeta local <code>docs/corpus_notebooklm/pdfs/</code>, eliminas cualquier dependencia de páginas web caídas y garantizas respuestas 100% fundamentadas en leyes venezolanas vigentes.
+              Todos los cálculos automáticos, la segregación de cánones vs. condominio en mandato, las retenciones tributarias y la distribución sucesoral operan en estricta concordancia con las gacetas oficiales vigentes de la República Bolivariana de Venezuela, garantizando respaldo probatorio y blindaje contable ante cualquier fiscalización del SENIAT o de la Administración Tributaria Municipal.
             </p>
           </div>
         </div>

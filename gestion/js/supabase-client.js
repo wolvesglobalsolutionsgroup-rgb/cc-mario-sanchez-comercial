@@ -1467,6 +1467,18 @@ class DatabaseService {
       grace_days: 5,               // 5 días de gracia antes de liquidar mora
       mora_monthly_rate: 3.0,      // 3.0% de mora mensual (Art. 30 G.O. 40.418 y Art. 108 Código de Comercio)
       mora_recurrence_days: 3,     // Recordatorios recurrentes cada 3 días hasta liquidación efectiva
+      // Perfil Tributario & Régimen Fiscal (SENIAT / LOCAT)
+      tax_contributor_type: 'especial',
+      tax_iva_withhold_pct: 75,
+      tax_islr_withhold_pct: 2.0,
+      tax_company_name: 'CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.',
+      tax_company_rif: 'J-30211544-2',
+      // Gastos Operativos, Aseo Urbano y Fruto Patrimonial
+      base_monthly_expenses_usd: 2540.00,
+      aseo_urbano_monthly_usd: 120.00,
+      reserve_fund_pct: 10.0,
+      admin_fee_pct: 5.0,
+      isae_rate_pct: 2.0,
       // Plantillas de Mensajes
       msg_preventive_template: `Estimados *{inquilino}* ({unidad}):\nLe remitimos su aviso de cobro preventivo del período *{periodo}* por un total de *{monto_usd}* (Bs. {monto_bs} a tasa BCV {tasa_bcv}).\nFecha límite oportuna de pago: *{fecha_limite}*.\nPor favor remitir comprobante a este canal oficial para conciliación y emisión de su recibo fiscal.`,
       msg_mora_template: `⚠️ *AVISO FORMAL DE MORA — CC MARIO SÁNCHEZ*\nEstimados *{inquilino}* ({unidad}):\nLe notificamos que su cuota del período *{periodo}* (vencida el *{fecha_limite}*) presenta *{dias_mora} días de retraso*.\n• Canon & Gastos Base: *{monto_usd}*\n• Recargo Moratorio Legal (Art. 30 G.O. 40.418): *{recargo_mora_usd}* (Bs. {recargo_mora_bs})\n• *TOTAL EXIGIBLE AL DÍA*: *{total_con_mora_usd}* (Bs. {total_con_mora_bs} a tasa BCV {tasa_bcv})\nPor favor consignar su comprobante a este canal para suspender las alertas automáticas y registrar su solvencia.`

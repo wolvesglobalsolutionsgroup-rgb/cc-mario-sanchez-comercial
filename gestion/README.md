@@ -46,7 +46,14 @@ Plataforma SaaS para la administración integral de locales comerciales, macro-l
 
 ---
 
-## 📚 Base de Datos para Google NotebookLM
+## 📚 Marco Jurídico Vinculante & Normativa Oficial
 
-En `docs/corpus_notebooklm/pdfs/` se encuentran descargados los 7 archivos PDF oficiales físicos (Decreto 929 de Arrendamiento Comercial, LOCAT, COT 2020, Ley IGTF, Decreto 1808 ISLR, Providencia IVA 40.720 y Providencia Facturación 0071). Puedes arrastrarlos directamente a tu cuaderno:
-👉 `https://notebooklm.google.com/notebook/3914afb9-a48b-4130-8890-7eaed1fddb28`
+El sistema opera estrictamente fundamentado en la legislación venezolana vigente:
+- **Decreto Ley N° 929 de Regulación del Arrendamiento Inmobiliario para el Uso Comercial** (Gaceta Oficial N° 40.418).
+- **Ley Orgánica de Coordinación y Armonización de las Potestades Tributarias - LOCAT** (Gaceta Oficial Ext. N° 6.755).
+- **Código Orgánico Tributario - COT** (Gaceta Oficial Ext. N° 6.507).
+- **Ley de Reforma del Impuesto a las Grandes Transacciones Financieras - IGTF** (Gaceta Oficial Ext. N° 6.687).
+- **Reglamento de Retenciones de ISLR** (Decreto N° 1.808).
+- **Providencia Administrativa SNAT/2015/0049** (Retenciones de IVA por Sujetos Pasivos Especiales).
+- **Providencia Administrativa SNAT/2011/0071** (Normas Generales de Emisión de Facturas y Libros Fiscales).
+

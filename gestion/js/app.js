@@ -546,6 +546,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (configNav) configNav.click();
   };
 
+  window.navigateToFrutoPatrimonial = function() {
+    window.switchTab('informes');
+    const select = document.getElementById('report-type-select');
+    if (select) {
+      select.value = 'herederos';
+      if (typeof window.onReportTypeChange === 'function') window.onReportTypeChange();
+      if (typeof window.generateSelectedReport === 'function') window.generateSelectedReport();
+    }
+    setTimeout(() => {
+      const container = document.getElementById('report-display-container') || document.getElementById('tab-informes');
+      if (container) container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 120);
+  };
+
   window.switchTab = function(tabName) {
     const isTenant = (currentRole === 'tenant');
     const roleSelector = isTenant ? '[data-roles="tenant"]' : ':not([data-roles="tenant"])';
@@ -561,6 +575,11 @@ document.addEventListener('DOMContentLoaded', () => {
       currentTab = tabName;
       renderAll();
     }
+    // Desplazar vista al inicio superior para evitar espacios en blanco o desalineación
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    const contentWrap = document.querySelector('.content-wrapper') || document.querySelector('.app-main');
+    if (contentWrap) contentWrap.scrollTop = 0;
+
     // Sincronizar barra inferior móvil solo entre botones visibles para el rol activo
     document.querySelectorAll('.mobile-bottom-nav .mobile-nav-item').forEach(b => b.classList.remove('active'));
     const activeBottomBtn = document.querySelector(`.mobile-bottom-nav .mobile-nav-item:not(.hidden-by-role)[data-bottom-tab="${tabName}"]`);
@@ -583,6 +602,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const activeView = document.getElementById(`tab-${currentTab}`);
       if (activeView) activeView.style.display = 'block';
 
+      // Desplazar al inicio superior en cambio de tab
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      const contentWrapper = document.querySelector('.content-wrapper') || document.querySelector('.app-main');
+      if (contentWrapper) contentWrapper.scrollTop = 0;
+
       // Sincronizar barra inferior móvil solo entre botones visibles para el rol activo
       document.querySelectorAll('.mobile-bottom-nav .mobile-nav-item').forEach(b => b.classList.remove('active'));
       const activeBottomBtn = document.querySelector(`.mobile-bottom-nav .mobile-nav-item:not(.hidden-by-role)[data-bottom-tab="${currentTab}"]`);
@@ -593,7 +617,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Re-renderizar de inmediato para garantizar datos frescos y sincronizados al instante
       renderAll();
 
-      if (currentTab === 'reportes') {
+      if (currentTab === 'reportes' || currentTab === 'informes') {
         try {
           if (typeof initReportsTab === 'function') initReportsTab();
           if (typeof window.generateSelectedReport === 'function') window.generateSelectedReport();
@@ -645,7 +669,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try { window.renderStaffProfileCards(); } catch (e) { console.error('[RenderError] StaffProfiles:', e); }
       }
     }
-    if (window.HelpContent && typeof window.HelpContent.render === 'function') {
+    if (currentTab === 'ayuda' && window.HelpContent && typeof window.HelpContent.render === 'function') {
       try { window.HelpContent.render(); } catch (e) { console.error('[RenderError] HelpContent:', e); }
     }
   }
@@ -1039,6 +1063,36 @@ document.addEventListener('DOMContentLoaded', () => {
         if (netCard) netCard.style.display = '';
       } else if (netCard) {
         netCard.style.display = 'none';
+      }
+    }
+
+    // 6.b. Fruto Patrimonial (Sucesión Mario Sánchez - 14 Coherederos)
+    const frutoEl = document.getElementById('kpi-fruto-patrimonial');
+    const frutoCard = document.getElementById('card-kpi-fruto-patrimonial');
+    const frutoSub = document.getElementById('kpi-fruto-patrimonial-sub');
+    if (frutoEl) {
+      if (isDirectiva) {
+        const condoExpenses = dbService.getCondoExpenses ? dbService.getCondoExpenses() : [];
+        const sysSettings = dbService.getSettings ? dbService.getSettings() : {};
+        const baseExpParam = parseFloat(sysSettings.base_monthly_expenses_usd) || 2540.00;
+        const totalExp = condoExpenses.length > 0
+          ? condoExpenses.reduce((acc, e) => acc + (parseFloat(e.amount_usd) || 0), 0)
+          : baseExpParam;
+        const baseCanonsUsd = totalPaidUsd > 0 ? totalPaidUsd : (invoices.reduce((acc, i) => acc + (parseFloat(i.rent_usd || i.base_rent_usd || 0)), 0) || 5600);
+        const resPct = (parseFloat(sysSettings.reserve_fund_pct) || 10.0) / 100;
+        const admPct = (parseFloat(sysSettings.admin_fee_pct) || 5.0) / 100;
+        const fondoReserva = baseCanonsUsd * resPct;
+        const gastoAdm = baseCanonsUsd * admPct;
+        const frutoNetoUsd = Math.max(0, baseCanonsUsd - totalExp - fondoReserva - gastoAdm);
+        const cuotaIndividualUsd = frutoNetoUsd / 14;
+
+        frutoEl.innerText = formatMoney(frutoNetoUsd);
+        if (frutoSub) {
+          frutoSub.innerText = `14 cuotas de ${formatMoney(cuotaIndividualUsd)} • Clic para desglose`;
+        }
+        if (frutoCard) frutoCard.style.display = '';
+      } else if (frutoCard) {
+        frutoCard.style.display = 'none';
       }
     }
 
@@ -4762,17 +4816,34 @@ document.addEventListener('DOMContentLoaded', () => {
   // Cargar configuración guardada en los inputs
   function loadConfigFields() {
     const cfg = dbService.getSettings();
+    // Perfil Tributario
+    if (document.getElementById('cfg-tax-contributor-type')) document.getElementById('cfg-tax-contributor-type').value = cfg.tax_contributor_type || 'especial';
+    if (document.getElementById('cfg-tax-iva-withhold')) document.getElementById('cfg-tax-iva-withhold').value = cfg.tax_iva_withhold_pct || 75;
+    if (document.getElementById('cfg-tax-islr-withhold')) document.getElementById('cfg-tax-islr-withhold').value = cfg.tax_islr_withhold_pct !== undefined ? cfg.tax_islr_withhold_pct : 2.0;
+    if (document.getElementById('cfg-tax-company-name')) document.getElementById('cfg-tax-company-name').value = cfg.tax_company_name || 'CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.';
+    if (document.getElementById('cfg-tax-company-rif')) document.getElementById('cfg-tax-company-rif').value = cfg.tax_company_rif || 'J-30211544-2';
+
+    // Gastos Operativos & Fruto
+    if (document.getElementById('cfg-base-expenses')) document.getElementById('cfg-base-expenses').value = cfg.base_monthly_expenses_usd !== undefined ? cfg.base_monthly_expenses_usd : 2540;
+    if (document.getElementById('cfg-aseo-urbano')) document.getElementById('cfg-aseo-urbano').value = cfg.aseo_urbano_monthly_usd !== undefined ? cfg.aseo_urbano_monthly_usd : 120;
+    if (document.getElementById('cfg-reserve-fund-pct')) document.getElementById('cfg-reserve-fund-pct').value = cfg.reserve_fund_pct !== undefined ? cfg.reserve_fund_pct : 10;
+    if (document.getElementById('cfg-admin-fee-pct')) document.getElementById('cfg-admin-fee-pct').value = cfg.admin_fee_pct !== undefined ? cfg.admin_fee_pct : 5;
+    if (document.getElementById('cfg-isae-rate-pct')) document.getElementById('cfg-isae-rate-pct').value = cfg.isae_rate_pct !== undefined ? cfg.isae_rate_pct : 2.0;
+
+    // Cuotas & Cánones
     if (document.getElementById('cfg-rate-locales')) document.getElementById('cfg-rate-locales').value = cfg.rate_locales_m2 || 4.5;
     if (document.getElementById('cfg-rate-macrolotes')) document.getElementById('cfg-rate-macrolotes').value = cfg.rate_macrolotes_m2 || 2.3;
     if (document.getElementById('cfg-rate-galpones')) document.getElementById('cfg-rate-galpones').value = cfg.rate_galpones_m2 || 2.5;
     if (document.getElementById('cfg-condo-aliquot')) document.getElementById('cfg-condo-aliquot').value = cfg.condo_fee_aliquot_base || 8.0;
 
+    // Alertas & Mora
     if (document.getElementById('cfg-cutoff-day')) document.getElementById('cfg-cutoff-day').value = cfg.cutoff_day || 5;
     if (document.getElementById('cfg-alert-before')) document.getElementById('cfg-alert-before').value = cfg.alert_days_before || 3;
     if (document.getElementById('cfg-grace-days')) document.getElementById('cfg-grace-days').value = cfg.grace_days || 5;
     if (document.getElementById('cfg-mora-rate')) document.getElementById('cfg-mora-rate').value = cfg.mora_monthly_rate !== undefined ? cfg.mora_monthly_rate : 3.0;
     if (document.getElementById('cfg-mora-recurrence')) document.getElementById('cfg-mora-recurrence').value = cfg.mora_recurrence_days || 3;
 
+    // Plantillas
     if (document.getElementById('cfg-msg-preventive')) document.getElementById('cfg-msg-preventive').value = cfg.msg_preventive_template;
     if (document.getElementById('cfg-msg-mora')) document.getElementById('cfg-msg-mora').value = cfg.msg_mora_template;
 
@@ -5031,6 +5102,63 @@ document.addEventListener('DOMContentLoaded', () => {
       window.SecuritySuite.toast('Parámetros base de cánones y gastos comunes actualizados.', 'success', 'Cánones Guardados');
     } else {
       alert("¡Parámetros de Cuotas y Cánones guardados con éxito!");
+    }
+  };
+
+  window.saveTaxProfileConfig = function(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const contributorType = document.getElementById('cfg-tax-contributor-type') ? document.getElementById('cfg-tax-contributor-type').value : 'especial';
+    const companyName = document.getElementById('cfg-tax-company-name') ? document.getElementById('cfg-tax-company-name').value.trim() : 'ADMINISTRADORA MARIO SÁNCHEZ, C.A.';
+    const companyRif = document.getElementById('cfg-tax-company-rif') ? document.getElementById('cfg-tax-company-rif').value.trim() : 'J-30211544-2';
+    const ivaWithhold = parseFloat(document.getElementById('cfg-tax-iva-withhold') ? document.getElementById('cfg-tax-iva-withhold').value : 75) || 75;
+    const islrWithhold = parseFloat(document.getElementById('cfg-tax-islr-withhold') ? document.getElementById('cfg-tax-islr-withhold').value : 2.0) || 2.0;
+
+    dbService.saveSettings({
+      tax_contributor_type: contributorType,
+      tax_company_name: companyName,
+      tax_company_rif: companyRif,
+      tax_iva_withhold_pct: ivaWithhold,
+      tax_islr_withhold_pct: islrWithhold
+    });
+
+    renderAll();
+    if (typeof window.generateSelectedReport === 'function') {
+      try { window.generateSelectedReport(); } catch(err) {}
+    }
+
+    if (window.SecuritySuite && window.SecuritySuite.toast) {
+      window.SecuritySuite.toast('Perfil tributario y parámetros de retención SENIAT actualizados.', 'success', 'Régimen Fiscal Guardado');
+    } else {
+      alert("¡Perfil tributario guardado con éxito!");
+    }
+  };
+
+  window.saveExpensesFrutoConfig = function(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const baseInput = document.getElementById('cfg-base-expenses') || document.getElementById('cfg-base-monthly-expenses');
+    const baseExpenses = parseFloat(baseInput ? baseInput.value : 2540) || 2540.00;
+    const aseoUrbano = parseFloat(document.getElementById('cfg-aseo-urbano') ? document.getElementById('cfg-aseo-urbano').value : 120) || 120.00;
+    const reserveFund = parseFloat(document.getElementById('cfg-reserve-fund-pct') ? document.getElementById('cfg-reserve-fund-pct').value : 10) || 10.0;
+    const adminFee = parseFloat(document.getElementById('cfg-admin-fee-pct') ? document.getElementById('cfg-admin-fee-pct').value : 5) || 5.0;
+    const isaeRate = parseFloat(document.getElementById('cfg-isae-rate-pct') ? document.getElementById('cfg-isae-rate-pct').value : 2) || 2.0;
+
+    dbService.saveSettings({
+      base_monthly_expenses_usd: baseExpenses,
+      aseo_urbano_monthly_usd: aseoUrbano,
+      reserve_fund_pct: reserveFund,
+      admin_fee_pct: adminFee,
+      isae_rate_pct: isaeRate
+    });
+
+    renderAll();
+    if (typeof window.generateSelectedReport === 'function') {
+      try { window.generateSelectedReport(); } catch(err) {}
+    }
+
+    if (window.SecuritySuite && window.SecuritySuite.toast) {
+      window.SecuritySuite.toast('Gastos base, aseo y porcentajes sucesorales actualizados.', 'success', 'Fruto Sucesoral Guardado');
+    } else {
+      alert("¡Parámetros de gastos y frutos sucesorales guardados con éxito!");
     }
   };
 
@@ -6190,20 +6318,20 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderOfficialReportHeaderHTML(title, docNumber = null, subtitle = 'Departamento de Administración, Finanzas & Cobranzas') {
     const bcvRate = financialEngine && financialEngine.getRates ? financialEngine.getRates().VES.toFixed(2) : '814.69';
     return `
-      <div class="report-official-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 18px; gap: 16px;">
-        <div style="display: flex; align-items: center; gap: 14px;">
-          <img src="logo_cc_mario_sanchez_2k.svg?v=20260904" alt="CC Mario Sánchez Logo" style="width: 48px; height: 48px; max-width: 48px; max-height: 48px; object-fit: contain; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); flex-shrink: 0;" onerror="this.style.display='none';">
-          <div>
-            <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: #0f172a; letter-spacing: -0.2px;">CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</h2>
-            <div style="font-size: 11px; color: #475569; font-weight: 600;">RIF: J-30211544-2 • Av. Municipal c/c Calle Juncal, Puerto La Cruz, Estado Anzoátegui</div>
-            <div style="font-size: 10.5px; color: #64748b;">${subtitle} • Gaceta Oficial N° 40.418</div>
+      <div class="report-official-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 18px; gap: 14px; flex-wrap: wrap; width: 100%; box-sizing: border-box;">
+        <div class="report-header-brand" style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1 1 260px;">
+          <img class="report-header-logo" src="logo_cc_mario_sanchez_2k.svg?v=20260904" alt="CC Mario Sánchez Logo" style="width: 44px; height: 44px; max-width: 44px; max-height: 44px; object-fit: contain; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); flex-shrink: 0;" onerror="this.style.display='none';">
+          <div class="report-header-company" style="min-width: 0;">
+            <h2 class="report-company-title" style="margin: 0; font-size: 16px; font-weight: 800; color: #0f172a; letter-spacing: -0.2px; word-break: break-word; line-height: 1.25;">CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.</h2>
+            <div class="report-company-rif" style="font-size: 11px; color: #475569; font-weight: 600; word-break: break-word;">RIF: J-30211544-2 • Av. Municipal c/c Calle Juncal, Puerto La Cruz, Estado Anzoátegui</div>
+            <div class="report-company-sub" style="font-size: 10.5px; color: #64748b; word-break: break-word;">${subtitle} • Gaceta Oficial N° 40.418</div>
           </div>
         </div>
-        <div style="text-align: right; font-size: 11px; color: #334155; flex-shrink: 0;">
-          <div><strong>${title}</strong></div>
-          ${docNumber ? `<div>N°: <strong style="font-family: monospace;">${docNumber}</strong></div>` : ''}
-          <div>Fecha Emisión: <strong>${new Date().toLocaleDateString('es-VE')}</strong></div>
-          <div>Tasa BCV: <strong>${bcvRate} Bs/USD</strong></div>
+        <div class="report-header-meta" style="text-align: right; font-size: 11px; color: #334155; min-width: 0; flex: 1 1 200px;">
+          <div class="report-doc-title" style="font-size: 12.5px; font-weight: 800; color: #0f172a; word-break: break-word; overflow-wrap: break-word; margin-bottom: 2px;"><strong>${title}</strong></div>
+          ${docNumber ? `<div class="report-doc-num">N°: <strong style="font-family: monospace;">${docNumber}</strong></div>` : ''}
+          <div class="report-doc-date">Fecha Emisión: <strong>${new Date().toLocaleDateString('es-VE')}</strong></div>
+          <div class="report-doc-bcv">Tasa BCV: <strong>${bcvRate} Bs/USD</strong></div>
         </div>
       </div>
     `;
@@ -6313,7 +6441,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
 
         <!-- PIE Y FIRMAS DE AUDITORÍA -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px; padding-top: 20px; border-top: 1px dashed #cbd5e1;">
+        <div class="report-signatures-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-top: 40px; padding-top: 20px; border-top: 1px dashed #cbd5e1;">
           <div style="text-align: center;">
             <div style="height: 45px;"></div>
             <div style="border-top: 1px solid #475569; padding-top: 6px; font-size: 11.5px; font-weight: 700;">LCDO. MARIO SÁNCHEZ</div>
@@ -6793,7 +6921,7 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 50px;">
+        <div class="report-signatures-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-top: 50px;">
           <div style="text-align: center;">
             <div style="border-top: 1px solid #0f172a; padding-top: 6px; font-size: 11.5px;">
               <strong>POR LA SOCIEDAD ADMINISTRADORA</strong><br>
@@ -7021,7 +7149,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <strong>PLAZO DE SUBSANACIÓN Y CONCILIACIÓN:</strong> Se otorga un plazo de <strong>setenta y dos (72) horas hábiles</strong> a partir de la recepción de la presente comunicación para consignar comprobante de liquidación total o apersonarse en la Oficina de Administración del Centro Comercial para la firma de un acuerdo de conciliación extrajudicial, so pena de dar inicio a las acciones resolutorias del contrato de arrendamiento ante las instancias jurisdiccionales correspondientes.
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px;">
+        <div class="report-signatures-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-top: 40px;">
           <div style="text-align: center;">
             <div style="border-top: 1px solid #0f172a; padding-top: 6px; font-size: 11px;">
               <strong>ADMINISTRACIÓN & COBRANZAS</strong><br>
@@ -7068,16 +7196,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // Si aún no hay cobros en este mes de prueba, tomar totalFacturado como referencia de liquidación estimada
     const baseIngresos = totalCobradoUsd > 0 ? totalCobradoUsd : (totalFacturadoUsd > 0 ? totalFacturadoUsd : 9050.00);
 
-    // Egresos comunes: presupuesto base de $2,540.00 o gastos reales registrados
+    // Egresos comunes: presupuesto base parametrizable o gastos reales registrados
+    const sysSettings = dbService.getSettings ? dbService.getSettings() : {};
+    const baseGastosCfg = parseFloat(sysSettings.base_monthly_expenses_usd) || 2540.00;
     const allDbExpenses = dbService.getCondoExpenses ? dbService.getCondoExpenses() : [];
     const expensesPeriod = allDbExpenses.filter(e => e.period_month === month && e.period_year === year);
     const totalGastosUsd = expensesPeriod.length > 0
       ? expensesPeriod.reduce((sum, e) => sum + (parseFloat(e.amount_usd) || 0), 0)
-      : 2540.00; // Presupuesto base mensual auditado ($2,540.00)
+      : baseGastosCfg;
 
-    // Deducciones reglamentarias: Fondo de Reserva (10%) y Gastos de Administración (5%)
-    const fondoReservaUsd = baseIngresos * 0.10;
-    const gastoAdmUsd = baseIngresos * 0.05;
+    // Deducciones reglamentarias: Fondo de Reserva y Gastos de Administración parametrizables
+    const pctReserva = (parseFloat(sysSettings.reserve_fund_pct) || 10.0) / 100;
+    const pctAdm = (parseFloat(sysSettings.admin_fee_pct) || 5.0) / 100;
+    const fondoReservaUsd = baseIngresos * pctReserva;
+    const gastoAdmUsd = baseIngresos * pctAdm;
 
     // Utilidad Neta / Frutos Civiles Repartibles
     const utilidadNetaUsd = Math.max(0, baseIngresos - totalGastosUsd - fondoReservaUsd - gastoAdmUsd);
@@ -7145,15 +7277,15 @@ document.addEventListener('DOMContentLoaded', () => {
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px;">
             <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #b91c1c;">2. Egresos Operativos</div>
             <div style="font-size: 15px; font-weight: 800; color: #b91c1c;">-$${totalGastosUsd.toFixed(2)}</div>
-            <div style="font-size: 9.5px; color: #64748b;">Ppto Base: $2,540.00</div>
+            <div style="font-size: 9.5px; color: #64748b;">Ppto Base: $${baseGastosCfg.toFixed(2)}</div>
           </div>
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px;">
-            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #d97706;">3. Fondo Reserva (10%)</div>
+            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #d97706;">3. Fondo Reserva (${(pctReserva * 100).toFixed(0)}%)</div>
             <div style="font-size: 15px; font-weight: 800; color: #d97706;">-$${fondoReservaUsd.toFixed(2)}</div>
             <div style="font-size: 9.5px; color: #64748b;">Bs. ${fondoReservaBs}</div>
           </div>
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px;">
-            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #7c3aed;">4. Gasto Adm. (5%)</div>
+            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #7c3aed;">4. Gasto Adm. (${(pctAdm * 100).toFixed(0)}%)</div>
             <div style="font-size: 15px; font-weight: 800; color: #7c3aed;">-$${gastoAdmUsd.toFixed(2)}</div>
             <div style="font-size: 9.5px; color: #64748b;">Bs. ${gastoAdmBs}</div>
           </div>
@@ -7169,30 +7301,32 @@ document.addEventListener('DOMContentLoaded', () => {
           <h4 style="font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 8px; color: #0f172a; border-left: 3px solid #7c3aed; padding-left: 8px;">
             Distribución Individual por Estirpe Hereditaria (1/14 Cuota Indivisa)
           </h4>
-          <table style="width: 100%; border-collapse: collapse; margin-top: 6px;">
-            <thead>
-              <tr style="background: #0f172a; color: white; font-size: 10.5px; text-transform: uppercase;">
-                <th style="padding: 8px 10px; text-align: center; width: 35px;">N°</th>
-                <th style="padding: 8px 10px; text-align: left;">Coheredero / Estirpe</th>
-                <th style="padding: 8px 10px; text-align: center;">Alícuota Indivisa</th>
-                <th style="padding: 8px 10px; text-align: right;">Cuota Base Flujo</th>
-                <th style="padding: 8px 10px; text-align: right;">Liquidación Neta USD</th>
-                <th style="padding: 8px 10px; text-align: right;">Liquidación Neta Bs.</th>
-                <th style="padding: 8px 10px; text-align: center;">Estatus</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rowsHtml}
-              <tr style="background: #f1f5f9; font-weight: 900; border-top: 2px solid #0f172a; font-size: 12px;">
-                <td colspan="2" style="padding: 10px;">TOTAL DISTRIBUIDO (14 ESTIRPES):</td>
-                <td style="padding: 10px; text-align: center; color: #7c3aed;">100.00% (14/14)</td>
-                <td style="padding: 10px; text-align: right; color: #64748b;">$5,600.00</td>
-                <td style="padding: 10px; text-align: right; color: #059669;">$${utilidadNetaUsd.toFixed(2)} USD</td>
-                <td style="padding: 10px; text-align: right; color: #0f172a;">Bs. ${utilidadNetaBs}</td>
-                <td style="padding: 10px; text-align: center; color: #059669;">✓ 100% Asignado</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="table-responsive" style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 22px;">
+            <table style="width: 100%; min-width: 650px; border-collapse: collapse; margin-top: 6px;">
+              <thead>
+                <tr style="background: #0f172a; color: white; font-size: 10.5px; text-transform: uppercase;">
+                  <th style="padding: 8px 10px; text-align: center; width: 35px;">N°</th>
+                  <th style="padding: 8px 10px; text-align: left;">Coheredero / Estirpe</th>
+                  <th style="padding: 8px 10px; text-align: center;">Alícuota Indivisa</th>
+                  <th style="padding: 8px 10px; text-align: right;">Cuota Base Flujo</th>
+                  <th style="padding: 8px 10px; text-align: right;">Liquidación Neta USD</th>
+                  <th style="padding: 8px 10px; text-align: right;">Liquidación Neta Bs.</th>
+                  <th style="padding: 8px 10px; text-align: center;">Estatus</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml}
+                <tr style="background: #f1f5f9; font-weight: 900; border-top: 2px solid #0f172a; font-size: 12px;">
+                  <td colspan="2" style="padding: 10px;">TOTAL DISTRIBUIDO (14 ESTIRPES):</td>
+                  <td style="padding: 10px; text-align: center; color: #7c3aed;">100.00% (14/14)</td>
+                  <td style="padding: 10px; text-align: right; color: #64748b;">$5,600.00</td>
+                  <td style="padding: 10px; text-align: right; color: #059669;">$${utilidadNetaUsd.toFixed(2)} USD</td>
+                  <td style="padding: 10px; text-align: right; color: #0f172a;">Bs. ${utilidadNetaBs}</td>
+                  <td style="padding: 10px; text-align: center; color: #059669;">✓ 100% Asignado</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <!-- NOTAS LEGALES Y AUDITORÍA SUCESORAL -->
@@ -7202,7 +7336,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
 
         <!-- FIRMAS AUTORIZADAS -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 35px;">
+        <div class="report-signatures-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-top: 35px;">
           <div style="text-align: center;">
             <div style="border-top: 1px solid #0f172a; padding-top: 6px; font-size: 11px;">
               <strong>ADMINISTRACIÓN GENERAL & CONTABILIDAD</strong><br>
@@ -7251,7 +7385,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
 
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 14px; font-size: 12px; margin-bottom: 20px;">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="report-metadata-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
             <div><strong>Razón Social:</strong> ${escapeHtml(tenant.business_name)}</div>
             <div><strong>R.I.F.:</strong> <span style="font-family: monospace; font-weight: 700;">${escapeHtml(tenant.rif)}</span></div>
             <div><strong>Nombre Comercial:</strong> ${escapeHtml(tenant.trade_name || tenant.business_name)}</div>
@@ -7293,7 +7427,7 @@ document.addEventListener('DOMContentLoaded', () => {
           Constancia que se expide a solicitud de la parte interesada en la ciudad de Puerto La Cruz, a los fines que estime pertinentes.
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px;">
+        <div class="report-signatures-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-top: 40px;">
           <div style="text-align: center;">
             <div style="border-top: 1px solid #0f172a; padding-top: 6px; font-size: 11px;">
               <strong>ADMINISTRACIÓN CC MARIO SÁNCHEZ</strong><br>
@@ -7366,7 +7500,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <strong>Soporte Documental:</strong> Se deja constancia de que los presupuestos, comprobantes de compra de materiales o anexo suscrito ${agr.proof_file ? `se encuentran <strong>digitalizados y archivados en el expediente digital del local (${escapeHtml(agr.proof_file.name)})</strong>` : 'reposan archivados en el legajo físico del expediente administrativo'}.
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px;">
+        <div class="report-signatures-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-top: 40px;">
           <div style="text-align: center;">
             <div style="border-top: 1px solid #0f172a; padding-top: 6px; font-size: 11px;">
               <strong>POR LA ARRENDADORA</strong><br>
@@ -7497,7 +7631,7 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 30px;">
+        <div class="report-signatures-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-top: 30px;">
           <div style="text-align: center;">
             <div style="border-top: 1px solid #0f172a; padding-top: 6px; font-size: 11px;">
               <strong>REPRESENTANTE LEGAL</strong><br>
@@ -11475,6 +11609,102 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   });
+
+  // =========================================================================
+  // ASISTENTE INTELIGENTE JURÍDICO & TRIBUTARIO (GEMINI FLASH SERVERLESS PROXY)
+  // =========================================================================
+  window.openGeminiAssistantModal = function() {
+    const modal = document.getElementById('modal-gemini-assistant');
+    if (modal) {
+      modal.style.display = 'flex';
+      const input = document.getElementById('gemini-assistant-input');
+      if (input) setTimeout(() => input.focus(), 100);
+    }
+  };
+
+  window.closeGeminiAssistantModal = function() {
+    const modal = document.getElementById('modal-gemini-assistant');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.askGeminiQuick = function(promptText) {
+    const input = document.getElementById('gemini-assistant-input');
+    if (input) input.value = promptText;
+    window.submitGeminiAssistant();
+  };
+
+  window.submitGeminiAssistant = async function() {
+    const input = document.getElementById('gemini-assistant-input');
+    const sendBtn = document.getElementById('btn-gemini-assistant-send');
+    const respBox = document.getElementById('gemini-assistant-response');
+    if (!input || !respBox) return;
+
+    const prompt = input.value.trim();
+    if (!prompt) {
+      if (window.SecuritySuite && window.SecuritySuite.toast) {
+        window.SecuritySuite.toast('Por favor ingrese una pregunta o consulta.', 'warning', 'Consulta Vacía');
+      }
+      return;
+    }
+
+    // Estado de carga UI
+    if (sendBtn) sendBtn.disabled = true;
+    respBox.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: center; gap: 12px; padding: 30px; color: var(--txt-secondary);">
+        <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 24px; color: var(--cyan);"></i>
+        <span>Consultando marco normativo venezolano y bases de datos con Gemini Flash...</span>
+      </div>
+    `;
+
+    try {
+      const response = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: prompt })
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.ok) {
+        const errorMsg = data.error || 'No se pudo obtener respuesta del servidor de IA.';
+        respBox.innerHTML = `
+          <div style="padding: 12px 14px; border-radius: 6px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171;">
+            <div style="font-weight: 700; margin-bottom: 4px;"><i class="fa-solid fa-triangle-exclamation"></i> Error en la consulta</div>
+            <div>${escapeHtml(errorMsg)}</div>
+          </div>
+        `;
+        return;
+      }
+
+      // Renderizar respuesta con formato básico seguro
+      const rawText = data.text || 'Sin respuesta generada.';
+      const formattedText = rawText
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/^### (.*$)/gim, '<h4 style="margin: 12px 0 4px; color: var(--cyan);">$1</h4>')
+        .replace(/^## (.*$)/gim, '<h3 style="margin: 14px 0 6px; color: var(--txt-primary);">$1</h3>')
+        .replace(/^# (.*$)/gim, '<h2 style="margin: 16px 0 8px; color: var(--txt-primary);">$1</h2>')
+        .replace(/^\s*-\s+(.*$)/gim, '<div style="display: flex; gap: 6px; margin: 3px 0;"><span>•</span><span>$1</span></div>');
+
+      respBox.innerHTML = `
+        <div style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 6px;">
+          <span style="font-size: 11px; font-weight: 700; color: var(--cyan);"><i class="fa-solid fa-wand-magic-sparkles"></i> Respuesta Jurídico-Tributaria</span>
+          <span style="font-size: 10px; color: var(--txt-muted);">Modelo: ${escapeHtml(data.model || 'Gemini Flash')}</span>
+        </div>
+        <div style="color: var(--txt-primary); font-size: 12.5px; line-height: 1.65;">${formattedText}</div>
+      `;
+    } catch (err) {
+      console.error('[GeminiAssistant] Error de conexión:', err);
+      respBox.innerHTML = `
+        <div style="padding: 12px 14px; border-radius: 6px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171;">
+          <div style="font-weight: 700; margin-bottom: 4px;"><i class="fa-solid fa-circle-exclamation"></i> Error de conexión</div>
+          <div>No fue posible conectar con el endpoint de IA (/api/gemini). Verifique que el servicio esté activo y el proxy serverless configurado.</div>
+        </div>
+      `;
+    } finally {
+      if (sendBtn) sendBtn.disabled = false;
+    }
+  };
 
   // Render inicial
   renderAll();
