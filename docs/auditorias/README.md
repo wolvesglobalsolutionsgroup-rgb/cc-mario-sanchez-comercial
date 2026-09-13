@@ -21,10 +21,23 @@ El estándar vigente para este proyecto es el **Diagnóstico Unificado v2 & Prot
      `sha512-lO8f7sIViqr9x5VE6Q72PS6f4FoZcuh5W9YzeSyfNRJ9z/qL3bkweiwG6keGzWS0BQzNDqAWXdBhYzFD6KffIw==`.
 6. **Conciliación Bancaria Tridimensional:**
    - Algoritmo en `bank-reconciliation.js` aplica tolerancia de fecha (`toleranceDays = 3`) junto con referencia y monto para evitar falsos positivos en cobros recurrentes.
-7. **Control de Concurrencia (Anti-IDOR):**
-   - Columna `version` en `payments` es incrementada y sincronizada tanto en PostgreSQL como en el almacenamiento local en cada aprobación de cobranza.
-8. **Marco Legal y Tributario:**
-   - Prórroga Legal obligatoria escalonada regida por el **Artículo 26** del Decreto Ley N° 929 (G.O. 40.418).
-   - Deducción de gastos de condominio en base imponible municipal conforme al **Artículo 1.684 del Código Civil** (Contrato de Mandato).
-   - Generación del archivo TXT de retenciones de IVA SENIAT bajo instructivo oficial `RI_DRIVA2020-IT01V3_0_0` (16 columnas tabuladas y período `AAAAMM`).
-   - Percepción del 3% de IGTF (G.O. Ext. 6.687) para pagos en divisas efectivo o criptoactivos no bancarios.
+7. **Persistencia Híbrida y Control de Concurrencia Optimista:**
+   - En fase de evaluación/showcase, `DatabaseService` actúa como almacén reactivo local (`localStorage`) que incrementa la columna `version` para simular control de concurrencia.
+   - En conexión de producción real (`window.supabaseClient`), `approvePayment` ejecuta la mutación remota directa contra PostgreSQL:
+     ```javascript
+     window.supabaseClient.from('payments').update({
+       status: 'verificado',
+       verified_by: payment.verified_by,
+       verified_at: payment.verified_at,
+       version: payment.version
+     }).eq('id', payment.id).eq('version', currentVersion)
+     ```
+     garantizando atomicidad e impidiendo colisiones de estado en red (Optimistic Locking).
+8. **Consolidación Canónica de Esquema SQL:**
+   - La arquitectura de base de datos se unificó estrictamente bajo el estándar de Supabase CLI en `supabase/migrations/` (6 migraciones secuenciales ordenadas cronológicamente) más `supabase/seed_data.sql`.
+   - Se eliminaron todos los directorios redundantes (`/migrations`), archivos raíz sueltos (`supabase_schema_rls.sql`) y duplicados obsoletos (`supabase/schema.sql`).
+9. **Marco Legal, Tributario y Disclaimers Doctrinales:**
+   - **Prórroga Legal Inmobiliaria:** Obligatoria y escalonada regida por el **Artículo 26** del Decreto Ley N° 929 de Arrendamiento Inmobiliario para el Uso Comercial (G.O. 40.418).
+   - **Retenciones IVA SENIAT:** Generación del archivo TXT bajo instructivo oficial `RI_DRIVA2020-IT01V3_0_0` (16 columnas separadas por tabulador y período `AAAAMM`).
+   - **IGTF (3%):** Percepción del Impuesto a las Grandes Transacciones Financieras (G.O. Ext. 6.687) para pagos en divisas en efectivo o criptoactivos no bancarios.
+   - **Deducción de Condominio (ISAE Municipal):** Basada en la doctrina de representación y mandato del **Artículo 1.684 del Código Civil Venezolano** (los fondos de condominio recaudados actúan por cuenta y orden de la comunidad de propietarios, no como ingreso bruto propio del arrendador). *Nota de gobernanza: Esta interpretación doctrinal y la alícuota referencial del 2% para el Municipio Sotillo deben ser ratificadas por un abogado tributarista colegiado en la jurisdicción local antes de la presentación de declaraciones juradas definitivas.*

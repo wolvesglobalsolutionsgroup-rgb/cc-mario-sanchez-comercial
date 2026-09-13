@@ -1261,6 +1261,28 @@ class DatabaseService {
     invoice.status = 'pagado';
     invoice.paid_at = payment.payment_date;
 
+    // --- HOOK REMOTO SUPABASE POSTGRESQL (CUANDO ESTÉ CONECTADO EN PRODUCCIÓN) ---
+    if (typeof window !== 'undefined' && window.supabaseClient && typeof window.supabaseClient.from === 'function') {
+      window.supabaseClient
+        .from('payments')
+        .update({
+          status: 'verificado',
+          verified_by: payment.verified_by,
+          verified_at: payment.verified_at,
+          version: payment.version
+        })
+        .eq('id', payment.id)
+        .eq('version', currentVersion)
+        .then(({ data: remoteData, error: remoteErr }) => {
+          if (remoteErr) {
+            console.error('[SUPABASE OPTIMISTIC LOCK CONFLICT] Modificación concurrente detectada en PostgreSQL:', remoteErr);
+          } else {
+            console.info('[SUPABASE POSTGRES] Pago verificado con incremento de versión en base de datos remota:', payment.id);
+          }
+        })
+        .catch(err => console.warn('[SUPABASE REMOTE SYNC] Error en llamada a PostgreSQL:', err));
+    }
+
     const tenant = data.tenants && data.tenants.find(t => t.id === invoice.tenant_id);
 
     // Verificar y normalizar solvencia del inquilino tras la aprobación

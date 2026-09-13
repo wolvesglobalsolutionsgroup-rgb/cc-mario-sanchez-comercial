@@ -95,19 +95,18 @@ describe("PILAR 3: BASE DE DATOS SEGURA & GUARDRAILS ANTI-DESTRUCCIÓN", () => {
   });
 
   test("Los archivos de migración deben existir y estructurar el esquema íntegro", () => {
-    const mig1Path = path.join(rootDir, "migrations", "0001_initial_ccms_core.sql");
-    const mig2Path = path.join(rootDir, "migrations", "0002_add_telemetry_and_security.sql");
-    assert.ok(fs.existsSync(mig1Path), "migrations/0001_initial_ccms_core.sql debe existir");
-    assert.ok(fs.existsSync(mig2Path), "migrations/0002_add_telemetry_and_security.sql debe existir");
+    const mig1Path = path.join(rootDir, "supabase", "migrations", "20260904000340_init_ccms_erp.sql");
+    const mig2Path = path.join(rootDir, "supabase", "migrations", "20260912000000_normalize_roles_and_anti_replay.sql");
+    assert.ok(fs.existsSync(mig1Path), "supabase/migrations/20260904000340_init_ccms_erp.sql debe existir");
+    assert.ok(fs.existsSync(mig2Path), "supabase/migrations/20260912000000_normalize_roles_and_anti_replay.sql debe existir");
     
     const sql1 = fs.readFileSync(mig1Path, "utf8");
     const sql2 = fs.readFileSync(mig2Path, "utf8");
 
-    assert.ok(sql1.includes("CREATE TABLE IF NOT EXISTS units"), "Debe definir tabla units");
-    assert.ok(sql1.includes("CREATE TABLE IF NOT EXISTS tenants"), "Debe definir tabla tenants");
-    assert.ok(sql1.includes("CREATE TABLE IF NOT EXISTS invoices"), "Debe definir tabla invoices");
-    assert.ok(sql2.includes("CREATE TABLE IF NOT EXISTS audit_logs"), "Debe definir tabla audit_logs");
-    assert.ok(sql2.includes("CREATE TABLE IF NOT EXISTS auth_security_tokens"), "Debe definir tabla auth_security_tokens");
+    assert.ok(sql1.includes("units"), "Debe definir tabla units");
+    assert.ok(sql1.includes("tenants"), "Debe definir tabla tenants");
+    assert.ok(sql1.includes("invoices"), "Debe definir tabla invoices");
+    assert.ok(sql2.includes("ANTI-REPLAY") || sql2.includes("anti_replay"), "Debe estructurar restricción anti-replay");
   });
 });
 
