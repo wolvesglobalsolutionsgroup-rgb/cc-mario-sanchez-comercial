@@ -1250,9 +1250,10 @@ class DatabaseService {
       payment.status = 'pendiente';
     }
 
-    // OPTIMISTIC LOCKING: versión interna para detectar modificaciones concurrentes
-    const currentVersion = payment._version || 1;
-    payment._version = currentVersion + 1;
+    // OPTIMISTIC LOCKING: versión para detectar modificaciones concurrentes (PostgreSQL + Local)
+    const currentVersion = Number(payment.version || payment._version || 1);
+    payment.version = currentVersion + 1;
+    payment._version = payment.version;
 
     payment.status = 'verificado';
     payment.verified_by = verifier || null;

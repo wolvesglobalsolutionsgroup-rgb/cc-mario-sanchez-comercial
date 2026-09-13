@@ -246,3 +246,44 @@ describe("PILAR 6: CUMPLIMIENTO REGULATORIO & LIQUIDACIÓN TRIBUTARIA (SENIAT & 
   });
 });
 
+describe("PILAR 7: AUDITORÍA DE INTEGRIDAD, FAIL-CLOSED & CONCILIACIÓN BANCARIA", () => {
+  const ContractViewer = require("../gestion/js/contract-viewer.js");
+  const BankReconciliation = require("../gestion/js/bank-reconciliation.js");
+
+  test("ContractViewer debe aplicar fail-closed (retornar null) si no encuentra el inquilino solicitado", () => {
+    // Si se consulta un ID de inquilino inexistente, NUNCA debe devolver datos reales de otro inquilino
+    const nonExistentTenant = ContractViewer.resolveTenant("inquilino-inexistente-999");
+    assert.strictEqual(nonExistentTenant, null, "Debe retornar null en vez de exponer datos de otro inquilino");
+
+    const nullContract = ContractViewer.resolveContract(null);
+    assert.strictEqual(nullContract, null, "resolveContract(null) debe retornar null de forma segura");
+  });
+
+  test("BankReconciliation debe considerar la ventana de tolerancia de fecha (toleranceDays)", () => {
+    const mockTxs = [
+      { id: "tx-1", date: "2026-03-05", reference: "REF999888", amount: 450, description: "Pago Alquiler" },
+      { id: "tx-2", date: "2026-06-25", reference: "NOREF", amount: 450, description: "Pago Desfasado 3 meses" }
+    ];
+
+    const mockInvoices = [
+      { id: "inv-1", due_date: "2026-03-04", total_usd: 450, payment_proof_ref: "REF999888" },
+      { id: "inv-2", due_date: "2026-03-05", total_usd: 450, payment_proof_ref: "" }
+    ];
+
+    const result = BankReconciliation.reconcile(mockTxs, mockInvoices, {
+      bcvRate: 1.0, // Moneda directa para la prueba
+      toleranceDays: 3
+    });
+
+    // tx-1 debe conciliar exacto con inv-1 (mismo monto y fecha dentro de 3 días)
+    const match1 = result.matched.find(m => m.bankTx.id === "tx-1");
+    assert.ok(match1, "tx-1 debe estar conciliado");
+    assert.strictEqual(match1.status, "CONCILIADO_EXACTO");
+
+    // tx-2 (junio) no debe emparejarse con inv-2 (marzo) por exceso de tolerancia de fecha
+    const match2 = result.matched.find(m => m.bankTx.id === "tx-2");
+    assert.strictEqual(match2, undefined, "tx-2 no debe conciliar exacto con una factura de 3 meses antes");
+  });
+});
+
+

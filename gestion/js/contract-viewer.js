@@ -46,8 +46,9 @@
      * Resuelve el objeto de inquilino según ID o sesión actual
      */
     resolveTenant(tenantId) {
-      if (window.AuthGuard && typeof window.AuthGuard.currentTenant === 'function') {
-        const current = window.AuthGuard.currentTenant();
+      const g = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : {});
+      if (g.AuthGuard && typeof g.AuthGuard.currentTenant === 'function') {
+        const current = g.AuthGuard.currentTenant();
         if (current && (!tenantId || current.id === tenantId || current.rif === tenantId || current.unit_code === tenantId)) {
           return current;
         }
@@ -58,29 +59,20 @@
           const found = tenants.find(t => t.id === tenantId || t.rif === tenantId || t.unit_code === tenantId);
           if (found) return found;
         }
-        if (tenants && tenants.length > 0) return tenants[0];
+        // Si no se especificó tenantId y no hay sesión pero estamos en demo, permitir el primer inquilino demo
+        if (!tenantId && g.CCMS_DEMO_MODE && tenants && tenants.length > 0) {
+          return tenants[0];
+        }
       }
-      return {
-        id: 'ten-1',
-        business_name: 'Mueblería Juncal, C.A.',
-        rif: 'J-08010995-3',
-        unit_code: 'LOC-1',
-        rep_name: 'Giuseppe Juncal',
-        rep_dni: 'V-8.452.190',
-        phone: '0414-8254190',
-        email: 'administracion@muebleriajuncal.com',
-        canon_usd: 450.00,
-        rent_usd: 450.00,
-        alicuota_pct: 7.25,
-        deposit_held_usd: 900.00,
-        area_m2: 54.5
-      };
+      // NUNCA devolver datos reales de otro inquilino como fallback genérico cuando se consulta un ID específico
+      return null;
     },
 
     /**
      * Resuelve el contrato asociado o genera uno canónico legal
      */
     resolveContract(tenant) {
+      if (!tenant) return null;
       if (typeof dbService !== 'undefined' && dbService.getContracts) {
         const contracts = dbService.getContracts();
         const found = contracts.find(c => c.tenant_id === tenant.id || c.unit_code === tenant.unit_code);
@@ -104,7 +96,7 @@
       const canonVal = parseFloat(tenant.canon_usd ?? tenant.rent_usd ?? tenant.monthly_rent_usd ?? 450.00);
       const aliVal = parseFloat(tenant.alicuota_pct ?? (tenant.condo_aliquot ? tenant.condo_aliquot * 100 : 7.25));
       return {
-        id: 'ctr-canonical-1',
+        id: `ctr-canonical-${tenant.unit_code || '1'}`,
         contract_number: tenant.contract_number || `CTR-2026-${tenant.unit_code || 'LOC-1'}`,
         notary_entry: 'Tomo 14-A, Protocolo Primero, Asiento N° 42',
         notary_office: 'Notaría Pública Primera de Puerto La Cruz',
@@ -122,7 +114,23 @@
      */
     async openModal(tenantId = null) {
       const tenant = this.resolveTenant(tenantId);
+      if (!tenant) {
+        if (typeof showToast === 'function') {
+          showToast('No se pudo cargar la información del contrato para este inquilino. Contacta a administración.', 'error', 'Contrato no encontrado');
+        } else {
+          alert('No se pudo cargar la información del contrato para este inquilino. Contacta a administración.');
+        }
+        return;
+      }
       const contract = this.resolveContract(tenant);
+      if (!contract) {
+        if (typeof showToast === 'function') {
+          showToast('No se encontró un contrato activo registrado para este inquilino.', 'warning', 'Sin Contrato');
+        } else {
+          alert('No se encontró un contrato activo registrado para este inquilino.');
+        }
+        return;
+      }
       const bcvRate = (typeof financialEngine !== 'undefined' && financialEngine.getRates)
         ? (financialEngine.getRates().VES || 832.49)
         : 832.49;

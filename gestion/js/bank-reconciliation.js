@@ -75,6 +75,14 @@
       const usedInvoiceIds = new Set();
       const usedTxIds = new Set();
 
+      function checkDateTolerance(d1Str, d2Str, tolDays) {
+        if (!d1Str || !d2Str) return true; // Si alguna fecha no está definida, no bloquear
+        const t1 = new Date(d1Str).getTime();
+        const t2 = new Date(d2Str).getTime();
+        if (isNaN(t1) || isNaN(t2)) return true;
+        return Math.abs(t1 - t2) <= tolDays * 24 * 60 * 60 * 1000;
+      }
+
       bankTransactions.forEach(tx => {
         // 1. Búsqueda por coincidencia exacta de referencia en pagos reportados
         let candidate = pendingInvoices.find(inv => {
@@ -84,14 +92,16 @@
           return tx.reference.includes(invRef) || invRef.includes(tx.reference);
         });
 
-        // 2. Si no hay match por referencia, buscar por monto equivalente en Bs o USD
+        // 2. Si no hay match por referencia, buscar por monto equivalente en Bs o USD dentro de la ventana de tolerancia de fecha
         if (!candidate) {
           candidate = pendingInvoices.find(inv => {
             if (usedInvoiceIds.has(inv.id)) return false;
             const invTotalBs = inv.total_usd * bcvRate;
             const matchBs = Math.abs(tx.amount - invTotalBs) <= (invTotalBs * toleranceAmountPct + 2.0);
             const matchUsd = Math.abs(tx.amount - inv.total_usd) <= 0.50;
-            return matchBs || matchUsd;
+            const invDate = inv.due_date || inv.date || inv.created_at;
+            const isDateMatch = checkDateTolerance(tx.date, invDate, toleranceDays);
+            return (matchBs || matchUsd) && isDateMatch;
           });
         }
 
@@ -99,8 +109,10 @@
           const invTotalBs = candidate.total_usd * bcvRate;
           const diffBs = Math.abs(tx.amount - invTotalBs);
           const isExact = diffBs < 1.0 || Math.abs(tx.amount - candidate.total_usd) < 0.05;
+          const invDate = candidate.due_date || candidate.date || candidate.created_at;
+          const isDateMatch = checkDateTolerance(tx.date, invDate, toleranceDays);
 
-          if (isExact) {
+          if (isExact && isDateMatch) {
             matched.push({
               status: 'CONCILIADO_EXACTO',
               confidence: 100,
@@ -110,8 +122,8 @@
             });
           } else {
             discrepancies.push({
-              status: 'DISCREPANCIA_MONTO',
-              confidence: 75,
+              status: isExact ? 'DISCREPANCIA_FECHA' : 'DISCREPANCIA_MONTO',
+              confidence: isExact ? 80 : 70,
               bankTx: tx,
               invoice: candidate,
               differenceBs: tx.amount - invTotalBs,
