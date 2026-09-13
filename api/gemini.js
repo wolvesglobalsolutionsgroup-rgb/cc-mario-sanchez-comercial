@@ -49,24 +49,45 @@ function redactSecrets(text, keyToRedact) {
   return cleaned;
 }
 
-const SYSTEM_PROMPT_PREFIX = `[INSTRUCCIÓN DE SISTEMA - CONTEXTO VENEZOLANO OBLIGATORIO]
-Eres el Asistente Experto en Gestión Inmobiliaria, Jurídica y Tributaria del Centro Comercial Mario Sánchez (Puerto La Cruz, Estado Anzoátegui, Venezuela).
-Tu conocimiento cubre:
-1. Ley de Regulación del Arrendamiento Inmobiliario para el Uso Comercial (Decreto N° 929, G.O. N° 40.418): Métodos de canon CAF, CAV, CAM; topes de canon variable (8%); depósitos en garantía (máximo 3 meses en cuenta bancaria remunerada); prórroga legal escalonada (Art. 26).
-2. Ley Orgánica de Coordinación y Armonización de las Potestades Tributarias (LOCAT, G.O. Ext. N° 6.755): Clasificador Único de Actividades Económicas (CIIU 6810-01), topes de alícuotas ISAE (máximo 3.0%), no sujeción del condominio en mandato, y TCMMV.
-3. Código Orgánico Tributario (COT 2020) y Providencia Administrativa SNAT/2011/0071 de Facturación y Libros Fiscales.
-4. Régimen de Sujetos Pasivos Especiales: Agentes de retención de IVA (75% y 100%, G.O. 40.720) y Retenciones de ISLR sobre arrendamiento comercial (Decreto 1808: 5% personas jurídicas, 3% personas naturales).
-5. Régimen de Frutos Civiles Sucesorales (Arts. 552 y 768 Código Civil) para la distribución a los 14 coherederos.
-Responde de manera profesional, estructurada, precisa y en español.
+const SYSTEM_PROMPT_PREFIX = `[INSTRUCCIÓN DE SISTEMA - CONTEXTO VENEZOLANO Y OPERATIVO DEL CCMS OBLIGATORIO]
+Eres el Asistente Experto en Gestión Inmobiliaria, Jurídica, Tributaria y Operativa del Centro Comercial Mario Sánchez (Puerto La Cruz, Estado Anzoátegui, Venezuela).
+
+DATOS CLAVE DEL PROYECTO INMOBILIARIO:
+- Centro Comercial Mario Sánchez: Complejo comercial ubicado en Puerto La Cruz, Municipio Sotillo, Anzoátegui.
+- 39 unidades inmobiliarias (locales comerciales PB y PA, oficinas ejecutivas, macro-lotes y galpones logísticos). Superficie total arrendable: 5.190 m².
+- Administración y Comunidad Hereditaria: Sucesión Mario Sánchez (RIF: J-30211544-2), integrada por 14 coherederos con alícuotas indivisas sobre los frutos civiles (Arts. 552 y 768 Código Civil).
+- Cánones y Moneda: Cánones pactados en divisas de referencia, exigibles y pagaderos en Bolívares a la tasa oficial del Banco Central de Venezuela (BCV) del día valor o mediante transferencias/USDT según contrato (Arts. 32 y 38 Decreto 929, G.O. 40.418).
+- Gastos Comunes / Condominio: Presupuesto base mensual de $2.540,00 USD asignado por alícuotas según m² (Vigilancia 24/7, Mantenimiento Eléctrico e Hidráulico, Bombeo de Agua, Limpieza, Fondo de Reserva 10%, Gestión Administrativa 5%).
+- Escaneo y Reconocimiento de Facturas/Documentos: Si el usuario proporciona una imagen o datos de una factura/recibo/documento, debes analizarla, verificar sus datos fiscales (RIF emisor, N° Control SENIAT, fecha, base imponible, desglose IVA, retenciones) y emitir un diagnóstico estructurado.
+
+MARCO JURÍDICO Y TRIBUTARIO VENEZOLANO:
+1. Ley de Regulación del Arrendamiento Inmobiliario para el Uso Comercial (Decreto N° 929, G.O. N° 40.418): Métodos CAF, CAV, CAM; límite máximo de canon variable (8% sobre ventas brutas); depósito en garantía tope de 3 meses en cuenta bancaria separada y remunerada (Art. 19); derecho de preferencia y prórroga legal escalonada (Art. 26).
+2. Ley Orgánica de Coordinación y Armonización de las Potestades Tributarias (LOCAT, G.O. Ext. N° 6.755): Clasificador Único de Actividades Económicas (CIIU 6810-01), topes de alícuotas de Actividad Económica ISAE (máx 3.0%), no sujeción ni gravabilidad del reembolso de gastos de condominio en mandato (Art. 1.684 Código Civil), y TCMMV.
+3. Código Orgánico Tributario (COT 2020) y Providencias SENIAT SNAT/2011/0071 y SNAT/2014/0032 de Facturación y Libros Fiscales.
+4. Sujetos Pasivos Especiales: Agentes de retención de IVA (75% y 100%, Providencia SNAT/2015/0049) y Retenciones de ISLR sobre arrendamiento comercial (Decreto 1808: 5% personas jurídicas, 3% personas naturales).
+5. Régimen de Frutos Civiles Sucesorales (Arts. 552 y 768 Código Civil) para la liquidación neta mensual a los 14 coherederos.
+6. Ley de Reforma del IGTF (G.O. Ext. 6.687): Alícuota del 3% aplicable a cobros liquidados en divisas en efectivo o monedas extranjeras sin intermediación bancaria nacional.
+
+Responde de manera profesional, estructurada, precisa y en español. Si te consultan por un local, estado de cuenta o cálculo, explica las fórmulas paso a paso.
 ---
 `;
 
-function callGeminiModel(model, apiKey, promptText, timeoutMs) {
+function callGeminiModel(model, apiKey, promptText, timeoutMs, inlineAttachment = null) {
   return new Promise((resolve, reject) => {
+    const parts = [{ text: SYSTEM_PROMPT_PREFIX + promptText }];
+    if (inlineAttachment && inlineAttachment.data && inlineAttachment.mimeType) {
+      parts.unshift({
+        inline_data: {
+          mime_type: inlineAttachment.mimeType,
+          data: inlineAttachment.data
+        }
+      });
+    }
+
     const payload = JSON.stringify({
       contents: [
         {
-          parts: [{ text: SYSTEM_PROMPT_PREFIX + promptText }]
+          parts: parts
         }
       ],
       generationConfig: {
@@ -203,6 +224,15 @@ module.exports = async function handler(req, res) {
     ? `[Contexto del Centro Comercial / Unidad:]\n${context}\n\n[Consulta del Usuario:]\n${prompt}`
     : prompt;
 
+  let inlineAttachment = null;
+  if (body && (body.image || body.file_base64)) {
+    const base64Raw = String(body.image || body.file_base64).replace(/^data:[^;]+;base64,/, '');
+    inlineAttachment = {
+      mimeType: body.image_type || body.mime_type || 'image/jpeg',
+      data: base64Raw
+    };
+  }
+
   // 4. Invocación con alta disponibilidad (Primary -> Cadena de Fallbacks si 503/429/timeout)
   try {
     let result = null;
@@ -211,7 +241,7 @@ module.exports = async function handler(req, res) {
 
     for (const modelCandidate of modelsToTry) {
       try {
-        result = await callGeminiModel(modelCandidate, apiKey, fullPrompt, TIMEOUT_MS);
+        result = await callGeminiModel(modelCandidate, apiKey, fullPrompt, TIMEOUT_MS, inlineAttachment);
         if (result && result.text) break;
       } catch (err) {
         lastError = err;
@@ -229,8 +259,10 @@ module.exports = async function handler(req, res) {
     }
 
     return res.status(200).json({
+      ok: true,
       success: true,
       model: result.model,
+      text: result.text,
       reply: result.text,
       timestamp: new Date().toISOString()
     });

@@ -163,7 +163,7 @@ const HelpContent = {
             <i class="fa-solid fa-compass"></i> ¿Qué puede hacer desde este portal?
           </h4>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 14px;">
             <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-left: 4px solid var(--emerald); padding: 16px; border-radius: 8px;">
               <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
                 <div style="width: 36px; height: 36px; background: rgba(16,185,129,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; color: var(--emerald);"><i class="fa-solid fa-credit-card"></i></div>
@@ -419,7 +419,7 @@ const HelpContent = {
             Esta plataforma implementa estándares bancarios y de grado de auditoría para proteger su información financiera y comercial.
           </p>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 14px;">
             <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); padding: 16px; border-radius: 8px;">
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--cyan); font-weight: 700;">
                 <i class="fa-solid fa-lock"></i> Cifrado de Comunicaciones (TLS 1.3)
@@ -524,7 +524,7 @@ const HelpContent = {
             <i class="fa-solid fa-rocket"></i> Tour Rápido en 5 Pasos
           </h4>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 14px;">
             <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-left: 4px solid var(--cyan); padding: 16px; border-radius: 8px;">
               <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
                 <div style="width: 36px; height: 36px; background: var(--cyan-glow); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; color: var(--cyan);">1</div>
@@ -714,7 +714,7 @@ const HelpContent = {
             <p style="font-size: 12.5px; color: var(--txt-secondary); line-height: 1.6; margin-bottom: 12px;">
               Cuando un arrendatario realiza reparaciones mayores, adecuaciones estructurales o mejoras aprobadas por la administración, se suscribe un <em>Acuerdo Especial de Amortización</em>. El canon neto facturado se liquida determinísticamente:
             </p>
-            <div style="background: #0f172a; color: #38bdf8; padding: 14px 18px; border-radius: 8px; font-family: monospace; font-size: 13px; margin-bottom: 12px; border-left: 4px solid var(--cyan);">
+            <div style="background: #0f172a; color: #38bdf8; padding: 14px 18px; border-radius: 8px; font-family: monospace; font-size: 13px; margin-bottom: 12px; overflow-x: auto; word-break: break-word; white-space: pre-wrap; border-left: 4px solid var(--cyan);">
               Canon Facturado = MAX(0, Canon Base - Deducción Mensual Acuerdo) + Alícuota Condominio + Recargo Mora
             </div>
             <div style="font-size: 11.5px; color: var(--txt-muted);">
@@ -730,7 +730,7 @@ const HelpContent = {
             <p style="font-size: 12.5px; color: var(--txt-secondary); line-height: 1.6; margin-bottom: 12px;">
               Los egresos comunes (vigilancia, aseo urbano comercial, áreas comunes, servicios, hidroneumáticos, insumos y mantenimiento) se basan en un <strong>presupuesto operativo totalmente configurable</strong> (con un valor base referencial de $2,540.00/mes para el modelo piloto, ajustable desde la pestaña de <em>Configuración</em> según la realidad mensual). Cada concepto se prorratea en estricta proporción a la superficie de cada unidad sobre el área total arrendable:
             </p>
-            <div style="background: #0f172a; color: #c084fc; padding: 14px 18px; border-radius: 8px; font-family: monospace; font-size: 13px; margin-bottom: 12px; border-left: 4px solid var(--purple);">
+            <div style="background: #0f172a; color: #c084fc; padding: 14px 18px; border-radius: 8px; font-family: monospace; font-size: 13px; margin-bottom: 12px; overflow-x: auto; word-break: break-word; white-space: pre-wrap; border-left: 4px solid var(--purple);">
               Alícuota Inmueble (%) = (Área Local m² / Área Total Arrendable m²) × 100<br>
               Cuota Mensual Gastos = Presupuesto Común Mensual Configurado ($) × Alícuota Inmueble (%)
             </div>
@@ -747,7 +747,7 @@ const HelpContent = {
             <p style="font-size: 12.5px; color: var(--txt-secondary); line-height: 1.6; margin-bottom: 12px;">
               El recargo moratorio se causa a partir del vencimiento del día límite de pago (más días de gracia configurados) y se calcula de forma lineal diaria:
             </p>
-            <div style="background: #0f172a; color: #fb7185; padding: 14px 18px; border-radius: 8px; font-family: monospace; font-size: 13px; margin-bottom: 12px; border-left: 4px solid var(--rose);">
+            <div style="background: #0f172a; color: #fb7185; padding: 14px 18px; border-radius: 8px; font-family: monospace; font-size: 13px; margin-bottom: 12px; overflow-x: auto; word-break: break-word; white-space: pre-wrap; border-left: 4px solid var(--rose);">
               Recargo Mora ($) = Saldo Vencido × (Tasa Mensual % / 30) × Días de Retraso Transcurridos
             </div>
             <div style="font-size: 11.5px; color: var(--txt-muted);">
@@ -763,7 +763,7 @@ const HelpContent = {
             <p style="font-size: 12.5px; color: var(--txt-secondary); line-height: 1.6; margin-bottom: 12px;">
               La liquidación de dividendos / utilidades se distribuye equitativamente entre las 14 estirpes o coherederos de la sucesión (RIF: J-30211544-2) tras deducir los costos operativos y reservas legales:
             </p>
-            <div style="background: #0f172a; color: #4ade80; padding: 14px 18px; border-radius: 8px; font-family: monospace; font-size: 13px; margin-bottom: 12px; border-left: 4px solid var(--emerald);">
+            <div style="background: #0f172a; color: #4ade80; padding: 14px 18px; border-radius: 8px; font-family: monospace; font-size: 13px; margin-bottom: 12px; overflow-x: auto; word-break: break-word; white-space: pre-wrap; border-left: 4px solid var(--emerald);">
               Utilidad Neta Repartible = Ingresos Cobrados - Egresos Comunes Operativos - Fondo de Reserva - Honorarios Administración<br>
               Cuota por Coheredero = Utilidad Neta Repartible / 14  (7.142857% por estirpe indivisa)
             </div>
@@ -780,17 +780,17 @@ const HelpContent = {
             <h4 style="color: var(--cyan); margin: 0 0 10px; font-size: 15px; display: flex; align-items: center; gap: 8px;">
               <i class="fa-solid fa-coins"></i> 5. Conversión Multimoneda Oficial & Retenciones Tributarias SENIAT
             </h4>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 14px;">
               <div>
                 <div style="font-weight: 700; font-size: 12px; color: var(--txt-primary); margin-bottom: 4px;">Tasa Oficial BCV:</div>
-                <div style="background: #0f172a; color: #38bdf8; padding: 10px 12px; border-radius: 6px; font-family: monospace; font-size: 12px; margin-bottom: 6px;">
+                <div style="background: #0f172a; color: #38bdf8; padding: 10px 12px; border-radius: 6px; font-family: monospace; font-size: 12px; margin-bottom: 6px; overflow-x: auto; word-break: break-word; white-space: pre-wrap;">
                   Monto VES = Monto USD × Tasa Oficial BCV del día
                 </div>
                 <div style="font-size: 11px; color: var(--txt-muted);">Convenio Cambiario N° 1 y Art. 128 Ley del BCV.</div>
               </div>
               <div>
                 <div style="font-weight: 700; font-size: 12px; color: var(--txt-primary); margin-bottom: 4px;">Retención Fiscal SENIAT:</div>
-                <div style="background: #0f172a; color: #facc15; padding: 10px 12px; border-radius: 6px; font-family: monospace; font-size: 12px; margin-bottom: 6px;">
+                <div style="background: #0f172a; color: #facc15; padding: 10px 12px; border-radius: 6px; font-family: monospace; font-size: 12px; margin-bottom: 6px; overflow-x: auto; word-break: break-word; white-space: pre-wrap;">
                   IVA Retenido = IVA Facturado (16%) × 75%<br>
                   ISLR Retenido = Base Imponible × 5% (Art. 9 Dec. 1808)
                 </div>
@@ -807,7 +807,7 @@ const HelpContent = {
             <p style="font-size: 12.5px; color: var(--txt-secondary); line-height: 1.6; margin-bottom: 12px;">
               En cumplimiento de la LOCAT (G.O. Ext. N° 6.755) y el Código Civil Venezolano, la administración segrega rigurosamente el canon de arrendamiento del condominio común:
             </p>
-            <div style="background: #0f172a; color: #fde047; padding: 14px 18px; border-radius: 8px; font-family: monospace; font-size: 13px; margin-bottom: 12px; border-left: 4px solid var(--amber);">
+            <div style="background: #0f172a; color: #fde047; padding: 14px 18px; border-radius: 8px; font-family: monospace; font-size: 13px; margin-bottom: 12px; overflow-x: auto; word-break: break-word; white-space: pre-wrap; border-left: 4px solid var(--amber);">
               Base Imponible ISAE = Ingresos Brutos Totales - Fondos en Custodia de Terceros (Condominio)<br>
               ISAE a Pagar (VES) = Base Imponible Gravable × Alícuota Municipal (ej. 2.00% Sotillo / 1.50% Chacao)
             </div>
@@ -840,17 +840,17 @@ Col 4: Operación (C=Compra)        Col 8: Número de Control           Col 12: 
             <h4 style="color: var(--purple); margin: 0 0 10px; font-size: 15px; display: flex; align-items: center; gap: 8px;">
               <i class="fa-solid fa-receipt"></i> 8. IGTF (3%) y Régimen Legal de Cánones (Gaceta Oficial N° 40.418)
             </h4>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 14px;">
               <div>
                 <div style="font-weight: 700; font-size: 12px; color: var(--txt-primary); margin-bottom: 4px;">IGTF en Divisas (3%):</div>
-                <div style="background: #0f172a; color: #d8b4fe; padding: 10px 12px; border-radius: 6px; font-family: monospace; font-size: 12px; margin-bottom: 6px;">
+                <div style="background: #0f172a; color: #d8b4fe; padding: 10px 12px; border-radius: 6px; font-family: monospace; font-size: 12px; margin-bottom: 6px; overflow-x: auto; word-break: break-word; white-space: pre-wrap;">
                   IGTF = Pago en Divisas Efectivo / Zelle × 3.00%
                 </div>
                 <div style="font-size: 11px; color: var(--txt-muted);">Ley de Reforma del IGTF (Gaceta Oficial Ext. N° 6.687 de 25/02/2022).</div>
               </div>
               <div>
                 <div style="font-weight: 700; font-size: 12px; color: var(--txt-primary); margin-bottom: 4px;">Topes de Cánones y Prórroga:</div>
-                <div style="background: #0f172a; color: #fda4af; padding: 10px 12px; border-radius: 6px; font-family: monospace; font-size: 12px; margin-bottom: 6px;">
+                <div style="background: #0f172a; color: #fda4af; padding: 10px 12px; border-radius: 6px; font-family: monospace; font-size: 12px; margin-bottom: 6px; overflow-x: auto; word-break: break-word; white-space: pre-wrap;">
                   Canon Variable máx 8% ventas | Prórroga Legal Art. 26: 6m a 3 años
                 </div>
                 <div style="font-size: 11px; color: var(--txt-muted);">Decreto Ley N° 929 de Arrendamiento Comercial (Gaceta Oficial N° 40.418).</div>

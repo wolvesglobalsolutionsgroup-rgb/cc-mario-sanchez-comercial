@@ -1653,7 +1653,7 @@ document.addEventListener('DOMContentLoaded', () => {
               </button>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: 12.5px;">
+            <div class="ttp-detail-fields-grid">
               <div>
                 <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Razón Social</div>
                 <strong style="color: var(--txt-primary);">${escapeHtml(tenant.business_name)}</strong>
@@ -1720,7 +1720,7 @@ document.addEventListener('DOMContentLoaded', () => {
               </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; font-size: 12.5px;">
+            <div class="ttp-detail-fields-grid" style="margin-top: 10px;">
               <div style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
                 <div style="font-size: 10.5px; color: var(--txt-muted); text-transform: uppercase; font-weight: 700;">Promedio Factura</div>
                 <div style="font-size: 18px; font-weight: 800; color: var(--txt-primary); font-family: var(--font-heading); margin-top: 2px;">
@@ -11308,32 +11308,54 @@ document.addEventListener('DOMContentLoaded', () => {
       certHtml = renderOfficialReportHeaderHTML('CONSTANCIA DE SOLVENCIA ARRENDATARIA', `SOLV-${unit.code}-2026`);
     }
 
-    const printWin = window.open('', '_blank');
+    // Abrir vista previa in-app con estándar oficial
+    window.openSolvencyPreviewModal(certHtml, tenant, unit);
+  };
+
+  window.openSolvencyPreviewModal = function(certHtml, tenant, unit) {
+    const modal = document.getElementById('modal-solvency-preview');
+    const wrapper = document.getElementById('solvency-document-wrapper');
+    if (!modal || !wrapper) return;
+    wrapper.innerHTML = certHtml;
+    modal.style.display = 'flex';
+  };
+
+  window.closeSolvencyPreviewModal = function() {
+    const modal = document.getElementById('modal-solvency-preview');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.printActiveSolvencyCertificate = function() {
+    const wrapper = document.getElementById('solvency-document-wrapper');
+    if (!wrapper) return;
+    const printWin = window.open('', '_blank', 'width=900,height=800');
     if (printWin) {
       printWin.document.write(`
         <!DOCTYPE html>
         <html lang="es">
         <head>
           <meta charset="UTF-8">
-          <title>Solvencia Arrendaticia Oficial — ${tenant.business_name}</title>
+          <title>Certificado Oficial de Solvencia — CC Mario Sánchez</title>
           <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
           <style>
-            body { margin: 24px; background: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-            @media print { body { margin: 0; background: #fff; } }
+            body { margin: 24px; background: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #111827; }
+            @media print { body { margin: 0; } }
           </style>
         </head>
         <body>
-          ${certHtml}
+          ${wrapper.innerHTML}
           <script>
-            window.onload = function() {
-              setTimeout(function() { window.print(); }, 400);
-            };
+            window.onload = function() { setTimeout(function() { window.print(); }, 300); };
           <\/script>
         </body>
         </html>
       `);
       printWin.document.close();
     }
+  };
+
+  window.downloadActiveSolvencyPDF = function() {
+    window.printActiveSolvencyCertificate();
   };
 
   window.viewTenantPhysicalContract = function() {
@@ -11633,6 +11655,36 @@ document.addEventListener('DOMContentLoaded', () => {
     window.submitGeminiAssistant();
   };
 
+  
+  let activeGeminiAttachment = null;
+
+  window.handleGeminiFileSelect = function(e) {
+    const file = e && e.target && e.target.files ? e.target.files[0] : null;
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      activeGeminiAttachment = {
+        name: file.name,
+        type: file.type || 'image/jpeg',
+        data: evt.target.result
+      };
+      const bar = document.getElementById('gemini-attachment-bar');
+      const nameSpan = document.getElementById('gemini-attachment-name');
+      if (bar) bar.style.display = 'flex';
+      if (nameSpan) nameSpan.textContent = file.name;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.clearGeminiAttachment = function() {
+    activeGeminiAttachment = null;
+    const bar = document.getElementById('gemini-attachment-bar');
+    const input = document.getElementById('gemini-file-input');
+    if (bar) bar.style.display = 'none';
+    if (input) input.value = '';
+  };
+
   window.submitGeminiAssistant = async function() {
     const input = document.getElementById('gemini-assistant-input');
     const sendBtn = document.getElementById('btn-gemini-assistant-send');
@@ -11660,7 +11712,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const response = await fetch('/api/gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: prompt })
+        body: JSON.stringify({
+          prompt: prompt,
+          image: activeGeminiAttachment ? activeGeminiAttachment.data : null,
+          image_type: activeGeminiAttachment ? activeGeminiAttachment.type : null
+        })
       });
 
       const data = await response.json();

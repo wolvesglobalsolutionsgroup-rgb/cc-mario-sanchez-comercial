@@ -513,6 +513,50 @@ describe("PILAR 9: INTEGRACIÓN DE IA RESILIENTE (GEMINI FLASH) & CONFIGURACIÓN
     assert.ok(indexContent.includes("id=\"card-kpi-fruto-patrimonial\""), "index.html debe contener la tarjeta KPI de Fruto Patrimonial");
     assert.ok(indexContent.includes("id=\"modal-gemini-assistant\""), "index.html debe contener el modal del Asistente Gemini");
     assert.ok(indexContent.includes("btn-gemini-assistant-trigger"), "index.html debe contener el botón disparador del asistente IA");
+    assert.ok(indexContent.includes("id=\"modal-solvency-preview\""), "index.html debe contener el modal de vista previa de Solvencia");
+    assert.ok(indexContent.includes("id=\"fab-gemini-assistant\""), "index.html debe contener el botón flotante (FAB) de Asistente IA");
+    assert.ok(cssContent.includes(".fab-gemini-chat"), "dashboard.css debe incluir estilos para .fab-gemini-chat");
+  });
+});
+
+describe("PILAR 10: ARQUITECTURA MULTI-TENANT (FASE 0) & CONDICIÓN DE CARRERA DE AUTENTICACIÓN", () => {
+  const rootDir = path.resolve(__dirname, "..");
+
+  test("Ficha Login: login.js debe resolver condición de carrera mediante supabaseReadyPromise", () => {
+    const loginJs = fs.readFileSync(path.join(rootDir, "gestion", "js", "login.js"), "utf8");
+    assert.ok(loginJs.includes("supabaseReadyPromise"), "login.js debe definir la promesa determinista supabaseReadyPromise");
+    assert.ok(loginJs.includes("await supabaseReadyPromise;"), "handleLogin debe esperar await supabaseReadyPromise antes de procesar credenciales");
+    assert.ok(loginJs.includes("supabase:ready"), "supabaseReadyPromise debe escuchar el evento 'supabase:ready'");
+  });
+
+  test("Fase 0 Multi-Tenant: Migración SQL 20260913000000 debe estructurar organizations, profiles y 11 tablas", () => {
+    const migrationFile = path.join(rootDir, "supabase", "migrations", "20260913000000_add_organizations_layer.sql");
+    assert.ok(fs.existsSync(migrationFile), "El archivo de migración multi-tenant debe existir");
+
+    const sql = fs.readFileSync(migrationFile, "utf8");
+    assert.ok(sql.includes("CREATE TABLE IF NOT EXISTS public.organizations"), "Debe crear la tabla maestra public.organizations");
+    assert.ok(sql.includes("has_ccms_organization"), "Debe definir la función de RLS has_ccms_organization()");
+    assert.ok(sql.includes("Centro Comercial Mario Sánchez"), "Debe insertar la organización semilla del CC Mario Sánchez");
+
+    const requiredTables = [
+      "units", "tenants", "contracts", "invoices", "payments",
+      "condo_expenses", "chart_of_accounts", "transactions", "alerts",
+      "audit_logs", "service_tickets"
+    ];
+
+    for (const table of requiredTables) {
+      assert.ok(
+        sql.includes("public." + table) && sql.includes("organization_id UUID"),
+        "La migración debe agregar organization_id a la tabla public." + table
+      );
+    }
+  });
+
+  test("Vista Previa In-App: Solvencia Arrendaticia debe contar con modal y controladores oficiales", () => {
+    const appJs = fs.readFileSync(path.join(rootDir, "gestion", "js", "app.js"), "utf8");
+    assert.ok(appJs.includes("openSolvencyPreviewModal"), "app.js debe exponer window.openSolvencyPreviewModal");
+    assert.ok(appJs.includes("printActiveSolvencyCertificate"), "app.js debe exponer window.printActiveSolvencyCertificate");
+    assert.ok(appJs.includes("downloadActiveSolvencyPDF"), "app.js debe exponer window.downloadActiveSolvencyPDF");
   });
 });
 

@@ -28,6 +28,19 @@
 
 let currentRole = 'admin';
 
+// Mitigación de condición de carrera entre supabase-init.js y el proceso de login
+const supabaseReadyPromise = new Promise((resolve) => {
+  if (typeof window !== 'undefined' && window.supabaseClient !== undefined) return resolve();
+  if (typeof document !== 'undefined') {
+    document.addEventListener('supabase:ready', () => resolve(), { once: true });
+    document.addEventListener('supabase:failed', () => resolve(), { once: true });
+  }
+  setTimeout(resolve, 4000); // Salvaguarda máxima 4s
+});
+if (typeof window !== 'undefined') {
+  window.supabaseReadyPromise = supabaseReadyPromise;
+}
+
 function showInfo(msg) {
   const box = document.getElementById('login-info');
   const span = document.getElementById('login-info-msg');
@@ -152,6 +165,10 @@ async function handleLogin(e) {
   if (e && e.preventDefault) e.preventDefault();
   hideError();
   hideInfo();
+
+  // Esperar a que la inicialización asíncrona de Supabase culmine o alcance timeout defensivo
+  await supabaseReadyPromise;
+
   const identifier = document.getElementById('login-user') ? document.getElementById('login-user').value : '';
   const password = document.getElementById('login-pass') ? document.getElementById('login-pass').value : '';
   const submitBtn = document.getElementById('login-submit-btn');

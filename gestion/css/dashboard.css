@@ -5677,3 +5677,217 @@ html, body {
 
 
 
+
+
+/* ========================================================================= */
+/* BOTÓN FLOTANTE PERMANENTE ASISTENTE IA (FAB) & RESPONSIVE AI CHAT         */
+/* ========================================================================= */
+.fab-gemini-chat {
+  position: fixed;
+  bottom: 84px;
+  right: 20px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 50%, #0f172a 100%);
+  border: 2px solid var(--cyan, #38bdf8);
+  color: #ffffff;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4), 0 0 15px rgba(14, 165, 233, 0.2);
+  z-index: 999;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fab-gemini-chat:hover {
+  transform: scale(1.08) translateY(-2px);
+  box-shadow: 0 10px 25px rgba(14, 165, 233, 0.55), 0 0 22px rgba(14, 165, 233, 0.35);
+  border-color: #7dd3fc;
+}
+
+.fab-sparkle-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--amber, #f59e0b);
+  border: 2px solid #0f172a;
+  box-shadow: 0 0 8px var(--amber, #f59e0b);
+  animation: pulseSparkle 2s infinite ease-in-out;
+}
+
+@keyframes pulseSparkle {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.3); opacity: 1; }
+}
+
+/* ========================================================================= */
+/* MEJORAS QUIRÚRGICAS RESPONSIVE MOBILE (PERFIL, GASTOS, COBRANZAS, RBAC)   */
+/* ========================================================================= */
+@media (max-width: 768px) {
+  .fab-gemini-chat {
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    right: 16px;
+    width: 48px;
+    height: 48px;
+    font-size: 18px;
+  }
+
+  /* Imagen 1 & Ficha Inquilino: Anulación de desbordamiento horizontal */
+  #client-profile-container,
+  .ttp-profile-sheet,
+  .ttp-profile-grid,
+  .ttp-panel-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  .ttp-detail-fields-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .ttp-detail-fields-grid > div {
+    width: 100% !important;
+    min-width: 0 !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  /* Tarjetas Generales y Contenedores */
+  .data-card {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 16px 12px !important;
+  }
+
+  /* Tablas Responsivas Móviles: Evitar que expandan la página */
+  .table-responsive {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    box-sizing: border-box !important;
+    border: none !important;
+  }
+
+  .table-responsive > table {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Imagen 4 & Tablas de Gastos / Cobranzas */
+  .modern-table {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .modern-table thead {
+    display: none !important;
+  }
+
+  .modern-table tbody {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+
+  .modern-table tr {
+    display: flex !important;
+    flex-direction: column !important;
+    background: var(--bg-card, #1e293b) !important;
+    border: 1px solid var(--border-subtle, #334155) !important;
+    border-radius: 12px !important;
+    padding: 12px 14px !important;
+    gap: 6px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .modern-table td {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    padding: 5px 0 !important;
+    border: none !important;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.05) !important;
+    white-space: normal !important;
+    font-size: 12px !important;
+    gap: 2px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+    text-align: left !important;
+  }
+
+  .modern-table td::before {
+    content: attr(data-label);
+    font-weight: 800;
+    color: var(--amber, #f59e0b);
+    text-transform: uppercase;
+    font-size: 10px;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+    margin-bottom: 2px;
+  }
+
+  .modern-table td:last-child {
+    border-bottom: none !important;
+    border-top: 1px dashed var(--border-subtle, #334155) !important;
+    padding-top: 10px !important;
+    margin-top: 4px !important;
+    flex-direction: row !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+  }
+
+  /* Imagen 5: Dropdown de Exportar sin cortes */
+  .export-dropdown-wrapper {
+    position: relative;
+  }
+
+  .export-dropdown-menu {
+    left: 0 !important;
+    right: auto !important;
+    min-width: 180px;
+    max-width: calc(100vw - 32px) !important;
+    box-sizing: border-box !important;
+    z-index: 1200 !important;
+  }
+
+  /* Modal Solvencia y Modales de Vista Previa */
+  #modal-solvency-preview .modal-window,
+  #modal-gemini-assistant .modal-window,
+  .modal-window {
+    width: 95% !important;
+    max-width: 95% !important;
+    margin: 10px auto !important;
+    box-sizing: border-box !important;
+  }
+
+  #solvency-document-wrapper {
+    padding: 14px 10px !important;
+    font-size: 11.5px !important;
+    overflow-x: auto !important;
+  }
+}
