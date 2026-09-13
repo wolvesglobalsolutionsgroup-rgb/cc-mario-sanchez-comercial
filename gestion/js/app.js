@@ -1066,20 +1066,25 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // 6.b. Fruto Patrimonial (Sucesión Mario Sánchez - 14 Coherederos)
-    // Basado fielmente en el modelo oficial del Centro Comercial Mario Sánchez (Flujo de Caja Anual 2026-2027 Hoja2 R45: "FRUTOS CIVILES A 400$ = 5600.0")
+    // 6.b. Fruto Patrimonial — Condicional a features de la Organización (Fase 6 Multi-Tenant)
+    // Solo aplica a copropiedades con régimen sucesoral activo (como Sucesión Mario Sánchez)
     const frutoEl = document.getElementById('kpi-fruto-patrimonial');
     const frutoCard = document.getElementById('card-kpi-fruto-patrimonial');
     const frutoSub = document.getElementById('kpi-fruto-patrimonial-sub');
     if (frutoEl) {
-      if (isDirectiva) {
-        const sysSettings = dbService.getSettings ? dbService.getSettings() : {};
-        const cuotaBaseHeredero = parseFloat(sysSettings.cuota_base_heredero_usd) || 400.00;
-        const totalFrutosBase = cuotaBaseHeredero * 14; // $5,600.00 base pactada oficial
+      const activeOrg = (typeof window !== 'undefined' && window.currentOrganization) || null;
+      const orgFeatures = activeOrg?.features || (dbService && dbService.getSettings ? dbService.getSettings().organization_features : null);
+      const hasRegimenSucesoral = isDirectiva && (orgFeatures?.regimen_sucesoral?.activo === true);
+
+      if (hasRegimenSucesoral) {
+        const sysSettings = (dbService && dbService.getSettings) ? dbService.getSettings() : {};
+        const cuotaBaseHeredero = parseFloat(orgFeatures?.regimen_sucesoral?.cuota_base || sysSettings.cuota_base_heredero_usd) || 400.00;
+        const coherederosCount = parseInt(orgFeatures?.regimen_sucesoral?.coherederos, 10) || 14;
+        const totalFrutosBase = cuotaBaseHeredero * coherederosCount;
 
         frutoEl.innerText = formatMoney(totalFrutosBase);
         if (frutoSub) {
-          frutoSub.innerText = `14 cuotas de ${formatMoney(cuotaBaseHeredero)} • Clic para desglose`;
+          frutoSub.innerText = `${coherederosCount} cuotas de ${formatMoney(cuotaBaseHeredero)} • Clic para desglose`;
         }
         if (frutoCard) frutoCard.style.display = '';
       } else if (frutoCard) {
@@ -10448,102 +10453,63 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
   };
 
+  // Inicialización multi-tenant de la Organización activa
+  try {
+    const currentSess = (typeof AuthGuard !== 'undefined' && typeof AuthGuard.currentUser === 'function') 
+      ? AuthGuard.currentUser() 
+      : null;
+    const sysSettings = (dbService && dbService.getSettings) ? dbService.getSettings() : {};
+    const orgFeatures = sysSettings.organization_features || {
+      regimen_sucesoral: { activo: true, cuota_base: 400.00, coherederos: 14 }
+    };
+    window.currentOrganization = {
+      id: (currentSess && currentSess.organization_id) || 'a0000000-0000-0000-0000-000000000001',
+      name: sysSettings.tax_company_name || 'Centro Comercial Mario Sánchez',
+      rif: sysSettings.tax_company_rif || 'J-30211544-2',
+      units_count: 39,
+      features: orgFeatures
+    };
+  } catch (_) {
+    window.currentOrganization = null;
+  }
+
   // =========================================================================
-  // ENVIRONMENT & DATABASE STATUS MODAL & CONTROLS
+  // GESTIÓN DISCRETA DE ENTORNO: PRODUCCIÓN VS MODO DEMO
   // =========================================================================
   window.updateEnvironmentBadge = function() {
     const badge = document.getElementById('env-mode-badge');
     const text = document.getElementById('env-mode-text');
     const pulse = document.getElementById('env-mode-pulse');
-    if (!badge || !text || !pulse) return;
+    const banner = document.getElementById('demo-mode-alert-banner');
+    const resetDemoBtn = document.getElementById('btn-header-reset-demo');
 
     const sess = (typeof AuthGuard !== 'undefined' && typeof AuthGuard.currentUser === 'function') 
       ? AuthGuard.currentUser() 
       : null;
     const isSupabaseAuth = sess && sess.is_supabase_auth;
-    const isDemoForced = localStorage.getItem('CCMS_FORCE_DEMO') === 'true' || (!isSupabaseAuth && window.CCMS_DEMO_MODE !== false);
+    const isDemo = localStorage.getItem('CCMS_FORCE_DEMO') === 'true' || (!isSupabaseAuth && window.CCMS_DEMO_MODE !== false);
 
-    if (isSupabaseAuth && !isDemoForced) {
-      badge.style.borderColor = 'rgba(16, 185, 129, 0.4)';
-      badge.style.background = 'rgba(16, 185, 129, 0.12)';
-      badge.style.color = '#34d399';
-      pulse.style.background = '#10b981';
-      pulse.style.boxShadow = '0 0 8px #10b981';
-      text.textContent = 'Supabase Cloud';
+    if (isSupabaseAuth && !isDemo) {
+      if (badge) badge.style.display = 'none';
+      if (banner) banner.style.display = 'none';
+      if (resetDemoBtn) resetDemoBtn.style.display = 'none';
     } else {
-      badge.style.borderColor = 'rgba(245, 158, 11, 0.4)';
-      badge.style.background = 'rgba(245, 158, 11, 0.12)';
-      badge.style.color = 'var(--amber)';
-      pulse.style.background = '#f59e0b';
-      pulse.style.boxShadow = '0 0 8px #f59e0b';
-      text.textContent = 'Modo Demo';
+      if (badge) {
+        badge.style.display = 'inline-flex';
+        badge.style.cursor = 'default';
+        if (text) text.textContent = 'Modo Demo';
+        if (pulse) {
+          pulse.style.background = '#f59e0b';
+          pulse.style.boxShadow = '0 0 6px #f59e0b';
+        }
+      }
+      if (banner) banner.style.display = 'flex';
+      if (resetDemoBtn) resetDemoBtn.style.display = (currentRole === 'admin' ? 'inline-flex' : 'none');
     }
   };
 
-  window.toggleEnvironmentModal = function() {
-    const modal = document.getElementById('modal-env-status');
-    if (!modal) return;
-    const isVisible = modal.style.display === 'flex';
-    if (isVisible) {
-      modal.style.display = 'none';
-      return;
-    }
-
-    const sess = (typeof AuthGuard !== 'undefined' && typeof AuthGuard.currentUser === 'function') 
-      ? AuthGuard.currentUser() 
-      : null;
-    const isSupabaseAuth = sess && sess.is_supabase_auth;
-    const isDemoForced = localStorage.getItem('CCMS_FORCE_DEMO') === 'true' || (!isSupabaseAuth && window.CCMS_DEMO_MODE !== false);
-
-    const titleEl = document.getElementById('env-modal-title');
-    const descEl = document.getElementById('env-modal-desc');
-    const pillEl = document.getElementById('env-modal-pill');
-    const pulseEl = document.getElementById('env-modal-pulse');
-    const boxEl = document.getElementById('env-current-status-box');
-
-    if (isSupabaseAuth && !isDemoForced) {
-      if (titleEl) titleEl.textContent = 'Conectado a Supabase Cloud';
-      if (descEl) descEl.textContent = 'Persistencia PostgreSQL real activa con RLS multi-inquilino en la nube.';
-      if (pillEl) {
-        pillEl.textContent = 'Cloud PostgreSQL';
-        pillEl.style.background = 'rgba(16, 185, 129, 0.15)';
-        pillEl.style.color = '#34d399';
-        pillEl.style.borderColor = 'rgba(16, 185, 129, 0.3)';
-      }
-      if (pulseEl) {
-        pulseEl.style.background = '#10b981';
-        pulseEl.style.boxShadow = '0 0 10px #10b981';
-      }
-      if (boxEl) {
-        boxEl.style.background = 'rgba(16, 185, 129, 0.08)';
-        boxEl.style.borderColor = 'rgba(16, 185, 129, 0.25)';
-      }
-    } else {
-      if (titleEl) titleEl.textContent = 'Modo Demostración Activo';
-      if (descEl) descEl.textContent = 'Operando con datos de prueba locales seguros en este navegador.';
-      if (pillEl) {
-        pillEl.textContent = 'Demo Local';
-        pillEl.style.background = 'rgba(245, 158, 11, 0.15)';
-        pillEl.style.color = 'var(--amber)';
-        pillEl.style.borderColor = 'rgba(245, 158, 11, 0.3)';
-      }
-      if (pulseEl) {
-        pulseEl.style.background = '#f59e0b';
-        pulseEl.style.boxShadow = '0 0 10px #f59e0b';
-      }
-      if (boxEl) {
-        boxEl.style.background = 'rgba(245, 158, 11, 0.08)';
-        boxEl.style.borderColor = 'rgba(245, 158, 11, 0.25)';
-      }
-    }
-
-    modal.style.display = 'flex';
-  };
-
-  window.closeEnvironmentModal = function() {
-    const modal = document.getElementById('modal-env-status');
-    if (modal) modal.style.display = 'none';
-  };
+  window.toggleEnvironmentModal = function() {};
+  window.closeEnvironmentModal = function() {};
 
   window.setEnvironmentMode = function(mode) {
     if (mode === 'demo') {
@@ -11812,13 +11778,43 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
 
     try {
+      // Obtener token de Supabase Auth si está disponible
+      let authToken = null;
+      if (typeof window !== 'undefined' && window.supabaseClient && window.supabaseClient.auth) {
+        try {
+          const { data: sessionData } = await window.supabaseClient.auth.getSession();
+          authToken = sessionData?.session?.access_token || null;
+        } catch (_) {}
+      }
+
+      const sess = (typeof AuthGuard !== 'undefined' && typeof AuthGuard.currentUser === 'function') 
+        ? AuthGuard.currentUser() 
+        : null;
+      const isDemo = localStorage.getItem('CCMS_FORCE_DEMO') === 'true' || (sess && !sess.is_supabase_auth);
+
+      const headers = { 'Content-Type': 'application/json' };
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+      if (isDemo) {
+        headers['X-CCMS-Demo'] = 'true';
+      }
+
+      const orgContext = (typeof window !== 'undefined' && window.currentOrganization) || null;
+
       const response = await fetch('/api/gemini', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,
         body: JSON.stringify({
           prompt: prompt,
           image: activeGeminiAttachment ? activeGeminiAttachment.data : null,
-          image_type: activeGeminiAttachment ? activeGeminiAttachment.type : null
+          image_type: activeGeminiAttachment ? activeGeminiAttachment.type : null,
+          demo: isDemo,
+          organization: orgContext ? {
+            name: orgContext.name,
+            units_count: orgContext.units_count,
+            features: orgContext.features
+          } : undefined
         })
       });
 

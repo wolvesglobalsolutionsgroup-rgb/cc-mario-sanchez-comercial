@@ -118,8 +118,11 @@ function switchRole(role, fillCredentials = false) {
 function fillDemo(role, autoSubmit = false) {
   hideError();
   hideInfo();
-  // Limpiar cualquier bloqueo previo en el navegador
-  try { localStorage.removeItem('ccms_login_lockout'); } catch (e) {}
+  // Limpiar cualquier bloqueo previo en el navegador y marcar entorno demo
+  try {
+    localStorage.removeItem('ccms_login_lockout');
+    localStorage.setItem('CCMS_FORCE_DEMO', 'true');
+  } catch (e) {}
 
   if (!AuthGuard.demoEnabled) {
     showError('El acceso demo está deshabilitado en producción. Configure Supabase Auth para ingresar.');
@@ -195,36 +198,95 @@ async function handleLogin(e) {
   }
 }
 
+function switchEnvironmentTab(mode) {
+  const btnReal = document.getElementById('tab-env-real');
+  const btnDemo = document.getElementById('tab-env-demo');
+  const panelReal = document.getElementById('panel-auth-real');
+  const panelDemo = document.getElementById('panel-auth-demo');
+  const beaconText = document.getElementById('auth-beacon-text');
+  const beaconPulse = document.getElementById('auth-beacon-pulse');
+
+  if (mode === 'demo') {
+    if (btnReal) {
+      btnReal.style.background = 'transparent';
+      btnReal.style.borderColor = 'transparent';
+      btnReal.style.color = 'var(--login-txt-muted)';
+      btnReal.classList.remove('active');
+    }
+    if (btnDemo) {
+      btnDemo.style.background = 'rgba(245, 158, 11, 0.18)';
+      btnDemo.style.borderColor = 'var(--login-gold)';
+      btnDemo.style.color = 'var(--login-gold)';
+      btnDemo.classList.add('active');
+    }
+    if (panelReal) panelReal.style.display = 'none';
+    if (panelDemo) panelDemo.style.display = 'block';
+    if (beaconText) beaconText.textContent = 'Demo Local';
+    if (beaconPulse) {
+      beaconPulse.style.background = '#f59e0b';
+      beaconPulse.style.boxShadow = '0 0 8px #f59e0b';
+    }
+    try { localStorage.setItem('CCMS_FORCE_DEMO', 'true'); } catch (e) {}
+  } else {
+    if (btnReal) {
+      btnReal.style.background = 'rgba(16, 185, 129, 0.18)';
+      btnReal.style.borderColor = '#10b981';
+      btnReal.style.color = '#34d399';
+      btnReal.classList.add('active');
+    }
+    if (btnDemo) {
+      btnDemo.style.background = 'transparent';
+      btnDemo.style.borderColor = 'transparent';
+      btnDemo.style.color = 'var(--login-txt-muted)';
+      btnDemo.classList.remove('active');
+    }
+    if (panelReal) panelReal.style.display = 'block';
+    if (panelDemo) panelDemo.style.display = 'none';
+    if (beaconText) beaconText.textContent = 'Supabase Cloud';
+    if (beaconPulse) {
+      beaconPulse.style.background = '#10b981';
+      beaconPulse.style.boxShadow = '0 0 8px #10b981';
+    }
+    try { localStorage.setItem('CCMS_FORCE_DEMO', 'false'); } catch (e) {}
+    const userIn = document.getElementById('login-user');
+    const passIn = document.getElementById('login-pass');
+    if (userIn) userIn.value = '';
+    if (passIn) passIn.value = '';
+  }
+}
+
 window.switchRole = switchRole;
 window.fillDemo = fillDemo;
 window.handleLogin = handleLogin;
+window.switchEnvironmentTab = switchEnvironmentTab;
 
 document.addEventListener('DOMContentLoaded', () => {
-  const demoSec = document.getElementById('demo-roles-section');
-  if (demoSec) {
-    demoSec.style.display = (window.CCMS_DEMO_MODE === false) ? 'none' : '';
-  }
-  if (window.CCMS_DEMO_MODE === false) {
-    document.querySelectorAll('[data-demo-login]').forEach((el) => { el.style.display = 'none'; });
-  }
-  
   const urlParams = new URLSearchParams(window.location.search);
+  const isDemoParam = urlParams.has('demo') && (urlParams.get('demo') === 'true' || urlParams.get('demo') === '1');
+  const isDemoForced = localStorage.getItem('CCMS_FORCE_DEMO') === 'true';
+
+  if (isDemoParam || (isDemoForced && !urlParams.has('logout'))) {
+    switchEnvironmentTab('demo');
+  } else {
+    switchEnvironmentTab('real');
+  }
+
   if (urlParams.has('logout')) {
     switchRole('admin', false);
-    showInfo('Sesión cerrada de forma segura. Puede volver a ingresar o usar los accesos Demo de prueba.');
+    showInfo('Sesión cerrada de forma segura. Puede volver a ingresar a producción o explorar el Modo Demo.');
   } else if (urlParams.has('expired')) {
     switchRole('admin', false);
     showError('Su sesión anterior ha caducado. Por favor ingrese sus credenciales nuevamente.');
   } else {
-    switchRole('admin', true);
+    switchRole('admin', false);
   }
 
   // Enlazar listeners programáticos directos (Multi-navegador / Cero dependencia de inline)
   const btnAdmin = document.getElementById('btn-role-admin');
   const btnTenant = document.getElementById('btn-role-tenant');
 
-  if (btnAdmin) btnAdmin.addEventListener('click', (e) => { e.preventDefault(); switchRole('admin', true); });
-  if (btnTenant) btnTenant.addEventListener('click', (e) => { e.preventDefault(); switchRole('tenant', true); });
+  if (btnAdmin) btnAdmin.addEventListener('click', (e) => { e.preventDefault(); switchRole('admin', false); });
+  if (btnTenant) btnTenant.addEventListener('click', (e) => { e.preventDefault(); switchRole('tenant', false); });
 
   document.querySelectorAll('[data-demo-login]').forEach(btn => {
     btn.addEventListener('click', (e) => {

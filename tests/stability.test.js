@@ -429,6 +429,67 @@ describe("PILAR 9: INTEGRACIÓN DE IA RESILIENTE (GEMINI FLASH) & CONFIGURACIÓN
     assert.ok(lastJson.error.includes("Límite de solicitudes"), "Debe devolver mensaje informativo de límite excedido");
   });
 
+  test("Proxy Gemini: Fallback resiliente ante modelo 404 y desvinculación sucesoral de organizaciones genéricas", async () => {
+    const https = require("https");
+    const originalRequest = https.request;
+    const requestedModels = [];
+
+    https.request = (url, options, callback) => {
+      const { EventEmitter } = require("events");
+      const reqMock = new EventEmitter();
+      reqMock.write = () => {};
+      reqMock.end = () => {
+        const resMock = new EventEmitter();
+        const modelMatch = url.match(/models\/([^:]+):generateContent/);
+        const model = modelMatch ? modelMatch[1] : "unknown";
+        requestedModels.push(model);
+
+        // Simular que el primer modelo devuelve 404 (deprecado) y el siguiente 200
+        if (requestedModels.length === 1) {
+          resMock.statusCode = 404;
+          process.nextTick(() => {
+            callback(resMock);
+            resMock.emit("data", JSON.stringify({ error: { message: `Model ${model} is discontinued.` } }));
+            resMock.emit("end");
+          });
+        } else {
+          resMock.statusCode = 200;
+          process.nextTick(() => {
+            callback(resMock);
+            resMock.emit("data", JSON.stringify({ candidates: [{ content: { parts: [{ text: "Respuesta exitosa del modelo fallback" }] } }] }));
+            resMock.emit("end");
+          });
+        }
+      };
+      return reqMock;
+    };
+
+    let statusCode = 0;
+    let jsonResult = null;
+    const mockRes = {
+      setHeader: () => {},
+      status: (c) => { statusCode = c; return mockRes; },
+      json: (d) => { jsonResult = d; return mockRes; }
+    };
+
+    try {
+      await geminiHandler({
+        method: "POST",
+        headers: { "x-forwarded-for": "172.16.0.5", "x-ccms-demo": "true" },
+        body: {
+          prompt: "¿Cuál es el canon máximo legal?",
+          organization: { name: "Centro Comercial Plaza Mayor", features: {} }
+        }
+      }, mockRes);
+    } finally {
+      https.request = originalRequest;
+    }
+
+    assert.strictEqual(statusCode, 200, "Debe responder 200 utilizando el modelo de fallback");
+    assert.strictEqual(jsonResult.ok, true, "La respuesta debe ser exitosa");
+    assert.ok(requestedModels.length >= 2, "Debe haber intentado al menos dos modelos en cascada");
+  });
+
   test("Seguridad e Inmunidad de Credenciales: .gitignore y no exposición de llaves de API", () => {
     const gitignorePath = path.join(rootDir, ".gitignore");
     assert.ok(fs.existsSync(gitignorePath), ".gitignore debe existir");
@@ -557,6 +618,52 @@ describe("PILAR 10: ARQUITECTURA MULTI-TENANT (FASE 0) & CONDICIÓN DE CARRERA D
     assert.ok(appJs.includes("openSolvencyPreviewModal"), "app.js debe exponer window.openSolvencyPreviewModal");
     assert.ok(appJs.includes("printActiveSolvencyCertificate"), "app.js debe exponer window.printActiveSolvencyCertificate");
     assert.ok(appJs.includes("downloadActiveSolvencyPDF"), "app.js debe exponer window.downloadActiveSolvencyPDF");
+  });
+
+  test("Fase 0 Multi-Tenant RLS: Migración 20260913000100 debe aislar por has_ccms_organization en 11 tablas", () => {
+    const migrationFile = path.join(rootDir, "supabase", "migrations", "20260913000100_enforce_organization_isolation.sql");
+    assert.ok(fs.existsSync(migrationFile), "La migración de aislamiento RLS 20260913000100 debe existir");
+
+    const sql = fs.readFileSync(migrationFile, "utf8");
+    assert.ok(sql.includes("has_ccms_organization(organization_id)"), "Debe aplicar has_ccms_organization(organization_id)");
+    assert.ok(sql.includes("regimen_sucesoral"), "Debe configurar features.regimen_sucesoral para la organización");
+
+    const requiredTables = [
+      "chart_of_accounts", "units", "tenants", "contracts",
+      "condo_expenses", "invoices", "payments", "transactions",
+      "alerts", "audit_logs", "service_tickets"
+    ];
+
+    for (const table of requiredTables) {
+      assert.ok(
+        sql.includes(table),
+        `La política RLS de aislamiento debe contemplar la tabla public.${table}`
+      );
+    }
+  });
+
+  test("Higiene UI y Flujo Demo/Producción: No modales invasivos en header y no autollenado en producción", () => {
+    const indexHtml = fs.readFileSync(path.join(rootDir, "gestion", "index.html"), "utf8");
+    const loginJs = fs.readFileSync(path.join(rootDir, "gestion", "js", "login.js"), "utf8");
+    const appJs = fs.readFileSync(path.join(rootDir, "gestion", "js", "app.js"), "utf8");
+
+    // Modal de entorno eliminado
+    assert.ok(!indexHtml.includes("id=\"modal-env-status\""), "index.html no debe contener el modal intrusivo #modal-env-status");
+    assert.ok(!indexHtml.includes("toggleEnvironmentModal()"), "index.html no debe enlazar onclick toggleEnvironmentModal()");
+
+    // Badge discreto por defecto oculto en HTML estático
+    assert.ok(indexHtml.includes("id=\"env-mode-badge\""), "index.html debe contener el badge discreto #env-mode-badge");
+    assert.ok(indexHtml.includes("id=\"env-mode-badge\" style=\"display: none;"), "El badge debe estar oculto por defecto para no parpadear en producción");
+
+    // Botón de restablecer datos demo oculto por defecto
+    assert.ok(indexHtml.includes("id=\"btn-header-reset-demo\""), "index.html debe contener el id #btn-header-reset-demo");
+    assert.ok(indexHtml.includes("id=\"btn-header-reset-demo\"") && indexHtml.includes("style=\"display: none;\""), "El botón reset demo debe estar oculto en el header por defecto");
+
+    // En producción no se deben autollenar contraseñas ficticias
+    assert.ok(loginJs.includes("switchRole('admin', false);"), "login.js no debe autollenar credenciales demo al iniciar en producción");
+
+    // Fruto Patrimonial condicional estricto
+    assert.ok(appJs.includes("regimen_sucesoral?.activo === true"), "app.js debe exigir estrictamente regimen_sucesoral.activo === true");
   });
 });
 

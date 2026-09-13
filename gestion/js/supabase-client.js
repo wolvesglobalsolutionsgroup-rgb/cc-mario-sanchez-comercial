@@ -1479,6 +1479,14 @@ class DatabaseService {
       reserve_fund_pct: 10.0,
       admin_fee_pct: 5.0,
       isae_rate_pct: 2.0,
+      // Features Multi-Tenant por Organización (Fase 0 y Fase 6)
+      organization_features: {
+        regimen_sucesoral: {
+          activo: true,
+          cuota_base: 400.00,
+          coherederos: 14
+        }
+      },
       // Plantillas de Mensajes
       msg_preventive_template: `Estimados *{inquilino}* ({unidad}):\nLe remitimos su aviso de cobro preventivo del período *{periodo}* por un total de *{monto_usd}* (Bs. {monto_bs} a tasa BCV {tasa_bcv}).\nFecha límite oportuna de pago: *{fecha_limite}*.\nPor favor remitir comprobante a este canal oficial para conciliación y emisión de su recibo fiscal.`,
       msg_mora_template: `⚠️ *AVISO FORMAL DE MORA — CC MARIO SÁNCHEZ*\nEstimados *{inquilino}* ({unidad}):\nLe notificamos que su cuota del período *{periodo}* (vencida el *{fecha_limite}*) presenta *{dias_mora} días de retraso*.\n• Canon & Gastos Base: *{monto_usd}*\n• Recargo Moratorio Legal (Art. 30 G.O. 40.418): *{recargo_mora_usd}* (Bs. {recargo_mora_bs})\n• *TOTAL EXIGIBLE AL DÍA*: *{total_con_mora_usd}* (Bs. {total_con_mora_bs} a tasa BCV {tasa_bcv})\nPor favor consignar su comprobante a este canal para suspender las alertas automáticas y registrar su solvencia.`

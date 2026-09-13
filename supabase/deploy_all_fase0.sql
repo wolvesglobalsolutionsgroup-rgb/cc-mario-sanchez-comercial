@@ -1,4 +1,4 @@
-﻿-- ==============================================================================
+-- ==============================================================================
 -- WGS · WOLVES GLOBAL SOLUTIONS GROUP
 -- CC MARIO SÁNCHEZ COMERCIAL — DESPLIEGUE MAESTRO SUPABASE CLOUD (FASE 0)
 -- Proyecto: wgs-proptech-prod (kjvmtsfibjedufcqsrwg)
@@ -459,7 +459,104 @@ VALUES
 (3, 2026, 'Servicio de Seguridad y Vigilancia Armada 24/7', 'seguridad', 1200.00, 72.50, 87000.00, 'a0000000-0000-0000-0000-000000000001'::uuid),
 (3, 2026, 'Energía Eléctrica Áreas Comunes & Postes (Corpoelec)', 'servicios_publicos', 350.00, 72.50, 25375.00, 'a0000000-0000-0000-0000-000000000001'::uuid),
 (3, 2026, 'Servicio Privado de Cisterna de Agua (40.000 L)', 'servicios_publicos', 220.00, 72.50, 15950.00, 'a0000000-0000-0000-0000-000000000001'::uuid),
-(3, 2026, 'Mantenimiento Preventivo Bomba de Achique y Drenajes', 'mantenimiento', 180.00, 72.50, 13050.00, 'a0000000-0000-0000-0000-000000000001'::uuid);
+-- 6. POLÍTICAS RLS DE AISLAMIENTO MULTI-TENANT POR ORGANIZACIÓN (has_ccms_organization)
+DROP POLICY IF EXISTS "Admin total chart_of_accounts" ON public.chart_of_accounts;
+CREATE POLICY "Admin total chart_of_accounts" ON public.chart_of_accounts
+  FOR ALL USING (public.is_ccms_admin() AND public.has_ccms_organization(organization_id))
+  WITH CHECK (public.is_ccms_admin() AND public.has_ccms_organization(organization_id));
+
+DROP POLICY IF EXISTS "Admin total units" ON public.units;
+CREATE POLICY "Admin total units" ON public.units
+  FOR ALL USING (public.is_ccms_admin() AND public.has_ccms_organization(organization_id))
+  WITH CHECK (public.is_ccms_admin() AND public.has_ccms_organization(organization_id));
+
+DROP POLICY IF EXISTS "Admin total tenants" ON public.tenants;
+CREATE POLICY "Admin total tenants" ON public.tenants
+  FOR ALL USING (public.is_ccms_admin() AND public.has_ccms_organization(organization_id))
+  WITH CHECK (public.is_ccms_admin() AND public.has_ccms_organization(organization_id));
+DROP POLICY IF EXISTS "Tenant own tenant" ON public.tenants;
+CREATE POLICY "Tenant own tenant" ON public.tenants
+  FOR SELECT USING (public.has_ccms_tenant(id) AND public.has_ccms_organization(organization_id));
+
+DROP POLICY IF EXISTS "Admin total contracts" ON public.contracts;
+CREATE POLICY "Admin total contracts" ON public.contracts
+  FOR ALL USING (public.is_ccms_admin() AND public.has_ccms_organization(organization_id))
+  WITH CHECK (public.is_ccms_admin() AND public.has_ccms_organization(organization_id));
+DROP POLICY IF EXISTS "Tenant own contracts" ON public.contracts;
+CREATE POLICY "Tenant own contracts" ON public.contracts
+  FOR SELECT USING (public.has_ccms_tenant(tenant_id) AND public.has_ccms_organization(organization_id));
+
+DROP POLICY IF EXISTS "Admin total condo_expenses" ON public.condo_expenses;
+CREATE POLICY "Admin total condo_expenses" ON public.condo_expenses
+  FOR ALL USING (public.is_ccms_admin() AND public.has_ccms_organization(organization_id))
+  WITH CHECK (public.is_ccms_admin() AND public.has_ccms_organization(organization_id));
+
+DROP POLICY IF EXISTS "Admin total invoices" ON public.invoices;
+CREATE POLICY "Admin total invoices" ON public.invoices
+  FOR ALL USING (public.is_ccms_admin() AND public.has_ccms_organization(organization_id))
+  WITH CHECK (public.is_ccms_admin() AND public.has_ccms_organization(organization_id));
+DROP POLICY IF EXISTS "Tenant own invoices" ON public.invoices;
+CREATE POLICY "Tenant own invoices" ON public.invoices
+  FOR SELECT USING (
+    public.has_ccms_organization(organization_id) AND EXISTS (
+      SELECT 1 FROM public.contracts c
+      WHERE c.id = contract_id AND public.has_ccms_tenant(c.tenant_id)
+    )
+  );
+
+DROP POLICY IF EXISTS "Admin total payments" ON public.payments;
+CREATE POLICY "Admin total payments" ON public.payments
+  FOR ALL USING (public.is_ccms_admin() AND public.has_ccms_organization(organization_id))
+  WITH CHECK (public.is_ccms_admin() AND public.has_ccms_organization(organization_id));
+DROP POLICY IF EXISTS "Tenant own payments" ON public.payments;
+CREATE POLICY "Tenant own payments" ON public.payments
+  FOR SELECT USING (
+    public.has_ccms_organization(organization_id) AND EXISTS (
+      SELECT 1 FROM public.invoices i JOIN public.contracts c ON c.id = i.contract_id
+      WHERE i.id = invoice_id AND public.has_ccms_tenant(c.tenant_id)
+    )
+  );
+
+DROP POLICY IF EXISTS "Admin total transactions" ON public.transactions;
+CREATE POLICY "Admin total transactions" ON public.transactions
+  FOR ALL USING (public.is_ccms_admin() AND public.has_ccms_organization(organization_id))
+  WITH CHECK (public.is_ccms_admin() AND public.has_ccms_organization(organization_id));
+
+DROP POLICY IF EXISTS "Admin total alerts" ON public.alerts;
+CREATE POLICY "Admin total alerts" ON public.alerts
+  FOR ALL USING (public.is_ccms_admin() AND public.has_ccms_organization(organization_id))
+  WITH CHECK (public.is_ccms_admin() AND public.has_ccms_organization(organization_id));
+DROP POLICY IF EXISTS "Tenant own alerts" ON public.alerts;
+CREATE POLICY "Tenant own alerts" ON public.alerts
+  FOR SELECT USING (tenant_id IS NOT NULL AND public.has_ccms_tenant(tenant_id) AND public.has_ccms_organization(organization_id));
+
+DROP POLICY IF EXISTS "Admin total audit_logs" ON public.audit_logs;
+CREATE POLICY "Admin total audit_logs" ON public.audit_logs
+  FOR ALL USING (public.is_ccms_admin() AND public.has_ccms_organization(organization_id))
+  WITH CHECK (public.is_ccms_admin() AND public.has_ccms_organization(organization_id));
+
+DROP POLICY IF EXISTS "Inquilinos pueden ver solo sus propios tickets" ON public.service_tickets;
+CREATE POLICY "Inquilinos pueden ver solo sus propios tickets" ON public.service_tickets
+  FOR SELECT USING (
+    public.has_ccms_organization(organization_id) AND
+    (public.is_ccms_admin() OR tenant_id IN (SELECT id FROM public.tenants WHERE public.has_ccms_tenant(id)))
+  );
+
+DROP POLICY IF EXISTS "Inquilinos y administradores pueden crear tickets" ON public.service_tickets;
+CREATE POLICY "Inquilinos y administradores pueden crear tickets" ON public.service_tickets
+  FOR INSERT WITH CHECK (
+    public.has_ccms_organization(organization_id) AND
+    (public.is_ccms_admin() OR tenant_id IN (SELECT id FROM public.tenants WHERE public.has_ccms_tenant(id)))
+  );
+
+-- Configuración de features para la organización semilla (CC Mario Sánchez)
+UPDATE public.organizations
+SET features = jsonb_set(
+  COALESCE(features, '{}'::jsonb),
+  '{regimen_sucesoral}',
+  '{"activo": true, "cuota_base": 400.00, "coherederos": 14}'::jsonb
+)
+WHERE id = 'a0000000-0000-0000-0000-000000000001'::uuid;
 
 COMMIT;
 

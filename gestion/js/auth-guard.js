@@ -377,14 +377,22 @@
       return { ok: false, error: 'Credenciales incompletas' };
     }
 
-    // --- RUTA REAL: Supabase Auth (si hay cliente Supabase y es un formato email) ---
-    if (typeof window !== 'undefined' && window.supabaseClient && typeof window.supabaseClient.auth?.signInWithPassword === 'function' && String(identifier).includes('@')) {
+    const isForceDemo = (typeof localStorage !== 'undefined' && localStorage.getItem('CCMS_FORCE_DEMO') === 'true');
+
+    // --- RUTA REAL: Supabase Auth (cuando NO se ha seleccionado modo demo explícito) ---
+    if (!isForceDemo && typeof window !== 'undefined' && window.supabaseClient && typeof window.supabaseClient.auth?.signInWithPassword === 'function' && String(identifier).includes('@')) {
       try {
         const { data, error } = await window.supabaseClient.auth.signInWithPassword({
           email: identifier,
           password: password
         });
-        if (!error && data?.user) {
+        if (error) {
+          return {
+            ok: false,
+            error: 'Credenciales inválidas en Supabase Cloud: ' + (error.message || 'Verifique su correo y contraseña.')
+          };
+        }
+        if (data?.user) {
           const { data: profile, error: profileError } = await window.supabaseClient
             .from('profiles')
             .select('role, display_name, tenant_id, organization_id')
@@ -400,22 +408,19 @@
               organization_id: profile.organization_id || null,
               status: 'active',
               is_supabase_auth: true,
+              is_demo: false,
               created_at: now(),
               expires_at: now() + SESSION_TTL_MS
             };
             setSession(session);
+            try { localStorage.setItem('CCMS_FORCE_DEMO', 'false'); } catch (_) {}
             return { ok: true, session, redirect: 'index.html' };
           }
         }
-        // Si no está habilitado el modo demo y falló Supabase, se rechaza
-        if (!DEMO_ENABLED) {
-          return { ok: false, error: error?.message || 'Usuario o contraseña incorrectos' };
-        }
+        return { ok: false, error: 'No se pudo obtener el perfil de usuario desde Supabase.' };
       } catch (e) {
-        console.warn('[AUTH] Intento Supabase Auth falló, continuando con fallback:', e);
-        if (!DEMO_ENABLED) {
-          return { ok: false, error: 'Error al conectar con el servidor de autenticación' };
-        }
+        console.warn('[AUTH] Error conectando con Supabase Auth:', e);
+        return { ok: false, error: 'Error de conexión con Supabase Cloud: ' + e.message };
       }
     }
 
@@ -504,10 +509,14 @@
       display_name: user.display_name,
       identifier: user.identifier,
       tenant_id: user.tenant_id || null,
+      organization_id: user.organization_id || 'a0000000-0000-0000-0000-000000000001',
       status: user.status || 'active',
+      is_supabase_auth: false,
+      is_demo: true,
       created_at: now(),
       expires_at: now() + SESSION_TTL_MS
     };
+    try { localStorage.setItem('CCMS_FORCE_DEMO', 'true'); } catch (_) {}
     setSession(session);
     return { ok: true, session, redirect: 'index.html' };
   }

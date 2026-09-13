@@ -247,12 +247,12 @@
 
       <div class="top-actions">
         
-        <!-- BADGE INDICADOR DE MODO: SUPABASE CLOUD VS MODO DEMO -->
-        <button type="button" class="btn-theme-toggle" id="env-mode-badge" onclick="window.toggleEnvironmentModal()" title="Ver estado de base de datos y alternar entre Supabase Cloud y Modo Demo" style="width: auto; padding: 0 12px; gap: 8px; border-radius: 20px; font-size: 11.5px; font-weight: 800; border: 1px solid rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.12); color: var(--amber);">
-          <span id="env-mode-pulse" style="width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 8px #f59e0b; display: inline-block;"></span>
+        <!-- INDICADOR DISCRETO DE ENTORNO (SOLO VISIBLE EN SESIONES DEMO) -->
+        <div class="badge-legal-pill" id="env-mode-badge" style="display: none; width: auto; padding: 4px 10px; gap: 7px; border-radius: 16px; font-size: 11px; font-weight: 700; border: 1px solid rgba(245, 158, 11, 0.35); background: rgba(245, 158, 11, 0.1); color: var(--amber); user-select: none; align-items: center;" title="Sesión en Modo Demostración (datos de prueba locales)">
+          <span id="env-mode-pulse" style="width: 6px; height: 6px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 6px #f59e0b; display: inline-block;"></span>
           <span id="env-mode-text">Modo Demo</span>
-          <i class="fa-solid fa-database" style="font-size: 10px; opacity: 0.8;"></i>
-        </button>
+          <i class="fa-solid fa-flask" id="env-mode-icon" style="font-size: 10px; opacity: 0.85;"></i>
+        </div>
 
         <!-- ASISTENTE IA JURÍDICO & TRIBUTARIO (GEMINI) -->
         <button type="button" class="btn-theme-toggle" id="btn-gemini-assistant-trigger" onclick="window.openGeminiAssistantModal()" title="Asistente Legal & Tributario con Inteligencia Artificial (G.O. 40.418, SENIAT y LOCAT)" style="width: auto; padding: 0 12px; gap: 6px; border-radius: 20px; font-size: 12px; font-weight: 700; border-color: rgba(14, 165, 233, 0.4); background: rgba(14, 165, 233, 0.08); color: var(--cyan);">
@@ -333,7 +333,7 @@
           <i class="fa-solid fa-user-plus"></i> <span>Registrar Inquilino</span>
         </button>
 
-        <button type="button" class="btn-theme-toggle" data-roles="admin" data-click="resetDemoData()" title="Restablecer todos los datos ficticios de la demo">
+        <button type="button" class="btn-theme-toggle" id="btn-header-reset-demo" data-roles="admin" data-click="resetDemoData()" title="Restablecer datos ficticios de la demo" style="display: none;">
           <i class="fa-solid fa-rotate-left" style="color: var(--cyan);"></i>
         </button>
       </div>
@@ -341,6 +341,22 @@
 
     <!-- CONTENT WRAPPER -->
     <div class="content-wrapper">
+      
+      <!-- BANNER DISCRETO DE MODO DEMOSTRACIÓN (SOLO VISIBLE CUANDO SE OPERA CON DATOS SIMULADOS) -->
+      <div id="demo-mode-alert-banner" style="display: none; margin: 0 0 16px 0; padding: 10px 16px; border-radius: 10px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; font-size: 12px; align-items: center; justify-content: space-between; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 9px;">
+          <i class="fa-solid fa-flask" style="font-size: 14px; color: var(--amber);"></i>
+          <span><strong>Modo Demostración Activo:</strong> Navegando con datos de prueba simulados (ideal para presentaciones comerciales, juntas directivas y capacitación). Los cambios no alteran la base de datos real.</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button type="button" onclick="if(typeof AuthGuard!=='undefined'&&AuthGuard.logout)AuthGuard.logout();else window.location.href='login.html?logout=1';" style="background: rgba(245,158,11,0.18); border: 1px solid rgba(245,158,11,0.4); color: #fbbf24; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; cursor: pointer;">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i> Salir a Producción
+          </button>
+          <button type="button" onclick="document.getElementById('demo-mode-alert-banner').style.display='none'" style="background: none; border: none; color: #fbbf24; cursor: pointer; padding: 4px; font-size: 14px;" title="Cerrar aviso">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
       
       <!-- TAB 0: DASHBOARD EJECUTIVO (AISLADO EN SU PROPIO MÓDULO PARA NO INVADIR OTROS) -->
       <section class="tab-view active" id="tab-dashboard" data-roles="admin">
@@ -4154,76 +4170,6 @@
   </div>
 </div>
 
-<!-- ========================================================================= -->
-<!-- MODAL: ESTADO DE BASE DE DATOS Y ENTORNO (SUPABASE CLOUD VS DEMO)         -->
-<!-- ========================================================================= -->
-<div class="modal-overlay" id="modal-env-status" style="display: none;" onclick="if(event.target===this) window.closeEnvironmentModal()">
-  <div class="modal-window" style="max-width: 540px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-xl);">
-    <div style="padding: 16px 20px; background: rgba(15, 23, 42, 0.7); border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between;">
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(245, 158, 11, 0.15); display: flex; align-items: center; justify-content: center; color: var(--amber);">
-          <i class="fa-solid fa-database"></i>
-        </div>
-        <div>
-          <h3 style="font-size: 15px; font-weight: 800; margin: 0; color: var(--txt-primary); font-family: var(--font-heading);">Entorno & Base de Datos</h3>
-          <span style="font-size: 11px; color: var(--txt-secondary);">Coexistencia: Base Real Supabase Cloud vs Modo Demostración</span>
-        </div>
-      </div>
-      <button type="button" class="btn-action-icon" onclick="window.closeEnvironmentModal()" style="background: none; border: none; color: var(--txt-muted); font-size: 16px; cursor: pointer;">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-    </div>
-
-    <div style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
-      <!-- Estado Actual -->
-      <div id="env-current-status-box" style="padding: 14px 16px; border-radius: 12px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); display: flex; align-items: center; justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span id="env-modal-pulse" style="width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 10px #f59e0b;"></span>
-          <div>
-            <div id="env-modal-title" style="font-size: 13px; font-weight: 800; color: var(--txt-primary);">Modo Demostración Activo</div>
-            <div id="env-modal-desc" style="font-size: 11px; color: var(--txt-muted);">Operando con datos de prueba locales en este navegador.</div>
-          </div>
-        </div>
-        <span id="env-modal-pill" class="badge-legal-pill" style="font-size: 10px; padding: 4px 8px; border-radius: 12px; background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid rgba(245,158,11,0.3);">Demo Local</span>
-      </div>
-
-      <!-- Tarjetas explicativas de ambos modos -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-        <div style="padding: 14px; border-radius: 10px; border: 1px solid rgba(245, 158, 11, 0.3); background: rgba(15, 23, 42, 0.6);">
-          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; color: var(--amber); font-weight: 800; font-size: 12px;">
-            <i class="fa-solid fa-flask"></i> Modo Demo
-          </div>
-          <p style="font-size: 11px; color: var(--txt-secondary); line-height: 1.4; margin: 0;">
-            Ideal para <strong>reuniones de venta</strong>, demostraciones a clientes y capacitación sin riesgo de alterar registros contables de la nube.
-          </p>
-        </div>
-
-        <div style="padding: 14px; border-radius: 10px; border: 1px solid rgba(16, 185, 129, 0.3); background: rgba(15, 23, 42, 0.6);">
-          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; color: var(--emerald); font-weight: 800; font-size: 12px;">
-            <i class="fa-solid fa-cloud"></i> Supabase Cloud
-          </div>
-          <p style="font-size: 11px; color: var(--txt-secondary); line-height: 1.4; margin: 0;">
-            Base de datos PostgreSQL en la nube con <strong>aislamiento multi-inquilino (RLS)</strong>, auditoría legal y persistencia centralizada.
-          </p>
-        </div>
-      </div>
-
-      <!-- Acciones de Alternancia -->
-      <div style="padding: 12px 14px; border-radius: 10px; background: rgba(148, 163, 184, 0.05); border: 1px solid var(--border-subtle); display: flex; flex-direction: column; gap: 10px;">
-        <span style="font-size: 11.5px; font-weight: 700; color: var(--txt-primary);">Alternar Comportamiento del Entorno:</span>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <button type="button" class="btn-theme-toggle" onclick="window.setEnvironmentMode('demo')" style="flex: 1; min-width: 140px; padding: 9px 12px; font-size: 11.5px; background: rgba(245, 158, 11, 0.15); border: 1px solid var(--amber); color: var(--amber); font-weight: 800; border-radius: 8px;">
-            <i class="fa-solid fa-toggle-on"></i> Forzar Modo Demo
-          </button>
-          <button type="button" class="btn-theme-toggle" onclick="window.setEnvironmentMode('real')" style="flex: 1; min-width: 140px; padding: 9px 12px; font-size: 11.5px; background: rgba(16, 185, 129, 0.15); border: 1px solid var(--emerald); color: var(--emerald); font-weight: 800; border-radius: 8px;">
-            <i class="fa-solid fa-cloud-arrow-up"></i> Forzar Modo Supabase
-          </button>
-        </div>
-        <span style="font-size: 10px; color: var(--txt-muted);">Al alternar, la página se recargará para aplicar las preferencias del motor de datos.</span>
-      </div>
-    </div>
-  </div>
-</div>
 
 <!-- ========================================================================= -->
 <!-- MODAL: GESTOR Y EDITOR DE CONTRATO REAL (DIGITALIZADO / FÍSICO)           -->

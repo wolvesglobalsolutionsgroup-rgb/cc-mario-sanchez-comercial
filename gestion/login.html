@@ -765,109 +765,170 @@
   <!-- 2. PANEL DERECHO: CONSOLA DE AUTENTICACIÓN VIP                          -->
   <!-- ======================================================================= -->
   <main class="auth-pane">
-    <div class="auth-header-row">
-      <div class="auth-headline">
-        <h2>Acceso al Portal</h2>
-        <p>Ingrese sus credenciales de seguridad</p>
-      </div>
-      <div class="system-status-beacon">
-        <span class="beacon-pulse"></span>
-        <span>En Línea</span>
-      </div>
-    </div>
-
-    <!-- SELECTOR DE ROL: ADMINISTRADOR VS INQUILINO -->
-    <div class="role-toggle">
-      <button class="role-btn active" id="btn-role-admin" type="button">
-        <i class="fa-solid fa-user-shield"></i> Administración & Directiva
+    <!-- SELECTOR DE ENTORNO ANTES DEL LOGIN: PRODUCCIÓN VS MODO DEMO -->
+    <div class="env-selector-tabs" id="env-selector-tabs" style="display: flex; gap: 8px; margin-bottom: 22px; background: rgba(8, 14, 30, 0.9); padding: 4px; border-radius: 12px; border: 1.5px solid rgba(148, 163, 184, 0.18);">
+      <button type="button" class="env-tab-btn active" id="tab-env-real" onclick="window.switchEnvironmentTab('real')" style="flex: 1; padding: 10px 12px; background: rgba(16, 185, 129, 0.18); border: 1px solid #10b981; color: #34d399; font-family: 'Manrope', sans-serif; font-size: 11.5px; font-weight: 800; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; transition: all 0.2s ease;">
+        <i class="fa-solid fa-cloud"></i> Producción (Supabase)
       </button>
-      <button class="role-btn" id="btn-role-tenant" type="button">
-        <i class="fa-solid fa-store"></i> Inquilinos & Locales
+      <button type="button" class="env-tab-btn" id="tab-env-demo" onclick="window.switchEnvironmentTab('demo')" style="flex: 1; padding: 10px 12px; background: transparent; border: 1px solid transparent; color: var(--login-txt-muted); font-family: 'Manrope', sans-serif; font-size: 11.5px; font-weight: 700; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; transition: all 0.2s ease;">
+        <i class="fa-solid fa-flask"></i> Modo Demostración
       </button>
     </div>
 
-    <!-- MENSAJES DE ESTADO / ERROR -->
-    <div id="login-info">
-      <i class="fa-solid fa-circle-check"></i> <span id="login-info-msg"></span>
-    </div>
-
-    <div id="login-error">
-      <i class="fa-solid fa-triangle-exclamation"></i> <span id="login-error-msg"></span>
-    </div>
-
-    <!-- FORMULARIO DE INGRESO -->
-    <form id="login-form">
-      <div class="form-group">
-        <label id="lbl-identifier">
-          <i class="fa-solid fa-id-badge" style="color: var(--login-gold);"></i> Correo Institucional Administrador
-        </label>
-        <div class="input-field-wrap">
-          <i class="fa-solid fa-envelope input-field-icon" id="icon-identifier"></i>
-          <input type="text" class="custom-login-input" id="login-user" autocomplete="username" required placeholder="ej. administracion@ccmariosanchez.com">
+    <!-- PANEL 1: INGRESO OFICIAL A PRODUCCIÓN (SUPABASE CLOUD) -->
+    <div id="panel-auth-real">
+      <div class="auth-header-row">
+        <div class="auth-headline">
+          <h2>Acceso a Producción</h2>
+          <p>Conexión segura a base de datos en la nube</p>
+        </div>
+        <div class="system-status-beacon" id="auth-beacon-box">
+          <span class="beacon-pulse" id="auth-beacon-pulse"></span>
+          <span id="auth-beacon-text">Supabase Cloud</span>
         </div>
       </div>
 
-      <div class="form-group">
-        <label>
-          <i class="fa-solid fa-key" style="color: var(--login-gold);"></i> Contraseña de Seguridad
-        </label>
-        <div class="input-field-wrap">
-          <i class="fa-solid fa-lock input-field-icon"></i>
-          <input type="password" class="custom-login-input" id="login-pass" autocomplete="current-password" required placeholder="••••••••••••">
-          <button type="button" class="btn-eye-toggle" id="btn-toggle-pass" onclick="togglePasswordVisibility()" title="Mostrar u ocultar contraseña">
-            <i class="fa-solid fa-eye" id="icon-eye-toggle"></i>
-          </button>
+      <!-- SELECTOR DE ROL: ADMINISTRADOR VS INQUILINO -->
+      <div class="role-toggle">
+        <button class="role-btn active" id="btn-role-admin" type="button">
+          <i class="fa-solid fa-user-shield"></i> Administración & Directiva
+        </button>
+        <button class="role-btn" id="btn-role-tenant" type="button">
+          <i class="fa-solid fa-store"></i> Inquilinos & Locales
+        </button>
+      </div>
+
+      <!-- MENSAJES DE ESTADO / ERROR -->
+      <div id="login-info">
+        <i class="fa-solid fa-circle-check"></i> <span id="login-info-msg"></span>
+      </div>
+
+      <div id="login-error">
+        <i class="fa-solid fa-triangle-exclamation"></i> <span id="login-error-msg"></span>
+      </div>
+
+      <!-- FORMULARIO DE INGRESO REAL -->
+      <form id="login-form">
+        <div class="form-group">
+          <label id="lbl-identifier">
+            <i class="fa-solid fa-id-badge" style="color: var(--login-gold);"></i> Correo Institucional Administrador
+          </label>
+          <div class="input-field-wrap">
+            <i class="fa-solid fa-envelope input-field-icon" id="icon-identifier"></i>
+            <input type="text" class="custom-login-input" id="login-user" autocomplete="username" required placeholder="ej. administracion@ccmariosanchez.com">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>
+            <i class="fa-solid fa-key" style="color: var(--login-gold);"></i> Contraseña de Seguridad
+          </label>
+          <div class="input-field-wrap">
+            <i class="fa-solid fa-lock input-field-icon"></i>
+            <input type="password" class="custom-login-input" id="login-pass" autocomplete="current-password" required placeholder="••••••••••••">
+            <button type="button" class="btn-eye-toggle" id="btn-toggle-pass" onclick="togglePasswordVisibility()" title="Mostrar u ocultar contraseña">
+              <i class="fa-solid fa-eye" id="icon-eye-toggle"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="auth-options-row">
+          <label class="remember-check-label">
+            <input type="checkbox" id="remember-session" checked> Recordar credenciales
+          </label>
+          <a href="#" class="recovery-trigger-link" id="forgot-password-link" onclick="window.openRecoveryModal(event)">
+            <i class="fa-solid fa-shield-halved"></i> ¿Olvidó su clave?
+          </a>
+        </div>
+
+        <button type="submit" id="login-submit-btn" class="btn-login-master">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> <span id="login-submit-text">Ingresar al Portal Oficial</span>
+        </button>
+
+        <!-- BOTÓN GUÍA DE GESTIÓN DE CREDENCIALES -->
+        <button type="button" class="btn-credentials-guide" onclick="window.openCredentialsGuide()">
+          <i class="fa-solid fa-circle-question"></i> ¿Cómo se generan y gestionan las credenciales del ERP?
+        </button>
+      </form>
+    </div>
+
+    <!-- PANEL 2: EXPLORACIÓN EN MODO DEMOSTRACIÓN (SHOWCASE & REUNIONES) -->
+    <div id="panel-auth-demo" style="display: none;">
+      <div class="auth-header-row">
+        <div class="auth-headline">
+          <h2>Modo Demostración</h2>
+          <p>Entorno interactivo con datos de muestra simulados</p>
+        </div>
+        <div class="system-status-beacon" style="border-color: rgba(245,158,11,0.4); color: var(--login-gold); background: rgba(245,158,11,0.12);">
+          <span style="width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 8px #f59e0b;"></span>
+          <span>Demo Local</span>
         </div>
       </div>
 
-      <div class="auth-options-row">
-        <label class="remember-check-label">
-          <input type="checkbox" id="remember-session" checked> Recordar credenciales
-        </label>
-        <a href="#" class="recovery-trigger-link" id="forgot-password-link" onclick="window.openRecoveryModal(event)">
-          <i class="fa-solid fa-shield-halved"></i> ¿Olvidó su clave?
-        </a>
+      <!-- TARJETA EXPLICATIVA DEL MODO DEMO -->
+      <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 12px; padding: 14px 16px; margin-bottom: 18px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; color: var(--login-gold); font-size: 12.5px; font-weight: 800;">
+          <i class="fa-solid fa-bolt"></i> Ideal para Reuniones y Presentaciones
+        </div>
+        <p style="font-size: 11.5px; color: #cbd5e1; line-height: 1.45; margin: 0;">
+          Acceda con 1-clic a cualquier perfil operativo para evaluar las funcionalidades del ERP. Los datos se ejecutan de manera simulada en este navegador y <strong>no alteran los registros contables en la nube</strong>.
+        </p>
       </div>
 
-      <button type="submit" id="login-submit-btn" class="btn-login-master">
-        <i class="fa-solid fa-arrow-right-to-bracket"></i> <span id="login-submit-text">Ingresar al Portal</span>
-      </button>
-
-      <!-- CONSOLA VIP DE ACCESO RÁPIDO DEMO (1-CLICK ROLES - SIN EMOJIS) -->
-      <div class="demo-roles-section demo-vip-box" id="demo-roles-section">
-        <div class="demo-vip-header">
-          <span class="demo-vip-title">
-            <i class="fa-solid fa-bolt"></i> Acceso Rápido por Rol
+      <!-- CONSOLA VIP DE ACCESO RÁPIDO DEMO (1-CLICK ROLES) -->
+      <div class="demo-roles-section demo-vip-box" id="demo-roles-section" style="margin-top: 0; background: transparent; border: none; padding: 0;">
+        <div class="demo-vip-header" style="margin-bottom: 12px;">
+          <span class="demo-vip-title" style="font-size: 12px;">
+            <i class="fa-solid fa-user-lock"></i> Seleccione un Perfil de Acceso Inmediato:
           </span>
-          <span class="demo-badge-pill">1-Click Demo</span>
+          <span class="demo-badge-pill" style="font-size: 10px; padding: 3px 9px;">Acceso 1-Clic</span>
         </div>
-        <div class="demo-roles-grid">
-          <button type="button" class="btn-demo-role-pill active" id="btn-demo-superadmin" data-demo-login data-role="superadmin" title="Bypass administrativo y control maestro">
-            <i class="fa-solid fa-crown" style="color: #f59e0b;"></i> <span>SuperAdmin</span>
+        <div class="demo-roles-grid" style="gap: 10px;">
+          <button type="button" class="btn-demo-role-pill active" id="btn-demo-superadmin" data-demo-login data-role="superadmin" style="padding: 12px 14px; border-radius: 10px;" title="Control administrativo total y configuración maestra">
+            <i class="fa-solid fa-crown" style="color: #f59e0b; font-size: 15px;"></i>
+            <div>
+              <div style="font-weight: 800; font-size: 12px; color: #fff;">SuperAdmin</div>
+              <div style="font-size: 10px; color: var(--login-txt-muted);">Control maestro y tesorería</div>
+            </div>
           </button>
-          <button type="button" class="btn-demo-role-pill" id="btn-demo-finanzas" data-demo-login data-role="finanzas" title="Finanzas, cobranzas y retenciones SENIAT">
-            <i class="fa-solid fa-chart-line" style="color: #10b981;"></i> <span>Finanzas & Cobros</span>
+          <button type="button" class="btn-demo-role-pill" id="btn-demo-finanzas" data-demo-login data-role="finanzas" style="padding: 12px 14px; border-radius: 10px;" title="Cobranzas, conciliación bancaria y retenciones SENIAT">
+            <i class="fa-solid fa-chart-line" style="color: #10b981; font-size: 15px;"></i>
+            <div>
+              <div style="font-weight: 800; font-size: 12px; color: #fff;">Finanzas & Cobros</div>
+              <div style="font-size: 10px; color: var(--login-txt-muted);">Retenciones y SENIAT</div>
+            </div>
           </button>
-          <button type="button" class="btn-demo-role-pill" id="btn-demo-legal" data-demo-login data-role="legal" title="Contratos legales y adendas notariales">
-            <i class="fa-solid fa-scale-balanced" style="color: #06b6d4;"></i> <span>Legal & Contratos</span>
+          <button type="button" class="btn-demo-role-pill" id="btn-demo-legal" data-demo-login data-role="legal" style="padding: 12px 14px; border-radius: 10px;" title="Contratos de arrendamiento y prórroga legal G.O. 40.418">
+            <i class="fa-solid fa-scale-balanced" style="color: #06b6d4; font-size: 15px;"></i>
+            <div>
+              <div style="font-weight: 800; font-size: 12px; color: #fff;">Legal & Contratos</div>
+              <div style="font-size: 10px; color: var(--login-txt-muted);">Contratos y Solvencias</div>
+            </div>
           </button>
-          <button type="button" class="btn-demo-role-pill" id="btn-demo-mantenimiento" data-demo-login data-role="mantenimiento" title="Kardex de consumibles e infraestructura">
-            <i class="fa-solid fa-wrench" style="color: #f43f5e;"></i> <span>Mantenimiento</span>
+          <button type="button" class="btn-demo-role-pill" id="btn-demo-mantenimiento" data-demo-login data-role="mantenimiento" style="padding: 12px 14px; border-radius: 10px;" title="Mantenimiento e infraestructura">
+            <i class="fa-solid fa-wrench" style="color: #f43f5e; font-size: 15px;"></i>
+            <div>
+              <div style="font-weight: 800; font-size: 12px; color: #fff;">Mantenimiento</div>
+              <div style="font-size: 10px; color: var(--login-txt-muted);">Kardex y consumibles</div>
+            </div>
           </button>
-          <button type="button" class="btn-demo-role-pill" id="btn-demo-heredero" data-demo-login data-role="heredero" style="border-color: rgba(168,85,247,0.35); color: #c084fc;" title="Modo Solo Lectura transparente para los 14 herederos">
-            <i class="fa-solid fa-landmark" style="color: #c084fc;"></i> <span>Heredero (Auditoría)</span>
+          <button type="button" class="btn-demo-role-pill" id="btn-demo-heredero" data-demo-login data-role="heredero" style="padding: 12px 14px; border-radius: 10px; border-color: rgba(168,85,247,0.35); color: #c084fc;" title="Modo Solo Lectura transparente para coherederos">
+            <i class="fa-solid fa-landmark" style="color: #c084fc; font-size: 15px;"></i>
+            <div>
+              <div style="font-weight: 800; font-size: 12px; color: #fff;">Heredero (Auditoría)</div>
+              <div style="font-size: 10px; color: var(--login-txt-muted);">Solo lectura y frutos</div>
+            </div>
           </button>
-          <button type="button" class="btn-demo-role-pill" id="btn-demo-tenant" data-demo-login data-role="tenant" style="border-color: rgba(16,185,129,0.35); color: #34d399;" title="Portal del inquilino (Local PB-01)">
-            <i class="fa-solid fa-store" style="color: #34d399;"></i> <span>Inquilino (Local)</span>
+          <button type="button" class="btn-demo-role-pill" id="btn-demo-tenant" data-demo-login data-role="tenant" style="padding: 12px 14px; border-radius: 10px; border-color: rgba(16,185,129,0.35); color: #34d399;" title="Portal del inquilino (Local PB-01)">
+            <i class="fa-solid fa-store" style="color: #34d399; font-size: 15px;"></i>
+            <div>
+              <div style="font-weight: 800; font-size: 12px; color: #fff;">Inquilino (Local PB)</div>
+              <div style="font-size: 10px; color: var(--login-txt-muted);">Facturación y reportes</div>
+            </div>
           </button>
         </div>
       </div>
-
-      <!-- BOTÓN GUÍA DE GESTIÓN DE CREDENCIALES -->
-      <button type="button" class="btn-credentials-guide" onclick="window.openCredentialsGuide()">
-        <i class="fa-solid fa-circle-question"></i> ¿Cómo se generan y gestionan las credenciales del ERP?
-      </button>
-    </form>
+    </div>
   </main>
 </div>
 
