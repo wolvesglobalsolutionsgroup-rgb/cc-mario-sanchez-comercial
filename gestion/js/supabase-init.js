@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Inicializa window.supabaseClient cargando el SDK oficial desde CDN
  * y la configuración pública desde /api/config. Debe cargarse ANTES
  * de auth-guard.js, login.js y supabase-client.js.
@@ -23,6 +23,12 @@
     window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey, {
       auth: { persistSession: true, autoRefreshToken: true }
     });
+
+    try {
+      localStorage.setItem('ccms_supabase_url', supabaseUrl);
+      localStorage.setItem('ccms_supabase_key', supabaseAnonKey);
+    } catch (e) {}
+
     console.info('[SUPABASE] Cliente inicializado correctamente.');
     document.dispatchEvent(new CustomEvent('supabase:ready'));
   } catch (err) {

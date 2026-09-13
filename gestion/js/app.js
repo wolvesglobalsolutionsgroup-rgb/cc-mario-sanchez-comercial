@@ -10457,6 +10457,117 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // =========================================================================
+  // ENVIRONMENT & DATABASE STATUS MODAL & CONTROLS
+  // =========================================================================
+  window.updateEnvironmentBadge = function() {
+    const badge = document.getElementById('env-mode-badge');
+    const text = document.getElementById('env-mode-text');
+    const pulse = document.getElementById('env-mode-pulse');
+    if (!badge || !text || !pulse) return;
+
+    const sess = (typeof AuthGuard !== 'undefined' && typeof AuthGuard.currentUser === 'function') 
+      ? AuthGuard.currentUser() 
+      : null;
+    const isSupabaseAuth = sess && sess.is_supabase_auth;
+    const isDemoForced = localStorage.getItem('CCMS_FORCE_DEMO') === 'true' || (!isSupabaseAuth && window.CCMS_DEMO_MODE !== false);
+
+    if (isSupabaseAuth && !isDemoForced) {
+      badge.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+      badge.style.background = 'rgba(16, 185, 129, 0.12)';
+      badge.style.color = '#34d399';
+      pulse.style.background = '#10b981';
+      pulse.style.boxShadow = '0 0 8px #10b981';
+      text.textContent = 'Supabase Cloud';
+    } else {
+      badge.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+      badge.style.background = 'rgba(245, 158, 11, 0.12)';
+      badge.style.color = 'var(--amber)';
+      pulse.style.background = '#f59e0b';
+      pulse.style.boxShadow = '0 0 8px #f59e0b';
+      text.textContent = 'Modo Demo';
+    }
+  };
+
+  window.toggleEnvironmentModal = function() {
+    const modal = document.getElementById('modal-env-status');
+    if (!modal) return;
+    const isVisible = modal.style.display === 'flex';
+    if (isVisible) {
+      modal.style.display = 'none';
+      return;
+    }
+
+    const sess = (typeof AuthGuard !== 'undefined' && typeof AuthGuard.currentUser === 'function') 
+      ? AuthGuard.currentUser() 
+      : null;
+    const isSupabaseAuth = sess && sess.is_supabase_auth;
+    const isDemoForced = localStorage.getItem('CCMS_FORCE_DEMO') === 'true' || (!isSupabaseAuth && window.CCMS_DEMO_MODE !== false);
+
+    const titleEl = document.getElementById('env-modal-title');
+    const descEl = document.getElementById('env-modal-desc');
+    const pillEl = document.getElementById('env-modal-pill');
+    const pulseEl = document.getElementById('env-modal-pulse');
+    const boxEl = document.getElementById('env-current-status-box');
+
+    if (isSupabaseAuth && !isDemoForced) {
+      if (titleEl) titleEl.textContent = 'Conectado a Supabase Cloud';
+      if (descEl) descEl.textContent = 'Persistencia PostgreSQL real activa con RLS multi-inquilino en la nube.';
+      if (pillEl) {
+        pillEl.textContent = 'Cloud PostgreSQL';
+        pillEl.style.background = 'rgba(16, 185, 129, 0.15)';
+        pillEl.style.color = '#34d399';
+        pillEl.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+      }
+      if (pulseEl) {
+        pulseEl.style.background = '#10b981';
+        pulseEl.style.boxShadow = '0 0 10px #10b981';
+      }
+      if (boxEl) {
+        boxEl.style.background = 'rgba(16, 185, 129, 0.08)';
+        boxEl.style.borderColor = 'rgba(16, 185, 129, 0.25)';
+      }
+    } else {
+      if (titleEl) titleEl.textContent = 'Modo Demostración Activo';
+      if (descEl) descEl.textContent = 'Operando con datos de prueba locales seguros en este navegador.';
+      if (pillEl) {
+        pillEl.textContent = 'Demo Local';
+        pillEl.style.background = 'rgba(245, 158, 11, 0.15)';
+        pillEl.style.color = 'var(--amber)';
+        pillEl.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+      }
+      if (pulseEl) {
+        pulseEl.style.background = '#f59e0b';
+        pulseEl.style.boxShadow = '0 0 10px #f59e0b';
+      }
+      if (boxEl) {
+        boxEl.style.background = 'rgba(245, 158, 11, 0.08)';
+        boxEl.style.borderColor = 'rgba(245, 158, 11, 0.25)';
+      }
+    }
+
+    modal.style.display = 'flex';
+  };
+
+  window.closeEnvironmentModal = function() {
+    const modal = document.getElementById('modal-env-status');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.setEnvironmentMode = function(mode) {
+    if (mode === 'demo') {
+      localStorage.setItem('CCMS_FORCE_DEMO', 'true');
+    } else {
+      localStorage.setItem('CCMS_FORCE_DEMO', 'false');
+    }
+    window.location.reload();
+  };
+
+  // Inicializar indicador visual de entorno
+  try {
+    window.updateEnvironmentBadge();
+  } catch (e) {}
+
+  // =========================================================================
   // GLOBAL COMMAND-K SEARCH OMNIBOX ENGINE (REQ. 9)
   // =========================================================================
   window.openCommandKModal = function() {
