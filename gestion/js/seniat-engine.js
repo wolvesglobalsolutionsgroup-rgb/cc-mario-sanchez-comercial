@@ -315,10 +315,18 @@
      * Estructura requerida por Providencia SNAT/2014/0032:
      * RIF_AGENTE\tPERIODO\tFECHA_FAC\tTIPO_OP\tTIPO_DOC\tRIF_SUJETO\tNUM_FAC\tNUM_CTRL\tMONTO_TOTAL\tBASE\tIVA_RETENIDO\tNUM_AFECT\tNUM_COMPROB\tEXENTO\tALICUOTA\tNUM_EXP
      */
-    generateSeniatTxtRetention(purchasesBook, agentRif = 'J-29881234-0') {
+    generateSeniatTxtRetention(purchasesBook, agentRif = 'J-30211544-2') {
       const lines = [];
-      const cleanRif = (rif) => rif.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-      const periodStr = purchasesBook.periodo.replace('/', '');
+      const cleanRif = (rif) => String(rif || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+      
+      // Formato oficial exigido por el portal del SENIAT: AAAAMM (ej. 202603)
+      let periodStr = '';
+      if (purchasesBook.periodo && purchasesBook.periodo.includes('/')) {
+        const parts = purchasesBook.periodo.split('/');
+        periodStr = parts[1] + parts[0].padStart(2, '0');
+      } else {
+        periodStr = String(new Date().getFullYear()) + String(new Date().getMonth() + 1).padStart(2, '0');
+      }
 
       purchasesBook.items.filter(r => r.iva_retenido_efectuado > 0).forEach(r => {
         const line = [

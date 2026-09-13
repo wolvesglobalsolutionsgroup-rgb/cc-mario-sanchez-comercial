@@ -1981,6 +1981,9 @@
             <button type="button" class="btn-action-icon" id="btn-export-seniat-txt" data-click="downloadSeniatTxtReport()" style="display: none; width: auto; padding: 7px 12px; font-size: 12px; gap: 6px; background: rgba(245, 158, 11, 0.15); color: var(--amber); border-color: rgba(245, 158, 11, 0.3);" title="Descargar archivo TXT oficial para carga en el portal fiscal del SENIAT">
               <i class="fa-solid fa-file-code"></i> <span>TXT SENIAT</span>
             </button>
+            <button type="button" class="btn-action-icon" id="btn-export-alcaldia-csv" data-click="downloadAlcaldiaCsvReport()" style="display: none; width: auto; padding: 7px 12px; font-size: 12px; gap: 6px; background: rgba(59, 130, 246, 0.15); color: #3b82f6; border-color: rgba(59, 130, 246, 0.3);" title="Descargar Matriz Oficial de Declaración Municipal de Actividades Económicas (Alcaldía)">
+              <i class="fa-solid fa-building-columns"></i> <span>CSV Alcaldía</span>
+            </button>
             <button type="button" class="btn-action-icon" data-click="exportReportToCSV()" style="width: auto; padding: 7px 12px; font-size: 12px; gap: 6px; background: rgba(16, 185, 129, 0.15); color: var(--emerald); border-color: rgba(16, 185, 129, 0.3);" title="Descargar como archivo compatible con Excel / Calc (.csv)">
               <i class="fa-solid fa-file-excel"></i> <span>Excel (.csv)</span>
             </button>
@@ -2012,6 +2015,7 @@
                 <option value="retencion_islr">9. Comprobante de Retención de ISLR (Art. 9 Dec. 1808)</option>
                 <option value="notificacion_mora">10. Notificación Formal de Mora & Citación Conciliatoria</option>
                 <option value="herederos">11. Estado de Cuenta & Frutos Civiles de Coherederos (1/14 Sucesión)</option>
+                <option value="alcaldia_declaracion">12. Declaración Municipal Alcaldía: Actividades Económicas (ISAE) & Tasas Locales (LOCAT)</option>
               </select>
             </div>
 
@@ -2040,6 +2044,24 @@
                   <option value="2025">2025</option>
                 </select>
               </div>
+            </div>
+
+            <div id="report-param-municipio-wrapper" style="display: none; flex: 2 1 240px; min-width: 0; width: 100%;">
+              <label style="font-size: 11px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">
+                <i class="fa-solid fa-building-columns"></i> Municipio / Alcaldía:
+              </label>
+              <select id="report-param-municipio" class="form-control" onchange="window.generateSelectedReport()" data-change="generateSelectedReport()" style="padding: 8px 10px; font-size: 13px;">
+                <option value="sotillo" selected>Sotillo (Puerto La Cruz - 2.0%)</option>
+                <option value="urbaneja">Urbaneja (Lechería - 2.5%)</option>
+                <option value="bolivar">Bolívar (Barcelona - 2.0%)</option>
+                <option value="chacao">Chacao (Caracas - 2.5%)</option>
+                <option value="baruta">Baruta (Caracas - 2.2%)</option>
+                <option value="sucre">Sucre (Caracas - 2.0%)</option>
+                <option value="libertador">Libertador (Distrito Capital - 2.0%)</option>
+                <option value="valencia">Valencia (Carabobo - 2.0%)</option>
+                <option value="maracaibo">Maracaibo (Zulia - 2.5%)</option>
+                <option value="iribarren">Iribarren (Barquisimeto - 2.0%)</option>
+              </select>
             </div>
 
             <div id="report-param-tenant-wrapper" style="display: none; flex: 2 1 240px; min-width: 0; width: 100%;">
@@ -4135,6 +4157,7 @@
 <script src="js/venezuela-legal.js?v=20260911_v50_e2e_verified" defer></script>
 <script src="js/financial-engine.js?v=20260911_v50_e2e_verified" defer></script>
 <script src="js/seniat-engine.js?v=20260911_v50_e2e_verified" defer></script>
+<script src="js/alcaldia-engine.js?v=20260912_v52" defer></script>
 <script src="js/bank-reconciliation.js?v=20260911_v50_e2e_verified" defer></script>
 <script src="js/google-workspace.js?v=20260911_v50_e2e_verified" defer></script>
 <script src="js/notifications.js?v=20260911_v50_e2e_verified" defer></script>

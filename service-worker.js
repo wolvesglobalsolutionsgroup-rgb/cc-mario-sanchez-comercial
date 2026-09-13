@@ -22,6 +22,7 @@ const STATIC_ASSETS = [
   '/gestion/js/financial-engine.js',
   '/gestion/js/venezuela-legal.js',
   '/gestion/js/seniat-engine.js',
+  '/gestion/js/alcaldia-engine.js',
   '/gestion/js/bank-reconciliation.js',
   '/gestion/js/tenant-loader.js',
   '/gestion/js/supabase-client.js',
