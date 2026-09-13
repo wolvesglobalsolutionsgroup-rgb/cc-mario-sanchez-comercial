@@ -771,7 +771,7 @@ const HelpContent = {
           </div>
 
           <!-- SECCIÓN 5: MULTIMONEDA BCV Y SENIAT -->
-          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 20px;">
+          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 20px; margin-bottom: 20px;">
             <h4 style="color: var(--cyan); margin: 0 0 10px; font-size: 15px; display: flex; align-items: center; gap: 8px;">
               <i class="fa-solid fa-coins"></i> 5. Conversión Multimoneda Oficial & Retenciones Tributarias SENIAT
             </h4>
@@ -789,7 +789,66 @@ const HelpContent = {
                   IVA Retenido = IVA Facturado (16%) × 75%<br>
                   ISLR Retenido = Base Imponible × 5% (Art. 9 Dec. 1808)
                 </div>
-                <div style="font-size: 11px; color: var(--txt-muted);">Providencias SNAT/2015/0049 y SNAT/2014/0032.</div>
+                <div style="font-size: 11px; color: var(--txt-muted);">Providencias SNAT/2023/000035, SNAT/2014/0032 y Decreto 1808.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECCIÓN 6: TRIBUTOS MUNICIPALES (ISAE - LOCAT) Y EXENCIÓN DE CONDOMINIO -->
+          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+            <h4 style="color: var(--amber); margin: 0 0 10px; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-building-columns"></i> 6. Impuesto Municipal de Actividades Económicas (ISAE) & Mandato de Condominio
+            </h4>
+            <p style="font-size: 12.5px; color: var(--txt-secondary); line-height: 1.6; margin-bottom: 12px;">
+              En cumplimiento de la LOCAT (G.O. Ext. N° 6.755) y el Código Civil Venezolano, la administración segrega rigurosamente el canon de arrendamiento del condominio común:
+            </p>
+            <div style="background: #0f172a; color: #fde047; padding: 14px 18px; border-radius: 8px; font-family: monospace; font-size: 13px; margin-bottom: 12px; border-left: 4px solid var(--amber);">
+              Base Imponible ISAE = Ingresos Brutos Totales - Fondos en Custodia de Terceros (Condominio)<br>
+              ISAE a Pagar (VES) = Base Imponible Gravable × Alícuota Municipal (ej. 2.00% Sotillo / 1.50% Chacao)
+            </div>
+            <div style="font-size: 11.5px; color: var(--txt-muted); line-height: 1.6;">
+              <strong>Base Jurídica Vinculante:</strong> Artículo 1.684 del Código Civil (Contrato de Mandato: los fondos de luz, agua y vigilancia recaudados no son ingreso propio ni enriquecimiento de la empresa, sino reembolso en custodia). Ley Orgánica de Coordinación y Armonización de las Potestades Tributarias (LOCAT, Gaceta Oficial Ext. N° 6.755, Art. 30 y Clasificador Único de Actividades Económicas CIIU 6810).
+            </div>
+          </div>
+
+          <!-- SECCIÓN 7: ESPECIFICACIÓN DEL ARCHIVO TXT SENIAT DE 16 COLUMNAS -->
+          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+            <h4 style="color: var(--emerald); margin: 0 0 10px; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-file-lines"></i> 7. Matriz Determinística del Archivo TXT de Retenciones IVA (SENIAT)
+            </h4>
+            <p style="font-size: 12.5px; color: var(--txt-secondary); line-height: 1.6; margin-bottom: 12px;">
+              Generación de archivo plano de 16 columnas separadas por tabulador (<code>\\t</code>) según el instructivo técnico oficial <strong>RI_DRIVA2020-IT01V3_0_0</strong>:
+            </p>
+            <div style="background: #0f172a; color: #86efac; padding: 14px 18px; border-radius: 8px; font-family: monospace; font-size: 12px; margin-bottom: 12px; border-left: 4px solid var(--emerald); overflow-x: auto; white-space: pre-wrap;">
+Col 1: RIF Agente (J302115442)     Col 5: Tipo Doc (01=Factura)       Col 9: Monto Total Factura     Col 13: Comprobante (14 dígitos: AAAAMMSSSSSSSS)
+Col 2: Período (AAAAMM: 202603)    Col 6: RIF Sujeto Retenido         Col 10: Base Imponible         Col 14: Monto Exento de IVA
+Col 3: Fecha Doc (AAAA-MM-DD)      Col 7: Número Documento            Col 11: IVA Retenido (75%)     Col 15: Alícuota Aplicada (16.00)
+Col 4: Operación (C=Compra)        Col 8: Número de Control           Col 12: Doc Afectado (0)       Col 16: Expediente Importación (0)
+            </div>
+            <div style="font-size: 11.5px; color: var(--txt-muted);">
+              <strong>Base Jurídica:</strong> Providencia Administrativa SENIAT SNAT/2023/000035 (G.O. N° 42.682) y Providencia SNAT/2014/0032 (G.O. N° 40.461).
+            </div>
+          </div>
+
+          <!-- SECCIÓN 8: IGTF Y CÁNONES SEGÚN GACETA 40.418 -->
+          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 20px;">
+            <h4 style="color: var(--purple); margin: 0 0 10px; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-receipt"></i> 8. IGTF (3%) y Régimen Legal de Cánones (Gaceta Oficial N° 40.418)
+            </h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+              <div>
+                <div style="font-weight: 700; font-size: 12px; color: var(--txt-primary); margin-bottom: 4px;">IGTF en Divisas (3%):</div>
+                <div style="background: #0f172a; color: #d8b4fe; padding: 10px 12px; border-radius: 6px; font-family: monospace; font-size: 12px; margin-bottom: 6px;">
+                  IGTF = Pago en Divisas Efectivo / Zelle × 3.00%
+                </div>
+                <div style="font-size: 11px; color: var(--txt-muted);">Ley de Reforma del IGTF (Gaceta Oficial Ext. N° 6.687 de 25/02/2022).</div>
+              </div>
+              <div>
+                <div style="font-weight: 700; font-size: 12px; color: var(--txt-primary); margin-bottom: 4px;">Topes de Cánones y Prórroga:</div>
+                <div style="background: #0f172a; color: #fda4af; padding: 10px 12px; border-radius: 6px; font-family: monospace; font-size: 12px; margin-bottom: 6px;">
+                  Canon Variable máx 8% ventas | Prórroga Legal Art. 26: 6m a 3 años
+                </div>
+                <div style="font-size: 11px; color: var(--txt-muted);">Decreto Ley N° 929 de Arrendamiento Comercial (Gaceta Oficial N° 40.418).</div>
               </div>
             </div>
           </div>
@@ -798,13 +857,88 @@ const HelpContent = {
 
       legal: `
         <div class="data-card" style="padding: 28px;">
-          <h3 style="font-family: var(--font-heading); font-size: 20px; color: var(--txt-primary); margin-bottom: 14px;">
-            <i class="fa-solid fa-scale-balanced" style="color: var(--purple);"></i>
-            Marco Jurídico Inmobiliario Venezolano
-          </h3>
-          <p style="font-size: 13px; color: var(--txt-secondary); line-height: 1.7;">
-            Normativa aplicable: Decreto Ley N° 929 de Arrendamiento Comercial, Prórrogas Legales del Art. 26, Ley del BCV Art. 128 y Convenio Cambiario N° 1.
-          </p>
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; border-bottom: 2px solid var(--border-subtle); padding-bottom: 14px;">
+            <div>
+              <h3 style="font-family: var(--font-heading); font-size: 22px; color: var(--txt-primary); margin: 0 0 4px;">
+                <i class="fa-solid fa-scale-balanced" style="color: var(--purple);"></i>
+                Marco Jurídico & Fuentes Originales en PDF
+              </h3>
+              <p style="font-size: 13px; color: var(--txt-secondary); margin: 0;">
+                Corpus legal venezolano verificado, descargado físicamente en el repositorio para auditar y alimentar Google NotebookLM sin alucinaciones.
+              </p>
+            </div>
+            <span class="status-pill pill-active" style="font-size: 11px;">
+              <i class="fa-solid fa-file-pdf"></i> 7 PDFs Oficiales en Disco
+            </span>
+          </div>
+
+          <div style="overflow-x: auto; margin-bottom: 20px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: left;">
+              <thead>
+                <tr style="border-bottom: 1px solid var(--border-subtle); color: var(--txt-muted);">
+                  <th style="padding: 10px;">Norma / Documento Oficial</th>
+                  <th style="padding: 10px;">Gaceta / Emisor</th>
+                  <th style="padding: 10px;">Tamaño</th>
+                  <th style="padding: 10px;">Ubicación Local</th>
+                </tr>
+              </thead>
+              <tbody style="color: var(--txt-secondary);">
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                  <td style="padding: 10px; color: var(--txt-primary); font-weight: 600;">Ley de Arrendamiento Inmobiliario Comercial (Decreto 929)</td>
+                  <td style="padding: 10px;">G.O. N° 40.418 (2014)</td>
+                  <td style="padding: 10px;">0.91 MB</td>
+                  <td style="padding: 10px;"><code>docs/corpus_notebooklm/pdfs/01_...</code></td>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                  <td style="padding: 10px; color: var(--txt-primary); font-weight: 600;">LOCAT - Armonización Tributaria Estados y Municipios</td>
+                  <td style="padding: 10px;">G.O. Ext. N° 6.755 (2023)</td>
+                  <td style="padding: 10px;">0.92 MB</td>
+                  <td style="padding: 10px;"><code>docs/corpus_notebooklm/pdfs/02_...</code></td>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                  <td style="padding: 10px; color: var(--txt-primary); font-weight: 600;">Código Orgánico Tributario (COT)</td>
+                  <td style="padding: 10px;">G.O. Ext. N° 6.507 (2020)</td>
+                  <td style="padding: 10px;">1.99 MB</td>
+                  <td style="padding: 10px;"><code>docs/corpus_notebooklm/pdfs/03_...</code></td>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                  <td style="padding: 10px; color: var(--txt-primary); font-weight: 600;">Ley de Reforma del IGTF (3% Divisas)</td>
+                  <td style="padding: 10px;">G.O. Ext. N° 6.687 (2022)</td>
+                  <td style="padding: 10px;">1.87 MB</td>
+                  <td style="padding: 10px;"><code>docs/corpus_notebooklm/pdfs/04_...</code></td>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                  <td style="padding: 10px; color: var(--txt-primary); font-weight: 600;">Reglamento Retenciones ISLR (Decreto 1808)</td>
+                  <td style="padding: 10px;">G.O. N° 36.203 (1997)</td>
+                  <td style="padding: 10px;">13.04 MB</td>
+                  <td style="padding: 10px;"><code>docs/corpus_notebooklm/pdfs/05_...</code></td>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                  <td style="padding: 10px; color: var(--txt-primary); font-weight: 600;">Agentes de Retención IVA Sujetos Especiales</td>
+                  <td style="padding: 10px;">G.O. N° 40.720 (2015)</td>
+                  <td style="padding: 10px;">3.42 MB</td>
+                  <td style="padding: 10px;"><code>docs/corpus_notebooklm/pdfs/06_...</code></td>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                  <td style="padding: 10px; color: var(--txt-primary); font-weight: 600;">Providencia 0071 Emisión de Facturas y Libros Fiscales</td>
+                  <td style="padding: 10px;">G.O. N° 39.795 (2011)</td>
+                  <td style="padding: 10px;">5.59 MB</td>
+                  <td style="padding: 10px;"><code>docs/corpus_notebooklm/pdfs/07_...</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 16px;">
+            <div style="font-weight: 700; font-size: 13px; color: var(--emerald); margin-bottom: 6px;">
+              <i class="fa-solid fa-cloud-arrow-up"></i> Ingesta Directa en Google NotebookLM:
+            </div>
+            <p style="font-size: 12px; color: var(--txt-secondary); margin: 0; line-height: 1.6;">
+              Puedes subir estos 7 archivos PDF descargados directamente a tu cuaderno: 
+              <a href="https://notebooklm.google.com/notebook/3914afb9-a48b-4130-8890-7eaed1fddb28" target="_blank" rel="noopener noreferrer" style="color: var(--cyan); text-decoration: underline; font-weight: 600;">Abrir NotebookLM en el Navegador</a>. 
+              Al subirlos desde la carpeta local <code>docs/corpus_notebooklm/pdfs/</code>, eliminas cualquier dependencia de páginas web caídas y garantizas respuestas 100% fundamentadas en leyes venezolanas vigentes.
+            </p>
+          </div>
         </div>
       `,
 
