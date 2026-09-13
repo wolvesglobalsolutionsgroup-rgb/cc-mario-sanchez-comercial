@@ -547,6 +547,9 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.navigateToFrutoPatrimonial = function() {
+    if (window.HerederosManager && typeof window.HerederosManager.navigateToFrutoPatrimonial === 'function') {
+      return window.HerederosManager.navigateToFrutoPatrimonial();
+    }
     window.switchTab('informes');
     const select = document.getElementById('report-type-select');
     if (select) {
@@ -1076,7 +1079,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const orgFeatures = activeOrg?.features || (dbService && dbService.getSettings ? dbService.getSettings().organization_features : null);
       const hasRegimenSucesoral = isDirectiva && (orgFeatures?.regimen_sucesoral?.activo === true);
 
-      if (hasRegimenSucesoral) {
+      if (window.HerederosManager && typeof window.HerederosManager.renderKPI === 'function') {
+        window.HerederosManager.renderKPI(isDirectiva, orgFeatures, (dbService && dbService.getSettings) ? dbService.getSettings() : {});
+      } else if (hasRegimenSucesoral) {
         const sysSettings = (dbService && dbService.getSettings) ? dbService.getSettings() : {};
         const cuotaBaseHeredero = parseFloat(orgFeatures?.regimen_sucesoral?.cuota_base || sysSettings.cuota_base_heredero_usd) || 400.00;
         const coherederosCount = parseInt(orgFeatures?.regimen_sucesoral?.coherederos, 10) || 14;
@@ -7170,187 +7175,14 @@ document.addEventListener('DOMContentLoaded', () => {
    * INFORME 11: ESTADO DE CUENTA & LIQUIDACIÓN DE FRUTOS CIVILES SUCESORALES
    * Sucesión Mario Sánchez (RIF: J-30211544-2) — 14 Coherederos / 1/14 Cuota
    * Arts. 552 y 768 del Código Civil Venezolano y Gaceta Oficial N° 40.418
+   * Delegado al módulo desacoplado HerederosManager (Dimensión 9)
    * =========================================================================
    */
   function renderHerederosReportHTML(month, year) {
-    const monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-    const bcvRate = financialEngine.getRates().VES.toFixed(2);
-    const invoices = dbService.getInvoices().filter(i => i.period_month === month && i.period_year === year);
-    const units = dbService.getUnits();
-    
-    // Total facturado y cobrado de los 39 locales
-    let totalFacturadoUsd = 0;
-    let totalCobradoUsd = 0;
-    invoices.forEach(inv => {
-      const rent = parseFloat(inv.rent_usd !== undefined ? inv.rent_usd : (inv.base_rent_usd || 0)) || 0;
-      const condo = parseFloat(inv.condo_usd || 0) || 0;
-      const total = parseFloat(inv.total_usd !== undefined ? inv.total_usd : (rent + condo)) || 0;
-      totalFacturadoUsd += total;
-      if (inv.status === 'pagado') totalCobradoUsd += total;
-    });
-
-    // Si aún no hay cobros en este mes de prueba, tomar totalFacturado como referencia de liquidación estimada
-    const baseIngresos = totalCobradoUsd > 0 ? totalCobradoUsd : (totalFacturadoUsd > 0 ? totalFacturadoUsd : 9050.00);
-
-    // Egresos comunes: presupuesto base parametrizable o gastos reales registrados
-    const sysSettings = dbService.getSettings ? dbService.getSettings() : {};
-    const baseGastosCfg = parseFloat(sysSettings.base_monthly_expenses_usd) || 2540.00;
-    const allDbExpenses = dbService.getCondoExpenses ? dbService.getCondoExpenses() : [];
-    const expensesPeriod = allDbExpenses.filter(e => e.period_month === month && e.period_year === year);
-    const totalGastosUsd = expensesPeriod.length > 0
-      ? expensesPeriod.reduce((sum, e) => sum + (parseFloat(e.amount_usd) || 0), 0)
-      : baseGastosCfg;
-
-    // Deducciones reglamentarias: Fondo de Reserva y Gastos de Administración parametrizables
-    const pctReserva = (parseFloat(sysSettings.reserve_fund_pct) || 10.0) / 100;
-    const pctAdm = (parseFloat(sysSettings.admin_fee_pct) || 5.0) / 100;
-    const fondoReservaUsd = baseIngresos * pctReserva;
-    const gastoAdmUsd = baseIngresos * pctAdm;
-
-    // Utilidad Neta en Caja Disponible (Recaudado - Egresos Operativos)
-    const utilidadNetaUsd = Math.max(0, baseIngresos - totalGastosUsd);
-    
-    // Asignación Sucesoral Base Oficial Mario Sánchez (Flujo de Caja Anual Hoja2 R45: 14 Coherederos x $400.00 = $5,600.00)
-    const cuotaPorHerederoUsd = parseFloat(sysSettings.cuota_base_heredero_usd) || 400.00;
-    const totalFrutosBaseUsd = cuotaPorHerederoUsd * 14; // $5,600.00
-    const remanentePatrimonialUsd = Math.max(0, utilidadNetaUsd - totalFrutosBaseUsd);
-
-    const coherederos = [
-      { id: 1, name: "Estirpe Mario Sánchez Jr.", doc: "V-8.452.190", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
-      { id: 2, name: "Estirpe Narváez Sánchez (Local 4-A)", doc: "V-9.821.405", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
-      { id: 3, name: "Coheredero Estirpe Sánchez Mendoza", doc: "V-11.234.567", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
-      { id: 4, name: "Coheredero Estirpe Sánchez Gil", doc: "V-12.890.123", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
-      { id: 5, name: "Coheredero Estirpe Sánchez Rodríguez", doc: "V-10.456.789", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
-      { id: 6, name: "Coheredero Estirpe Sánchez Ramos", doc: "V-13.456.001", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
-      { id: 7, name: "Coheredero Estirpe Sánchez Velásquez", doc: "V-14.789.234", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
-      { id: 8, name: "Coheredero Estirpe Sánchez Carvajal", doc: "V-15.012.345", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
-      { id: 9, name: "Coheredero Estirpe Sánchez Salazar", doc: "V-16.123.890", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
-      { id: 10, name: "Coheredero Estirpe Sánchez Rondón", doc: "V-17.234.901", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
-      { id: 11, name: "Coheredero Estirpe Sánchez Guzmán", doc: "V-18.345.678", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
-      { id: 12, name: "Coheredero Estirpe Sánchez Marcano", doc: "V-19.456.789", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
-      { id: 13, name: "Coheredero Estirpe Sánchez Blanco", doc: "V-20.567.890", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
-      { id: 14, name: "Coheredero Estirpe Sánchez Gómez", doc: "V-21.678.901", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" }
-    ];
-
-    const rowsHtml = coherederos.map((h, idx) => {
-      const bsAmount = financialEngine.convert(cuotaPorHerederoUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
-      return `
-        <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11.5px;">
-          <td style="padding: 8px 10px; font-weight: 700; text-align: center;">${idx + 1}</td>
-          <td style="padding: 8px 10px;">
-            <strong>${escapeHtml(h.name)}</strong>
-            <div style="font-size: 10px; color: #64748b;">Doc / C.I.: ${escapeHtml(h.doc)}</div>
-          </td>
-          <td style="padding: 8px 10px; text-align: center; font-weight: 700; color: #7c3aed;">${h.shareFrac} (${h.sharePct})</td>
-          <td style="padding: 8px 10px; text-align: right; color: #64748b;">$400.00</td>
-          <td style="padding: 8px 10px; text-align: right; font-weight: 700; color: #0f172a;">$${cuotaPorHerederoUsd.toFixed(2)}</td>
-          <td style="padding: 8px 10px; text-align: right; color: #475569;">Bs. ${bsAmount}</td>
-          <td style="padding: 8px 10px; text-align: center;">
-            <span style="display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 10px; font-weight: 700; background: rgba(16, 185, 129, 0.15); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3);">
-              ${h.status}
-            </span>
-          </td>
-        </tr>
-      `;
-    }).join('');
-
-    const baseIngresosBs = financialEngine.convert(baseIngresos, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
-    const totalGastosBs = financialEngine.convert(totalGastosUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
-    const utilidadNetaBs = financialEngine.convert(utilidadNetaUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
-    const totalFrutosBaseBs = financialEngine.convert(totalFrutosBaseUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
-    const remanentePatrimonialBs = financialEngine.convert(remanentePatrimonialUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
-
-    return `
-      <div class="printable-report" style="background: white; color: #0f172a; padding: 28px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif;">
-        ${renderOfficialReportHeaderHTML('LIQUIDACIÓN DE FRUTOS CIVILES SUCESORALES', `SUC-${year}-${String(month).padStart(2, '0')}`, 'Sucesión Mario Sánchez (RIF: J-30211544-2) • Arts. 552 y 768 Código Civil')}
-
-        <!-- KPI CARDS SUCESORALES -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 22px;">
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px;">
-            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b;">1. Ingresos Recaudados</div>
-            <div style="font-size: 15px; font-weight: 800; color: #0f172a;">$${baseIngresos.toFixed(2)}</div>
-            <div style="font-size: 9.5px; color: #64748b;">Bs. ${baseIngresosBs}</div>
-          </div>
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px;">
-            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #b91c1c;">2. Egresos Operativos</div>
-            <div style="font-size: 15px; font-weight: 800; color: #b91c1c;">-$${totalGastosUsd.toFixed(2)}</div>
-            <div style="font-size: 9.5px; color: #64748b;">Bs. ${totalGastosBs}</div>
-          </div>
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px;">
-            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #0284c7;">3. Utilidad Neta en Caja</div>
-            <div style="font-size: 15px; font-weight: 800; color: #0284c7;">$${utilidadNetaUsd.toFixed(2)}</div>
-            <div style="font-size: 9.5px; color: #0284c7;">Bs. ${utilidadNetaBs}</div>
-          </div>
-          <div style="background: rgba(124, 58, 237, 0.08); border: 1px solid rgba(124, 58, 237, 0.3); border-radius: 6px; padding: 10px 12px;">
-            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #7c3aed;">4. Fruto Base (14 Estirpes)</div>
-            <div style="font-size: 15px; font-weight: 800; color: #7c3aed;">$${totalFrutosBaseUsd.toFixed(2)}</div>
-            <div style="font-size: 9.5px; color: #7c3aed; font-weight: 700;">14 Cuotas de $${cuotaPorHerederoUsd.toFixed(2)}</div>
-          </div>
-          <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; padding: 10px 12px;">
-            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #059669;">5. Remanente Patrimonial</div>
-            <div style="font-size: 16px; font-weight: 900; color: #059669;">$${remanentePatrimonialUsd.toFixed(2)}</div>
-            <div style="font-size: 9.5px; color: #059669; font-weight: 700;">Bs. ${remanentePatrimonialBs}</div>
-          </div>
-        </div>
-
-        <!-- TABLA DE DISTRIBUCIÓN SUCESORAL -->
-        <div style="margin-bottom: 22px;">
-          <h4 style="font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 8px; color: #0f172a; border-left: 3px solid #7c3aed; padding-left: 8px;">
-            Distribución Individual por Estirpe Hereditaria (1/14 Cuota Indivisa)
-          </h4>
-          <div class="table-responsive" style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 22px;">
-            <table style="width: 100%; min-width: 650px; border-collapse: collapse; margin-top: 6px;">
-              <thead>
-                <tr style="background: #0f172a; color: white; font-size: 10.5px; text-transform: uppercase;">
-                  <th style="padding: 8px 10px; text-align: center; width: 35px;">N°</th>
-                  <th style="padding: 8px 10px; text-align: left;">Coheredero / Estirpe</th>
-                  <th style="padding: 8px 10px; text-align: center;">Alícuota Indivisa</th>
-                  <th style="padding: 8px 10px; text-align: right;">Cuota Base Flujo</th>
-                  <th style="padding: 8px 10px; text-align: right;">Liquidación Neta USD</th>
-                  <th style="padding: 8px 10px; text-align: right;">Liquidación Neta Bs.</th>
-                  <th style="padding: 8px 10px; text-align: center;">Estatus</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${rowsHtml}
-                <tr style="background: #f1f5f9; font-weight: 900; border-top: 2px solid #0f172a; font-size: 12px;">
-                  <td colspan="2" style="padding: 10px;">TOTAL DISTRIBUIDO (14 ESTIRPES):</td>
-                  <td style="padding: 10px; text-align: center; color: #7c3aed;">100.00% (14/14)</td>
-                  <td style="padding: 10px; text-align: right; color: #64748b;">$${totalFrutosBaseUsd.toFixed(2)}</td>
-                  <td style="padding: 10px; text-align: right; color: #059669;">$${totalFrutosBaseUsd.toFixed(2)} USD</td>
-                  <td style="padding: 10px; text-align: right; color: #0f172a;">Bs. ${totalFrutosBaseBs}</td>
-                  <td style="padding: 10px; text-align: center; color: #059669;">✓ 100% Asignado</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- NOTAS LEGALES Y AUDITORÍA SUCESORAL -->
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; font-size: 11px; margin-bottom: 25px; line-height: 1.5; color: #334155;">
-          <strong>FUNDAMENTO LEGAL Y NORMAS DE PARTICIÓN:</strong>
-          La presente liquidación se rige por los Artículos 552 (Frutos Civiles) y 768 (Comunidad Indivisa) del Código Civil de la República Bolivariana de Venezuela, en concordancia con el Decreto con Rango, Valor y Fuerza de Ley de Regulación del Arrendamiento Inmobiliario para el Uso Comercial (G.O. N° 40.418). Los recursos han sido auditados según los comprobantes bancarios, facturas de gastos operativos y deducciones correspondientes al Fondo de Reserva y Honorarios de Administración de la Sociedad.
-        </div>
-
-        <!-- FIRMAS AUTORIZADAS -->
-        <div class="report-signatures-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-top: 35px;">
-          <div style="text-align: center;">
-            <div style="border-top: 1px solid #0f172a; padding-top: 6px; font-size: 11px;">
-              <strong>ADMINISTRACIÓN GENERAL & CONTABILIDAD</strong><br>
-              Centro Comercial Mario Sánchez, C.A.<br>
-              <span style="font-size: 10px; color: #64748b;">Firma y Sello Oficial</span>
-            </div>
-          </div>
-          <div style="text-align: center;">
-            <div style="border-top: 1px solid #0f172a; padding-top: 6px; font-size: 11px;">
-              <strong>REPRESENTACIÓN SUCESORAL / ALBACEAZGO</strong><br>
-              Sucesión Mario Sánchez (RIF: J-30211544-2)<br>
-              <span style="font-size: 10px; color: #64748b;">Comité de Vigilancia Coherederos</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
+    if (window.HerederosManager && typeof window.HerederosManager.renderReportHTML === 'function') {
+      return window.HerederosManager.renderReportHTML(month, year);
+    }
+    return '<div style="padding:20px;text-align:center;">Módulo HerederosManager no disponible.</div>';
   }
 
   // --- REPORTE COMPLEMENTARIO: CONSTANCIA FORMAL DE ARRENDAMIENTO ---
@@ -10474,37 +10306,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // =========================================================================
-  // GESTIÓN DISCRETA DE ENTORNO: PRODUCCIÓN VS MODO DEMO
+  // GESTIÓN DISCRETA DE ENTORNO: PRODUCCIÓN VS MODO DEMO (DELEGADO A MÓDULO)
   // =========================================================================
   window.updateEnvironmentBadge = function() {
-    const badge = document.getElementById('env-mode-badge');
-    const text = document.getElementById('env-mode-text');
-    const pulse = document.getElementById('env-mode-pulse');
-    const banner = document.getElementById('demo-mode-alert-banner');
-    const resetDemoBtn = document.getElementById('btn-header-reset-demo');
-
-    const sess = (typeof AuthGuard !== 'undefined' && typeof AuthGuard.currentUser === 'function') 
-      ? AuthGuard.currentUser() 
-      : null;
-    const isSupabaseAuth = sess && sess.is_supabase_auth;
-    const isDemo = localStorage.getItem('CCMS_FORCE_DEMO') === 'true' || (!isSupabaseAuth && window.CCMS_DEMO_MODE !== false);
-
-    if (isSupabaseAuth && !isDemo) {
-      if (badge) badge.style.display = 'none';
-      if (banner) banner.style.display = 'none';
-      if (resetDemoBtn) resetDemoBtn.style.display = 'none';
-    } else {
-      if (badge) {
-        badge.style.display = 'inline-flex';
-        badge.style.cursor = 'default';
-        if (text) text.textContent = 'Modo Demo';
-        if (pulse) {
-          pulse.style.background = '#f59e0b';
-          pulse.style.boxShadow = '0 0 6px #f59e0b';
-        }
-      }
-      if (banner) banner.style.display = 'flex';
-      if (resetDemoBtn) resetDemoBtn.style.display = (currentRole === 'admin' ? 'inline-flex' : 'none');
+    if (window.EnvBadgeManager && typeof window.EnvBadgeManager.updateBadge === 'function') {
+      return window.EnvBadgeManager.updateBadge();
     }
   };
 
@@ -10512,6 +10318,9 @@ document.addEventListener('DOMContentLoaded', () => {
   window.closeEnvironmentModal = function() {};
 
   window.setEnvironmentMode = function(mode) {
+    if (window.EnvBadgeManager && typeof window.EnvBadgeManager.setMode === 'function') {
+      return window.EnvBadgeManager.setMode(mode);
+    }
     if (mode === 'demo') {
       localStorage.setItem('CCMS_FORCE_DEMO', 'true');
     } else {
@@ -11702,163 +11511,30 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // =========================================================================
-  // ASISTENTE INTELIGENTE JURÍDICO & TRIBUTARIO (GEMINI FLASH SERVERLESS PROXY)
+  // ASISTENTE INTELIGENTE JURÍDICO & TRIBUTARIO (DELEGADO A GEMINI-ASSISTANT)
   // =========================================================================
   window.openGeminiAssistantModal = function() {
-    const modal = document.getElementById('modal-gemini-assistant');
-    if (modal) {
-      modal.style.display = 'flex';
-      const input = document.getElementById('gemini-assistant-input');
-      if (input) setTimeout(() => input.focus(), 100);
-    }
+    if (window.GeminiAssistant) window.GeminiAssistant.openModal();
   };
 
   window.closeGeminiAssistantModal = function() {
-    const modal = document.getElementById('modal-gemini-assistant');
-    if (modal) modal.style.display = 'none';
+    if (window.GeminiAssistant) window.GeminiAssistant.closeModal();
   };
 
   window.askGeminiQuick = function(promptText) {
-    const input = document.getElementById('gemini-assistant-input');
-    if (input) input.value = promptText;
-    window.submitGeminiAssistant();
+    if (window.GeminiAssistant) window.GeminiAssistant.askQuick(promptText);
   };
 
-  
-  let activeGeminiAttachment = null;
-
   window.handleGeminiFileSelect = function(e) {
-    const file = e && e.target && e.target.files ? e.target.files[0] : null;
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(evt) {
-      activeGeminiAttachment = {
-        name: file.name,
-        type: file.type || 'image/jpeg',
-        data: evt.target.result
-      };
-      const bar = document.getElementById('gemini-attachment-bar');
-      const nameSpan = document.getElementById('gemini-attachment-name');
-      if (bar) bar.style.display = 'flex';
-      if (nameSpan) nameSpan.textContent = file.name;
-    };
-    reader.readAsDataURL(file);
+    if (window.GeminiAssistant) window.GeminiAssistant.handleFileSelect(e);
   };
 
   window.clearGeminiAttachment = function() {
-    activeGeminiAttachment = null;
-    const bar = document.getElementById('gemini-attachment-bar');
-    const input = document.getElementById('gemini-file-input');
-    if (bar) bar.style.display = 'none';
-    if (input) input.value = '';
+    if (window.GeminiAssistant) window.GeminiAssistant.clearAttachment();
   };
 
   window.submitGeminiAssistant = async function() {
-    const input = document.getElementById('gemini-assistant-input');
-    const sendBtn = document.getElementById('btn-gemini-assistant-send');
-    const respBox = document.getElementById('gemini-assistant-response');
-    if (!input || !respBox) return;
-
-    const prompt = input.value.trim();
-    if (!prompt) {
-      if (window.SecuritySuite && window.SecuritySuite.toast) {
-        window.SecuritySuite.toast('Por favor ingrese una pregunta o consulta.', 'warning', 'Consulta Vacía');
-      }
-      return;
-    }
-
-    // Estado de carga UI
-    if (sendBtn) sendBtn.disabled = true;
-    respBox.innerHTML = `
-      <div style="display: flex; align-items: center; justify-content: center; gap: 12px; padding: 30px; color: var(--txt-secondary);">
-        <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 24px; color: var(--cyan);"></i>
-        <span>Consultando marco normativo venezolano y bases de datos con Gemini Flash...</span>
-      </div>
-    `;
-
-    try {
-      // Obtener token de Supabase Auth si está disponible
-      let authToken = null;
-      if (typeof window !== 'undefined' && window.supabaseClient && window.supabaseClient.auth) {
-        try {
-          const { data: sessionData } = await window.supabaseClient.auth.getSession();
-          authToken = sessionData?.session?.access_token || null;
-        } catch (_) {}
-      }
-
-      const sess = (typeof AuthGuard !== 'undefined' && typeof AuthGuard.currentUser === 'function') 
-        ? AuthGuard.currentUser() 
-        : null;
-      const isDemo = localStorage.getItem('CCMS_FORCE_DEMO') === 'true' || (sess && !sess.is_supabase_auth);
-
-      const headers = { 'Content-Type': 'application/json' };
-      if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
-      }
-      if (isDemo) {
-        headers['X-CCMS-Demo'] = 'true';
-      }
-
-      const orgContext = (typeof window !== 'undefined' && window.currentOrganization) || null;
-
-      const response = await fetch('/api/gemini', {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify({
-          prompt: prompt,
-          image: activeGeminiAttachment ? activeGeminiAttachment.data : null,
-          image_type: activeGeminiAttachment ? activeGeminiAttachment.type : null,
-          demo: isDemo,
-          organization: orgContext ? {
-            name: orgContext.name,
-            units_count: orgContext.units_count,
-            features: orgContext.features
-          } : undefined
-        })
-      });
-
-      const data = await response.json();
-      if (!response.ok || !data.ok) {
-        const errorMsg = data.error || 'No se pudo obtener respuesta del servidor de IA.';
-        respBox.innerHTML = `
-          <div style="padding: 12px 14px; border-radius: 6px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171;">
-            <div style="font-weight: 700; margin-bottom: 4px;"><i class="fa-solid fa-triangle-exclamation"></i> Error en la consulta</div>
-            <div>${escapeHtml(errorMsg)}</div>
-          </div>
-        `;
-        return;
-      }
-
-      // Renderizar respuesta con formato básico seguro
-      const rawText = data.text || 'Sin respuesta generada.';
-      const formattedText = rawText
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        .replace(/^### (.*$)/gim, '<h4 style="margin: 12px 0 4px; color: var(--cyan);">$1</h4>')
-        .replace(/^## (.*$)/gim, '<h3 style="margin: 14px 0 6px; color: var(--txt-primary);">$1</h3>')
-        .replace(/^# (.*$)/gim, '<h2 style="margin: 16px 0 8px; color: var(--txt-primary);">$1</h2>')
-        .replace(/^\s*-\s+(.*$)/gim, '<div style="display: flex; gap: 6px; margin: 3px 0;"><span>•</span><span>$1</span></div>');
-
-      respBox.innerHTML = `
-        <div style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 6px;">
-          <span style="font-size: 11px; font-weight: 700; color: var(--cyan);"><i class="fa-solid fa-wand-magic-sparkles"></i> Respuesta Jurídico-Tributaria</span>
-          <span style="font-size: 10px; color: var(--txt-muted);">Modelo: ${escapeHtml(data.model || 'Gemini Flash')}</span>
-        </div>
-        <div style="color: var(--txt-primary); font-size: 12.5px; line-height: 1.65;">${formattedText}</div>
-      `;
-    } catch (err) {
-      console.error('[GeminiAssistant] Error de conexión:', err);
-      respBox.innerHTML = `
-        <div style="padding: 12px 14px; border-radius: 6px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171;">
-          <div style="font-weight: 700; margin-bottom: 4px;"><i class="fa-solid fa-circle-exclamation"></i> Error de conexión</div>
-          <div>No fue posible conectar con el endpoint de IA (/api/gemini). Verifique que el servicio esté activo y el proxy serverless configurado.</div>
-        </div>
-      `;
-    } finally {
-      if (sendBtn) sendBtn.disabled = false;
-    }
+    if (window.GeminiAssistant) await window.GeminiAssistant.submit();
   };
 
   // Render inicial

@@ -144,6 +144,33 @@ describe("PILAR 5: PIPELINE DE AUTOMATIZACIÓN & HIGIENE DE CÓDIGO", () => {
     const appJs = fs.readFileSync(path.join(rootDir, "gestion", "js", "app.js"), "utf8");
     assert.ok(!appJs.includes("eval(match.action)"), "No debe usarse eval() para ejecutar comandos del Command Palette");
   });
+
+  test("Arquitectura Modular (Dimensión 9): Módulos desacoplados en gestion/js/modules/ deben estructurarse e inyectarse", () => {
+    const modulesDir = path.join(rootDir, "gestion", "js", "modules");
+    assert.ok(fs.existsSync(modulesDir), "gestion/js/modules/ debe existir");
+    assert.ok(fs.existsSync(path.join(modulesDir, "gemini-assistant.js")), "gemini-assistant.js debe existir en modules");
+    assert.ok(fs.existsSync(path.join(modulesDir, "herederos-manager.js")), "herederos-manager.js debe existir en modules");
+    assert.ok(fs.existsSync(path.join(modulesDir, "env-badge.js")), "env-badge.js debe existir en modules");
+
+    const indexHtml = fs.readFileSync(path.join(rootDir, "gestion", "index.html"), "utf8");
+    assert.ok(indexHtml.includes("js/modules/gemini-assistant.js"), "index.html debe cargar gemini-assistant.js");
+    assert.ok(indexHtml.includes("js/modules/herederos-manager.js"), "index.html debe cargar herederos-manager.js");
+    assert.ok(indexHtml.includes("js/modules/env-badge.js"), "index.html debe cargar env-badge.js");
+
+    // Verificar que HerederosManager resuelva correctamente métodos de dbService y financialEngine
+    require(path.join(modulesDir, "herederos-manager.js"));
+    global.dbService = {
+      getInvoices: () => [{ period_month: 9, period_year: 2026, rent_usd: 500, condo_usd: 100, status: 'pagado' }],
+      getSettings: () => ({ cuota_base_heredero_usd: 400 }),
+      getCondoExpenses: () => []
+    };
+    global.financialEngine = {
+      convert: (usd) => usd * 800
+    };
+    const reportHtml = global.HerederosManager.renderReportHTML(9, 2026);
+    assert.ok(reportHtml.includes("LIQUIDACIÓN DE FRUTOS CIVILES SUCESORALES"), "HerederosManager debe renderizar el informe sucesoral");
+    assert.ok(reportHtml.includes("$600.00"), "HerederosManager debe calcular los ingresos recaudados de los recibos");
+  });
 });
 
 describe("PILAR 6: CUMPLIMIENTO REGULATORIO & LIQUIDACIÓN TRIBUTARIA (SENIAT & ALCALDÍAS LOCAT)", () => {
@@ -358,6 +385,7 @@ describe("PILAR 8: CONEXIÓN REAL A SUPABASE, CONFIGURACIÓN SERVERLESS & CONTRO
 
 describe("PILAR 9: INTEGRACIÓN DE IA RESILIENTE (GEMINI FLASH) & CONFIGURACIÓN FISCAL/PARAMÉTRICA", () => {
   const geminiHandler = require("../api/gemini.js");
+  process.env.GEMINI_API_KEY = process.env.GEMINI_API_KEY || "test-gemini-key-ci";
 
   test("Proxy Gemini: Validación defensiva de métodos HTTP y cuerpo de la petición", async () => {
     let statusCode = 0;
@@ -372,14 +400,41 @@ describe("PILAR 9: INTEGRACIÓN DE IA RESILIENTE (GEMINI FLASH) & CONFIGURACIÓN
     await geminiHandler({ method: "GET" }, mockRes);
     assert.strictEqual(statusCode, 405, "Debe retornar 405 para peticiones GET");
 
+    // POST sin autenticación ni demo debe ser rechazado con 401 incondicionalmente
+    await geminiHandler({ method: "POST", headers: { "x-forwarded-for": "10.0.0.1" }, body: { prompt: "Test no autenticado" } }, mockRes);
+    assert.strictEqual(statusCode, 401, "Debe rechazar peticiones no autenticadas con 401 incondicionalmente");
+
+    // POST con esquema de autorización no Bearer debe retornar 401
+    await geminiHandler({ method: "POST", headers: { "x-forwarded-for": "10.0.0.1", "authorization": "Basic user:pass" }, body: { prompt: "Test" } }, mockRes);
+    assert.strictEqual(statusCode, 401, "Debe rechazar esquemas no Bearer con 401");
+
+    // POST con Bearer token vacío debe retornar 401
+    await geminiHandler({ method: "POST", headers: { "x-forwarded-for": "10.0.0.1", "authorization": "Bearer   " }, body: { prompt: "Test" } }, mockRes);
+    assert.strictEqual(statusCode, 401, "Debe rechazar token Bearer vacío con 401");
+
+    // POST con token en entorno sin Supabase URL debe fallar cerrado con 401
+    await geminiHandler({ method: "POST", headers: { "x-forwarded-for": "10.0.0.1", "authorization": "Bearer fake-unverified-token" }, body: { prompt: "Test" } }, mockRes);
+    assert.strictEqual(statusCode, 401, "Debe fallar cerrado con 401 cuando no se puede verificar el token con Supabase");
+
     // POST con body vacío debe retornar 400
-    await geminiHandler({ method: "POST", headers: { "x-forwarded-for": "10.0.0.1" }, body: {} }, mockRes);
+    await geminiHandler({ method: "POST", headers: { "x-forwarded-for": "10.0.0.1", "x-ccms-demo": "true" }, body: {} }, mockRes);
     assert.strictEqual(statusCode, 400, "Debe retornar 400 si el prompt está ausente");
 
     // POST con prompt superior a 4000 caracteres debe retornar 400
-    await geminiHandler({ method: "POST", headers: { "x-forwarded-for": "10.0.0.2" }, body: { prompt: "X".repeat(4001) } }, mockRes);
+    await geminiHandler({ method: "POST", headers: { "x-forwarded-for": "10.0.0.2", "x-ccms-demo": "true" }, body: { prompt: "X".repeat(4001) } }, mockRes);
     assert.strictEqual(statusCode, 400, "Debe rechazar prompts de más de 4000 caracteres con 400");
     assert.ok(jsonResult.error.includes("4.000"), "Debe notificar el límite de 4.000 caracteres");
+
+    // POST en demo sin GEMINI_API_KEY debe retornar 500 informando servicio no configurado
+    const savedKey = process.env.GEMINI_API_KEY;
+    delete process.env.GEMINI_API_KEY;
+    try {
+      await geminiHandler({ method: "POST", headers: { "x-forwarded-for": "10.0.0.3", "x-ccms-demo": "true" }, body: { prompt: "Consulta prueba" } }, mockRes);
+      assert.strictEqual(statusCode, 500, "Debe retornar 500 si GEMINI_API_KEY está ausente");
+      assert.strictEqual(jsonResult.code, "MISSING_API_KEY", "Debe incluir código MISSING_API_KEY");
+    } finally {
+      process.env.GEMINI_API_KEY = savedKey;
+    }
   });
 
   test("Proxy Gemini: Rate Limiter por ventana deslizante debe bloquear abusos con HTTP 429", async () => {
@@ -416,7 +471,7 @@ describe("PILAR 9: INTEGRACIÓN DE IA RESILIENTE (GEMINI FLASH) & CONFIGURACIÓN
       for (let i = 0; i < 20; i++) {
         await geminiHandler({
           method: "POST",
-          headers: { "x-forwarded-for": testIp },
+          headers: { "x-forwarded-for": testIp, "x-ccms-demo": "true" },
           body: { prompt: "Consulta legal de prueba" }
         }, mockRes);
       }

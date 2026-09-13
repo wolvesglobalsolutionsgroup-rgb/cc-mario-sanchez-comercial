@@ -193,15 +193,38 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  // 2. Control de Autenticación & Detección de Modo Demo
+  // 2. Control de Autenticación Incondicional & Detección de Modo Demo
+  // Blindaje estricto de seguridad: no depende de NODE_ENV ni VERCEL_ENV volátiles.
   const reqHeaders = req.headers || {};
-  const isDemo = (body && body.demo === true) || reqHeaders['x-ccms-demo'] === 'true';
+  const isDemo = (body && body.demo === true) || 
+                 reqHeaders['x-ccms-demo'] === 'true' || 
+                 reqHeaders['x-demo'] === 'true';
   const authHeader = reqHeaders['authorization'] || reqHeaders['Authorization'];
-  const isProd = process.env.NODE_ENV === 'production';
   let authenticatedUser = null;
 
-  if (authHeader && authHeader.startsWith('Bearer ')) {
+  if (!isDemo && !authHeader) {
+    return res.status(401).json({
+      success: false,
+      error: 'Autenticación requerida. Inicie sesión con credenciales válidas o especifique el modo demostración.'
+    });
+  }
+
+  if (authHeader) {
+    if (!authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        error: 'Formato de autorización inválido. Debe utilizar esquema Bearer token.'
+      });
+    }
+
     const token = authHeader.slice(7).trim();
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        error: 'Token de autorización vacío.'
+      });
+    }
+
     if (process.env.SUPABASE_URL && (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY)) {
       try {
         const verifyRes = await fetch(`${process.env.SUPABASE_URL}/auth/v1/user`, {
@@ -212,7 +235,7 @@ module.exports = async function handler(req, res) {
         });
         if (verifyRes.ok) {
           authenticatedUser = await verifyRes.json();
-        } else if (isProd && !isDemo) {
+        } else if (!isDemo) {
           return res.status(401).json({
             success: false,
             error: 'Sesión de Supabase inválida o expirada. Por favor vuelva a iniciar sesión.'
@@ -220,13 +243,19 @@ module.exports = async function handler(req, res) {
         }
       } catch (e) {
         console.warn('[Gemini Auth] Advertencia verificando token con Supabase:', e.message);
+        if (!isDemo) {
+          return res.status(401).json({
+            success: false,
+            error: 'Error de verificación de autenticación con el servidor central.'
+          });
+        }
       }
+    } else if (!isDemo) {
+      return res.status(401).json({
+        success: false,
+        error: 'Servidor no configurado para validar sesiones de usuario (SUPABASE_URL no disponible).'
+      });
     }
-  } else if (isProd && !isDemo) {
-    return res.status(401).json({
-      success: false,
-      error: 'Autenticación requerida. Inicie sesión o especifique el modo demostración.'
-    });
   }
 
   // 3. Gobernanza & Rate Limiting por IP del cliente (con control estricto para modo Demo)
@@ -271,7 +300,8 @@ module.exports = async function handler(req, res) {
   if (!apiKey || apiKey === 'your-gemini-api-key-here') {
     return res.status(500).json({
       success: false,
-      error: 'El servicio de IA no está configurado (GEMINI_API_KEY faltante en el servidor).'
+      error: 'El servicio de IA no está configurado (GEMINI_API_KEY faltante en el servidor).',
+      code: 'MISSING_API_KEY'
     });
   }
 
