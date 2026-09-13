@@ -1,4 +1,4 @@
-﻿/**
+/**
  * CCMS - Keep-Alive & Liveness Ping
  * Ejecuta una consulta ligera a Supabase Cloud cada 3 días
  * para evitar que el Free Tier pause la base de datos por inactividad.
@@ -19,11 +19,12 @@ module.exports = async function handler(req, res) {
 
   try {
     const pingStart = Date.now();
-    const response = await fetch(\/rest/v1/organizations?select=id&limit=1, {
+    const endpoint = `${supabaseUrl.replace(/\/$/, '')}/rest/v1/organizations?select=id&limit=1`;
+    const response = await fetch(endpoint, {
       method: 'GET',
       headers: {
         'apikey': supabaseAnonKey,
-        'Authorization': Bearer \,
+        'Authorization': `Bearer ${supabaseAnonKey}`,
         'Content-Type': 'application/json'
       }
     });
@@ -31,7 +32,8 @@ module.exports = async function handler(req, res) {
     const latencyMs = Date.now() - pingStart;
 
     if (!response.ok) {
-      throw new Error(Supabase respondió HTTP \: \);
+      const errorText = await response.text();
+      throw new Error(`Supabase respondió HTTP ${response.status}: ${errorText}`);
     }
 
     const data = await response.json();
