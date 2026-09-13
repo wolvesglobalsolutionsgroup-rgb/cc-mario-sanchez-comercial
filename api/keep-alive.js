@@ -3,7 +3,10 @@
  * Ejecuta una consulta ligera a Supabase Cloud cada 3 días
  * para evitar que el Free Tier pause la base de datos por inactividad.
  */
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
+
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
@@ -16,11 +19,11 @@ export default async function handler(req, res) {
 
   try {
     const pingStart = Date.now();
-    const response = await fetch(${supabaseUrl}/rest/v1/organizations?select=id&limit=1, {
+    const response = await fetch(\/rest/v1/organizations?select=id&limit=1, {
       method: 'GET',
       headers: {
         'apikey': supabaseAnonKey,
-        'Authorization': Bearer ,
+        'Authorization': Bearer \,
         'Content-Type': 'application/json'
       }
     });
@@ -28,7 +31,7 @@ export default async function handler(req, res) {
     const latencyMs = Date.now() - pingStart;
 
     if (!response.ok) {
-      throw new Error(Supabase respondió HTTP : );
+      throw new Error(Supabase respondió HTTP \: \);
     }
 
     const data = await response.json();
@@ -49,4 +52,4 @@ export default async function handler(req, res) {
       timestamp: new Date().toISOString()
     });
   }
-}
+};
