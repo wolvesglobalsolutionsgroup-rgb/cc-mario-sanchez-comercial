@@ -1067,28 +1067,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 6.b. Fruto Patrimonial (Sucesión Mario Sánchez - 14 Coherederos)
+    // Basado fielmente en el modelo oficial del Centro Comercial Mario Sánchez (Flujo de Caja Anual 2026-2027 Hoja2 R45: "FRUTOS CIVILES A 400$ = 5600.0")
     const frutoEl = document.getElementById('kpi-fruto-patrimonial');
     const frutoCard = document.getElementById('card-kpi-fruto-patrimonial');
     const frutoSub = document.getElementById('kpi-fruto-patrimonial-sub');
     if (frutoEl) {
       if (isDirectiva) {
-        const condoExpenses = dbService.getCondoExpenses ? dbService.getCondoExpenses() : [];
         const sysSettings = dbService.getSettings ? dbService.getSettings() : {};
-        const baseExpParam = parseFloat(sysSettings.base_monthly_expenses_usd) || 2540.00;
-        const totalExp = condoExpenses.length > 0
-          ? condoExpenses.reduce((acc, e) => acc + (parseFloat(e.amount_usd) || 0), 0)
-          : baseExpParam;
-        const baseCanonsUsd = totalPaidUsd > 0 ? totalPaidUsd : (invoices.reduce((acc, i) => acc + (parseFloat(i.rent_usd || i.base_rent_usd || 0)), 0) || 5600);
-        const resPct = (parseFloat(sysSettings.reserve_fund_pct) || 10.0) / 100;
-        const admPct = (parseFloat(sysSettings.admin_fee_pct) || 5.0) / 100;
-        const fondoReserva = baseCanonsUsd * resPct;
-        const gastoAdm = baseCanonsUsd * admPct;
-        const frutoNetoUsd = Math.max(0, baseCanonsUsd - totalExp - fondoReserva - gastoAdm);
-        const cuotaIndividualUsd = frutoNetoUsd / 14;
+        const cuotaBaseHeredero = parseFloat(sysSettings.cuota_base_heredero_usd) || 400.00;
+        const totalFrutosBase = cuotaBaseHeredero * 14; // $5,600.00 base pactada oficial
 
-        frutoEl.innerText = formatMoney(frutoNetoUsd);
+        frutoEl.innerText = formatMoney(totalFrutosBase);
         if (frutoSub) {
-          frutoSub.innerText = `14 cuotas de ${formatMoney(cuotaIndividualUsd)} • Clic para desglose`;
+          frutoSub.innerText = `14 cuotas de ${formatMoney(cuotaBaseHeredero)} • Clic para desglose`;
         }
         if (frutoCard) frutoCard.style.display = '';
       } else if (frutoCard) {
@@ -7211,12 +7202,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const fondoReservaUsd = baseIngresos * pctReserva;
     const gastoAdmUsd = baseIngresos * pctAdm;
 
-    // Utilidad Neta / Frutos Civiles Repartibles
-    const utilidadNetaUsd = Math.max(0, baseIngresos - totalGastosUsd - fondoReservaUsd - gastoAdmUsd);
+    // Utilidad Neta en Caja Disponible (Recaudado - Egresos Operativos)
+    const utilidadNetaUsd = Math.max(0, baseIngresos - totalGastosUsd);
     
-    // 14 Coherederos / Estirpes (1/14 cada uno = 7.142857%)
-    // Base de $400.00 mensual por coheredero según presupuesto anual ($5,600 / 14 = $400)
-    const cuotaPorHerederoUsd = utilidadNetaUsd / 14;
+    // Asignación Sucesoral Base Oficial Mario Sánchez (Flujo de Caja Anual Hoja2 R45: 14 Coherederos x $400.00 = $5,600.00)
+    const cuotaPorHerederoUsd = parseFloat(sysSettings.cuota_base_heredero_usd) || 400.00;
+    const totalFrutosBaseUsd = cuotaPorHerederoUsd * 14; // $5,600.00
+    const remanentePatrimonialUsd = Math.max(0, utilidadNetaUsd - totalFrutosBaseUsd);
 
     const coherederos = [
       { id: 1, name: "Estirpe Mario Sánchez Jr.", doc: "V-8.452.190", sharePct: "7.142857%", shareFrac: "1/14", status: "Disponible" },
@@ -7259,9 +7251,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const baseIngresosBs = financialEngine.convert(baseIngresos, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
     const totalGastosBs = financialEngine.convert(totalGastosUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
-    const fondoReservaBs = financialEngine.convert(fondoReservaUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
-    const gastoAdmBs = financialEngine.convert(gastoAdmUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
     const utilidadNetaBs = financialEngine.convert(utilidadNetaUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
+    const totalFrutosBaseBs = financialEngine.convert(totalFrutosBaseUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
+    const remanentePatrimonialBs = financialEngine.convert(remanentePatrimonialUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 });
 
     return `
       <div class="printable-report" style="background: white; color: #0f172a; padding: 28px; border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif;">
@@ -7270,29 +7262,29 @@ document.addEventListener('DOMContentLoaded', () => {
         <!-- KPI CARDS SUCESORALES -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 22px;">
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px;">
-            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b;">1. Ingresos Base</div>
+            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b;">1. Ingresos Recaudados</div>
             <div style="font-size: 15px; font-weight: 800; color: #0f172a;">$${baseIngresos.toFixed(2)}</div>
             <div style="font-size: 9.5px; color: #64748b;">Bs. ${baseIngresosBs}</div>
           </div>
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px;">
             <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #b91c1c;">2. Egresos Operativos</div>
             <div style="font-size: 15px; font-weight: 800; color: #b91c1c;">-$${totalGastosUsd.toFixed(2)}</div>
-            <div style="font-size: 9.5px; color: #64748b;">Ppto Base: $${baseGastosCfg.toFixed(2)}</div>
+            <div style="font-size: 9.5px; color: #64748b;">Bs. ${totalGastosBs}</div>
           </div>
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px;">
-            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #d97706;">3. Fondo Reserva (${(pctReserva * 100).toFixed(0)}%)</div>
-            <div style="font-size: 15px; font-weight: 800; color: #d97706;">-$${fondoReservaUsd.toFixed(2)}</div>
-            <div style="font-size: 9.5px; color: #64748b;">Bs. ${fondoReservaBs}</div>
+            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #0284c7;">3. Utilidad Neta en Caja</div>
+            <div style="font-size: 15px; font-weight: 800; color: #0284c7;">$${utilidadNetaUsd.toFixed(2)}</div>
+            <div style="font-size: 9.5px; color: #0284c7;">Bs. ${utilidadNetaBs}</div>
           </div>
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px;">
-            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #7c3aed;">4. Gasto Adm. (${(pctAdm * 100).toFixed(0)}%)</div>
-            <div style="font-size: 15px; font-weight: 800; color: #7c3aed;">-$${gastoAdmUsd.toFixed(2)}</div>
-            <div style="font-size: 9.5px; color: #64748b;">Bs. ${gastoAdmBs}</div>
+          <div style="background: rgba(124, 58, 237, 0.08); border: 1px solid rgba(124, 58, 237, 0.3); border-radius: 6px; padding: 10px 12px;">
+            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #7c3aed;">4. Fruto Base (14 Estirpes)</div>
+            <div style="font-size: 15px; font-weight: 800; color: #7c3aed;">$${totalFrutosBaseUsd.toFixed(2)}</div>
+            <div style="font-size: 9.5px; color: #7c3aed; font-weight: 700;">14 Cuotas de $${cuotaPorHerederoUsd.toFixed(2)}</div>
           </div>
           <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; padding: 10px 12px;">
-            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #059669;">5. Utilidad Repartible</div>
-            <div style="font-size: 16px; font-weight: 900; color: #059669;">$${utilidadNetaUsd.toFixed(2)}</div>
-            <div style="font-size: 9.5px; color: #059669; font-weight: 700;">14 Cuotas de $${cuotaPorHerederoUsd.toFixed(2)}</div>
+            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #059669;">5. Remanente Patrimonial</div>
+            <div style="font-size: 16px; font-weight: 900; color: #059669;">$${remanentePatrimonialUsd.toFixed(2)}</div>
+            <div style="font-size: 9.5px; color: #059669; font-weight: 700;">Bs. ${remanentePatrimonialBs}</div>
           </div>
         </div>
 
@@ -7319,9 +7311,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <tr style="background: #f1f5f9; font-weight: 900; border-top: 2px solid #0f172a; font-size: 12px;">
                   <td colspan="2" style="padding: 10px;">TOTAL DISTRIBUIDO (14 ESTIRPES):</td>
                   <td style="padding: 10px; text-align: center; color: #7c3aed;">100.00% (14/14)</td>
-                  <td style="padding: 10px; text-align: right; color: #64748b;">$5,600.00</td>
-                  <td style="padding: 10px; text-align: right; color: #059669;">$${utilidadNetaUsd.toFixed(2)} USD</td>
-                  <td style="padding: 10px; text-align: right; color: #0f172a;">Bs. ${utilidadNetaBs}</td>
+                  <td style="padding: 10px; text-align: right; color: #64748b;">$${totalFrutosBaseUsd.toFixed(2)}</td>
+                  <td style="padding: 10px; text-align: right; color: #059669;">$${totalFrutosBaseUsd.toFixed(2)} USD</td>
+                  <td style="padding: 10px; text-align: right; color: #0f172a;">Bs. ${totalFrutosBaseBs}</td>
                   <td style="padding: 10px; text-align: center; color: #059669;">✓ 100% Asignado</td>
                 </tr>
               </tbody>
