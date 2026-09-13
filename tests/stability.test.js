@@ -285,4 +285,75 @@ describe("PILAR 7: AUDITORÍA DE INTEGRIDAD, FAIL-CLOSED & CONCILIACIÓN BANCARI
   });
 });
 
+describe("PILAR 8: CONEXIÓN REAL A SUPABASE, CONFIGURACIÓN SERVERLESS & CONTROL DE CONCURRENCIA", () => {
+  const configHandler = require("../api/config.js");
+
+  test("Ficha A: /api/config debe responder 500 si faltan variables y 200 con cabeceras de caché si están presentes", async () => {
+    // Caso 1: Variables no configuradas
+    const prevUrl = process.env.SUPABASE_URL;
+    const prevKey = process.env.SUPABASE_ANON_KEY;
+    delete process.env.SUPABASE_URL;
+    delete process.env.SUPABASE_ANON_KEY;
+
+    let statusCode = 0;
+    let jsonResult = null;
+    const mockRes500 = {
+      setHeader: () => {},
+      status: (c) => { statusCode = c; return mockRes500; },
+      json: (d) => { jsonResult = d; }
+    };
+    await configHandler({}, mockRes500);
+    assert.strictEqual(statusCode, 500, "Debe retornar 500 si faltan credenciales");
+
+    // Caso 2: Variables configuradas
+    process.env.SUPABASE_URL = "https://ccms-prod.supabase.co";
+    process.env.SUPABASE_ANON_KEY = "anon-key-mock-12345";
+    const headers = {};
+    const mockRes200 = {
+      setHeader: (k, v) => { headers[k] = v; },
+      status: (c) => { statusCode = c; return mockRes200; },
+      json: (d) => { jsonResult = d; }
+    };
+    await configHandler({}, mockRes200);
+    assert.strictEqual(statusCode, 200, "Debe retornar 200 cuando las credenciales están configuradas");
+    assert.strictEqual(jsonResult.supabaseUrl, "https://ccms-prod.supabase.co");
+    assert.strictEqual(jsonResult.supabaseAnonKey, "anon-key-mock-12345");
+    assert.ok(headers["Cache-Control"].includes("s-maxage=3600"), "Debe tener cabecera de CDN cache");
+
+    // Restaurar estado
+    if (prevUrl) process.env.SUPABASE_URL = prevUrl; else delete process.env.SUPABASE_URL;
+    if (prevKey) process.env.SUPABASE_ANON_KEY = prevKey; else delete process.env.SUPABASE_ANON_KEY;
+  });
+
+  test("Ficha A: supabase-init.js debe estar inyectado en index.html y login.html antes de auth-guard", () => {
+    const indexHtml = fs.readFileSync(path.join(rootDir, "gestion", "index.html"), "utf8");
+    const loginHtml = fs.readFileSync(path.join(rootDir, "gestion", "login.html"), "utf8");
+
+    assert.ok(indexHtml.includes("supabase-init.js"), "index.html debe cargar supabase-init.js");
+    assert.ok(loginHtml.includes("supabase-init.js"), "login.html debe cargar supabase-init.js");
+
+    const indexInitPos = indexHtml.indexOf("supabase-init.js");
+    const indexAuthPos = indexHtml.indexOf("auth-guard.js");
+    assert.ok(indexInitPos < indexAuthPos, "supabase-init.js debe cargarse antes de auth-guard.js en index.html");
+
+    const loginInitPos = loginHtml.indexOf("supabase-init.js");
+    const loginAuthPos = loginHtml.indexOf("auth-guard.js");
+    assert.ok(loginInitPos < loginAuthPos, "supabase-init.js debe cargarse antes de auth-guard.js en login.html");
+  });
+
+  test("Ficha B & C: AuthGuard y DatabaseService deben estructurar conexión real y rollback de concurrencia", () => {
+    const authGuardSrc = fs.readFileSync(path.join(rootDir, "gestion", "js", "auth-guard.js"), "utf8");
+    const dbClientSrc = fs.readFileSync(path.join(rootDir, "gestion", "js", "supabase-client.js"), "utf8");
+
+    // Ficha B
+    assert.ok(authGuardSrc.includes("supabaseClient.auth.signInWithPassword"), "AuthGuard debe invocar signInWithPassword");
+    assert.ok(authGuardSrc.includes("profiles"), "AuthGuard debe validar el rol en la tabla profiles");
+
+    // Ficha C
+    assert.ok(dbClientSrc.includes("conflictoDeVersion"), "DatabaseService debe detectar conflicto de versión");
+    assert.ok(dbClientSrc.includes("OPTIMISTIC_LOCK_CONFLICT"), "DatabaseService debe lanzar OPTIMISTIC_LOCK_CONFLICT");
+    assert.ok(dbClientSrc.includes("payment.status = 'pendiente'"), "DatabaseService debe hacer rollback a pendiente ante conflicto");
+  });
+});
+
 

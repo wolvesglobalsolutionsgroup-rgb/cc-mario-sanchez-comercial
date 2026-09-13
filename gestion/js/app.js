@@ -2435,12 +2435,12 @@ document.addEventListener('DOMContentLoaded', () => {
     window.openModal('modal-payment-proof-viewer');
   };
 
-  window.approvePaymentFromProofModal = function(invoiceId) {
+  window.approvePaymentFromProofModal = async function(invoiceId) {
     const targetId = invoiceId || window._activeProofInvoiceId;
     if (!targetId) return;
 
     try {
-      const result = dbService.approvePayment(targetId, 'Administración CCMS');
+      const result = await dbService.approvePayment(targetId, 'Administración CCMS');
       window.closePaymentProofModal();
       showToast(`✓ Pago de factura ${result.invoice.invoice_number} APROBADO y conciliado exitosamente.`, 'success', 'Cobranza Confirmada');
       
@@ -2456,6 +2456,10 @@ document.addEventListener('DOMContentLoaded', () => {
         window.openReceiptPreview(result.receipt);
       }
     } catch (err) {
+      if (err.message === 'OPTIMISTIC_LOCK_CONFLICT') {
+        window.closePaymentProofModal();
+        return;
+      }
       console.error('[Approve Payment Error]', err);
       showToast(err.message || 'Error al aprobar el pago.', 'error');
     }
@@ -4395,7 +4399,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Enviar Formulario de Pago con Snapshot
   const paymentForm = document.getElementById('payment-form');
   if (paymentForm) {
-    paymentForm.onsubmit = (e) => {
+    paymentForm.onsubmit = async (e) => {
       e.preventDefault();
       const invId = document.getElementById('pay-invoice-id').value;
       const method = document.getElementById('pay-method').value;
@@ -4518,7 +4522,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentRole === 'tenant') {
           dbService.submitPayment(invId, paymentPayload);
         } else if (document.getElementById('pay-review-mode').value === '1') {
-          approvalResult = dbService.approvePayment(invId, AuthGuard.currentUser()?.identifier);
+          try {
+            approvalResult = await dbService.approvePayment(invId, AuthGuard.currentUser()?.identifier);
+          } catch (err) {
+            if (err.message === 'OPTIMISTIC_LOCK_CONFLICT') {
+              if (typeof window.closeModal === 'function') window.closeModal('modal-payment');
+              return;
+            }
+            throw err;
+          }
         } else {
           dbService.recordPayment(invId, paymentPayload);
         }

@@ -1217,7 +1217,7 @@ class DatabaseService {
       : null;
   }
 
-  approvePayment(invoiceId, verifier) {
+  async approvePayment(invoiceId, verifier) {
     const data = this.getData();
     const invoice = data.invoices.find(i => i.id === invoiceId);
     if (!invoice) throw new Error('Factura no encontrada.');
@@ -1263,7 +1263,7 @@ class DatabaseService {
 
     // --- HOOK REMOTO SUPABASE POSTGRESQL (CUANDO ESTÉ CONECTADO EN PRODUCCIÓN) ---
     if (typeof window !== 'undefined' && window.supabaseClient && typeof window.supabaseClient.from === 'function') {
-      window.supabaseClient
+      const { data: remoteData, error: remoteErr } = await window.supabaseClient
         .from('payments')
         .update({
           status: 'verificado',
@@ -1273,14 +1273,43 @@ class DatabaseService {
         })
         .eq('id', payment.id)
         .eq('version', currentVersion)
-        .then(({ data: remoteData, error: remoteErr }) => {
-          if (remoteErr) {
-            console.error('[SUPABASE OPTIMISTIC LOCK CONFLICT] Modificación concurrente detectada en PostgreSQL:', remoteErr);
-          } else {
-            console.info('[SUPABASE POSTGRES] Pago verificado con incremento de versión en base de datos remota:', payment.id);
-          }
-        })
-        .catch(err => console.warn('[SUPABASE REMOTE SYNC] Error en llamada a PostgreSQL:', err));
+        .select();
+
+      const conflictoDeVersion = !remoteErr && Array.isArray(remoteData) && remoteData.length === 0;
+
+      if (remoteErr || conflictoDeVersion) {
+        // ROLLBACK: revertir el estado local optimista que se aplicó más arriba en esta función
+        payment.status = 'pendiente';
+        payment.version = currentVersion;
+        payment._version = currentVersion;
+        invoice.status = invoice.status === 'pagado' ? 'pendiente' : invoice.status;
+
+        console.error('[SUPABASE OPTIMISTIC LOCK CONFLICT] Modificación concurrente detectada:', remoteErr || 'version_mismatch');
+
+        if (typeof showToast === 'function') {
+          showToast(
+            'Este pago ya fue verificado o modificado por otro usuario. La pantalla se sincronizó con el servidor — por favor revisa el estado actualizado.',
+            'warning',
+            'Conflicto de concurrencia'
+          );
+        } else if (typeof window !== 'undefined' && typeof window.showToast === 'function') {
+          window.showToast(
+            'Este pago ya fue verificado o modificado por otro usuario. La pantalla se sincronizó con el servidor — por favor revisa el estado actualizado.',
+            'warning',
+            'Conflicto de concurrencia'
+          );
+        } else {
+          alert('Este pago ya fue verificado por otro usuario. Refresca la vista para ver el estado actualizado.');
+        }
+
+        if (typeof window !== 'undefined' && typeof window.refreshPaymentsView === 'function') {
+          window.refreshPaymentsView();
+        }
+
+        throw new Error('OPTIMISTIC_LOCK_CONFLICT');
+      }
+
+      console.info('[SUPABASE POSTGRES] Pago verificado con incremento de versión en base de datos remota:', payment.id);
     }
 
     const tenant = data.tenants && data.tenants.find(t => t.id === invoice.tenant_id);

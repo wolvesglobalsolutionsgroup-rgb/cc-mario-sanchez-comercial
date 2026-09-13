@@ -377,8 +377,41 @@
       return { ok: false, error: 'Credenciales incompletas' };
     }
 
+    // --- RUTA REAL: Supabase Auth (producción, o demo apuntando a un proyecto Supabase real) ---
+    if (typeof window !== 'undefined' && window.supabaseClient && typeof window.supabaseClient.auth?.signInWithPassword === 'function') {
+      const { data, error } = await window.supabaseClient.auth.signInWithPassword({
+        email: identifier,
+        password: password
+      });
+      if (error) {
+        return { ok: false, error: 'Usuario o contraseña incorrectos' };
+      }
+      const { data: profile, error: profileError } = await window.supabaseClient
+        .from('profiles')
+        .select('role, display_name, tenant_id')
+        .eq('id', data.user.id)
+        .single();
+      if (profileError || !profile) {
+        await window.supabaseClient.auth.signOut();
+        return { ok: false, error: 'Su cuenta no tiene un perfil asignado. Contacte a administración.' };
+      }
+      const session = {
+        user_id: data.user.id,
+        role: profile.role,
+        display_name: profile.display_name,
+        identifier: identifier,
+        tenant_id: profile.tenant_id || null,
+        status: 'active',
+        created_at: now(),
+        expires_at: now() + SESSION_TTL_MS
+      };
+      setSession(session);
+      return { ok: true, session, redirect: 'index.html' };
+    }
+
+    // --- RUTA DEMO (solo si Supabase no está inicializado Y el modo demo está activo) ---
     if (!DEMO_ENABLED) {
-      return { ok: false, error: 'La autenticación demo está deshabilitada en producción. Configure Supabase Auth.' };
+      return { ok: false, error: 'La autenticación no está disponible. Verifique la conexión a Supabase.' };
     }
 
     // RATE LIMITING / LOCKOUT: Máximo 5 intentos fallidos en 5 minutos
