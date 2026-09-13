@@ -1,75 +1,47 @@
-﻿# ÍNDICE MAESTRO DE FUENTES PRIMARIAS, GACETAS OFICIALES Y FORMULARIOS ORIGINALES (PDF)
-**Base de Conocimiento para Ingesta en NotebookLM:** `https://notebooklm.google.com/notebook/3914afb9-a48b-4130-8890-7eaed1fddb28`
-**Área de Dominio:** Commercial Real Estate (CRE), Arrendamiento Inmobiliario Comercial, Tributación Municipal y SENIAT en Venezuela.
+# ÍNDICE MAESTRO DE FUENTES PRIMARIAS, GACETAS OFICIALES Y FORMULARIOS ORIGINALES (PDF)
+**Directorio Local de Archivos Físicos:** [`cc-mario-sanchez-comercial/docs/corpus_notebooklm/pdfs/`](file:///c:/Users/Administrator/Desktop/Memoria/cc-mario-sanchez-comercial/docs/corpus_notebooklm/pdfs/)  
+**Destino de Ingesta en Google NotebookLM:** [`https://notebooklm.google.com/notebook/3914afb9-a48b-4130-8890-7eaed1fddb28`](https://notebooklm.google.com/notebook/3914afb9-a48b-4130-8890-7eaed1fddb28)  
+**Objetivo:** Eliminar el 100% de alucinaciones en el modelo de lenguaje alimentando exclusivamente los documentos oficiales emitidos por la Asamblea Nacional, la Imprenta Nacional y el SENIAT.
 
 ---
 
-## 1. Legislación Nacional & Sectorial de Arrendamiento Comercial
+## 📂 1. Inventario de Archivos PDF Físicos Descargados (Verdad Terreno)
 
-### 1.1 Gaceta Oficial N° 40.418 (23 de mayo de 2014)
-* **Nombre Oficial:** Decreto N° 929 con Rango, Valor y Fuerza de Ley de Regulación del Arrendamiento Inmobiliario para el Uso Comercial.
-* **Materia:** Régimen de fijación de cánones (CAF, CAV, CAM), depósitos en garantía (máximo 3 meses en cuenta bancaria remunerada), prórroga legal escalonada obligatoria (Art. 26), finiquitos y arbitraje de controversias ante la SUNDDE.
-* **Enlace Oficial TSJ / Repositorio:**
-  * [Tribunal Supremo de Justicia (Gaceta 40.418)](http://historico.tsj.gob.ve/gaceta/mayo/2352014/2352014-3982.pdf)
-  * [Pandectas Digital - Decreto Ley 929](https://pandectasdigital.home.blog/2014/05/23/gaceta-oficial-n-40-418/)
-* **Uso en NotebookLM:** Extraer reglas sobre prórroga obligatoria, penalidades por mora y límites del canon variable (8%) y mixto (50% porción fija).
+Todos los siguientes archivos reposan descargados e íntegros en tu disco local dentro de la carpeta `docs/corpus_notebooklm/pdfs/`:
 
----
-
-## 2. Régimen Tributario Municipal & Armonización Fiscal (Alcaldías)
-
-### 2.1 Gaceta Oficial N° 6.755 Extraordinario (10 de agosto de 2023)
-* **Nombre Oficial:** Ley Orgánica de Coordinación y Armonización de las Potestades Tributarias de los Estados y Municipios (LOCAT).
-* **Materia:** Establece los límites máximos a las alícuotas municipales, clasificador único de actividades económicas (CIIU 6810 para bienes inmuebles comerciales), prohibición de cobro confiscatorio y adopción del Tipo de Cambio de la Moneda de Mayor Valor fijado por el BCV (TCMMV) como unidad de cuenta.
-* **Enlace Oficial TSJ / Asamblea Nacional:**
-  * [Gaceta Oficial Extraordinaria 6.755 (PDF)](http://spgoin.imprentanacional.gob.ve/cgi-win/be_alex.cgi?Documento=T028700042456/0&Nombrebd=spgoin&CodAsocDoc=3211&TipoDoc=GXT&Sesion=163013832)
-* **Uso en NotebookLM:** Consultar topes de alícuotas del ISAE (máximo 3.0%), exoneraciones de fondos de terceros y límites a tasas de aseo urbano.
-
-### 2.2 Código Civil de Venezuela (Gaceta N° 2.990 Extraordinario de 26/07/1982)
-* **Artículos Clave:**
-  * **Artículo 1.684:** Naturaleza del Mandato ("El mandato es un contrato por el cual una persona se obliga gratuitamente, o mediante salario, a ejecutar uno o más negocios por cuenta de otra, que la ha encargado de ello").
-  * **Fundamento:** Los cobros de luz, agua, vigilancia y mantenimiento de áreas comunes recaudados por la Administradora constituyen fondos en custodia de la Comunidad de Propietarios/Inquilinos. **NO son enriquecimiento ni ingreso bruto de la sociedad mercantil, por lo que están legalmente exentos de patente municipal (ISAE)**.
+| # | Archivo PDF Local | Tamaño | Gaceta Oficial / Emisor | Materia y Contenido Normativo |
+|:---:|:---|:---:|:---|:---|
+| **1** | [`01_Gaceta_Oficial_40418_Decreto_929_Arrendamiento_Comercial.pdf`](file:///c:/Users/Administrator/Desktop/Memoria/cc-mario-sanchez-comercial/docs/corpus_notebooklm/pdfs/01_Gaceta_Oficial_40418_Decreto_929_Arrendamiento_Comercial.pdf) | 0.91 MB | G.O. N° 40.418 (23/05/2014) | **Ley de Regulación del Arrendamiento Comercial:** Métodos CAF, CAV, CAM; topes de canon variable (8%); depósitos en garantía (máx 3 meses en cuenta remunerada); prórroga legal escalonada (Art. 26). |
+| **2** | [`02_Gaceta_Oficial_6755_LOCAT_Armonizacion_Tributaria.pdf`](file:///c:/Users/Administrator/Desktop/Memoria/cc-mario-sanchez-comercial/docs/corpus_notebooklm/pdfs/02_Gaceta_Oficial_6755_LOCAT_Armonizacion_Tributaria.pdf) | 0.92 MB | G.O. Ext. N° 6.755 (10/08/2023) | **LOCAT (Armonización Tributaria Municipal):** Clasificador Único de Actividades Económicas (CIIU 6810); topes de alícuotas ISAE (máx 3.0%); uso de la Moneda de Mayor Valor (TCMMV/BCV) y límites al cobro de aseo urbano. |
+| **3** | [`03_Gaceta_Oficial_6507_Codigo_Organico_Tributario.pdf`](file:///c:/Users/Administrator/Desktop/Memoria/cc-mario-sanchez-comercial/docs/corpus_notebooklm/pdfs/03_Gaceta_Oficial_6507_Codigo_Organico_Tributario.pdf) | 1.99 MB | G.O. Ext. N° 6.507 (29/01/2020) | **Código Orgánico Tributario (COT 2020):** Régimen sancionatorio, multas indexadas al TCMMV, deberes formales, fiscalización y prescripción tributaria. |
+| **4** | [`04_Gaceta_Oficial_6687_Ley_IGTF.pdf`](file:///c:/Users/Administrator/Desktop/Memoria/cc-mario-sanchez-comercial/docs/corpus_notebooklm/pdfs/04_Gaceta_Oficial_6687_Ley_IGTF.pdf) | 1.87 MB | G.O. Ext. N° 6.687 (25/02/2022) | **Ley del IGTF:** Impuesto del 3% sobre pagos en divisas o criptoactivos no intermediados por el sistema financiero nacional; agentes de percepción. |
+| **5** | [`05_Decreto_1808_Retenciones_ISLR_Gaceta_36203.pdf`](file:///c:/Users/Administrator/Desktop/Memoria/cc-mario-sanchez-comercial/docs/corpus_notebooklm/pdfs/05_Decreto_1808_Retenciones_ISLR_Gaceta_36203.pdf) | 13.04 MB | G.O. N° 36.203 (12/05/1997) | **Reglamento de Retenciones de ISLR (Decreto 1808):** Tabla de retenciones aplicable a cánones de arrendamiento (5% a personas jurídicas / 3% a personas naturales) y honorarios profesionales. |
+| **6** | [`06_Agentes_Retencion_IVA_Gaceta_40720.pdf`](file:///c:/Users/Administrator/Desktop/Memoria/cc-mario-sanchez-comercial/docs/corpus_notebooklm/pdfs/06_Agentes_Retencion_IVA_Gaceta_40720.pdf) | 3.42 MB | G.O. N° 40.720 (10/08/2015) | **Régimen de Retenciones de IVA para Sujetos Pasivos Especiales:** Base imponible, porcentajes de retención (75% y 100%), plazos para enterar y emisión del comprobante digital. |
+| **7** | [`07_Providencia_0071_Facturacion_Libros_Fiscales.pdf`](file:///c:/Users/Administrator/Desktop/Memoria/cc-mario-sanchez-comercial/docs/corpus_notebooklm/pdfs/07_Providencia_0071_Facturacion_Libros_Fiscales.pdf) | 5.59 MB | G.O. N° 39.795 (08/11/2011) | **Normas de Emisión de Facturas y Libros Fiscales:** Requisitos de imprenta autorizada, Libro de Compras, Libro de Ventas, notas de débito y crédito. |
 
 ---
 
-## 3. Normativa Fiscal Nacional (SENIAT)
+## 📋 2. Manuales Técnicos y Estructura de Datos Complementarios (Markdown)
 
-### 3.1 Providencia Administrativa SENIAT SNAT/2023/000035 (01 de agosto de 2023 - G.O. N° 42.682)
-* **Materia:** Régimen de Retenciones de IVA para Sujetos Pasivos Especiales.
-* **Porcentajes:** 75% regla general / 100% en supuestos especiales.
-* **Formato de Archivo TXT Oficial:**
-  * Estructura por columnas separadas por tabulador (`\t`):
-    `RIF_AGENTE\tPERIODO\tFECHA_FAC\tTIPO_OP\tTIPO_DOC\tRIF_SUJETO\tNUM_FAC\tNUM_CTRL\tMONTO_TOTAL\tBASE\tIVA_RETENIDO\tNUM_AFECT\tNUM_COMPROB\tEXENTO\tALICUOTA\tNUM_EXP`
-  * **Regla estricta:** Período en formato `AAAAMM` (Año 4 dígitos + Mes 2 dígitos, ej. 202603) y RIF limpio sin guiones.
-* **Enlace SENIAT:** [Portal SENIAT - Manual de Retenciones](http://declaraciones.seniat.gob.ve)
+Además de los 7 PDFs oficiales, este repositorio incluye los manuales operativos estructurados para ingesta rápida en NotebookLM:
 
-### 3.2 Providencia Administrativa SENIAT SNAT/2014/0032 (25 de julio de 2014 - G.O. N° 40.461)
-* **Materia:** Requisitos formales de emisión de facturas, órdenes de entrega y libros fiscales (Libro de Compras y Libro de Ventas).
-* **Conservación:** Obligación de conservar comprobantes y libros digitales por 10 años auditable (Art. 102 COT).
-
-### 3.3 Decreto N° 1.808 (12 de mayo de 1997 - G.O. N° 36.203)
-* **Materia:** Reglamento Parcial de la Ley de Impuesto sobre la Renta en materia de Retenciones.
-* **Alícuota Inmobiliaria:** 5% para personas jurídicas arrendadoras / 3% para personas naturales residentes (Art. 9, Numeral 11).
-
-### 3.4 Gaceta Oficial N° 6.687 Extraordinario (25 de febrero de 2022)
-* **Materia:** Ley de Impuesto a las Grandes Transacciones Financieras (IGTF).
-* **Alícuota:** 3% sobre pagos recibidos en divisas en efectivo, Zelle, criptomonedas o transferencias bancarias internacionales no intermediadas por la banca nacional.
+1. **[`08_SENIAT_INSTRUCTIVO_TECNICO_TXT_16_COLUMNAS.md`](file:///c:/Users/Administrator/Desktop/Memoria/cc-mario-sanchez-comercial/docs/corpus_notebooklm/08_SENIAT_INSTRUCTIVO_TECNICO_TXT_16_COLUMNAS.md):**  
+   Transcripción fidedigna del Instructivo `RI_DRIVA2020-IT01V3_0_0` del SENIAT con el desglose exacto de las 16 columnas tabuladas, tipos de datos, códigos de error y formato del período `AAAAMM`.
+2. **[`01_ALCALDIA_TRIBUTOS_MUNICIPALES_LOCAT.md`](file:///c:/Users/Administrator/Desktop/Memoria/cc-mario-sanchez-comercial/docs/corpus_notebooklm/01_ALCALDIA_TRIBUTOS_MUNICIPALES_LOCAT.md):**  
+   Alícuotas comparadas de los 10 municipios principales de Venezuela (Chacao, Baruta, Sucre, Libertador, Sotillo, Bolívar, Urbaneja, Valencia, Maracaibo, Iribarren) y la fundamentación legal del Mandato (Art. 1684 C.C.) para la exención del condominio.
+3. **[`DOSSIER_MAESTRO_RECAUDOS_Y_CUMPLIMIENTO_CRE_VENEZUELA.md`](file:///c:/Users/Administrator/Desktop/Memoria/cc-mario-sanchez-comercial/docs/corpus_notebooklm/DOSSIER_MAESTRO_RECAUDOS_Y_CUMPLIMIENTO_CRE_VENEZUELA.md):**  
+   Checklist exhaustivo de recaudos para Licencia de Actividades Económicas, Conformidad de Uso, Bomberos, Ficha Catastral y solvencias municipales.
 
 ---
 
-## 4. Formularios y Planillas Oficiales a Replicar en el SaaS
+## 🚀 3. Instrucciones para Subir los Archivos a NotebookLM
 
-1. **Formulario DP-ISAE (Declaración de Actividades Económicas de la Alcaldía):**
-   * Encabezado con RIF, Nombre Comercial, Licencia de Funcionamiento.
-   * Clasificador de Actividad (6810-01).
-   * Columna 1: Ingresos Brutos Totales Declarados.
-   * Columna 2: Deducciones Legales / Fondos de Terceros Exentos (Condominio).
-   * Columna 3: Base Imponible Neta Sujeta a Patente.
-   * Columna 4: Alícuota Municipal Aplicable (ej. 2.00%).
-   * Columna 5: Impuesto Autoliquidado a Pagar al Municipio.
-2. **Archivo Plano TXT SENIAT:**
-   * Archivo físico `.txt` codificado en UTF-8 o ANSI sin encabezado, listo para subir por la opción "Carga de Archivo de Retenciones de IVA" en el portal SENIAT.
-3. **Certificado Bomberil de Inspección:**
-   * Formulario de Evaluación de Riesgos y Carga Calórica para Edificaciones Comerciales.
-4. **Ficha Catastral Urbana:**
-   * Formato de registro de linderos, superficie de terreno y construcción para el cálculo del Derecho de Frente.
+1. Abre en tu navegador tu cuaderno de NotebookLM:  
+   👉 **[`https://notebooklm.google.com/notebook/3914afb9-a48b-4130-8890-7eaed1fddb28`](https://notebooklm.google.com/notebook/3914afb9-a48b-4130-8890-7eaed1fddb28)**
+2. Haz clic en el botón **"+ Añadir fuentes"** (o "Add sources").
+3. Selecciona **"Subir archivos"** (o arrastra y suelta).
+4. Ve a la carpeta local de tu proyecto:  
+   `c:\Users\Administrator\Desktop\Memoria\cc-mario-sanchez-comercial\docs\corpus_notebooklm\pdfs\`
+5. Selecciona los 7 archivos PDF y haz clic en **Abrir**.
+6. *(Opcional)* Añade también los archivos `.md` de la carpeta `corpus_notebooklm/` (como el archivo del instructivo de 16 columnas).
+7. ¡Listo! NotebookLM indexará el 100% de la legislación física oficial venezolana en cuestión de segundos, sin depender de páginas web caídas ni sufrir alucinaciones de IA.
