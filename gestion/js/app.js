@@ -212,20 +212,29 @@ document.addEventListener('DOMContentLoaded', () => {
     AuthGuard.applyRoleVisibility();
   }
 
+  // Helper de normalización de roles
+  function isTenantRole(role) {
+    return role === 'tenant' || role === 'tenant_user';
+  }
+  window.isTenantRole = isTenantRole;
+
   // 1. ESTADO GLOBAL
   const session = (window.AuthGuard && window.AuthGuard.currentUser) ? window.AuthGuard.currentUser() : null;
   const currentRole = session ? session.role : 'admin'; // fallback si guard no está cargado
   const currentTenantId = session ? session.tenant_id : null;
-  const isSuperAdmin = (currentRole === 'superadmin');
-  const isDirectiva = ['superadmin', 'admin', 'admin_finanzas', 'admin_legal', 'admin_mantenimiento', 'heredero'].includes(currentRole);
-  const isMasterAdmin = (currentRole === 'superadmin' || currentRole === 'admin');
+  const isSuperAdmin = (currentRole === 'superadmin' || currentRole === 'org_director');
+  const isDirectiva = [
+    'superadmin', 'org_director', 'admin', 'org_admin', 'admin_finanzas', 'accountant',
+    'admin_legal', 'admin_mantenimiento', 'operations_manager', 'heredero', 'heir_viewer', 'fiscal_auditor'
+  ].includes(currentRole);
+  const isMasterAdmin = (currentRole === 'superadmin' || currentRole === 'org_director' || currentRole === 'admin' || currentRole === 'org_admin');
   let currentCurrency = localStorage.getItem('ccms_active_currency') || 'USD'; // 'USD', 'EUR', 'VES', 'USDT'
   let currentTheme = localStorage.getItem('ccms_theme') || 'dark'; // 'dark' o 'light'
 
   // Sincronización reactiva del Menú Lateral y Barra Inferior Móvil por Rol
   function syncNavigationUI(role) {
     const activeRole = role || currentRole;
-    const isTenant = (activeRole === 'tenant');
+    const isTenant = isTenantRole(activeRole);
 
     // 1. Ocultar o mostrar elementos en el Menú Lateral según rol
     document.querySelectorAll('#app-sidebar [data-roles="admin"]').forEach(el => {
@@ -286,13 +295,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Configuración de pestaña de inicio según el rol del usuario:
   // - Inquilino: aterriza directamente en su perfil comercial integral (Mi Perfil & Mi Local)
   // - Administrador / Junta: aterriza en el Dashboard Ejecutivo aislado
-  let currentTab = (currentRole === 'tenant') ? 'perfil-inquilino' : 'dashboard';
+  let currentTab = isTenantRole(currentRole) ? 'perfil-inquilino' : 'dashboard';
 
   // Sincronizar menús y barra inmediatamente
   syncNavigationUI(currentRole);
 
   // Activar de inmediato la pestaña correspondiente y ocultar las demás
-  const roleSelector = (currentRole === 'tenant') ? '[data-roles="tenant"]' : ':not([data-roles="tenant"])';
+  const roleSelector = isTenantRole(currentRole) ? '[data-roles="tenant"]' : ':not([data-roles="tenant"])';
   const initialNav = document.querySelector(`.nav-item${roleSelector}[data-tab="${currentTab}"]`) ||
                      document.querySelector(`.nav-item[data-tab="${currentTab}"]`);
   if (initialNav) {
@@ -564,7 +573,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.switchTab = function(tabName) {
-    const isTenant = (currentRole === 'tenant');
+    const isTenant = isTenantRole(currentRole);
     const roleSelector = isTenant ? '[data-roles="tenant"]' : ':not([data-roles="tenant"])';
     const navItem = document.querySelector(`.nav-item${roleSelector}[data-tab="${tabName}"]`) ||
                     document.querySelector(`.nav-item:not(.hidden-by-role)[data-tab="${tabName}"]`) ||
@@ -653,7 +662,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try { renderAgingReport(); } catch (e) { console.error('[RenderError] AgingReport:', e); }
     try { renderRadialGauges(); } catch (e) { console.error('[RenderError] RadialGauges:', e); }
     try { renderExecutivePerformanceCharts(); } catch (e) { console.error('[RenderError] PerformanceCharts:', e); }
-    if (currentRole === 'tenant') {
+    if (isTenantRole(currentRole)) {
       try { renderTenantSelfProfile(); } catch (e) { console.error('[RenderError] TenantSelfProfile:', e); }
     }
     if (isDirectiva) {
@@ -696,7 +705,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (valDateEl) valDateEl.innerText = formattedDate;
     if (valRateEl) valRateEl.innerText = `${bcvRate.toFixed(2)} Bs/USD`;
 
-    const tenantFilterId = (currentRole === 'tenant') ? currentTenantId : null;
+    const tenantFilterId = isTenantRole(currentRole) ? currentTenantId : null;
     const accounts = dbService.getReceivingAccounts ? dbService.getReceivingAccounts(tenantFilterId) : [];
     grid.innerHTML = '';
 
@@ -862,19 +871,19 @@ document.addEventListener('DOMContentLoaded', () => {
    * - tenant: solo las suyas
    */
   function visibleInvoices(allInvoices) {
-    if (currentRole === 'tenant' && currentTenantId) {
+    if (isTenantRole(currentRole) && currentTenantId) {
       return allInvoices.filter(i => i.tenant_id === currentTenantId);
     }
     return allInvoices;
   }
 
   /**
-   * Devuelve los inquilinos visibles para el usuario actual.
-   * - admin: todos
-   * - tenant: solo el suyo
-   */
+    * Devuelve los inquilinos visibles para el usuario actual.
+    * - admin: todos
+    * - tenant: solo el suyo
+    */
   function visibleTenants(allTenants) {
-    if (currentRole === 'tenant' && currentTenantId) {
+    if (isTenantRole(currentRole) && currentTenantId) {
       return allTenants.filter(t => t.id === currentTenantId);
     }
     return allTenants;
@@ -2841,7 +2850,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Renderizado del banner de estado de cuenta para inquilino
     const tenantBanner = document.getElementById('tenant-statement-banner');
     if (tenantBanner) {
-      if (currentRole === 'tenant') {
+      if (isTenantRole(currentRole)) {
         const myAllInvoices = allInvoices.filter(i => i.tenant_id === currentTenantId);
         const myUnpaid = myAllInvoices.filter(i => i.status !== 'pagado');
         const myOverdue = myAllInvoices.filter(i => i.status === 'en_mora');
@@ -2914,7 +2923,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Ajustar el título de la sección según el rol
     const sectionTitle = document.querySelector('#tab-cobranzas .section-title');
     if (sectionTitle) {
-      if (currentRole === 'tenant') {
+      if (isTenantRole(currentRole)) {
         sectionTitle.innerHTML = '<i class="fa-solid fa-receipt" style="color: var(--emerald);"></i> Mis Cuotas, Pagos y Recibos';
       } else {
         sectionTitle.innerHTML = '<i class="fa-solid fa-receipt" style="color: var(--emerald);"></i> Cobranzas y Conciliación Multimoneda';
@@ -2969,8 +2978,8 @@ document.addEventListener('DOMContentLoaded', () => {
         <td data-label="Estado">${statusBadge}</td>
         <td data-label="Acciones">
           <div style="display: flex; gap: 6px;">
-            ${inv.status !== 'pagado' && (currentRole === 'admin' || currentRole === 'tenant') ? `
-              <button class="btn-action-icon" title="${currentRole === 'tenant' ? 'Reportar pago y adjuntar comprobante' : (inv.status === 'verificando' ? 'Revisar comprobante' : 'Registrar Pago Multimoneda')}" style="background: var(--emerald-glow); color: var(--emerald);" data-click="openPaymentModal('${inv.id}')">
+            ${inv.status !== 'pagado' && (isDirectiva || isTenantRole(currentRole)) ? `
+              <button class="btn-action-icon" title="${isTenantRole(currentRole) ? 'Reportar pago y adjuntar comprobante' : (inv.status === 'verificando' ? 'Revisar comprobante' : 'Registrar Pago Multimoneda')}" style="background: var(--emerald-glow); color: var(--emerald);" data-click="openPaymentModal('${inv.id}')">
                 <i class="fa-solid fa-receipt"></i>
               </button>
             ` : ''}
@@ -2982,7 +2991,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <button class="btn-action-icon" title="Imprimir Recibo Oficial" data-click="printReceipt('${inv.id}')">
               <i class="fa-solid fa-print"></i>
             </button>
-            ${currentRole === 'admin' ? `
+            ${isDirectiva ? `
               <button class="btn-action-icon btn-wa-action" title="Aviso de Cobranza WhatsApp" data-click="openWhatsAppModal('${tenant.id}', '${inv.id}')">
                 <i class="fa-brands fa-whatsapp"></i>
               </button>
@@ -3625,7 +3634,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sectionTitle = document.querySelector('#tab-alertas .section-title');
     const sectionSubtitle = document.querySelector('#tab-alertas .section-head span');
 
-    if (currentRole === 'tenant') {
+    if (isTenantRole(currentRole)) {
       if (sectionTitle) sectionTitle.innerHTML = '<i class="fa-solid fa-inbox" style="color: var(--amber);"></i> Buzón de Notificaciones, Avisos & Mesa de Servicio';
       if (sectionSubtitle) sectionSubtitle.textContent = 'Canal oficial bidireccional entre su local comercial y la Administración del CCMS';
     } else {
@@ -4238,8 +4247,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const selectGroup = document.getElementById('pay-select-invoice-group');
     if (selectGroup) {
-      selectGroup.style.display = (currentRole === 'tenant') ? 'block' : 'none';
-      if (currentRole === 'tenant' && select && select.options.length === 0) {
+      selectGroup.style.display = isTenantRole(currentRole) ? 'block' : 'none';
+      if (isTenantRole(currentRole) && select && select.options.length === 0) {
         const currentTenant = (window.AuthGuard && window.AuthGuard.currentTenant) ? window.AuthGuard.currentTenant() : null;
         const allInvs = dbService.getInvoices();
         const myInvs = currentTenant ? allInvs.filter(i => i.tenant_id === currentTenant.id || i.unit_code === currentTenant.unit_code) : allInvs;
@@ -4274,9 +4283,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (regPhoneEl) regPhoneEl.textContent = activeTenantObj.phone || '0414-5550192';
     if (regDocEl) regDocEl.textContent = activeTenantObj.rif || activeTenantObj.doc_id || 'J-50123456-7';
 
-    const pending = currentRole === 'admin' ? dbService.getPendingPayment(invoiceId) : null;
-    const isTenantSubmission = currentRole === 'tenant';
-    const isAdminReview = currentRole === 'admin' && Boolean(pending);
+    const canReviewPayments = isMasterAdmin || currentRole === 'accountant' || currentRole === 'admin_finanzas';
+    const pending = canReviewPayments ? dbService.getPendingPayment(invoiceId) : null;
+    const isTenantSubmission = isTenantRole(currentRole);
+    const isAdminReview = canReviewPayments && Boolean(pending);
     document.getElementById('payment-modal-title').innerText = isTenantSubmission ? 'Reportar / Cargar Pago' : (isAdminReview ? 'Revisar Comprobante' : 'Registrar y Conciliar Pago');
     document.getElementById('payment-submit-label').innerText = isTenantSubmission ? 'Enviar Comprobante a Administración' : (isAdminReview ? 'Aprobar y Conciliar Pago' : 'Confirmar Pago & Guardar Comprobante');
     document.getElementById('pay-reject-btn').style.display = isAdminReview ? 'flex' : 'none';
@@ -4578,7 +4588,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         let approvalResult = null;
-        if (currentRole === 'tenant') {
+        if (isTenantRole(currentRole)) {
           dbService.submitPayment(invId, paymentPayload);
         } else if (document.getElementById('pay-review-mode').value === '1') {
           try {
@@ -4596,18 +4606,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const paidInvoice = dbService.getInvoices().find(i => i.id === invId);
         const paidTenant = paidInvoice && dbService.getTenants().find(t => t.id === paidInvoice.tenant_id);
-        const notificationRecipient = currentRole === 'tenant'
+        const notificationRecipient = isTenantRole(currentRole)
           ? 'administracion@ccmariosanchez.com'
           : (paidTenant && paidTenant.email);
         if (notificationRecipient && window.Notifications) {
           void Notifications.email({
             to: notificationRecipient,
-            subject: `${currentRole === 'tenant' ? 'Comprobante enviado para revisión' : 'Pago aprobado'} — ${paidInvoice.invoice_number} — CC Mario Sánchez`,
-            body: `${currentRole === 'tenant' ? 'Se recibió un comprobante de pago para revisión administrativa' : 'Hemos aprobado el pago de la cuota'} ${paidInvoice.invoice_number} correspondiente al período ${paidInvoice.period_month}/${paidInvoice.period_year}. Referencia: ${ref || txid || 'no indicada'}.`
+            subject: `${isTenantRole(currentRole) ? 'Comprobante enviado para revisión' : 'Pago aprobado'} — ${paidInvoice.invoice_number} — CC Mario Sánchez`,
+            body: `${isTenantRole(currentRole) ? 'Se recibió un comprobante de pago para revisión administrativa' : 'Hemos aprobado el pago de la cuota'} ${paidInvoice.invoice_number} correspondiente al período ${paidInvoice.period_month}/${paidInvoice.period_year}. Referencia: ${ref || txid || 'no indicada'}.`
           });
         }
 
-        if (currentRole === 'tenant') {
+        if (isTenantRole(currentRole)) {
           // Secuencia visual interactiva de procesamiento y cifrado para Inquilinos
           const modalContent = document.querySelector('#modal-payment .modal-content') || document.getElementById('modal-payment');
           const originalModalHTML = modalContent.innerHTML;
@@ -6163,7 +6173,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const unitInput = document.getElementById('inv-unit');
     const idLabel = document.getElementById('inv-identifier-label');
     
-    if (role === 'tenant') {
+    if (isTenantRole(role)) {
       if (unitGroup) unitGroup.style.display = 'block';
       if (unitLabel) unitLabel.innerText = 'Unidad / Local Comercial Asignado';
       if (unitInput) unitInput.placeholder = 'Ej: Local PB-08';
@@ -9473,12 +9483,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const STAFF_ROLE_CONFIG = {
-    superadmin:        { label: 'SuperAdministrador',       color: '#f59e0b', bg: 'rgba(245,158,11,0.12)',   icon: 'fa-crown' },
-    admin:             { label: 'Administración General',   color: '#10b981', bg: 'rgba(16,185,129,0.12)',   icon: 'fa-building' },
-    admin_finanzas:    { label: 'Finanzas & Cobranzas',     color: '#10b981', bg: 'rgba(16,185,129,0.12)',   icon: 'fa-coins' },
-    admin_legal:       { label: 'Legal & Contratos',        color: '#0ea5e9', bg: 'rgba(14,165,233,0.12)',   icon: 'fa-scale-balanced' },
-    admin_mantenimiento: { label: 'Infraestructura',        color: '#f97316', bg: 'rgba(249,115,22,0.12)',   icon: 'fa-wrench' },
-    heredero:          { label: 'Copropietario Heredero',   color: '#a855f7', bg: 'rgba(168,85,247,0.12)',   icon: 'fa-landmark' }
+    superadmin:          { label: 'SuperAdministrador',       color: '#f59e0b', bg: 'rgba(245,158,11,0.12)',   icon: 'fa-crown' },
+    org_director:        { label: 'Director General',         color: '#f59e0b', bg: 'rgba(245,158,11,0.12)',   icon: 'fa-crown' },
+    admin:               { label: 'Administración General',   color: '#10b981', bg: 'rgba(16,185,129,0.12)',   icon: 'fa-building' },
+    org_admin:           { label: 'Admin Organización',       color: '#10b981', bg: 'rgba(16,185,129,0.12)',   icon: 'fa-building' },
+    admin_finanzas:      { label: 'Finanzas & Cobranzas',     color: '#10b981', bg: 'rgba(16,185,129,0.12)',   icon: 'fa-coins' },
+    accountant:          { label: 'Contador General',         color: '#10b981', bg: 'rgba(16,185,129,0.12)',   icon: 'fa-coins' },
+    admin_legal:         { label: 'Legal & Contratos',        color: '#0ea5e9', bg: 'rgba(14,165,233,0.12)',   icon: 'fa-scale-balanced' },
+    fiscal_auditor:      { label: 'Auditor Fiscal',           color: '#06b6d4', bg: 'rgba(6,182,212,0.12)',    icon: 'fa-scale-balanced' },
+    admin_mantenimiento: { label: 'Infraestructura',          color: '#f97316', bg: 'rgba(249,115,22,0.12)',   icon: 'fa-wrench' },
+    operations_manager:  { label: 'Gerente Operaciones',      color: '#f97316', bg: 'rgba(249,115,22,0.12)',   icon: 'fa-wrench' },
+    heredero:            { label: 'Copropietario Heredero',   color: '#a855f7', bg: 'rgba(168,85,247,0.12)',   icon: 'fa-landmark' },
+    heir_viewer:         { label: 'Heredero Consulta',        color: '#a855f7', bg: 'rgba(168,85,247,0.12)',   icon: 'fa-landmark' }
   };
 
   window.renderStaffProfileCards = function() {
@@ -9487,7 +9503,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const allUsers = (window.AuthGuard && window.AuthGuard.listUsers) ? window.AuthGuard.listUsers() : [];
     // Filtrar solo personal administrativo/directiva (los inquilinos NO llevan perfil con foto)
-    const staffUsers = allUsers.filter(u => u.role !== 'tenant');
+    const staffUsers = allUsers.filter(u => !isTenantRole(u.role));
 
     if (staffUsers.length === 0) {
       grid.innerHTML = '<div style="padding:20px;text-align:center;color:var(--txt-muted);font-size:12px;grid-column:1/-1;">No hay usuarios directivos registrados.</div>';
@@ -11258,7 +11274,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const invoices = (typeof dbService !== 'undefined' && dbService.getInvoices) ? dbService.getInvoices() : [];
     const tickets = typeof window.getServiceTickets === 'function' ? window.getServiceTickets() : [];
 
-    if (currentRole === 'tenant') {
+    if (isTenantRole(currentRole)) {
       const tenantObj = (window.AuthGuard && typeof window.AuthGuard.currentTenant === 'function') ? window.AuthGuard.currentTenant() : null;
       const myInvoices = invoices.filter(i => tenantObj && (i.tenant_id === tenantObj.id || i.tenant_rif === tenantObj.rif || i.unit_code === tenantObj.unit_code));
       

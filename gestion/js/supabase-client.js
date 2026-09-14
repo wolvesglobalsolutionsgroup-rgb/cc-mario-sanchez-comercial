@@ -61,8 +61,11 @@ class DatabaseService {
   }
 
   seedInitialData() {
-    if (typeof window !== 'undefined' && window.CCMS_SEED_DATA) {
-      const copy = JSON.parse(JSON.stringify(window.CCMS_SEED_DATA));
+    const sourceData = (typeof window !== 'undefined' && window.CCMS_SYNTHETIC_FIXTURES && window.CCMS_SYNTHETIC_FIXTURES.full_dataset)
+      ? window.CCMS_SYNTHETIC_FIXTURES.full_dataset
+      : (typeof window !== 'undefined' && window.CCMS_SEED_DATA ? window.CCMS_SEED_DATA : null);
+    if (sourceData) {
+      const copy = JSON.parse(JSON.stringify(sourceData));
       localStorage.setItem(this.storageKey, JSON.stringify(copy));
       return copy;
     }
@@ -576,16 +579,19 @@ class DatabaseService {
         data.condo_expenses = this.getDefaultCondoExpenses();
         dirty = true;
       }
-      if ((!data.activos_fijos || !data.activos_fijos.length) && typeof window !== 'undefined' && window.CCMS_SEED_DATA && window.CCMS_SEED_DATA.activos_fijos) {
-        data.activos_fijos = JSON.parse(JSON.stringify(window.CCMS_SEED_DATA.activos_fijos));
+      const seedSource = (typeof window !== 'undefined' && window.CCMS_SYNTHETIC_FIXTURES && window.CCMS_SYNTHETIC_FIXTURES.full_dataset)
+        ? window.CCMS_SYNTHETIC_FIXTURES.full_dataset
+        : (typeof window !== 'undefined' && window.CCMS_SEED_DATA ? window.CCMS_SEED_DATA : null);
+      if ((!data.activos_fijos || !data.activos_fijos.length) && seedSource && seedSource.activos_fijos) {
+        data.activos_fijos = JSON.parse(JSON.stringify(seedSource.activos_fijos));
         dirty = true;
       }
-      if ((!data.consumibles || !data.consumibles.length) && typeof window !== 'undefined' && window.CCMS_SEED_DATA && window.CCMS_SEED_DATA.consumibles) {
-        data.consumibles = JSON.parse(JSON.stringify(window.CCMS_SEED_DATA.consumibles));
+      if ((!data.consumibles || !data.consumibles.length) && seedSource && seedSource.consumibles) {
+        data.consumibles = JSON.parse(JSON.stringify(seedSource.consumibles));
         dirty = true;
       }
-      if ((!data.kardex_movimientos || !data.kardex_movimientos.length) && typeof window !== 'undefined' && window.CCMS_SEED_DATA && window.CCMS_SEED_DATA.kardex_movimientos) {
-        data.kardex_movimientos = JSON.parse(JSON.stringify(window.CCMS_SEED_DATA.kardex_movimientos));
+      if ((!data.kardex_movimientos || !data.kardex_movimientos.length) && seedSource && seedSource.kardex_movimientos) {
+        data.kardex_movimientos = JSON.parse(JSON.stringify(seedSource.kardex_movimientos));
         dirty = true;
       }
       if (!data.special_agreements || !Array.isArray(data.special_agreements)) {

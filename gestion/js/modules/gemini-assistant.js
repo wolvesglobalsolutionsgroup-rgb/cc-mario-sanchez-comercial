@@ -107,6 +107,24 @@
           : null;
         const isDemo = localStorage.getItem('CCMS_FORCE_DEMO') === 'true' || (sess && !sess.is_supabase_auth);
 
+        // Si es modo demo y no hay JWT de sesión de usuario, usar token demo firmado por el servidor
+        if (!authToken && isDemo) {
+          authToken = global.__ccms_demo_token || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('CCMS_DEMO_TOKEN')) || null;
+          if (!authToken) {
+            try {
+              const cfgRes = await fetch('/api/config');
+              if (cfgRes.ok) {
+                const cfgData = await cfgRes.json();
+                if (cfgData && cfgData.demoToken) {
+                  authToken = cfgData.demoToken;
+                  global.__ccms_demo_token = authToken;
+                  try { sessionStorage.setItem('CCMS_DEMO_TOKEN', authToken); } catch (_) {}
+                }
+              }
+            } catch (_) {}
+          }
+        }
+
         const headers = { 'Content-Type': 'application/json' };
         if (authToken) {
           headers['Authorization'] = `Bearer ${authToken}`;

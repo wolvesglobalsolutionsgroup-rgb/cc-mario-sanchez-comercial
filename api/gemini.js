@@ -10,9 +10,41 @@
  */
 
 const https = require('https');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { checkRateLimit } = require('./rate-limit.js');
+
+const DEMO_TOKEN_SECRET = process.env.DEMO_TOKEN_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'ccms-demo-secret-salt-2026';
+
+function signDemoToken(payload = {}) {
+  const data = {
+    sub: 'demo-user',
+    role: 'demo_viewer',
+    exp: Date.now() + 24 * 60 * 60 * 1000,
+    ...payload
+  };
+  const str = Buffer.from(JSON.stringify(data)).toString('base64url');
+  const sig = crypto.createHmac('sha256', DEMO_TOKEN_SECRET).update(str).digest('base64url');
+  return `demo.${str}.${sig}`;
+}
+
+function verifyDemoToken(token) {
+  if (!token || typeof token !== 'string' || !token.startsWith('demo.')) return null;
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  const [prefix, payloadB64, sig] = parts;
+  if (prefix !== 'demo') return null;
+  const expectedSig = crypto.createHmac('sha256', DEMO_TOKEN_SECRET).update(payloadB64).digest('base64url');
+  try {
+    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSig))) return null;
+    const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
+    if (payload.exp && Date.now() > payload.exp) return null;
+    return payload;
+  } catch (_) {
+    return null;
+  }
+}
 
 // Auto-cargar .env local si no están cargadas las variables por el orquestador
 if (!process.env.GEMINI_API_KEY) {
@@ -193,38 +225,43 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  // 2. Control de Autenticación Incondicional & Detección de Modo Demo
-  // Blindaje estricto de seguridad: no depende de NODE_ENV ni VERCEL_ENV volátiles.
+  // 2. Control de Autenticación Incondicional & Cierre Total de Bypass (R05)
+  // Blindaje estricto de seguridad: ninguna bandera no autenticada (body.demo, x-ccms-demo) puede evadir el control.
+  // Sin JWT válido de Supabase o token demo firmado por el servidor = HTTP 401 incondicional.
   const reqHeaders = req.headers || {};
-  const isDemo = (body && body.demo === true) || 
-                 reqHeaders['x-ccms-demo'] === 'true' || 
-                 reqHeaders['x-demo'] === 'true';
   const authHeader = reqHeaders['authorization'] || reqHeaders['Authorization'];
   let authenticatedUser = null;
+  let isDemo = false;
 
-  if (!isDemo && !authHeader) {
+  if (!authHeader) {
     return res.status(401).json({
       success: false,
-      error: 'Autenticación requerida. Inicie sesión con credenciales válidas o especifique el modo demostración.'
+      error: 'Autenticación requerida. Debe proporcionar una credencial Bearer válida o un token demo firmado por el servidor.'
     });
   }
 
-  if (authHeader) {
-    if (!authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        success: false,
-        error: 'Formato de autorización inválido. Debe utilizar esquema Bearer token.'
-      });
-    }
+  if (!authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({
+      success: false,
+      error: 'Formato de autorización inválido. Debe utilizar esquema Bearer token.'
+    });
+  }
 
-    const token = authHeader.slice(7).trim();
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        error: 'Token de autorización vacío.'
-      });
-    }
+  const token = authHeader.slice(7).trim();
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      error: 'Token de autorización vacío.'
+    });
+  }
 
+  // Verificar primero si corresponde a un token demo firmado por el servidor
+  const demoPayload = verifyDemoToken(token);
+  if (demoPayload) {
+    authenticatedUser = { id: demoPayload.sub, role: demoPayload.role, is_demo: true };
+    isDemo = true;
+  } else {
+    // Si no es token demo firmado, validar obligatoriamente contra Supabase Auth
     if (process.env.SUPABASE_URL && (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY)) {
       try {
         const verifyRes = await fetch(`${process.env.SUPABASE_URL}/auth/v1/user`, {
@@ -235,22 +272,21 @@ module.exports = async function handler(req, res) {
         });
         if (verifyRes.ok) {
           authenticatedUser = await verifyRes.json();
-        } else if (!isDemo) {
+          isDemo = false;
+        } else {
           return res.status(401).json({
             success: false,
             error: 'Sesión de Supabase inválida o expirada. Por favor vuelva a iniciar sesión.'
           });
         }
       } catch (e) {
-        console.warn('[Gemini Auth] Advertencia verificando token con Supabase:', e.message);
-        if (!isDemo) {
-          return res.status(401).json({
-            success: false,
-            error: 'Error de verificación de autenticación con el servidor central.'
-          });
-        }
+        console.warn('[Gemini Auth] Error verificando token con Supabase:', e.message);
+        return res.status(401).json({
+          success: false,
+          error: 'Error de verificación de autenticación con el servidor central.'
+        });
       }
-    } else if (!isDemo) {
+    } else {
       return res.status(401).json({
         success: false,
         error: 'Servidor no configurado para validar sesiones de usuario (SUPABASE_URL no disponible).'
@@ -363,3 +399,6 @@ module.exports = async function handler(req, res) {
     });
   }
 };
+
+module.exports.signDemoToken = signDemoToken;
+module.exports.verifyDemoToken = verifyDemoToken;

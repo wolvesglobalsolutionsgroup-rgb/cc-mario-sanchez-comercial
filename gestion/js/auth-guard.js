@@ -603,14 +603,22 @@
     return sess;
   }
 
+  function isTenantRole(role) {
+    return role === 'tenant' || role === 'tenant_user';
+  }
+
   function hasPermission(moduleKey, action = 'read') {
     const sess = getSession();
     if (!sess) return false;
+    // Inmutabilidad de rol: fiscal_auditor y heir_viewer nunca tienen permisos de escritura ni eliminación
+    if ((sess.role === 'fiscal_auditor' || sess.role === 'heir_viewer') && action !== 'read') {
+      return false;
+    }
     if (sess.role === 'superadmin' || sess.role === 'org_director') return true;
     if (global.AccessManagement && typeof global.AccessManagement.hasPermission === 'function') {
       return global.AccessManagement.hasPermission(sess.role, moduleKey, action);
     }
-    return true;
+    return action === 'read'; // Fallback fail-closed para modificaciones
   }
 
   // --- 4. UI HELPERS -----------------------------------------------------------
@@ -1068,7 +1076,12 @@
     verifyPassword,
     sha256: sha256Legacy,
     demoEnabled: DEMO_ENABLED,
-    hasPermission
+    hasPermission,
+    isTenantRole,
+    getUserRole: () => {
+      const sess = getSession();
+      return sess ? sess.role : null;
+    }
   };
 
   global.escapeHtml = escapeHtml;

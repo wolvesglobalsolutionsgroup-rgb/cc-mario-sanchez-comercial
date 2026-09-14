@@ -416,12 +416,21 @@ describe("PILAR 9: INTEGRACIÓN DE IA RESILIENTE (GEMINI FLASH) & CONFIGURACIÓN
     await geminiHandler({ method: "POST", headers: { "x-forwarded-for": "10.0.0.1", "authorization": "Bearer fake-unverified-token" }, body: { prompt: "Test" } }, mockRes);
     assert.strictEqual(statusCode, 401, "Debe fallar cerrado con 401 cuando no se puede verificar el token con Supabase");
 
-    // POST con body vacío debe retornar 400
-    await geminiHandler({ method: "POST", headers: { "x-forwarded-for": "10.0.0.1", "x-ccms-demo": "true" }, body: {} }, mockRes);
+    // Cierre estricto de bypass (R05): banderas no autenticadas deben retornar 401 incondicionalmente
+    await geminiHandler({ method: "POST", headers: { "x-forwarded-for": "10.0.0.1" }, body: { demo: true } }, mockRes);
+    assert.strictEqual(statusCode, 401, "Debe rechazar body demo:true sin credencial con 401");
+
+    await geminiHandler({ method: "POST", headers: { "x-forwarded-for": "10.0.0.1", "x-ccms-demo": "true" }, body: { prompt: "Test" } }, mockRes);
+    assert.strictEqual(statusCode, 401, "Debe rechazar cabecera x-ccms-demo no firmada con 401");
+
+    const signedDemoAuth = "Bearer " + geminiHandler.signDemoToken();
+
+    // POST con body vacío debe retornar 400 (con token firmado)
+    await geminiHandler({ method: "POST", headers: { "x-forwarded-for": "10.0.0.1", "authorization": signedDemoAuth }, body: {} }, mockRes);
     assert.strictEqual(statusCode, 400, "Debe retornar 400 si el prompt está ausente");
 
     // POST con prompt superior a 4000 caracteres debe retornar 400
-    await geminiHandler({ method: "POST", headers: { "x-forwarded-for": "10.0.0.2", "x-ccms-demo": "true" }, body: { prompt: "X".repeat(4001) } }, mockRes);
+    await geminiHandler({ method: "POST", headers: { "x-forwarded-for": "10.0.0.2", "authorization": signedDemoAuth }, body: { prompt: "X".repeat(4001) } }, mockRes);
     assert.strictEqual(statusCode, 400, "Debe rechazar prompts de más de 4000 caracteres con 400");
     assert.ok(jsonResult.error.includes("4.000"), "Debe notificar el límite de 4.000 caracteres");
 
@@ -429,7 +438,7 @@ describe("PILAR 9: INTEGRACIÓN DE IA RESILIENTE (GEMINI FLASH) & CONFIGURACIÓN
     const savedKey = process.env.GEMINI_API_KEY;
     delete process.env.GEMINI_API_KEY;
     try {
-      await geminiHandler({ method: "POST", headers: { "x-forwarded-for": "10.0.0.3", "x-ccms-demo": "true" }, body: { prompt: "Consulta prueba" } }, mockRes);
+      await geminiHandler({ method: "POST", headers: { "x-forwarded-for": "10.0.0.3", "authorization": signedDemoAuth }, body: { prompt: "Consulta prueba" } }, mockRes);
       assert.strictEqual(statusCode, 500, "Debe retornar 500 si GEMINI_API_KEY está ausente");
       assert.strictEqual(jsonResult.code, "MISSING_API_KEY", "Debe incluir código MISSING_API_KEY");
     } finally {
@@ -467,11 +476,12 @@ describe("PILAR 9: INTEGRACIÓN DE IA RESILIENTE (GEMINI FLASH) & CONFIGURACIÓN
     };
 
     try {
+      const validDemoAuth = "Bearer " + geminiHandler.signDemoToken();
       // Ejecutar ráfaga de peticiones para agotar la cuota
       for (let i = 0; i < 20; i++) {
         await geminiHandler({
           method: "POST",
-          headers: { "x-forwarded-for": testIp, "x-ccms-demo": "true" },
+          headers: { "x-forwarded-for": testIp, "authorization": validDemoAuth },
           body: { prompt: "Consulta legal de prueba" }
         }, mockRes);
       }
@@ -528,9 +538,10 @@ describe("PILAR 9: INTEGRACIÓN DE IA RESILIENTE (GEMINI FLASH) & CONFIGURACIÓN
     };
 
     try {
+      const validDemoAuth = "Bearer " + geminiHandler.signDemoToken();
       await geminiHandler({
         method: "POST",
-        headers: { "x-forwarded-for": "172.16.0.5", "x-ccms-demo": "true" },
+        headers: { "x-forwarded-for": "172.16.0.5", "authorization": validDemoAuth },
         body: {
           prompt: "¿Cuál es el canon máximo legal?",
           organization: { name: "Centro Comercial Plaza Mayor", features: {} }
@@ -804,4 +815,53 @@ describe("PILAR 11: REMEDIACIÓN TÉCNICA MAESTRA (FASES F1-F5 / T04-T22)", () =
     assert.strictEqual(AccessManagement.hasPermission("fiscal_auditor", "invoices", "write"), false, "fiscal_auditor no debe tener write en invoices");
     assert.strictEqual(AccessManagement.hasPermission("fiscal_auditor", "invoices", "read"), true, "fiscal_auditor debe tener read en invoices");
   });
+
+  test("HerederosManager: Distribución determinista de restos en centavos ($100 reparte exactamente $100.00)", () => {
+    global.dbService = {
+      getInvoices: () => [{ period_month: 1, period_year: 2026, status: 'pagado', total_usd: 100 }],
+      getCondoExpenses: () => [],
+      getSettings: () => ({ base_monthly_expenses_usd: 0, cuota_base_heredero_usd: 400 })
+    };
+    require("../gestion/js/modules/herederos-manager.js");
+    const html = global.HerederosManager.renderReportHTML(1, 2026);
+    const beneficiaryRows = (html.match(/<tr\b[\s\S]*?<\/tr>/g) || []).filter(r => r.includes('Doc / C.I.'));
+    const displayed = beneficiaryRows.map(r => Number([...r.matchAll(/\$(\d+\.\d{2})/g)][1][1]));
+    const sumOfDisplayedLines = displayed.reduce((a, v) => a + Math.round(v * 100), 0) / 100;
+    
+    assert.strictEqual(sumOfDisplayedLines, 100.00, "La suma de los 14 renglones mostrados debe ser exactamente $100.00 sin perder centavos");
+    assert.ok(!html.includes("fondos efectivamente percibidos en cuenta bancaria"), "No debe afirmar falsamente conciliación bancaria bancarizada");
+  });
+
+  test("Proxy Gemini: Cierre total de bypass por demo:true y requerimiento de firma de servidor", async () => {
+    const geminiHandler = require("../api/gemini.js");
+    let statusCode = null;
+    let responseBody = null;
+
+    const mockRes = {
+      setHeader() { return this; },
+      status(s) { statusCode = s; return this; },
+      json(b) { responseBody = b; return this; },
+      writeHead(s) { statusCode = s; return this; },
+      end(b) { if (b) { try { responseBody = JSON.parse(b); } catch (_) { responseBody = b; } } return this; }
+    };
+
+    const reqWithoutAuth = {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      url: '/api/gemini',
+      [Symbol.asyncIterator]: async function* () {
+        yield Buffer.from(JSON.stringify({ demo: true, prompt: 'Prueba sin token' }));
+      }
+    };
+
+    await geminiHandler(reqWithoutAuth, mockRes);
+    assert.strictEqual(statusCode, 401, "Petición con demo:true pero sin Bearer token debe retornar HTTP 401 incondicional");
+    assert.ok(responseBody && responseBody.error.includes("Autenticación requerida"), "Debe rechazar con mensaje de autenticación requerida");
+
+    // Verificar token demo firmado por servidor
+    const validToken = geminiHandler.signDemoToken({ sub: 'demo-tester', role: 'demo' });
+    const verified = geminiHandler.verifyDemoToken(validToken);
+    assert.ok(verified && verified.sub === 'demo-tester', "El verificador debe validar exitosamente tokens firmados por el servidor");
+  });
 });
+

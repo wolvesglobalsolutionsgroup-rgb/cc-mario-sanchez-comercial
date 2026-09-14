@@ -120,23 +120,33 @@
         ? expensesPeriod.reduce((sum, e) => sum + (parseFloat(e.amount_usd) || 0), 0)
         : (totalCobradoUsd > 0 ? (parseFloat(sysSettings.base_monthly_expenses_usd) || 0) : 0);
 
-      const utilidadNetaUsd = baseIngresos - totalGastosUsd;
+      const totalIngresosCents = Math.round(baseIngresos * 100);
+      const totalGastosCents = Math.round(totalGastosUsd * 100);
+      const utilidadNetaCents = Math.max(0, totalIngresosCents - totalGastosCents);
       const cuotaConfiguradaUsd = parseFloat(sysSettings.cuota_base_heredero_usd) || 400.00;
-      
-      // Si no hay ingresos cobrados o hay déficit, la cuota efectivamente liquidada es 0 (no se fabrica dinero inexistente)
-      const cuotaPorHerederoUsd = (baseIngresos > 0 && utilidadNetaUsd > 0)
-        ? Math.min(cuotaConfiguradaUsd, utilidadNetaUsd / 14)
-        : 0;
-      const totalFrutosBaseUsd = cuotaPorHerederoUsd * 14;
-      const remanentePatrimonialUsd = Math.max(0, utilidadNetaUsd - totalFrutosBaseUsd);
-
+      const cuotaConfiguradaCents = Math.round(cuotaConfiguradaUsd * 100);
       const coherederos = this.getCoherederos();
+      const numHerederos = coherederos.length || 14;
+
+      // Si no hay ingresos cobrados o hay déficit, la cuota efectivamente liquidada es 0
+      const totalFrutosBaseCents = (baseIngresos > 0 && utilidadNetaCents > 0)
+        ? Math.min(cuotaConfiguradaCents * numHerederos, utilidadNetaCents)
+        : 0;
+
+      const baseCentsPerHeredero = Math.floor(totalFrutosBaseCents / numHerederos);
+      const remainderCents = totalFrutosBaseCents % numHerederos;
+
+      const totalFrutosBaseUsd = totalFrutosBaseCents / 100;
+      const remanentePatrimonialUsd = Math.max(0, (utilidadNetaCents - totalFrutosBaseCents) / 100);
+      const utilidadNetaUsd = utilidadNetaCents / 100;
 
       const rowsHtml = coherederos.map((h, idx) => {
+        const heirCents = baseCentsPerHeredero + (idx < remainderCents ? 1 : 0);
+        const heirUsd = heirCents / 100;
         const bsAmount = financialEngine && financialEngine.convert 
-          ? financialEngine.convert(cuotaPorHerederoUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 })
-          : (cuotaPorHerederoUsd * 40.0).toFixed(2);
-        const estatusHeredero = baseIngresos <= 0 ? 'Sin recaudación' : (cuotaPorHerederoUsd > 0 ? h.status : 'Déficit / En espera');
+          ? financialEngine.convert(heirUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 })
+          : (heirUsd * 40.0).toFixed(2);
+        const estatusHeredero = baseIngresos <= 0 ? 'Sin recaudación' : (heirUsd > 0 ? h.status : 'Déficit / En espera');
         return `
           <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11.5px;">
             <td style="padding: 8px 10px; font-weight: 700; text-align: center;">${idx + 1}</td>
@@ -146,10 +156,10 @@
             </td>
             <td style="padding: 8px 10px; text-align: center; font-weight: 700; color: #7c3aed;">${h.shareFrac} (${h.sharePct})</td>
             <td style="padding: 8px 10px; text-align: right; color: #64748b;">$${cuotaConfiguradaUsd.toFixed(2)}</td>
-            <td style="padding: 8px 10px; text-align: right; font-weight: 700; color: #0f172a;">$${cuotaPorHerederoUsd.toFixed(2)}</td>
+            <td style="padding: 8px 10px; text-align: right; font-weight: 700; color: #0f172a;">$${heirUsd.toFixed(2)}</td>
             <td style="padding: 8px 10px; text-align: right; color: #475569;">Bs. ${bsAmount}</td>
             <td style="padding: 8px 10px; text-align: center;">
-              <span style="display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 10px; font-weight: 700; background: ${cuotaPorHerederoUsd > 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(148, 163, 184, 0.15)'}; color: ${cuotaPorHerederoUsd > 0 ? '#059669' : '#64748b'}; border: 1px solid ${cuotaPorHerederoUsd > 0 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(148, 163, 184, 0.3)'};">
+              <span style="display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 10px; font-weight: 700; background: ${heirUsd > 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(148, 163, 184, 0.15)'}; color: ${heirUsd > 0 ? '#059669' : '#64748b'}; border: 1px solid ${heirUsd > 0 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(148, 163, 184, 0.3)'};">
                 ${estatusHeredero}
               </span>
             </td>
@@ -198,7 +208,7 @@
             <div style="background: rgba(124, 58, 237, 0.08); border: 1px solid rgba(124, 58, 237, 0.3); border-radius: 6px; padding: 10px 12px;">
               <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #7c3aed;">4. Fruto Base (14 Estirpes)</div>
               <div style="font-size: 15px; font-weight: 800; color: #7c3aed;">$${totalFrutosBaseUsd.toFixed(2)}</div>
-              <div style="font-size: 9.5px; color: #7c3aed; font-weight: 700;">14 Cuotas de $${cuotaPorHerederoUsd.toFixed(2)}</div>
+              <div style="font-size: 9.5px; color: #7c3aed; font-weight: 700;">14 Cuotas (${remainderCents > 0 ? `base $${(baseCentsPerHeredero / 100).toFixed(2)} + restos` : `$${(baseCentsPerHeredero / 100).toFixed(2)} c/u`})</div>
             </div>
             <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; padding: 10px 12px;">
               <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #059669;">5. Remanente Patrimonial</div>
@@ -243,7 +253,7 @@
           <!-- NOTAS LEGALES Y AUDITORÍA SUCESORAL -->
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; font-size: 11px; margin-bottom: 25px; line-height: 1.5; color: #334155;">
             <strong>FUNDAMENTO LEGAL Y NORMAS DE PARTICIÓN:</strong>
-            La presente liquidación se rige por los Artículos 552 (Frutos Civiles) y 768 (Comunidad Indivisa) del Código Civil de la República Bolivariana de Venezuela, en concordancia con el Decreto con Rango, Valor y Fuerza de Ley de Regulación del Arrendamiento Inmobiliario para el Uso Comercial (G.O. N° 40.418). Los montos calculados corresponden a los fondos efectivamente percibidos en cuenta bancaria y gastos operativos conciliados del período, sujetos a aprobación final de la Junta de Sucesores y cierre contable.
+            La presente liquidación se rige por los Artículos 552 (Frutos Civiles) y 768 (Comunidad Indivisa) del Código Civil de la República Bolivariana de Venezuela, en concordancia con el Decreto con Rango, Valor y Fuerza de Ley de Regulación del Arrendamiento Inmobiliario para el Uso Comercial (G.O. N° 40.418). Los montos calculados corresponden a las facturas cobradas y gastos operativos registrados en el sistema para el período, sujetos a conciliación bancaria definitiva, aprobación de la Junta de Sucesores y cierre contable.
           </div>
 
           <!-- FIRMAS AUTORIZADAS -->

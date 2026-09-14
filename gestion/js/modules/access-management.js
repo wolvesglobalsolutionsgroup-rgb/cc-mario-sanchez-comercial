@@ -132,6 +132,26 @@
     },
 
     togglePermission(roleKey, moduleKey, action) {
+      // Inmutabilidad de rol: fiscal_auditor y heir_viewer son estrictamente de solo lectura
+      if ((roleKey === 'fiscal_auditor' || roleKey === 'heir_viewer') && action !== 'read') {
+        if (global.SecuritySuite && global.SecuritySuite.toast) {
+          global.SecuritySuite.toast(`El rol ${roleKey} es estrictamente de solo lectura.`, 'warning', 'Acción Denegada');
+        }
+        return false;
+      }
+
+      // Verificación de sesión: solo Director General / SuperAdmin puede alterar permisos
+      const currentRole = (global.AuthGuard && typeof global.AuthGuard.getUserRole === 'function')
+        ? global.AuthGuard.getUserRole()
+        : (global.currentRole || null);
+      const isAuthorized = currentRole === 'org_director' || currentRole === 'superadmin';
+      if (!isAuthorized) {
+        if (global.SecuritySuite && global.SecuritySuite.toast) {
+          global.SecuritySuite.toast('Se requiere sesión de Director General para modificar la matriz de accesos.', 'error', 'No Autorizado');
+        }
+        return false;
+      }
+
       const matrix = this.getMatrix();
       if (!matrix[roleKey] || !matrix[roleKey].modules[moduleKey]) return;
       matrix[roleKey].modules[moduleKey][action] = !matrix[roleKey].modules[moduleKey][action];
@@ -218,6 +238,10 @@
     },
 
     hasPermission(roleKey, moduleKey, action = 'read') {
+      // Inmutabilidad de rol: fiscal_auditor y heir_viewer nunca tienen permisos de escritura ni eliminación
+      if ((roleKey === 'fiscal_auditor' || roleKey === 'heir_viewer') && action !== 'read') {
+        return false;
+      }
       const matrix = this.getMatrix();
       if (!matrix[roleKey] || !matrix[roleKey].modules[moduleKey]) return false;
       return Boolean(matrix[roleKey].modules[moduleKey][action]);
