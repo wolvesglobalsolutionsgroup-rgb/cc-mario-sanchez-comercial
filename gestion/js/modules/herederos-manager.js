@@ -96,7 +96,7 @@
       const dbService = global.dbService || (typeof global.DatabaseService === 'function' ? (global._dbServiceInstance || (global._dbServiceInstance = new global.DatabaseService())) : null);
       const financialEngine = global.financialEngine || (typeof global.FinancialEngine === 'function' ? (global._financialEngineInstance || (global._financialEngineInstance = new global.FinancialEngine())) : null);
       const invoices = dbService && typeof dbService.getInvoices === 'function'
-        ? dbService.getInvoices().filter(i => i.period_month === month && i.period_year === year)
+        ? dbService.getInvoices().filter(i => Number(i.period_month) === Number(month) && Number(i.period_year) === Number(year))
         : [];
 
       // Total facturado y cobrado de los 39 locales
@@ -110,19 +110,23 @@
         if (inv.status === 'pagado') totalCobradoUsd += total;
       });
 
-      const baseIngresos = totalCobradoUsd > 0 ? totalCobradoUsd : (totalFacturadoUsd > 0 ? totalFacturadoUsd : 9050.00);
+      const baseIngresos = totalCobradoUsd;
 
       // Egresos comunes
       const sysSettings = (dbService && dbService.getSettings) ? dbService.getSettings() : {};
-      const baseGastosCfg = parseFloat(sysSettings.base_monthly_expenses_usd) || 2540.00;
       const allDbExpenses = dbService && dbService.getCondoExpenses ? dbService.getCondoExpenses() : [];
-      const expensesPeriod = allDbExpenses.filter(e => e.period_month === month && e.period_year === year);
+      const expensesPeriod = allDbExpenses.filter(e => Number(e.period_month) === Number(month) && Number(e.period_year) === Number(year));
       const totalGastosUsd = expensesPeriod.length > 0
         ? expensesPeriod.reduce((sum, e) => sum + (parseFloat(e.amount_usd) || 0), 0)
-        : baseGastosCfg;
+        : (totalCobradoUsd > 0 ? (parseFloat(sysSettings.base_monthly_expenses_usd) || 0) : 0);
 
-      const utilidadNetaUsd = Math.max(0, baseIngresos - totalGastosUsd);
-      const cuotaPorHerederoUsd = parseFloat(sysSettings.cuota_base_heredero_usd) || 400.00;
+      const utilidadNetaUsd = baseIngresos - totalGastosUsd;
+      const cuotaConfiguradaUsd = parseFloat(sysSettings.cuota_base_heredero_usd) || 400.00;
+      
+      // Si no hay ingresos cobrados o hay déficit, la cuota efectivamente liquidada es 0 (no se fabrica dinero inexistente)
+      const cuotaPorHerederoUsd = (baseIngresos > 0 && utilidadNetaUsd > 0)
+        ? Math.min(cuotaConfiguradaUsd, utilidadNetaUsd / 14)
+        : 0;
       const totalFrutosBaseUsd = cuotaPorHerederoUsd * 14;
       const remanentePatrimonialUsd = Math.max(0, utilidadNetaUsd - totalFrutosBaseUsd);
 
@@ -132,6 +136,7 @@
         const bsAmount = financialEngine && financialEngine.convert 
           ? financialEngine.convert(cuotaPorHerederoUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 })
           : (cuotaPorHerederoUsd * 40.0).toFixed(2);
+        const estatusHeredero = baseIngresos <= 0 ? 'Sin recaudación' : (cuotaPorHerederoUsd > 0 ? h.status : 'Déficit / En espera');
         return `
           <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11.5px;">
             <td style="padding: 8px 10px; font-weight: 700; text-align: center;">${idx + 1}</td>
@@ -140,12 +145,12 @@
               <div style="font-size: 10px; color: #64748b;">Doc / C.I.: ${escapeHtml(h.doc)}</div>
             </td>
             <td style="padding: 8px 10px; text-align: center; font-weight: 700; color: #7c3aed;">${h.shareFrac} (${h.sharePct})</td>
-            <td style="padding: 8px 10px; text-align: right; color: #64748b;">$400.00</td>
+            <td style="padding: 8px 10px; text-align: right; color: #64748b;">$${cuotaConfiguradaUsd.toFixed(2)}</td>
             <td style="padding: 8px 10px; text-align: right; font-weight: 700; color: #0f172a;">$${cuotaPorHerederoUsd.toFixed(2)}</td>
             <td style="padding: 8px 10px; text-align: right; color: #475569;">Bs. ${bsAmount}</td>
             <td style="padding: 8px 10px; text-align: center;">
-              <span style="display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 10px; font-weight: 700; background: rgba(16, 185, 129, 0.15); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3);">
-                ${h.status}
+              <span style="display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 10px; font-weight: 700; background: ${cuotaPorHerederoUsd > 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(148, 163, 184, 0.15)'}; color: ${cuotaPorHerederoUsd > 0 ? '#059669' : '#64748b'}; border: 1px solid ${cuotaPorHerederoUsd > 0 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(148, 163, 184, 0.3)'};">
+                ${estatusHeredero}
               </span>
             </td>
           </tr>
@@ -238,7 +243,7 @@
           <!-- NOTAS LEGALES Y AUDITORÍA SUCESORAL -->
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; font-size: 11px; margin-bottom: 25px; line-height: 1.5; color: #334155;">
             <strong>FUNDAMENTO LEGAL Y NORMAS DE PARTICIÓN:</strong>
-            La presente liquidación se rige por los Artículos 552 (Frutos Civiles) y 768 (Comunidad Indivisa) del Código Civil de la República Bolivariana de Venezuela, en concordancia con el Decreto con Rango, Valor y Fuerza de Ley de Regulación del Arrendamiento Inmobiliario para el Uso Comercial (G.O. N° 40.418). Los recursos han sido auditados según los comprobantes bancarios, facturas de gastos operativos y deducciones correspondientes al Fondo de Reserva y Honorarios de Administración de la Sociedad.
+            La presente liquidación se rige por los Artículos 552 (Frutos Civiles) y 768 (Comunidad Indivisa) del Código Civil de la República Bolivariana de Venezuela, en concordancia con el Decreto con Rango, Valor y Fuerza de Ley de Regulación del Arrendamiento Inmobiliario para el Uso Comercial (G.O. N° 40.418). Los montos calculados corresponden a los fondos efectivamente percibidos en cuenta bancaria y gastos operativos conciliados del período, sujetos a aprobación final de la Junta de Sucesores y cierre contable.
           </div>
 
           <!-- FIRMAS AUTORIZADAS -->

@@ -627,6 +627,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) { console.error('[ReportsTab] Render error:', err); }
       }
 
+      if (currentTab === 'configuracion' && window.AccessManagement && typeof window.AccessManagement.render === 'function') {
+        try { window.AccessManagement.render(); } catch (err) { console.error('[AccessManagement] Render error:', err); }
+      }
+
       if (currentTab === 'ayuda' && window.HelpContent && typeof window.HelpContent.render === 'function') {
         try { window.HelpContent.render(); } catch (err) { console.error('[HelpContent] Render error:', err); }
       }

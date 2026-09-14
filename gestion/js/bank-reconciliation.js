@@ -37,8 +37,15 @@
           
           let amount = 0;
           if (rawAmount.includes(',') && rawAmount.includes('.')) {
-            // Formato es-VE / europeo: 1.250,50
-            amount = parseFloat(rawAmount.replace(/\./g, '').replace(',', '.'));
+            const lastDot = rawAmount.lastIndexOf('.');
+            const lastComma = rawAmount.lastIndexOf(',');
+            if (lastDot > lastComma) {
+              // Formato US / estándar: 1,250.50 -> eliminar comas
+              amount = parseFloat(rawAmount.replace(/,/g, ''));
+            } else {
+              // Formato es-VE / europeo: 1.250,50 -> eliminar puntos y cambiar coma por punto
+              amount = parseFloat(rawAmount.replace(/\./g, '').replace(',', '.'));
+            }
           } else if (rawAmount.includes(',')) {
             amount = parseFloat(rawAmount.replace(',', '.'));
           } else {
@@ -59,6 +66,10 @@
       }
 
       return transactions;
+    },
+
+    parseCSV(csvText, bankType = 'auto') {
+      return this.parseStatement(csvText, bankType);
     },
 
     /**

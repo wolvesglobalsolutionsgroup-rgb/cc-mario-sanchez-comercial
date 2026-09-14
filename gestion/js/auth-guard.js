@@ -395,16 +395,33 @@
         if (data?.user) {
           const { data: profile, error: profileError } = await window.supabaseClient
             .from('profiles')
-            .select('role, display_name, tenant_id, organization_id')
+            .select('id, role, display_name, organization_id')
             .eq('id', data.user.id)
             .single();
           if (!profileError && profile) {
+            let resolvedTenantId = null;
+            try {
+              const { data: ut } = await window.supabaseClient
+                .from('user_tenants')
+                .select('tenant_id')
+                .eq('user_id', data.user.id)
+                .limit(1)
+                .maybeSingle();
+              if (ut && ut.tenant_id) {
+                resolvedTenantId = ut.tenant_id;
+              }
+            } catch (utErr) {
+              console.warn('[AUTH] Error verificando user_tenants:', utErr);
+            }
+
+            const normalizedRole = (profile.role === 'superadmin') ? 'org_director' : profile.role;
+
             const session = {
               user_id: data.user.id,
-              role: profile.role,
+              role: normalizedRole,
               display_name: profile.display_name,
               identifier: identifier,
-              tenant_id: profile.tenant_id || null,
+              tenant_id: resolvedTenantId,
               organization_id: profile.organization_id || null,
               status: 'active',
               is_supabase_auth: true,
@@ -574,11 +591,11 @@
       return null;
     }
     if (requiredRole && requiredRole !== 'any' && sess.role !== requiredRole) {
-      const isBoardOrAdmin = ['superadmin', 'admin', 'admin_finanzas', 'admin_legal', 'admin_mantenimiento', 'heredero'].includes(sess.role);
+      const isBoardOrAdmin = ['superadmin', 'org_director', 'admin', 'org_admin', 'admin_finanzas', 'accountant', 'fiscal_auditor', 'admin_legal', 'admin_mantenimiento', 'operations_manager', 'heredero', 'heir_viewer'].includes(sess.role);
       if (requiredRole === 'admin' && isBoardOrAdmin) {
         return sess;
       }
-      if (sess.role !== 'superadmin' && sess.role !== 'admin') {
+      if (sess.role !== 'superadmin' && sess.role !== 'org_director' && sess.role !== 'admin' && sess.role !== 'org_admin') {
         redirectToLogin('forbidden_role');
         return null;
       }
@@ -586,12 +603,30 @@
     return sess;
   }
 
+  function hasPermission(moduleKey, action = 'read') {
+    const sess = getSession();
+    if (!sess) return false;
+    if (sess.role === 'superadmin' || sess.role === 'org_director') return true;
+    if (global.AccessManagement && typeof global.AccessManagement.hasPermission === 'function') {
+      return global.AccessManagement.hasPermission(sess.role, moduleKey, action);
+    }
+    return true;
+  }
+
   // --- 4. UI HELPERS -----------------------------------------------------------
 
   const ROLE_MAP = {
     superadmin: {
-      name: 'SuperAdministrador Maestro',
-      badge: '👑 SUPERADMIN',
+      name: 'Director General / SuperAdmin',
+      badge: '👑 DIRECTOR GENERAL',
+      icon: 'fa-crown',
+      color: 'var(--amber)',
+      glow: 'var(--amber-glow)',
+      isMaster: true
+    },
+    org_director: {
+      name: 'Director General (Junta Directiva)',
+      badge: '👑 DIRECTOR GENERAL',
       icon: 'fa-crown',
       color: 'var(--amber)',
       glow: 'var(--amber-glow)',
@@ -605,12 +640,34 @@
       glow: 'var(--amber-glow)',
       isMaster: true
     },
+    org_admin: {
+      name: 'Administrador de Organización',
+      badge: 'ADMIN ORGANIZACIÓN',
+      icon: 'fa-user-shield',
+      color: 'var(--amber)',
+      glow: 'var(--amber-glow)',
+      isMaster: true
+    },
     admin_finanzas: {
       name: 'Finanzas & Cobranzas',
       badge: 'DIRECTOR FINANZAS',
       icon: 'fa-coins',
       color: 'var(--emerald)',
       glow: 'var(--emerald-glow)'
+    },
+    accountant: {
+      name: 'Contador General & Cobranzas',
+      badge: 'CONTADOR GENERAL',
+      icon: 'fa-coins',
+      color: 'var(--emerald)',
+      glow: 'var(--emerald-glow)'
+    },
+    fiscal_auditor: {
+      name: 'Auditor Fiscal & Tributario',
+      badge: 'AUDITOR FISCAL',
+      icon: 'fa-scale-balanced',
+      color: 'var(--cyan)',
+      glow: 'rgba(6, 182, 212, 0.2)'
     },
     admin_legal: {
       name: 'Legal & Contratos',
@@ -626,6 +683,13 @@
       color: '#f97316',
       glow: 'rgba(249, 115, 22, 0.2)'
     },
+    operations_manager: {
+      name: 'Gerente de Operaciones e Infraestructura',
+      badge: 'GERENTE OPERACIONES',
+      icon: 'fa-wrench',
+      color: '#f97316',
+      glow: 'rgba(249, 115, 22, 0.2)'
+    },
     heredero: {
       name: 'Copropietario Sucesión Mario Sánchez',
       badge: 'HEREDERO (1/14 CUOTA - SOLO LECTURA)',
@@ -634,8 +698,24 @@
       glow: 'rgba(168, 85, 247, 0.2)',
       isReadOnly: true
     },
+    heir_viewer: {
+      name: 'Copropietario Heredero (Solo Lectura)',
+      badge: 'HEREDERO (SOLO LECTURA)',
+      icon: 'fa-landmark',
+      color: 'var(--purple)',
+      glow: 'rgba(168, 85, 247, 0.2)',
+      isReadOnly: true
+    },
     tenant: {
       name: 'Arrendatario Comercial',
+      badge: 'INQUILINO COMERCIAL',
+      icon: 'fa-store',
+      color: 'var(--emerald)',
+      glow: 'var(--emerald-glow)',
+      isTenant: true
+    },
+    tenant_user: {
+      name: 'Usuario Inquilino Comercial',
       badge: 'INQUILINO COMERCIAL',
       icon: 'fa-store',
       color: 'var(--emerald)',
@@ -732,9 +812,9 @@
     if (!sess) return;
     const root = rootEl || document;
 
-    const isBoardOrAdmin = ['superadmin', 'admin', 'admin_finanzas', 'admin_legal', 'admin_mantenimiento', 'heredero'].includes(sess.role);
-    const isSuperAdmin = (sess.role === 'superadmin');
-    const isReadOnlyHeredero = (sess.role === 'heredero');
+    const isBoardOrAdmin = ['superadmin', 'org_director', 'admin', 'org_admin', 'admin_finanzas', 'accountant', 'fiscal_auditor', 'admin_legal', 'admin_mantenimiento', 'operations_manager', 'heredero', 'heir_viewer'].includes(sess.role);
+    const isSuperAdmin = (sess.role === 'superadmin' || sess.role === 'org_director');
+    const isReadOnlyHeredero = (sess.role === 'heredero' || sess.role === 'heir_viewer');
 
     // Visibilidad de pestañas y elementos administrativos (respetando el estado de tab-view)
     root.querySelectorAll('[data-roles="admin"]').forEach(el => {
@@ -754,13 +834,14 @@
       }
     });
     root.querySelectorAll('[data-roles="tenant"]').forEach(el => {
+      const isTenantUser = (sess.role === 'tenant' || sess.role === 'tenant_user');
       if (el.classList.contains('tab-view')) {
-        if (sess.role !== 'tenant') {
+        if (!isTenantUser) {
           el.style.setProperty('display', 'none', 'important');
           el.classList.add('hidden-by-role', 'is-hidden');
         }
       } else {
-        if (sess.role === 'tenant') {
+        if (isTenantUser) {
           el.style.removeProperty('display');
           el.classList.remove('hidden-by-role', 'is-hidden');
         } else {
@@ -788,7 +869,7 @@
 
     // Control departamental por atributo data-permission
     root.querySelectorAll('[data-permission="finances"]').forEach(el => {
-      const can = isSuperAdmin || sess.role === 'admin' || sess.role === 'admin_finanzas';
+      const can = isSuperAdmin || sess.role === 'admin' || sess.role === 'org_admin' || sess.role === 'admin_finanzas' || sess.role === 'accountant' || sess.role === 'fiscal_auditor';
       if (can) {
         el.style.removeProperty('display');
         el.classList.remove('hidden-by-role', 'is-hidden');
@@ -798,7 +879,7 @@
       }
     });
     root.querySelectorAll('[data-permission="legal"]').forEach(el => {
-      const can = isSuperAdmin || sess.role === 'admin' || sess.role === 'admin_legal';
+      const can = isSuperAdmin || sess.role === 'admin' || sess.role === 'org_admin' || sess.role === 'admin_legal';
       if (can) {
         el.style.removeProperty('display');
         el.classList.remove('hidden-by-role', 'is-hidden');
@@ -808,7 +889,7 @@
       }
     });
     root.querySelectorAll('[data-permission="maintenance"]').forEach(el => {
-      const can = isSuperAdmin || sess.role === 'admin' || sess.role === 'admin_mantenimiento';
+      const can = isSuperAdmin || sess.role === 'admin' || sess.role === 'org_admin' || sess.role === 'admin_mantenimiento' || sess.role === 'operations_manager';
       if (can) {
         el.style.removeProperty('display');
         el.classList.remove('hidden-by-role', 'is-hidden');
@@ -986,7 +1067,8 @@
     hashPasswordWithSalt,
     verifyPassword,
     sha256: sha256Legacy,
-    demoEnabled: DEMO_ENABLED
+    demoEnabled: DEMO_ENABLED,
+    hasPermission
   };
 
   global.escapeHtml = escapeHtml;

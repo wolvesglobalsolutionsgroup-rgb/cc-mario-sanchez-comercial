@@ -722,4 +722,86 @@ describe("PILAR 10: ARQUITECTURA MULTI-TENANT (FASE 0) & CONDICIÓN DE CARRERA D
   });
 });
 
+describe("PILAR 11: REMEDIACIÓN TÉCNICA MAESTRA (FASES F1-F5 / T04-T22)", () => {
+  const BankReconciliation = require("../gestion/js/bank-reconciliation.js");
 
+  test("BankReconciliation: Parseo exacto de montos en formatos 1,250.50 (US) y 1.250,50 (VE/EU)", () => {
+    const csvContent = [
+      "fecha;referencia;monto;descripcion",
+      "2026-03-05;REF-001;1,250.50;Transferencia Formato US",
+      "2026-03-05;REF-002;1.250,50;Transferencia Formato VE",
+      "2026-03-05;REF-003;500.00;Transferencia Simple",
+      "2026-03-05;REF-004;750,25;Transferencia Coma Decimal"
+    ].join("\n");
+
+    const parsed = BankReconciliation.parseCSV(csvContent);
+    assert.strictEqual(parsed.length, 4, "Debe parsear 4 transacciones válidas");
+    assert.strictEqual(parsed[0].amount, 1250.50, "1,250.50 debe interpretarse exactamente como 1250.50");
+    assert.strictEqual(parsed[1].amount, 1250.50, "1.250,50 debe interpretarse exactamente como 1250.50");
+    assert.strictEqual(parsed[2].amount, 500.00, "500.00 debe interpretarse como 500");
+    assert.strictEqual(parsed[3].amount, 750.25, "750,25 debe interpretarse como 750.25");
+  });
+
+  test("HerederosManager: Cero recaudación no debe fabricar $9,050 ficticios", () => {
+    if (!global.window) global.window = {};
+    // Simular dbService sin facturas pagadas
+    global.dbService = {
+      getInvoices: () => [],
+      getCondoExpenses: () => [],
+      getSettings: () => ({ base_monthly_expenses_usd: 2540.00, cuota_base_heredero_usd: 400.00 })
+    };
+    require("../gestion/js/modules/herederos-manager.js");
+    const html = global.HerederosManager.renderReportHTML(1, 2040);
+    assert.ok(!html.includes("$9050.00"), "No debe fabricar $9,050.00 cuando no hay facturas");
+    assert.ok(html.includes("$0.00"), "Los ingresos recaudados deben reflejar $0.00");
+    assert.ok(html.includes("Sin recaudación"), "Los herederos deben reflejar 'Sin recaudación'");
+    assert.ok(!html.includes("Los recursos han sido auditados"), "No debe contener afirmaciones infundadas de auditoría");
+  });
+
+  test("Migración Expansiva 20260914000000: Estructura roles enterprise, command_receipts y RPC atómico", () => {
+    const migPath = path.join(rootDir, "supabase", "migrations", "20260914000000_expand_identity_and_command_receipts.sql");
+    assert.ok(fs.existsSync(migPath), "La migración 20260914000000 debe existir");
+    const sql = fs.readFileSync(migPath, "utf8");
+
+    assert.ok(sql.includes("org_director"), "Debe definir rol org_director");
+    assert.ok(sql.includes("accountant"), "Debe definir rol accountant");
+    assert.ok(sql.includes("fiscal_auditor"), "Debe definir rol fiscal_auditor");
+    assert.ok(sql.includes("command_receipts"), "Debe crear tabla command_receipts");
+    assert.ok(sql.includes("approve_payment_transaction"), "Debe implementar RPC approve_payment_transaction");
+    assert.ok(sql.includes("OPTIMISTIC_LOCK_CONFLICT"), "RPC debe manejar OPTIMISTIC_LOCK_CONFLICT");
+  });
+
+  test("Fixtures Sintéticos y Gobernanza de Acceso: Archivos desacoplados presentes", () => {
+    const synPath = path.join(rootDir, "gestion", "js", "fixtures-synthetic.js");
+    const accPath = path.join(rootDir, "gestion", "js", "modules", "access-management.js");
+    assert.ok(fs.existsSync(synPath), "fixtures-synthetic.js debe existir");
+    assert.ok(fs.existsSync(accPath), "access-management.js debe existir");
+
+    const accJs = fs.readFileSync(accPath, "utf8");
+    assert.ok(accJs.includes("AccessManagement"), "Debe definir objeto global AccessManagement");
+    assert.ok(accJs.includes("togglePermission"), "Debe soportar toggle de permisos");
+    assert.ok(accJs.includes("hasPermission"), "Debe definir helper hasPermission para control en runtime");
+  });
+
+  test("HerederosManager & AccessManagement: Compatibilidad con cadenas de período y verificación de permisos", () => {
+    // 1. Verificar coincidencia de períodos string vs number en HerederosManager
+    global.dbService = {
+      getInvoices: () => [
+        { period_month: "3", period_year: "2026", status: "pagado", total_usd: 1500.00 }
+      ],
+      getCondoExpenses: () => [
+        { period_month: "3", period_year: "2026", amount_usd: 500.00 }
+      ],
+      getSettings: () => ({ base_monthly_expenses_usd: 500.00, cuota_base_heredero_usd: 400.00 })
+    };
+    require("../gestion/js/modules/herederos-manager.js");
+    const htmlWithStrings = global.HerederosManager.renderReportHTML(3, 2026);
+    assert.ok(htmlWithStrings.includes("$1500.00"), "Debe recaudar $1500.00 aún cuando period_month y period_year son cadenas");
+
+    // 2. Verificar helper de permisos en AccessManagement
+    const AccessManagement = require("../gestion/js/modules/access-management.js");
+    assert.strictEqual(AccessManagement.hasPermission("org_director", "invoices", "write"), true, "org_director debe tener write en invoices");
+    assert.strictEqual(AccessManagement.hasPermission("fiscal_auditor", "invoices", "write"), false, "fiscal_auditor no debe tener write en invoices");
+    assert.strictEqual(AccessManagement.hasPermission("fiscal_auditor", "invoices", "read"), true, "fiscal_auditor debe tener read en invoices");
+  });
+});
