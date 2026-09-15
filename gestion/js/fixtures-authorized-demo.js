@@ -1512,7 +1512,7 @@
         "rent_usd": 1000.0,
         "condo_usd": 0,
         "total_usd": 1000.0,
-        "status": "pendiente",
+        "status": "pagado",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1557,7 +1557,7 @@
         "rent_usd": 300.0,
         "condo_usd": 0,
         "total_usd": 300.0,
-        "status": "pendiente",
+        "status": "pagado",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1602,7 +1602,7 @@
         "rent_usd": 120.0,
         "condo_usd": 0,
         "total_usd": 120.0,
-        "status": "pendiente",
+        "status": "pagado",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1647,7 +1647,7 @@
         "rent_usd": 500.0,
         "condo_usd": 0,
         "total_usd": 500.0,
-        "status": "pendiente",
+        "status": "pagado",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1737,7 +1737,7 @@
         "rent_usd": 350.0,
         "condo_usd": 0,
         "total_usd": 350.0,
-        "status": "pendiente",
+        "status": "pagado",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1782,7 +1782,7 @@
         "rent_usd": 200.0,
         "condo_usd": 0,
         "total_usd": 200.0,
-        "status": "pendiente",
+        "status": "pagado",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1962,7 +1962,7 @@
         "rent_usd": 120.0,
         "condo_usd": 0,
         "total_usd": 120.0,
-        "status": "pendiente",
+        "status": "pagado",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -2007,7 +2007,7 @@
         "rent_usd": 320.0,
         "condo_usd": 0,
         "total_usd": 320.0,
-        "status": "pendiente",
+        "status": "pagado",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -2073,7 +2073,104 @@
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
       }
     ],
-    "payments": [],
+    "payments": [
+      {
+        "id": "demo-real-payment-001",
+        "payment_number": "PAG-DEMO-001",
+        "invoice_id": "demo-real-invoice-001",
+        "amount_usd": 1000.0,
+        "payment_method": "transferencia",
+        "reference_number": "DEMO-REAL-001",
+        "payment_date": "2026-08-08",
+        "status": "verificado",
+        "version": 1,
+        "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
+      },
+      {
+        "id": "demo-real-payment-004",
+        "payment_number": "PAG-DEMO-004",
+        "invoice_id": "demo-real-invoice-004",
+        "amount_usd": 300.0,
+        "payment_method": "transferencia",
+        "reference_number": "DEMO-REAL-004",
+        "payment_date": "2026-08-08",
+        "status": "verificado",
+        "version": 1,
+        "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
+      },
+      {
+        "id": "demo-real-payment-007",
+        "payment_number": "PAG-DEMO-007",
+        "invoice_id": "demo-real-invoice-007",
+        "amount_usd": 120.0,
+        "payment_method": "transferencia",
+        "reference_number": "DEMO-REAL-007",
+        "payment_date": "2026-08-08",
+        "status": "verificado",
+        "version": 1,
+        "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
+      },
+      {
+        "id": "demo-real-payment-010",
+        "payment_number": "PAG-DEMO-010",
+        "invoice_id": "demo-real-invoice-010",
+        "amount_usd": 500.0,
+        "payment_method": "transferencia",
+        "reference_number": "DEMO-REAL-010",
+        "payment_date": "2026-08-08",
+        "status": "verificado",
+        "version": 1,
+        "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
+      },
+      {
+        "id": "demo-real-payment-016",
+        "payment_number": "PAG-DEMO-016",
+        "invoice_id": "demo-real-invoice-016",
+        "amount_usd": 350.0,
+        "payment_method": "transferencia",
+        "reference_number": "DEMO-REAL-016",
+        "payment_date": "2026-08-08",
+        "status": "verificado",
+        "version": 1,
+        "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
+      },
+      {
+        "id": "demo-real-payment-019",
+        "payment_number": "PAG-DEMO-019",
+        "invoice_id": "demo-real-invoice-019",
+        "amount_usd": 200.0,
+        "payment_method": "transferencia",
+        "reference_number": "DEMO-REAL-019",
+        "payment_date": "2026-08-08",
+        "status": "verificado",
+        "version": 1,
+        "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
+      },
+      {
+        "id": "demo-real-payment-031",
+        "payment_number": "PAG-DEMO-031",
+        "invoice_id": "demo-real-invoice-031",
+        "amount_usd": 120.0,
+        "payment_method": "transferencia",
+        "reference_number": "DEMO-REAL-031",
+        "payment_date": "2026-08-08",
+        "status": "verificado",
+        "version": 1,
+        "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
+      },
+      {
+        "id": "demo-real-payment-034",
+        "payment_number": "PAG-DEMO-034",
+        "invoice_id": "demo-real-invoice-034",
+        "amount_usd": 320.0,
+        "payment_method": "transferencia",
+        "reference_number": "DEMO-REAL-034",
+        "payment_date": "2026-08-08",
+        "status": "verificado",
+        "version": 1,
+        "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
+      }
+    ],
     "condo_expenses": [
       {
         "id": "demo-real-exp-001",
