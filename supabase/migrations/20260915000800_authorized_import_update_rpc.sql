@@ -16,6 +16,10 @@ BEGIN
   IF p_patch ? 'unit' AND p_patch->'unit' ? 'area_m2' THEN new_payload := jsonb_set(new_payload,'{unit,area_m2}',to_jsonb(p_patch->'unit'->>'area_m2'),true); END IF;
   IF p_patch ? 'tenant' AND p_patch->'tenant' ? 'rif' THEN new_payload := jsonb_set(new_payload,'{tenant,rif}',to_jsonb(p_patch->'tenant'->>'rif'),true); END IF;
   IF p_patch ? 'tenant' AND p_patch->'tenant' ? 'legal_rep_dni' THEN new_payload := jsonb_set(new_payload,'{tenant,legal_rep_dni}',to_jsonb(p_patch->'tenant'->>'legal_rep_dni'),true); END IF;
+  IF p_patch ? 'tenant' AND p_patch->'tenant' ? 'legal_rep_name' THEN new_payload := jsonb_set(new_payload,'{tenant,legal_rep_name}',to_jsonb(p_patch->'tenant'->>'legal_rep_name'),true); END IF;
+  IF p_patch ? 'tenant' AND p_patch->'tenant' ? 'email' THEN new_payload := jsonb_set(new_payload,'{tenant,email}',to_jsonb(p_patch->'tenant'->>'email'),true); END IF;
+  IF p_patch ? 'tenant' AND p_patch->'tenant' ? 'phone' THEN new_payload := jsonb_set(new_payload,'{tenant,phone}',to_jsonb(p_patch->'tenant'->>'phone'),true); END IF;
+  IF p_patch ? 'tenant' AND p_patch->'tenant' ? 'whatsapp' THEN new_payload := jsonb_set(new_payload,'{tenant,whatsapp}',to_jsonb(p_patch->'tenant'->>'whatsapp'),true); END IF;
   IF p_patch ? 'contract' AND p_patch->'contract' ? 'start_date' THEN new_payload := jsonb_set(new_payload,'{contract,start_date}',to_jsonb(p_patch->'contract'->>'start_date'),true); END IF;
   IF p_patch ? 'contract' AND p_patch->'contract' ? 'end_date' THEN new_payload := jsonb_set(new_payload,'{contract,end_date}',to_jsonb(p_patch->'contract'->>'end_date'),true); END IF;
   UPDATE public.authorized_import_staging

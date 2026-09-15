@@ -738,7 +738,7 @@ document.addEventListener('DOMContentLoaded', () => {
     badge.textContent = pending.length ? `${pending.length} por revisar` : 'Sin pendientes';
     badge.style.color = pending.length ? 'var(--amber)' : 'var(--emerald)';
     list.replaceChildren();
-    pending.slice(0, 12).forEach(row => {
+    rows.filter(row => row.status !== 'imported').slice(0, 12).forEach(row => {
       const item = document.createElement('div');
       item.style.cssText = 'display:grid;gap:8px;padding:8px 10px;border:1px solid var(--border-subtle);border-radius:8px;background:var(--bg-card);font-size:11px;';
       const head = document.createElement('div');
@@ -747,9 +747,19 @@ document.addEventListener('DOMContentLoaded', () => {
       label.style.color = 'var(--txt-primary)';
       label.textContent = `${row.record_type === 'data_quality_exception' ? 'Excepción' : 'Paquete'} · ${row.source_record_key || 'sin clave'} · fila ${row.source_row}`;
       const state = document.createElement('span');
-      state.style.color = 'var(--amber)';
-      state.textContent = 'Requiere validación';
+      state.style.color = row.status === 'approved' ? 'var(--emerald)' : 'var(--amber)';
+      state.textContent = row.status === 'approved' ? 'Aprobado · listo para materializar' : row.status === 'rejected' ? 'Rechazado' : 'Requiere validación';
       head.append(label, state); item.appendChild(head);
+      if (row.status === 'approved' && typeof dbService.materializeAuthorizedImport === 'function') {
+        const materialize = document.createElement('button');
+        materialize.type = 'button'; materialize.className = 'btn-primary'; materialize.textContent = 'Materializar paquete'; materialize.style.cssText = 'justify-self:start;padding:7px 10px;font-size:10.5px;';
+        materialize.addEventListener('click', async () => {
+          materialize.disabled = true; materialize.textContent = 'Procesando…';
+          try { await dbService.materializeAuthorizedImport(row.id); renderAuthorizedImportReview(); renderDataQualityNotice(); }
+          catch (error) { console.error('[ImportReview] Materialization failed:', error); alert(`No se pudo materializar: ${error.message}`); materialize.disabled = false; materialize.textContent = 'Materializar paquete'; }
+        });
+        item.appendChild(materialize);
+      }
       if (row.record_type === 'lease_bundle') {
         const details = document.createElement('details');
         const summaryEl = document.createElement('summary');
@@ -762,7 +772,11 @@ document.addEventListener('DOMContentLoaded', () => {
           ['start_date', 'Inicio contrato', row.payload?.contract?.start_date ?? '', 'date'],
           ['end_date', 'Fin contrato', row.payload?.contract?.end_date ?? '', 'date'],
           ['rif', 'RIF', row.payload?.tenant?.rif ?? ''],
-          ['legal_rep_dni', 'C.I. representante', row.payload?.tenant?.legal_rep_dni ?? '']
+          ['legal_rep_dni', 'C.I. representante', row.payload?.tenant?.legal_rep_dni ?? ''],
+          ['legal_rep_name', 'Representante legal', row.payload?.tenant?.legal_rep_name ?? ''],
+          ['email', 'Correo', row.payload?.tenant?.email ?? '', 'email'],
+          ['phone', 'Teléfono', row.payload?.tenant?.phone ?? ''],
+          ['whatsapp', 'WhatsApp', row.payload?.tenant?.whatsapp ?? '']
         ];
         const controls = {};
         fields.forEach(([key, labelText, value, type = 'text']) => {
@@ -773,7 +787,7 @@ document.addEventListener('DOMContentLoaded', () => {
         form.addEventListener('submit', async event => {
           event.preventDefault(); save.disabled = true; save.textContent = 'Guardando…';
           try {
-            await dbService.updateAuthorizedImport(row.id, { unit: { area_m2: controls.area_m2.value }, tenant: { rif: controls.rif.value, legal_rep_dni: controls.legal_rep_dni.value }, contract: { start_date: controls.start_date.value, end_date: controls.end_date.value } });
+            await dbService.updateAuthorizedImport(row.id, { unit: { area_m2: controls.area_m2.value }, tenant: { rif: controls.rif.value, legal_rep_dni: controls.legal_rep_dni.value, legal_rep_name: controls.legal_rep_name.value, email: controls.email.value, phone: controls.phone.value, whatsapp: controls.whatsapp.value }, contract: { start_date: controls.start_date.value, end_date: controls.end_date.value } });
             renderAuthorizedImportReview(); renderDataQualityNotice();
           } catch (error) { console.error('[ImportReview] Update failed:', error); alert(`No se pudo guardar la corrección: ${error.message}`); }
           finally { save.disabled = false; save.textContent = 'Guardar corrección'; }
@@ -782,10 +796,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       list.appendChild(item);
     });
-    if (pending.length > 12) {
+    const visibleRows = rows.filter(row => row.status !== 'imported');
+    if (visibleRows.length > 12) {
       const more = document.createElement('div');
       more.style.cssText = 'color:var(--txt-muted);font-size:10.5px;padding-top:3px;';
-      more.textContent = `Se muestran 12 de ${pending.length}.`;
+      more.textContent = `Se muestran 12 de ${visibleRows.length}.`;
       list.appendChild(more);
     }
   }
