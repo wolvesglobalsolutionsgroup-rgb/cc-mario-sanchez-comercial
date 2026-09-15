@@ -7,7 +7,7 @@
 - Vercel responde `200` en `/login`, `/onboarding`, `/gestion`, `/gestion/login` y `/gestion/onboarding`.
 - Supabase `wgs-proptech-prod` tiene aplicadas las migraciones de identidad, RLS, comandos financieros y endurecimiento.
 - Demo pública verificada con datos autorizados de los libros: 38 unidades físicas operativas, 38 inquilinos, facturación $7.560, recaudado $2.910, 30 cuotas vencidas por $4.650 y 159 gastos. El libro contiene 39 registros numerados: `LUBRICANTES DANCO, C.A.` queda registrado como excepción pendiente (sin metraje/unidad física identificable), no como local inventado.
-- Estabilidad actual: 52/52 pruebas; sintaxis y linter aprobados. El smoke UI publicado continúa verificado a 390/1440.
+- Estabilidad actual: 53/53 pruebas; sintaxis y linter aprobados. El smoke UI publicado continúa verificado a 390/1440.
 - Smoke UI ampliado: los seis botones de acceso demo crean sesión y navegan al tablero en un clic; los 11 módulos siguen navegables sin errores.
 - Los fixtures autorizados se consumen solo como snapshot demo; el fixture sintético no se carga en `index.html` y la política pública heredada de `units` fue eliminada.
 - Las escrituras de producción ya tienen frontera serverless `/api/records`: Bearer de Supabase, membresía activa, aislamiento por organización y RLS; la demo mantiene mutaciones solo en memoria.
@@ -37,7 +37,7 @@
 - Estado de persistencia visible: el dashboard muestra un aviso bloqueante cuando la lectura o escritura remota no se confirma, evitando presentar ceros o cambios optimistas como datos válidos.
 - Flujo de revisión operativo: la bandeja de importación ahora ofrece aprobar o rechazar cada paquete; el rechazo exige motivo y ambas decisiones pasan por la RPC protegida antes de habilitar la materialización.
 - Persistencia de módulos operativos: la migración `20260915001400` crea tablas RLS para acuerdos, cuentas receptoras, activos, consumibles y kardex; el allowlist serverless y la cola remota ya las incluyen. Los acuerdos dejaron de depender de `localStorage`.
-- Rendimiento RLS: `20260915001500` separa políticas de lectura/escritura por acción, indexa el alcance de los módulos operativos y corrige el initplan de `property_memberships`; el asesor dejó de reportar políticas permisivas duplicadas en esas cinco tablas. Los nuevos CRUD generan UUID en producción y conservan IDs legibles únicamente en la demo; esto evita rechazos contra las claves UUID de tenants, contratos, facturas, gastos y pagos.
+- Rendimiento RLS: `20260915001500` separa políticas de lectura/escritura por acción, indexa el alcance de los módulos operativos y corrige el initplan de `property_memberships`; el asesor dejó de reportar políticas permisivas duplicadas en esas cinco tablas. Los nuevos CRUD generan UUID en producción y conservan IDs legibles únicamente en la demo; esto evita rechazos contra las claves UUID de tenants, contratos, facturas, gastos y pagos. El endpoint de registros conserva validación UUID para tablas financieras y permite IDs textuales solo en los cinco módulos operativos que los definen.
 
 ## Bloqueos restantes antes de aceptar producción real
 
@@ -49,4 +49,5 @@
 6. Activar, cuando el cliente lo autorice, las credenciales de IA, Telegram/WhatsApp, correo, alertas y dominio/Cloudflare.
 
 Estimación operativa: **80 % de avance de ingeniería; 65 % de aceptación productiva**. La versión actual es una demo operativa y una base de producción conectada con persistencia remota inicial; no se debe declarar producción contable definitiva hasta cerrar los seis puntos anteriores.
+
 
