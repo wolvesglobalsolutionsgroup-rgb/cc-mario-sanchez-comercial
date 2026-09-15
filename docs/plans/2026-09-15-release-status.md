@@ -2,7 +2,7 @@
 
 ## Evidencia verificada
 
-- SHA publicado en `main`: `f49d793`.
+- SHA publicado en `main`: `4a69776`.
 - Build de Vercel corregido: el proyecto ahora declara `npm run build` y genera el bundle de Speed Insights; la causa del fallo en `4cf77f2` era la ausencia del script `build`.
 - Vercel responde `200` en `/login`, `/onboarding`, `/gestion`, `/gestion/login` y `/gestion/onboarding`.
 - Supabase `wgs-proptech-prod` tiene aplicadas las migraciones de identidad, RLS, comandos financieros y endurecimiento.
