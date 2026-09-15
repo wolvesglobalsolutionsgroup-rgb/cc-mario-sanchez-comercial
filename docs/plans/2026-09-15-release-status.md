@@ -2,7 +2,7 @@
 
 ## Evidencia verificada
 
-- SHA publicado en `main`: `6670d56`.
+- SHA publicado en `main`: `6670d56` (la entrega E14 se registra en el siguiente commit).
 - Vercel responde `200` en `/login`, `/onboarding`, `/gestion`, `/gestion/login` y `/gestion/onboarding`.
 - Supabase `wgs-proptech-prod` tiene aplicadas las migraciones de identidad, RLS, comandos financieros y endurecimiento.
 - Demo pública verificada con datos autorizados de los libros: 38 unidades físicas operativas, 38 inquilinos, facturación $7.560, recaudado $2.910, 30 cuotas vencidas por $4.650 y 159 gastos. El libro contiene 39 registros numerados: `LUBRICANTES DANCO, C.A.` queda registrado como excepción pendiente (sin metraje/unidad física identificable), no como local inventado.
@@ -26,6 +26,8 @@
 - Materialización transaccional: RPC `materialize_authorized_import` crea unidad, inquilino y contrato juntos, verifica duplicados y marca el origen como `imported` solo si las tres inserciones completan; cualquier error revierte todo.
 - Pruebas de contrato: la suite verifica separación de edición/aprobación/materialización, bloqueo de estado incorrecto, detección de duplicados y revocación de ejecución anónima.
 - Endurecimiento financiero: `/api/records` ya no acepta escrituras de `payments` ni `transactions`; esos efectos deben pasar por comandos/RPC atómicos. La suite verifica esta frontera.
+- Supabase Security Advisor: se eliminó la alerta de ejecución anónima de `has_ccms_property`; el predicado queda ejecutable solo por `authenticated`. Permanecen advertencias de funciones SECURITY DEFINER usadas intencionalmente por RLS y comandos protegidos.
+- E14 iniciada: RPC `create_organization_onboarding` y `/api/onboarding` crean organización + primer inmueble de forma atómica, solo para `platform_staff.role = founder`, con slug único y features permitidas.
 
 ## Bloqueos restantes antes de aceptar producción real
 

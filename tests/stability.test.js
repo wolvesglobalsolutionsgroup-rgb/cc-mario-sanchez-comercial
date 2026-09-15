@@ -789,6 +789,16 @@ describe("PILAR 11: REMEDIACIÓN TÉCNICA MAESTRA (FASES F1-F5 / T04-T22)", () =
     assert.match(fs.readFileSync(path.join(rootDir, "api", "commands.js"), "utf8"), /payments\.approve/);
   });
 
+  test("Onboarding: alta de organización exige fundador y limita features", () => {
+    const sql = fs.readFileSync(path.join(rootDir, "supabase", "migrations", "20260915001100_onboarding_organization_rpc.sql"), "utf8");
+    assert.match(sql, /PLATFORM_FOUNDER_REQUIRED/);
+    assert.match(sql, /ORGANIZATION_SLUG_EXISTS/);
+    assert.match(sql, /safe_features/);
+    assert.match(sql, /marketplace_opt_in/);
+    assert.match(sql, /REVOKE ALL ON FUNCTION/);
+    assert.match(fs.readFileSync(path.join(rootDir, "api", "onboarding.js"), "utf8"), /create_organization_onboarding/);
+  });
+
   test("Fixtures Sintéticos y Gobernanza de Acceso: Archivos desacoplados presentes", () => {
     const synPath = path.join(rootDir, "gestion", "js", "fixtures-synthetic.js");
     const accPath = path.join(rootDir, "gestion", "js", "modules", "access-management.js");
