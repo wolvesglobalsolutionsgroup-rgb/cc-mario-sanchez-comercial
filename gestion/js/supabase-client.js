@@ -1153,6 +1153,8 @@ class DatabaseService {
 try {
   window.DatabaseService = DatabaseService;
   window.dbService = new DatabaseService();
+  // Declaración global explícita para módulos legacy que referencian dbService sin window.
+  var dbService = window.dbService;
 } catch (error) {
   console.error('[DB] No se pudo inicializar el servicio de datos:', error);
   window.dbService = {
@@ -1161,4 +1163,5 @@ try {
     getSettings: () => ({}),
     saveData: () => { throw new Error('REMOTE_PERSISTENCE_REQUIRED'); }
   };
+  var dbService = window.dbService;
 }

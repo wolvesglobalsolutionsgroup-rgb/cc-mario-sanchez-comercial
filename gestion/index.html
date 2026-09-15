@@ -4438,6 +4438,13 @@
 <script src="js/modules/herederos-manager.js?v=20260913_v2" defer></script>
 <script src="js/modules/gemini-assistant.js?v=20260913_v2" defer></script>
 <script src="js/modules/access-management.js?v=20260914_v1" defer></script>
+<script>
+  if (!window.dbService && window.CCMS_AUTHORIZED_DEMO_FIXTURES?.full_dataset) {
+    const demoData = window.CCMS_AUTHORIZED_DEMO_FIXTURES.full_dataset;
+    window.dbService = { persistenceState: 'demo_fixture', getData: () => JSON.parse(JSON.stringify(demoData)), getSettings: () => demoData.settings || {} };
+    var dbService = window.dbService;
+  }
+</script>
 <script src="js/app.js?v=20260913_v2" defer></script>
 </body>
 </html>
