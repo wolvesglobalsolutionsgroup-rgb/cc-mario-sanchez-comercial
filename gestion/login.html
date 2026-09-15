@@ -749,7 +749,7 @@
     <!-- SELECTOR DE ENTORNO ANTES DEL LOGIN: PRODUCCIÓN VS MODO DEMO -->
     <div class="env-selector-tabs" id="env-selector-tabs" style="display: flex; gap: 8px; margin-bottom: 22px; background: rgba(8, 14, 30, 0.9); padding: 4px; border-radius: 12px; border: 1.5px solid rgba(148, 163, 184, 0.18);">
       <button type="button" class="env-tab-btn active" id="tab-env-real" onclick="window.switchEnvironmentTab('real')" style="flex: 1; padding: 10px 12px; background: rgba(16, 185, 129, 0.18); border: 1px solid #10b981; color: #34d399; font-family: 'Manrope', sans-serif; font-size: 11.5px; font-weight: 800; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; transition: all 0.2s ease;">
-        <i class="fa-solid fa-cloud"></i> Producción (Supabase)
+        <i class="fa-solid fa-cloud"></i> Producción (Nube segura)
       </button>
       <button type="button" class="env-tab-btn" id="tab-env-demo" onclick="window.switchEnvironmentTab('demo')" style="flex: 1; padding: 10px 12px; background: transparent; border: 1px solid transparent; color: var(--login-txt-muted); font-family: 'Manrope', sans-serif; font-size: 11.5px; font-weight: 700; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; transition: all 0.2s ease;">
         <i class="fa-solid fa-flask"></i> Modo Demostración
@@ -765,7 +765,7 @@
         </div>
         <div class="system-status-beacon" id="auth-beacon-box">
           <span class="beacon-pulse" id="auth-beacon-pulse"></span>
-          <span id="auth-beacon-text">Supabase Cloud</span>
+          <span id="auth-beacon-text">Nube segura</span>
         </div>
       </div>
 
@@ -1016,7 +1016,7 @@
           1. Generación de Cuentas Administrativas
         </h4>
         <p style="color: var(--login-txt-muted);">
-          Las cuentas de personal (SuperAdmin, Finanzas, Legal, Mantenimiento) son aprovisionadas centralmente por el Administrador General o conectadas a <strong>Supabase Auth</strong>. Tienen identificadores basados en correos electrónicos corporativos (ej. <code>administracion@ccmariosanchez.com</code>).
+          Las cuentas de personal (SuperAdmin, Finanzas, Legal, Mantenimiento) son aprovisionadas centralmente por el Administrador General y protegidas mediante autenticación segura. Tienen identificadores basados en correos electrónicos corporativos.
         </p>
       </div>
 

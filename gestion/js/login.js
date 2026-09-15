@@ -242,7 +242,7 @@ function switchEnvironmentTab(mode) {
     }
     if (panelReal) panelReal.style.display = 'block';
     if (panelDemo) panelDemo.style.display = 'none';
-    if (beaconText) beaconText.textContent = 'Supabase Cloud';
+    if (beaconText) beaconText.textContent = 'Nube segura';
     if (beaconPulse) {
       beaconPulse.style.background = '#10b981';
       beaconPulse.style.boxShadow = '0 0 8px #10b981';
