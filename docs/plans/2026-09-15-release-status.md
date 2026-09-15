@@ -2,7 +2,7 @@
 
 ## Evidencia verificada
 
-- SHA publicado en `main`: `58f8af5`.
+- SHA publicado en `main`: `c87c473`.
 - Build de Vercel corregido: el proyecto ahora declara `npm run build` y genera el bundle de Speed Insights; la causa del fallo en `4cf77f2` era la ausencia del script `build`.
 - Vercel responde `200` en `/login`, `/onboarding`, `/gestion`, `/gestion/login` y `/gestion/onboarding`.
 - Supabase `wgs-proptech-prod` tiene aplicadas las migraciones de identidad, RLS, comandos financieros y endurecimiento.
@@ -49,5 +49,6 @@
 6. Activar, cuando el cliente lo autorice, las credenciales de IA, Telegram/WhatsApp, correo, alertas y dominio/Cloudflare.
 
 Estimación operativa: **80 % de avance de ingeniería; 65 % de aceptación productiva**. La versión actual es una demo operativa y una base de producción conectada con persistencia remota inicial; no se debe declarar producción contable definitiva hasta cerrar los seis puntos anteriores.
+
 
 
