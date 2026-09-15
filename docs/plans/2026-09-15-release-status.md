@@ -2,7 +2,7 @@
 
 ## Evidencia verificada
 
-- SHA publicado en `main`: `2b679ff`.
+- SHA publicado en `main`: `c8f97a6`.
 - Vercel responde `200` en `/login`, `/onboarding`, `/gestion`, `/gestion/login` y `/gestion/onboarding`.
 - Supabase `wgs-proptech-prod` tiene aplicadas las migraciones de identidad, RLS, comandos financieros y endurecimiento.
 - Demo pública verificada con datos autorizados de los libros: 38 unidades físicas operativas, 38 inquilinos, facturación $7.560, recaudado $2.910, 30 cuotas vencidas por $4.650 y 159 gastos. El libro contiene 39 registros numerados: `LUBRICANTES DANCO, C.A.` queda registrado como excepción pendiente (sin metraje/unidad física identificable), no como local inventado.
@@ -21,6 +21,7 @@
 - Reproducibilidad CI: `scripts/verify-ui.js` usa un puerto efímero para evitar falsos fallos `EADDRINUSE` cuando existe otra previsualización local.
 - Revisión desde la app: la bandeja de origen se expone como lectura autorizada y permanece bloqueada para escrituras directas; el banner de calidad muestra los paquetes pendientes en producción.
 - UX de validación: Configuración incluye un panel accesible con conteo, excepciones y primeras filas pendientes; no ofrece acciones que salten la revisión contable.
+- Comando de revisión: RPC `review_authorized_import` aplicada en Supabase y protegida por sesión, alcance de inmueble y permiso `properties.manage`; rechaza aprobaciones con datos incompletos y registra revisor/fecha/motivo.
 
 ## Bloqueos restantes antes de aceptar producción real
 
