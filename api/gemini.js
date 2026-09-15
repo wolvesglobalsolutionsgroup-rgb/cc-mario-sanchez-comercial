@@ -10,41 +10,10 @@
  */
 
 const https = require('https');
-const crypto = require('crypto');
+
 const fs = require('fs');
 const path = require('path');
 const { checkRateLimit } = require('./rate-limit.js');
-
-const DEMO_TOKEN_SECRET = process.env.DEMO_TOKEN_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'ccms-demo-secret-salt-2026';
-
-function signDemoToken(payload = {}) {
-  const data = {
-    sub: 'demo-user',
-    role: 'demo_viewer',
-    exp: Date.now() + 24 * 60 * 60 * 1000,
-    ...payload
-  };
-  const str = Buffer.from(JSON.stringify(data)).toString('base64url');
-  const sig = crypto.createHmac('sha256', DEMO_TOKEN_SECRET).update(str).digest('base64url');
-  return `demo.${str}.${sig}`;
-}
-
-function verifyDemoToken(token) {
-  if (!token || typeof token !== 'string' || !token.startsWith('demo.')) return null;
-  const parts = token.split('.');
-  if (parts.length !== 3) return null;
-  const [prefix, payloadB64, sig] = parts;
-  if (prefix !== 'demo') return null;
-  const expectedSig = crypto.createHmac('sha256', DEMO_TOKEN_SECRET).update(payloadB64).digest('base64url');
-  try {
-    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSig))) return null;
-    const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
-    if (payload.exp && Date.now() > payload.exp) return null;
-    return payload;
-  } catch (_) {
-    return null;
-  }
-}
 
 // Auto-cargar .env local si no están cargadas las variables por el orquestador
 if (!process.env.GEMINI_API_KEY) {
@@ -255,13 +224,11 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  // Verificar primero si corresponde a un token demo firmado por el servidor
-  const demoPayload = verifyDemoToken(token);
-  if (demoPayload) {
-    authenticatedUser = { id: demoPayload.sub, role: demoPayload.role, is_demo: true };
-    isDemo = true;
-  } else {
-    // Si no es token demo firmado, validar obligatoriamente contra Supabase Auth
+  if (token.startsWith('demo.')) {
+    return res.status(401).json({ success: false, error: 'La sesión demo legacy no está admitida. Inicie sesión en el entorno aislado.' });
+  }
+  {
+    // Toda sesión se valida contra el proyecto Supabase configurado.
     if (process.env.SUPABASE_URL && (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY)) {
       try {
         const verifyRes = await fetch(`${process.env.SUPABASE_URL}/auth/v1/user`, {
@@ -399,6 +366,3 @@ module.exports = async function handler(req, res) {
     });
   }
 };
-
-module.exports.signDemoToken = signDemoToken;
-module.exports.verifyDemoToken = verifyDemoToken;

@@ -39,16 +39,12 @@ ALTER TABLE public.organization_memberships ENABLE ROW LEVEL SECURITY;
 -- 2.1 BACKFILL DE MEMBRESÍAS DESDE PERFILES EXISTENTES (R02)
 INSERT INTO public.organization_memberships (organization_id, user_id, role, status)
 SELECT 
-    COALESCE(p.organization_id, 'a0000000-0000-0000-0000-000000000001'::uuid),
+    p.organization_id,
     p.id,
     p.role,
     'active'
 FROM public.profiles p
-WHERE p.id IS NOT NULL
-ON CONFLICT (organization_id, user_id) DO UPDATE
-SET role = EXCLUDED.role,
-    status = 'active',
-    updated_at = timezone('utc'::text, now());
+WHERE p.id IS NOT NULL AND p.organization_id IS NOT NULL ON CONFLICT (organization_id, user_id) DO NOTHING;
 
 -- 2.2 TABLA DE SOBREESCRITURAS DE PERMISOS POR MEMBRESÍA (MEMBERSHIP_PERMISSION_OVERRIDES)
 CREATE TABLE IF NOT EXISTS public.membership_permission_overrides (
@@ -313,7 +309,7 @@ BEGIN
         RAISE EXCEPTION 'UNAUTHORIZED: Sesión autenticada requerida para aprobar pagos.';
     END IF;
 
-    SELECT role, COALESCE(full_name, email, 'Usuario ' || v_actor_id::text)
+    SELECT role, COALESCE(display_name, 'Usuario ' || v_actor_id::text)
     INTO v_actor_role, v_actor_name
     FROM public.profiles
     WHERE id = v_actor_id;
@@ -327,7 +323,7 @@ BEGIN
     END IF;
 
     -- Derivar verificador de la identidad autenticada
-    v_actor_name := COALESCE(NULLIF(trim(p_verifier_name), ''), v_actor_name);
+    -- p_verifier_name is ignored; identity always comes from the authenticated profile.
 
     -- 2. Bloqueo de concurrencia y validación del pago
     SELECT * INTO v_payment FROM public.payments WHERE id::text = p_payment_id FOR UPDATE;

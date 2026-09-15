@@ -47,7 +47,7 @@ BEGIN
   ) THEN
     ALTER TABLE public.payments
       ADD CONSTRAINT uq_payments_anti_replay
-      UNIQUE (banco_origen, banco_destino, referencia_operacion, fecha_operacion, amount_usd);
+      UNIQUE (banco_origen, banco_destino, referencia_operacion, fecha_operacion, amount_paid, currency);
   END IF;
 END $body$;
 
@@ -85,7 +85,7 @@ CREATE POLICY "Inquilinos pueden ver solo sus propios tickets"
   FOR SELECT
   USING (
     tenant_id IN (
-      SELECT id FROM public.tenants WHERE profile_id = (SELECT auth.uid())
+      SELECT tenant_id FROM public.user_tenants WHERE user_id = (SELECT auth.uid())
     )
     OR public.is_ccms_admin()
   );
@@ -96,7 +96,7 @@ CREATE POLICY "Inquilinos pueden crear sus propios tickets"
   FOR INSERT
   WITH CHECK (
     tenant_id IN (
-      SELECT id FROM public.tenants WHERE profile_id = (SELECT auth.uid())
+      SELECT tenant_id FROM public.user_tenants WHERE user_id = (SELECT auth.uid())
     )
     OR public.is_ccms_admin()
   );

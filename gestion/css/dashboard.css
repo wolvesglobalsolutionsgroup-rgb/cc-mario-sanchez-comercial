@@ -492,7 +492,13 @@ button {
   padding: 6px 14px;
   margin-right: 18px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  min-width: 0;
+  scrollbar-width: none;
 }
+
+.bcv-ticker::-webkit-scrollbar { display: none; }
+
+.top-market-group { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1 1 auto; }
 
 .bcv-label {
   display: flex;
@@ -1346,7 +1352,12 @@ select.form-control optgroup {
   .bcv-ticker {
     padding: 4px 10px;
     font-size: 11px;
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-right: 0;
+    overflow-x: auto;
   }
+  .top-market-group { width: 100%; flex-basis: 100%; }
   .bcv-label {
     font-size: 10px;
   }
@@ -1430,7 +1441,13 @@ select.form-control optgroup {
   .bcv-ticker {
     display: inline-flex;
     padding: 3px 8px;
+    gap: 8px;
+    max-width: calc(100vw - 58px);
   }
+  .bcv-ticker #bcv-sync-timestamp,
+  .bcv-ticker .btn-edit-bcv { display: none !important; }
+  .bcv-ticker > div { flex: 0 0 auto; }
+  .top-market-group { gap: 8px; }
   .bcv-label span {
     display: none;
   }

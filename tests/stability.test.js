@@ -6,7 +6,7 @@
  */
 
 import assert from "node:assert/strict";
-import { test, describe } from "node:test";
+import { test, describe, beforeEach, afterEach } from "node:test";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -329,10 +329,13 @@ describe("PILAR 8: CONEXIÓN REAL A SUPABASE, CONFIGURACIÓN SERVERLESS & CONTRO
       status: (c) => { statusCode = c; return mockRes500; },
       json: (d) => { jsonResult = d; }
     };
-    await configHandler({}, mockRes500);
-    assert.strictEqual(statusCode, 500, "Debe retornar 500 si faltan credenciales");
+    await configHandler({method:'GET'}, mockRes500);
+    assert.strictEqual(statusCode, 503, "Configuración incompleta debe fallar cerrada");
 
     // Caso 2: Variables configuradas
+    process.env.APP_ENV = 'production';
+    process.env.APP_ORIGIN = 'https://erp.example.test';
+    process.env.SUPABASE_EXPECTED_PROJECT_REF = 'ccms-prod';
     process.env.SUPABASE_URL = "https://ccms-prod.supabase.co";
     process.env.SUPABASE_ANON_KEY = "anon-key-mock-12345";
     const headers = {};
@@ -341,11 +344,11 @@ describe("PILAR 8: CONEXIÓN REAL A SUPABASE, CONFIGURACIÓN SERVERLESS & CONTRO
       status: (c) => { statusCode = c; return mockRes200; },
       json: (d) => { jsonResult = d; }
     };
-    await configHandler({}, mockRes200);
+    await configHandler({method:'GET'}, mockRes200);
     assert.strictEqual(statusCode, 200, "Debe retornar 200 cuando las credenciales están configuradas");
     assert.strictEqual(jsonResult.supabaseUrl, "https://ccms-prod.supabase.co");
     assert.strictEqual(jsonResult.supabaseAnonKey, "anon-key-mock-12345");
-    assert.ok(headers["Cache-Control"].includes("s-maxage=3600"), "Debe tener cabecera de CDN cache");
+    assert.ok(headers["Cache-Control"].includes("no-store"), "Debe tener cabecera de CDN cache");
 
     // Restaurar estado
     if (prevUrl) process.env.SUPABASE_URL = prevUrl; else delete process.env.SUPABASE_URL;
@@ -423,7 +426,7 @@ describe("PILAR 9: INTEGRACIÓN DE IA RESILIENTE (GEMINI FLASH) & CONFIGURACIÓN
     await geminiHandler({ method: "POST", headers: { "x-forwarded-for": "10.0.0.1", "x-ccms-demo": "true" }, body: { prompt: "Test" } }, mockRes);
     assert.strictEqual(statusCode, 401, "Debe rechazar cabecera x-ccms-demo no firmada con 401");
 
-    const signedDemoAuth = "Bearer " + geminiHandler.signDemoToken();
+    const signedDemoAuth = "Bearer test-valid-session";
 
     // POST con body vacío debe retornar 400 (con token firmado)
     await geminiHandler({ method: "POST", headers: { "x-forwarded-for": "10.0.0.1", "authorization": signedDemoAuth }, body: {} }, mockRes);
@@ -476,7 +479,7 @@ describe("PILAR 9: INTEGRACIÓN DE IA RESILIENTE (GEMINI FLASH) & CONFIGURACIÓN
     };
 
     try {
-      const validDemoAuth = "Bearer " + geminiHandler.signDemoToken();
+      const validDemoAuth = "Bearer test-valid-session";
       // Ejecutar ráfaga de peticiones para agotar la cuota
       for (let i = 0; i < 20; i++) {
         await geminiHandler({
@@ -538,7 +541,7 @@ describe("PILAR 9: INTEGRACIÓN DE IA RESILIENTE (GEMINI FLASH) & CONFIGURACIÓN
     };
 
     try {
-      const validDemoAuth = "Bearer " + geminiHandler.signDemoToken();
+      const validDemoAuth = "Bearer test-valid-session";
       await geminiHandler({
         method: "POST",
         headers: { "x-forwarded-for": "172.16.0.5", "authorization": validDemoAuth },
@@ -604,27 +607,8 @@ describe("PILAR 9: INTEGRACIÓN DE IA RESILIENTE (GEMINI FLASH) & CONFIGURACIÓN
     const dbService = global.window.dbService;
     const settings = dbService.getSettings();
 
-    // Valores por defecto
-    assert.strictEqual(settings.tax_contributor_type, "especial", "Tipo de contribuyente por defecto debe ser especial");
-    assert.strictEqual(settings.tax_iva_withhold_pct, 75, "Retención IVA por defecto debe ser 75%");
-    assert.strictEqual(settings.tax_islr_withhold_pct, 2.0, "Retención ISLR por defecto debe ser 2.0%");
-    assert.strictEqual(settings.base_monthly_expenses_usd, 2540.00, "Gasto mensual base por defecto debe ser $2,540.00");
-    assert.strictEqual(settings.reserve_fund_pct, 10.0, "Fondo de reserva por defecto debe ser 10.0%");
-    assert.strictEqual(settings.admin_fee_pct, 5.0, "Gasto de administración por defecto debe ser 5.0%");
-
-    // Guardado y actualización
-    const updated = dbService.saveSettings({
-      base_monthly_expenses_usd: 2800.00,
-      reserve_fund_pct: 12.0
-    });
-    assert.strictEqual(updated.base_monthly_expenses_usd, 2800.00, "Debe persistir el nuevo gasto base");
-    assert.strictEqual(updated.reserve_fund_pct, 12.0, "Debe persistir el nuevo porcentaje de fondo de reserva");
-
-    // Restaurar a valores iniciales
-    dbService.saveSettings({
-      base_monthly_expenses_usd: 2540.00,
-      reserve_fund_pct: 10.0
-    });
+    assert.deepEqual(settings, {}, 'No inventar configuración contable');
+    assert.throws(() => dbService.saveSettings({base_monthly_expenses_usd: 2800}), /REMOTE_PERSISTENCE_REQUIRED/);
   });
 
   test("Diseño Responsive Móvil: Estructura de documentos y clases oficiales de visualización", () => {
@@ -858,10 +842,26 @@ describe("PILAR 11: REMEDIACIÓN TÉCNICA MAESTRA (FASES F1-F5 / T04-T22)", () =
     assert.strictEqual(statusCode, 401, "Petición con demo:true pero sin Bearer token debe retornar HTTP 401 incondicional");
     assert.ok(responseBody && responseBody.error.includes("Autenticación requerida"), "Debe rechazar con mensaje de autenticación requerida");
 
-    // Verificar token demo firmado por servidor
-    const validToken = geminiHandler.signDemoToken({ sub: 'demo-tester', role: 'demo' });
-    const verified = geminiHandler.verifyDemoToken(validToken);
-    assert.ok(verified && verified.sub === 'demo-tester', "El verificador debe validar exitosamente tokens firmados por el servidor");
+    assert.equal(geminiHandler.signDemoToken, undefined, 'No emitir tokens demo propios');
   });
 });
 
+
+// Provider transport is mocked; no stability test may call a live account.
+let originalFetch;
+let originalEnv;
+beforeEach(() => {
+  originalFetch = global.fetch;
+  originalEnv = {...process.env};
+  process.env.SUPABASE_URL = 'https://ccms-prod.supabase.co';
+  process.env.SUPABASE_ANON_KEY = 'synthetic-test-anon';
+  global.fetch = async (_url, options) => ({
+    ok: options?.headers?.Authorization === 'Bearer test-valid-session',
+    json: async () => ({id:'00000000-0000-0000-0000-000000000001'})
+  });
+});
+afterEach(() => {
+  global.fetch = originalFetch;
+  for (const key of Object.keys(process.env)) if (!(key in originalEnv)) delete process.env[key];
+  Object.assign(process.env, originalEnv);
+});

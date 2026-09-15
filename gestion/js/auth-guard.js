@@ -164,7 +164,7 @@
   const THEME_KEY = 'ccms_theme';
   // Modo DEMO activo por defecto para pruebas, evaluación y showcase comercial.
   // Puede desactivarse estrictamente en producción definiendo window.CCMS_DEMO_MODE = false.
-  const DEMO_ENABLED = (global.CCMS_DEMO_MODE !== false);
+  const DEMO_ENABLED = false; // Legacy local authentication is retired; demo uses real isolated Auth sessions.
 
   // --- 2. CRIPTOGRAFÍA: PBKDF2 CON SALT ---------------------------------------
 
@@ -312,6 +312,7 @@
       const raw = localStorage.getItem(SESSION_KEY);
       if (!raw) return null;
       const sess = JSON.parse(raw);
+      if (!sess || sess.is_demo || sess.is_supabase_auth !== true) return null;
       if (!sess || !sess.user_id || !sess.role || !sess.expires_at) return null;
       if (sess.expires_at < now()) {
         localStorage.removeItem(SESSION_KEY);
@@ -377,7 +378,7 @@
       return { ok: false, error: 'Credenciales incompletas' };
     }
 
-    const isForceDemo = (typeof localStorage !== 'undefined' && localStorage.getItem('CCMS_FORCE_DEMO') === 'true');
+    const isForceDemo = false; // Browser flags cannot change the authentication provider.
 
     // --- RUTA REAL: Supabase Auth (cuando NO se ha seleccionado modo demo explícito) ---
     if (!isForceDemo && typeof window !== 'undefined' && window.supabaseClient && typeof window.supabaseClient.auth?.signInWithPassword === 'function' && String(identifier).includes('@')) {

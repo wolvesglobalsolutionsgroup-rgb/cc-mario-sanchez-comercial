@@ -116,19 +116,57 @@
     }
   };
 
-  const STORAGE_KEY = 'ccms_role_permissions_matrix';
+  // La matriz mostrada es una plantilla visual; la autoridad vive en Supabase.
+  // Se mantiene únicamente en memoria para evitar que localStorage pueda otorgar permisos.
+  let runtimeMatrix = null;
 
   const AccessManagement = {
     getMatrix() {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) return JSON.parse(stored);
-      } catch (e) {}
-      return JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS));
+      if (!runtimeMatrix) runtimeMatrix = JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS));
+      return runtimeMatrix;
     },
 
     saveMatrix(matrix) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(matrix));
+      runtimeMatrix = matrix;
+    },
+
+    async loadRemote(organizationId) {
+      const session = global.AuthGuard && typeof global.AuthGuard.getSession === 'function'
+        ? await global.AuthGuard.getSession() : null;
+      if (!session?.access_token || !organizationId) return { ok: false, reason: 'missing_session' };
+      const response = await fetch(`/api/capabilities?organization_id=${encodeURIComponent(organizationId)}`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        cache: 'no-store'
+      });
+      if (!response.ok) throw new Error(`CAPABILITIES_${response.status}`);
+      const payload = await response.json();
+      this.activeMembership = { id: payload.membership_id, version: payload.version };
+      // Los overrides de la membresía activa se reflejan sobre la plantilla local.
+      const matrix = this.getMatrix();
+      (payload.overrides || []).forEach(override => {
+        Object.values(matrix).forEach(role => {
+          const mod = role.modules[override.module];
+          if (mod && Object.prototype.hasOwnProperty.call(mod, override.action)) mod[override.action] = Boolean(override.granted);
+        });
+      });
+      this.saveMatrix(matrix);
+      this.render();
+      return { ok: true, ...payload };
+    },
+
+    async persistOverride(membershipId, moduleKey, action, granted, expectedVersion, reason, scope, resourceIds, expiresAt) {
+      const session = global.AuthGuard && typeof global.AuthGuard.getSession === 'function'
+        ? await global.AuthGuard.getSession() : null;
+      if (!session?.access_token) throw new Error('AUTH_REQUIRED');
+      const response = await fetch('/api/commands', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ type: 'permissions.set', expected_version: expectedVersion, data: {
+          membership_id: membershipId, module: moduleKey, action, granted, reason, scope, resource_ids: resourceIds, expires_at: expiresAt
+        } })
+      });
+      if (response.status === 409) throw new Error('CONFLICT');
+      if (!response.ok) throw new Error(`PERMISSION_${response.status}`);
+      return response.json();
     },
 
     togglePermission(roleKey, moduleKey, action) {
@@ -157,6 +195,12 @@
       matrix[roleKey].modules[moduleKey][action] = !matrix[roleKey].modules[moduleKey][action];
       this.saveMatrix(matrix);
       this.render();
+      // La UI puede seguir funcionando sin red, pero nunca presenta el cambio como persistido.
+      if (this.activeMembership) {
+        this.persistOverride(this.activeMembership.id, moduleKey, action, matrix[roleKey].modules[moduleKey][action], this.activeMembership.version, 'Actualización desde Equipo y Permisos', 'organization', [], null)
+          .then(() => global.SecuritySuite?.toast?.('Permiso guardado en Supabase.', 'success', 'Control de Accesos'))
+          .catch(err => global.SecuritySuite?.toast?.(err.message === 'CONFLICT' ? 'La política cambió en otra sesión. Recarga antes de guardar.' : 'No se pudo guardar el permiso; se revirtió la vista.', 'error', 'Control de Accesos'));
+      }
       if (global.SecuritySuite && global.SecuritySuite.toast) {
         global.SecuritySuite.toast(`Permiso ${action.toUpperCase()} actualizado para ${matrix[roleKey].name}`, 'info', 'Control de Accesos');
       }
@@ -248,7 +292,7 @@
     },
 
     resetDefaults() {
-      localStorage.removeItem(STORAGE_KEY);
+      runtimeMatrix = JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS));
       this.render();
       if (global.SecuritySuite && global.SecuritySuite.toast) {
         global.SecuritySuite.toast('Matriz de permisos restablecida a los valores oficiales.', 'info', 'Permisos Restablecidos');

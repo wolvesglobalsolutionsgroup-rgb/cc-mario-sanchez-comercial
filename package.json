@@ -4,11 +4,12 @@
   "private": true,
   "description": "Centro Comercial Mario Sánchez - Portal Comercial + ERP Inmobiliario",
   "scripts": {
-    "test": "node scripts/check-syntax.js && node scripts/lint-guard.js && node --test tests/stability.test.js && node scripts/verify-fixes.cjs",
+    "test": "node scripts/check-syntax.js && node scripts/lint-guard.js && node --test tests/stability.test.js tests/*.test.cjs && node scripts/verify-fixes.cjs && node scripts/verify-ui.js",
     "build:speed-insights": "node scripts/build-speed-insights.js",
     "dev": "node scripts/build-speed-insights.js"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@tailwindcss/cli": "^4.3.3",
     "esbuild": "^0.28.2",
     "playwright": "^1.63.0",

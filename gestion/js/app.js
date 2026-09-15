@@ -637,7 +637,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (currentTab === 'configuracion' && window.AccessManagement && typeof window.AccessManagement.render === 'function') {
-        try { window.AccessManagement.render(); } catch (err) { console.error('[AccessManagement] Render error:', err); }
+        try {
+          window.AccessManagement.render();
+          const orgId = window.currentOrganization?.id;
+          if (orgId && typeof window.AccessManagement.loadRemote === 'function') {
+            window.AccessManagement.loadRemote(orgId).catch(err => console.warn('[AccessManagement] Remote load unavailable:', err.message));
+          }
+        } catch (err) { console.error('[AccessManagement] Render error:', err); }
       }
 
       if (currentTab === 'ayuda' && window.HelpContent && typeof window.HelpContent.render === 'function') {
@@ -11563,4 +11569,3 @@ document.addEventListener('DOMContentLoaded', () => {
     try { renderStaffProfileCards(); } catch(e) {}
   }
 });
-

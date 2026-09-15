@@ -27,26 +27,7 @@
   <link rel="stylesheet" href="css/dashboard.css?v=20260911_v45_ttp">
 
   <!-- Script Inmediato Anti-FOUC (Cero parpadeo entre Dark y Light Mode) -->
-  <script>
-    // Atajo de URL para activar/desactivar la demo sin tocar la consola (FICHA UI-12):
-    // ?demo=true  -> activa el modo demo en este navegador (persiste en localStorage)
-    // ?demo=off   -> lo desactiva explícitamente en este navegador
-    (function () {
-      var params = new URLSearchParams(window.location.search);
-      if (params.has('demo')) {
-        var val = params.get('demo');
-        if (val === 'true' || val === '1') {
-          localStorage.setItem('CCMS_FORCE_DEMO', 'true');
-        } else if (val === 'off' || val === 'false' || val === '0') {
-          localStorage.setItem('CCMS_FORCE_DEMO', 'false');
-        }
-      }
-    })();
-
-    // Modo Demo habilitado por defecto para pruebas y showcase comercial.
-    // Se desactiva únicamente al pasar ?demo=off en la URL
-    window.CCMS_DEMO_MODE = (localStorage.getItem('CCMS_FORCE_DEMO') !== 'false');
-  </script>
+  <script>window.CCMS_DEMO_MODE = false;</script>
   <script src="js/theme-init.js?v=20260911_v45_ttp"></script>
 
   <!-- Vercel Speed Insights -->
@@ -212,13 +193,13 @@
     
     <!-- TOP NAVBAR -->
     <header class="top-navbar">
-      <div style="display: flex; align-items: center; gap: 12px;">
+      <div class="top-market-group">
         <button class="mobile-menu-toggle" id="mobile-menu-toggle" onclick="window.toggleSidebar()" title="Mostrar / Ocultar Menú Lateral" aria-label="Menú Lateral">
           <i class="fa-solid fa-bars"></i>
         </button>
 
         <!-- MULTI-CURRENCY TICKER (USD BCV + EUR BCV + BINANCE P2P USDT) CON SINCRONIZACIÓN EN VIVO -->
-        <div class="bcv-ticker" title="Tasas oficiales y de mercado en tiempo real: BCV y Binance P2P" style="display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch;">
+        <div class="bcv-ticker" role="status" aria-live="polite" title="Tasas oficiales y de mercado en tiempo real: BCV y Binance P2P">
           <div style="display: flex; align-items: center; gap: 5px;">
             <span class="bcv-label"><i class="fa-solid fa-landmark"></i> USD BCV:</span>
             <span class="bcv-value" id="bcv-rate-val">Cargando...</span>
@@ -236,10 +217,10 @@
             <i class="fa-regular fa-clock" style="color: var(--amber);"></i>
             <span id="bcv-sync-time-str">Sincronizando...</span>
           </div>
-          <button type="button" class="btn-sync-bcv" data-click="syncBcvRate()" title="Actualizar tasas en vivo (BCV DolarApi y Binance P2P)" style="background: none; border: none; color: var(--amber); cursor: pointer; padding: 2px 4px; font-size: 11px;">
+          <button type="button" class="btn-sync-bcv" aria-label="Actualizar tasas" data-click="syncBcvRate()" title="Actualizar tasas en vivo (BCV DolarApi y Binance P2P)" style="background: none; border: none; color: var(--amber); cursor: pointer; padding: 2px 4px; font-size: 11px;">
             <i class="fa-solid fa-arrows-rotate" id="bcv-sync-icon"></i>
           </button>
-          <button type="button" class="btn-edit-bcv" data-roles="admin" data-click="editBcvRate()" title="Editar tasa manualmente" style="background: none; border: none; color: var(--txt-muted); cursor: pointer; padding: 2px 4px; font-size: 11px;">
+          <button type="button" class="btn-edit-bcv" aria-label="Editar tasa" data-roles="admin" data-click="editBcvRate()" title="Editar tasa manualmente" style="background: none; border: none; color: var(--txt-muted); cursor: pointer; padding: 2px 4px; font-size: 11px;">
             <i class="fa-solid fa-pen-to-square"></i>
           </button>
         </div>
@@ -4429,7 +4410,7 @@
 <script src="js/bank-reconciliation.js?v=20260913_v2" defer></script>
 <script src="js/google-workspace.js?v=20260913_v2" defer></script>
 <script src="js/notifications.js?v=20260913_v2" defer></script>
-<script src="js/fixtures-synthetic.js?v=20260914_v2" defer></script>
+
 <script src="js/supabase-client.js?v=20260913_v2" defer></script>
 <script src="js/contract-viewer.js?v=20260913_v2" defer></script>
 <script src="js/tickets-manager.js?v=20260913_v2" defer></script>

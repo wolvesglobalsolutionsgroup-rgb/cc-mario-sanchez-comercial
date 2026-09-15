@@ -5,19 +5,21 @@
  * cliente Supabase en el navegador. La SERVICE_ROLE_KEY nunca se expone aquí.
  * ==============================================================================
  */
-const { signDemoToken } = require('./gemini.js');
 
+const { environment } = require('../lib/server/environment.cjs');
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=7200');
+  res.setHeader('Cache-Control', 'no-store');
 
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
-    return res.status(500).json({ error: 'Supabase no está configurado en las variables de entorno del servidor.' });
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Método no admitido.' });
+  let config;
+  try { config = environment(); } catch (_) {
+    return res.status(503).json({ error: 'El entorno requiere configuración antes de iniciar sesión.' });
   }
 
   return res.status(200).json({
-    supabaseUrl: process.env.SUPABASE_URL,
-    supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
-    demoToken: signDemoToken({ sub: 'demo-viewer', role: 'demo', exp: Date.now() + 24 * 3600 * 1000 })
+    supabaseUrl: config.supabaseUrl,
+    supabaseAnonKey: config.anonKey,
+    environment: config.name
   });
 };

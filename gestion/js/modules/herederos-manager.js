@@ -122,7 +122,7 @@
 
       const totalIngresosCents = Math.round(baseIngresos * 100);
       const totalGastosCents = Math.round(totalGastosUsd * 100);
-      const utilidadNetaCents = Math.max(0, totalIngresosCents - totalGastosCents);
+      const utilidadNetaCents = totalIngresosCents - totalGastosCents;
       const cuotaConfiguradaUsd = parseFloat(sysSettings.cuota_base_heredero_usd) || 400.00;
       const cuotaConfiguradaCents = Math.round(cuotaConfiguradaUsd * 100);
       const coherederos = this.getCoherederos();

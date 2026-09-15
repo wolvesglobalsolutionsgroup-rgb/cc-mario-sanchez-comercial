@@ -37,598 +37,26 @@ class DatabaseService {
   }
 
   initDatabase() {
-    const raw = localStorage.getItem(this.storageKey);
-    if (!raw) {
-      this.seedInitialData();
-    } else {
-      try {
-        const parsed = JSON.parse(raw);
-        if (!parsed.units || parsed.units.length < 39 || !parsed.activos_fijos || !parsed.consumibles) {
-          console.info('[CCMS DB] Migrando base de datos a Maestro 39 Unidades e Inventarios...');
-          this.seedInitialData();
-        }
-      } catch (e) {
-        this.seedInitialData();
-      }
-    }
+    // Legacy storage is not an authoritative source, even if it contains 39 units.
+    this.remoteSnapshot = { units: [], tenants: [], invoices: [], payments: [], receipts: [], condo_expenses: [], activos_fijos: [], consumibles: [], kardex_movimientos: [], special_agreements: [], receiving_accounts: [], settings: {} };
+    this.persistenceState = 'not_loaded';
+    return;
+
   }
 
   resetDemoData() {
-    localStorage.removeItem(this.storageKey);
-    localStorage.removeItem('ccms_notif_log_v1');
-    this.seedInitialData();
-    return this.getData();
+    throw new Error('REMOTE_PERSISTENCE_REQUIRED: Reinicie la sesión en el entorno demo aislado.');
+
   }
 
   seedInitialData() {
-    const sourceData = (typeof window !== 'undefined' && window.CCMS_SYNTHETIC_FIXTURES && window.CCMS_SYNTHETIC_FIXTURES.full_dataset)
-      ? window.CCMS_SYNTHETIC_FIXTURES.full_dataset
-      : (typeof window !== 'undefined' && window.CCMS_SEED_DATA ? window.CCMS_SEED_DATA : null);
-    if (sourceData) {
-      const copy = JSON.parse(JSON.stringify(sourceData));
-      localStorage.setItem(this.storageKey, JSON.stringify(copy));
-      return copy;
-    }
-    const initialData = {
-      units: [
-        { id: 'u-1', code: 'LOT-C01', name: 'Macro-Lote C01 (Norte - Acceso Principal)', category: 'macro-lotes', area_m2: 1730, base_rent_usd: 3800, condo_aliquot: 0.2315, status: 'arrendado', tenant_id: 't-1' },
-        { id: 'u-2', code: 'LOT-C02', name: 'Macro-Lote C02 (Centro - Eje Logístico)', category: 'macro-lotes', area_m2: 1730, base_rent_usd: 3800, condo_aliquot: 0.2315, status: 'arrendado', tenant_id: 't-2' },
-        { id: 'u-3', code: 'LOT-C03', name: 'Macro-Lote C03 (Sur - Maniobras & Conexión)', category: 'macro-lotes', area_m2: 1730, base_rent_usd: 3800, condo_aliquot: 0.2315, status: 'disponible', tenant_id: null },
-        { id: 'u-4', code: 'LOC-01', name: 'Local 01 — Fachada Principal', category: 'locales', area_m2: 250, base_rent_usd: 1100, condo_aliquot: 0.048, status: 'arrendado', tenant_id: 't-3' },
-        { id: 'u-5', code: 'LOC-02', name: 'Local 02 — Fachada Comercial', category: 'locales', area_m2: 250, base_rent_usd: 1050, condo_aliquot: 0.048, status: 'arrendado', tenant_id: 't-4' },
-        { id: 'u-6', code: 'LOC-03', name: 'Local 03 — Planta Baja', category: 'locales', area_m2: 180, base_rent_usd: 850, condo_aliquot: 0.035, status: 'disponible', tenant_id: null },
-        { id: 'u-7', code: 'LOC-04', name: 'Local 04 — Planta Baja', category: 'locales', area_m2: 180, base_rent_usd: 850, condo_aliquot: 0.035, status: 'arrendado', tenant_id: 't-5' },
-        { id: 'u-8', code: 'LOC-05', name: 'Local 05 — Zona Media', category: 'locales', area_m2: 160, base_rent_usd: 750, condo_aliquot: 0.031, status: 'disponible', tenant_id: null },
-        { id: 'u-9', code: 'LOC-06', name: 'Local 06 — Zona Media', category: 'locales', area_m2: 160, base_rent_usd: 750, condo_aliquot: 0.031, status: 'arrendado', tenant_id: 't-6' },
-        { id: 'u-10', code: 'GAL-01', name: 'Galpón 01 Logístico y Almacén', category: 'galpones', area_m2: 750, base_rent_usd: 1900, condo_aliquot: 0.145, status: 'arrendado', tenant_id: 't-7' },
-        { id: 'u-11', code: 'GAL-02', name: 'Galpón 02 Distribución & Taller', category: 'galpones', area_m2: 560, base_rent_usd: 1500, condo_aliquot: 0.108, status: 'disponible', tenant_id: null }
-      ],
-      tenants: [
-        {
-          id: 't-1',
-          rif: 'J-30987123-4',
-          business_name: 'Distribuidora Oriente Marino, C.A.',
-          trade_name: 'Oriente Marine Supply',
-          legal_rep_name: 'Carlos Eduardo Mendoza',
-          legal_rep_dni: 'V-14.289.412',
-          email: 'carlos.mendoza@orientemarine.com',
-          phone: '+58 281-2674400',
-          whatsapp: '+58 414-8123456',
-          commercial_activity: 'Repuestos e insumos navieros e industriales',
-          status: 'activo',
-          unit_code: 'LOT-C01'
-        },
-        {
-          id: 't-2',
-          rif: 'J-40112890-1',
-          business_name: 'Logística y Cargas del Caribe, S.A.',
-          trade_name: 'Caribe Logistics Hub',
-          legal_rep_name: 'Mariana Valentina Silva',
-          legal_rep_dni: 'V-16.904.551',
-          email: 'msilva@caribelogistics.com',
-          phone: '+58 281-2869010',
-          whatsapp: '+58 424-8199234',
-          commercial_activity: 'Distribución logística, bodegaje y paquetería',
-          status: 'activo',
-          unit_code: 'LOT-C02'
-        },
-        {
-          id: 't-3',
-          rif: 'J-31445892-0',
-          business_name: 'Ferretería Industrial La Cruz, C.A.',
-          trade_name: 'FerroCruz Pro',
-          legal_rep_name: 'Ing. Roberto Hernández',
-          legal_rep_dni: 'V-12.780.334',
-          email: 'gerencia@ferrocruz.com.ve',
-          phone: '+58 281-2681122',
-          whatsapp: '+58 412-3556789',
-          commercial_activity: 'Materiales de construcción y ferretería pesada',
-          status: 'activo',
-          unit_code: 'LOC-01'
-        },
-        {
-          id: 't-4',
-          rif: 'J-50239011-8',
-          business_name: 'AutoPartes & Servicios Express, C.A.',
-          trade_name: 'AutoExpress PLC',
-          legal_rep_name: 'Alejandro José Gómez',
-          legal_rep_dni: 'V-18.441.902',
-          email: 'admin@autopartesexpress.net',
-          phone: '+58 281-2659988',
-          whatsapp: '+58 416-6801234',
-          commercial_activity: 'Venta de autopartes, lubricantes y baterías',
-          status: 'activo',
-          unit_code: 'LOC-02'
-        },
-        {
-          id: 't-5',
-          rif: 'J-41220993-2',
-          business_name: 'Bodegón & Delicateses El Faro, C.A.',
-          trade_name: 'El Faro Market',
-          legal_rep_name: 'Lucía Carolina Morales',
-          legal_rep_dni: 'V-15.332.109',
-          email: 'contacto@elfaromarket.com',
-          phone: '+58 281-2693311',
-          whatsapp: '+58 424-8224567',
-          commercial_activity: 'Víveres, importados, panadería gourmet y café',
-          status: 'moroso',
-          unit_code: 'LOC-04'
-        },
-        {
-          id: 't-6',
-          rif: 'J-29801455-9',
-          business_name: 'Servicios Técnicos Industriales Anzoátegui, C.A.',
-          trade_name: 'STIA Electricidad & Redes',
-          legal_rep_name: 'Nelson José Vargas',
-          legal_rep_dni: 'V-13.882.019',
-          email: 'nvargas@stia.com.ve',
-          phone: '+58 281-2710033',
-          whatsapp: '+58 414-8209988',
-          commercial_activity: 'Mantenimiento electromecánico y telecomunicaciones',
-          status: 'activo',
-          unit_code: 'LOC-06'
-        },
-        {
-          id: 't-7',
-          rif: 'J-31889021-7',
-          business_name: 'Consorcio Naviero del Golfo, C.A.',
-          trade_name: 'Naviera del Golfo',
-          legal_rep_name: 'Cap. Andrés Eloy Rivas',
-          legal_rep_dni: 'V-10.450.912',
-          email: 'operaciones@navieradelgolfo.com',
-          phone: '+58 281-2601199',
-          whatsapp: '+58 412-8877112',
-          commercial_activity: 'Armadores navieros y servicios costa afuera',
-          status: 'activo',
-          unit_code: 'GAL-01'
-        }
-      ],
-      contracts: [
-        {
-          id: 'c-1',
-          contract_number: 'CCMS-CTR-2025-001',
-          tenant_id: 't-1',
-          unit_code: 'LOT-C01',
-          start_date: '2025-06-01',
-          end_date: '2026-06-01',
-          rent_usd: 3800,
-          rent_method: 'CAF (Canon Fijo Art. 32)',
-          deposit_usd: 11400,
-          deposit_months: 3,
-          status: 'vigente'
-        },
-        {
-          id: 'c-2',
-          contract_number: 'CCMS-CTR-2025-002',
-          tenant_id: 't-2',
-          unit_code: 'LOT-C02',
-          start_date: '2025-08-15',
-          end_date: '2026-08-15',
-          rent_usd: 3800,
-          rent_method: 'CAF (Canon Fijo Art. 32)',
-          deposit_usd: 11400,
-          deposit_months: 3,
-          status: 'vigente'
-        },
-        {
-          id: 'c-3',
-          contract_number: 'CCMS-CTR-2025-003',
-          tenant_id: 't-3',
-          unit_code: 'LOC-01',
-          start_date: '2025-03-01',
-          end_date: '2026-03-31', // Por vencer
-          rent_usd: 1100,
-          rent_method: 'CAF (Canon Fijo Art. 32)',
-          deposit_usd: 3300,
-          deposit_months: 3,
-          status: 'por_vencer'
-        },
-        {
-          id: 'c-4',
-          contract_number: 'CCMS-CTR-2025-004',
-          tenant_id: 't-4',
-          unit_code: 'LOC-02',
-          start_date: '2025-09-01',
-          end_date: '2026-09-01',
-          rent_usd: 1050,
-          rent_method: 'CAF (Canon Fijo Art. 32)',
-          deposit_usd: 3150,
-          deposit_months: 3,
-          status: 'vigente'
-        },
-        {
-          id: 'c-5',
-          contract_number: 'CCMS-CTR-2025-005',
-          tenant_id: 't-5',
-          unit_code: 'LOC-04',
-          start_date: '2025-01-10',
-          end_date: '2026-01-10',
-          rent_usd: 850,
-          rent_method: 'CAF (Canon Fijo Art. 32)',
-          deposit_usd: 2550,
-          deposit_months: 3,
-          status: 'en_prorroga'
-        },
-        {
-          id: 'c-6',
-          contract_number: 'CCMS-CTR-2025-006',
-          tenant_id: 't-6',
-          unit_code: 'LOC-06',
-          start_date: '2025-10-01',
-          end_date: '2026-10-01',
-          rent_usd: 750,
-          rent_method: 'CAF (Canon Fijo Art. 32)',
-          deposit_usd: 2250,
-          deposit_months: 3,
-          status: 'vigente'
-        },
-        {
-          id: 'c-7',
-          contract_number: 'CCMS-CTR-2025-007',
-          tenant_id: 't-7',
-          unit_code: 'GAL-01',
-          start_date: '2025-05-01',
-          end_date: '2026-05-01',
-          rent_usd: 1900,
-          rent_method: 'CAF (Canon Fijo Art. 32)',
-          deposit_usd: 5700,
-          deposit_months: 3,
-          status: 'vigente'
-        }
-      ],
-      invoices: [
-        {
-          id: 'inv-1',
-          invoice_number: 'REC-2026-03-001',
-          tenant_id: 't-1',
-          unit_code: 'LOT-C01',
-          period_month: 3,
-          period_year: 2026,
-          rent_usd: 3800,
-          condo_usd: 250,
-          total_usd: 4050,
-          due_date: '2026-03-05',
-          status: 'pagado',
-          paid_at: '2026-03-03'
-        },
-        {
-          id: 'inv-2',
-          invoice_number: 'REC-2026-03-002',
-          tenant_id: 't-2',
-          unit_code: 'LOT-C02',
-          period_month: 3,
-          period_year: 2026,
-          rent_usd: 3800,
-          condo_usd: 250,
-          total_usd: 4050,
-          due_date: '2026-03-05',
-          status: 'pagado',
-          paid_at: '2026-03-04'
-        },
-        {
-          id: 'inv-3',
-          invoice_number: 'REC-2026-03-003',
-          tenant_id: 't-3',
-          unit_code: 'LOC-01',
-          period_month: 3,
-          period_year: 2026,
-          rent_usd: 1100,
-          condo_usd: 80,
-          total_usd: 1180,
-          due_date: '2026-03-05',
-          status: 'pagado',
-          paid_at: '2026-03-02'
-        },
-        {
-          id: 'inv-4',
-          invoice_number: 'REC-2026-03-004',
-          tenant_id: 't-4',
-          unit_code: 'LOC-02',
-          period_month: 3,
-          period_year: 2026,
-          rent_usd: 1050,
-          condo_usd: 80,
-          total_usd: 1130,
-          due_date: '2026-03-05',
-          status: 'verificando',
-          paid_at: null,
-          issuing_bank: '0102 - Banco de Venezuela',
-          payment_method: 'Pago Móvil Interbancario',
-          reference_number: 'BDV-98712340',
-          receipt_proof: {
-            name: 'Comprobante_PagoMovil_BDV_LOC02.png',
-            type: 'image/png',
-            size: 148200,
-            data: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect width="400" height="300" fill="%230f172a"/><rect x="20" y="20" width="360" height="260" rx="12" fill="%231e293b" stroke="%23f59e0b" stroke-width="2"/><text x="200" y="60" fill="%23f59e0b" font-family="sans-serif" font-size="16" font-weight="bold" text-anchor="middle">BANCO DE VENEZUELA — PAGO MÓVIL</text><text x="200" y="100" fill="%2310b981" font-family="sans-serif" font-size="20" font-weight="bold" text-anchor="middle">OPERACIÓN EXITOSA</text><text x="40" y="140" fill="%2394a3b8" font-family="sans-serif" font-size="12">Referencia: BDV-98712340</text><text x="40" y="165" fill="%2394a3b8" font-family="sans-serif" font-size="12">Destino: CC Mario Sánchez (J-29881234-0)</text><text x="40" y="190" fill="%2394a3b8" font-family="sans-serif" font-size="12">Emisor: AutoPartes Express (J-50239011-8)</text><text x="40" y="215" fill="%2394a3b8" font-family="sans-serif" font-size="12">Monto Equivalente: $1,130.00 USD (Tasa BCV)</text><text x="200" y="255" fill="%2338bdf8" font-family="sans-serif" font-size="11" text-anchor="middle">Sello Digital: CCMS-GO40418-VERIFIED</text></svg>'
-          }
-        },
-        {
-          id: 'inv-5',
-          invoice_number: 'REC-2026-03-005',
-          tenant_id: 't-5',
-          unit_code: 'LOC-04',
-          period_month: 3,
-          period_year: 2026,
-          rent_usd: 850,
-          condo_usd: 60,
-          total_usd: 910,
-          due_date: '2026-03-05',
-          status: 'en_mora',
-          mora_days: 12,
-          paid_at: null
-        },
-        {
-          id: 'inv-6',
-          invoice_number: 'REC-2026-03-006',
-          tenant_id: 't-6',
-          unit_code: 'LOC-06',
-          period_month: 3,
-          period_year: 2026,
-          rent_usd: 750,
-          condo_usd: 50,
-          total_usd: 800,
-          due_date: '2026-03-05',
-          status: 'pendiente',
-          paid_at: null
-        },
-        {
-          id: 'inv-7',
-          invoice_number: 'REC-2026-03-007',
-          tenant_id: 't-7',
-          unit_code: 'GAL-01',
-          period_month: 3,
-          period_year: 2026,
-          rent_usd: 1900,
-          condo_usd: 150,
-          total_usd: 2050,
-          due_date: '2026-03-05',
-          status: 'pagado',
-          paid_at: '2026-03-01'
-        },
-        {
-          id: 'inv-8',
-          invoice_number: 'REC-2026-04-008',
-          tenant_id: 't-1',
-          unit_code: 'LOT-C01',
-          period_month: 4,
-          period_year: 2026,
-          rent_usd: 3800,
-          condo_usd: 250,
-          total_usd: 4050,
-          due_date: '2026-04-05',
-          status: 'pendiente',
-          paid_at: null
-        },
-        {
-          id: 'inv-9',
-          invoice_number: 'CSH-2026-03-001',
-          tenant_id: 't-3',
-          unit_code: 'LOC-01',
-          period_month: 3,
-          period_year: 2026,
-          rent_usd: 366.66,
-          condo_usd: 0,
-          total_usd: 366.66,
-          due_date: '2026-03-15',
-          status: 'pendiente',
-          cashea_plan: 'Cashea 3 Cuotas (Cuota 1/3)',
-          paid_at: null
-        },
-        // --- HISTORIAL PREVIO (ENERO Y FEBRERO 2026) PARA AUDITORÍA SOCIETARIA ---
-        {
-          id: 'inv-hist-1',
-          invoice_number: 'REC-2026-02-001',
-          tenant_id: 't-1',
-          unit_code: 'LOT-C01',
-          period_month: 2,
-          period_year: 2026,
-          rent_usd: 3800,
-          condo_usd: 240,
-          total_usd: 4040,
-          due_date: '2026-02-05',
-          status: 'pagado',
-          paid_at: '2026-02-04'
-        },
-        {
-          id: 'inv-hist-2',
-          invoice_number: 'REC-2026-01-001',
-          tenant_id: 't-1',
-          unit_code: 'LOT-C01',
-          period_month: 1,
-          period_year: 2026,
-          rent_usd: 3800,
-          condo_usd: 230,
-          total_usd: 4030,
-          due_date: '2026-01-05',
-          status: 'pagado',
-          paid_at: '2026-01-03'
-        },
-        {
-          id: 'inv-hist-3',
-          invoice_number: 'REC-2026-02-003',
-          tenant_id: 't-3',
-          unit_code: 'LOC-01',
-          period_month: 2,
-          period_year: 2026,
-          rent_usd: 1100,
-          condo_usd: 80,
-          total_usd: 1180,
-          due_date: '2026-02-05',
-          status: 'pagado',
-          paid_at: '2026-02-03'
-        },
-        {
-          id: 'inv-hist-4',
-          invoice_number: 'REC-2026-02-005',
-          tenant_id: 't-5',
-          unit_code: 'LOC-04',
-          period_month: 2,
-          period_year: 2026,
-          rent_usd: 850,
-          condo_usd: 60,
-          total_usd: 910,
-          due_date: '2026-02-05',
-          status: 'pagado',
-          paid_at: '2026-02-08'
-        }
-      ],
-      pending_payments: {
-        'inv-4': {
-          invoice_id: 'inv-4',
-          amount_paid: 1130,
-          currency: 'USD',
-          payment_method: 'Pago Móvil Interbancario',
-          reference_number: 'BDV-98712340',
-          issuing_bank: '0102 - Banco de Venezuela',
-          origin_type: 'registered',
-          origin_phone: '0416-6801234',
-          origin_doc: 'J-50239011-8',
-          origin_name: 'AutoPartes & Servicios Express, C.A.',
-          submitted_at: '2026-09-04T18:30:00.000Z',
-          receipt_proof: {
-            name: 'Comprobante_PagoMovil_BDV_LOC02.png',
-            type: 'image/png',
-            size: 148200,
-            data: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect width="400" height="300" fill="%230f172a"/><rect x="20" y="20" width="360" height="260" rx="12" fill="%231e293b" stroke="%23f59e0b" stroke-width="2"/><text x="200" y="60" fill="%23f59e0b" font-family="sans-serif" font-size="16" font-weight="bold" text-anchor="middle">BANCO DE VENEZUELA — PAGO MÓVIL</text><text x="200" y="100" fill="%2310b981" font-family="sans-serif" font-size="20" font-weight="bold" text-anchor="middle">OPERACIÓN EXITOSA</text><text x="40" y="140" fill="%2394a3b8" font-family="sans-serif" font-size="12">Referencia: BDV-98712340</text><text x="40" y="165" fill="%2394a3b8" font-family="sans-serif" font-size="12">Destino: CC Mario Sánchez (J-29881234-0)</text><text x="40" y="190" fill="%2394a3b8" font-family="sans-serif" font-size="12">Emisor: AutoPartes Express (J-50239011-8)</text><text x="40" y="215" fill="%2394a3b8" font-family="sans-serif" font-size="12">Monto Equivalente: $1,130.00 USD (Tasa BCV)</text><text x="200" y="255" fill="%2338bdf8" font-family="sans-serif" font-size="11" text-anchor="middle">Sello Digital: CCMS-GO40418-VERIFIED</text></svg>'
-          }
-        }
-      },
-      payments: [
-        {
-          id: 'p-1',
-          invoice_id: 'inv-1',
-          payment_date: '2026-03-03',
-          payment_method: 'Transferencia Divisas (Custodia Banesco)',
-          reference_number: 'BNS-09823412',
-          amount_paid: 3750,
-          currency: 'USD',
-          status: 'verificado'
-        },
-        {
-          id: 'p-2',
-          invoice_id: 'inv-2',
-          payment_date: '2026-03-04',
-          payment_method: 'Transferencia Bs. (Tasa Oficial BCV)',
-          reference_number: 'BDV-55421098',
-          amount_paid: 203000,
-          currency: 'BS',
-          status: 'verificado'
-        },
-        {
-          id: 'p-3',
-          invoice_id: 'inv-3',
-          payment_date: '2026-03-02',
-          payment_method: 'Pago Móvil Mercantil',
-          reference_number: 'PM-78119022',
-          amount_paid: 85550,
-          currency: 'BS',
-          status: 'verificado'
-        },
-        {
-          id: 'p-4',
-          invoice_id: 'inv-7',
-          payment_date: '2026-03-01',
-          payment_method: 'Zelle',
-          reference_number: 'ZLL-90184451',
-          amount_paid: 2050,
-          currency: 'USD',
-          status: 'verificado'
-        },
-        {
-          id: 'p-5',
-          invoice_id: 'inv-4',
-          payment_date: '2026-09-04',
-          payment_method: 'Pago Móvil Interbancario',
-          reference_number: 'BDV-98712340',
-          issuing_bank: '0102 - Banco de Venezuela',
-          origin_type: 'registered',
-          origin_phone: '0416-6801234',
-          origin_doc: 'J-50239011-8',
-          origin_name: 'AutoPartes & Servicios Express, C.A.',
-          amount_paid: 1130,
-          currency: 'USD',
-          status: 'pendiente',
-          receipt_proof: {
-            name: 'Comprobante_PagoMovil_BDV_LOC02.png',
-            type: 'image/png',
-            size: 148200,
-            data: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect width="400" height="300" fill="%230f172a"/><rect x="20" y="20" width="360" height="260" rx="12" fill="%231e293b" stroke="%23f59e0b" stroke-width="2"/><text x="200" y="60" fill="%23f59e0b" font-family="sans-serif" font-size="16" font-weight="bold" text-anchor="middle">BANCO DE VENEZUELA — PAGO MÓVIL</text><text x="200" y="100" fill="%2310b981" font-family="sans-serif" font-size="20" font-weight="bold" text-anchor="middle">OPERACIÓN EXITOSA</text><text x="40" y="140" fill="%2394a3b8" font-family="sans-serif" font-size="12">Referencia: BDV-98712340</text><text x="40" y="165" fill="%2394a3b8" font-family="sans-serif" font-size="12">Destino: CC Mario Sánchez (J-29881234-0)</text><text x="40" y="190" fill="%2394a3b8" font-family="sans-serif" font-size="12">Emisor: AutoPartes Express (J-50239011-8)</text><text x="40" y="215" fill="%2394a3b8" font-family="sans-serif" font-size="12">Monto Equivalente: $1,130.00 USD (Tasa BCV)</text><text x="200" y="255" fill="%2338bdf8" font-family="sans-serif" font-size="11" text-anchor="middle">Sello Digital: CCMS-GO40418-VERIFIED</text></svg>'
-          }
-        }
-      ]
-    };
+    throw new Error('REMOTE_PERSISTENCE_REQUIRED: No se permite sembrar datos locales.');
 
-    localStorage.setItem(this.storageKey, JSON.stringify(initialData));
   }
 
   getData() {
-    try {
-      const raw = localStorage.getItem(this.storageKey);
-      if (!raw) return this.seedInitialData();
-      const data = JSON.parse(raw);
-      let dirty = false;
-      if (!data.receiving_accounts || !Array.isArray(data.receiving_accounts) || data.receiving_accounts.length === 0) {
-        data.receiving_accounts = this.getDefaultReceivingAccounts();
-        dirty = true;
-      }
-      if (!data.receipts || !Array.isArray(data.receipts)) {
-        data.receipts = [];
-        dirty = true;
-      }
-      if (!data.condo_expenses || !Array.isArray(data.condo_expenses) || data.condo_expenses.length === 0) {
-        data.condo_expenses = this.getDefaultCondoExpenses();
-        dirty = true;
-      }
-      const seedSource = (typeof window !== 'undefined' && window.CCMS_SYNTHETIC_FIXTURES && window.CCMS_SYNTHETIC_FIXTURES.full_dataset)
-        ? window.CCMS_SYNTHETIC_FIXTURES.full_dataset
-        : (typeof window !== 'undefined' && window.CCMS_SEED_DATA ? window.CCMS_SEED_DATA : null);
-      if ((!data.activos_fijos || !data.activos_fijos.length) && seedSource && seedSource.activos_fijos) {
-        data.activos_fijos = JSON.parse(JSON.stringify(seedSource.activos_fijos));
-        dirty = true;
-      }
-      if ((!data.consumibles || !data.consumibles.length) && seedSource && seedSource.consumibles) {
-        data.consumibles = JSON.parse(JSON.stringify(seedSource.consumibles));
-        dirty = true;
-      }
-      if ((!data.kardex_movimientos || !data.kardex_movimientos.length) && seedSource && seedSource.kardex_movimientos) {
-        data.kardex_movimientos = JSON.parse(JSON.stringify(seedSource.kardex_movimientos));
-        dirty = true;
-      }
-      if (!data.special_agreements || !Array.isArray(data.special_agreements)) {
-        data.special_agreements = [];
-        dirty = true;
-      }
-      if (data.invoices && Array.isArray(data.invoices)) {
-        const inv4 = data.invoices.find(i => i.id === 'inv-4');
-        if (inv4 && inv4.status === 'verificando' && (!data.payments || !data.payments.some(p => p.invoice_id === 'inv-4' && p.status === 'pendiente'))) {
-          if (!data.payments) data.payments = [];
-          data.payments.push({
-            id: 'p-5',
-            invoice_id: 'inv-4',
-            payment_date: '2026-09-04',
-            payment_method: 'Pago Móvil Interbancario',
-            reference_number: 'BDV-98712340',
-            issuing_bank: '0102 - Banco de Venezuela',
-            origin_type: 'registered',
-            origin_phone: '0416-6801234',
-            origin_doc: 'J-50239011-8',
-            origin_name: 'AutoPartes & Servicios Express, C.A.',
-            amount_paid: 1130,
-            currency: 'USD',
-            status: 'pendiente',
-            receipt_proof: inv4.receipt_proof || null
-          });
-          dirty = true;
-        }
-      }
-      if (dirty) {
-        this.saveData(data);
-      }
-      return data;
-    } catch (e) {
-      console.error("Error reading localStorage DB:", e);
-      return null;
-    }
+    return JSON.parse(JSON.stringify(this.remoteSnapshot));
+
   }
 
   // --- MÓDULO DE ACTIVOS FIJOS / BIENES PROPIOS ---
@@ -737,7 +165,7 @@ class DatabaseService {
   }
 
   saveData(data) {
-    localStorage.setItem(this.storageKey, JSON.stringify(data));
+    throw new Error('REMOTE_PERSISTENCE_REQUIRED: La operación requiere un comando remoto confirmado.');
   }
 
   // --- MÉTODOS CRUD ---
@@ -1224,6 +652,30 @@ class DatabaseService {
   }
 
   async approvePayment(invoiceId, verifier) {
+    // All production approvals are server-side commands. The browser never
+    // fabricates a payment, receipt, ledger line, or verifier identity.
+    if (typeof window === 'undefined' || !window.supabaseClient?.from || !window.supabaseClient?.rpc) {
+      throw new Error('REMOTE_PERSISTENCE_REQUIRED: Conecte Supabase para aprobar pagos.');
+    }
+    const { data: pending, error: pendingError } = await window.supabaseClient
+      .from('payments').select('*').eq('invoice_id', invoiceId).eq('status', 'pendiente').limit(1).maybeSingle();
+    if (pendingError) throw pendingError;
+    if (!pending) throw new Error('No hay un pago pendiente de revisión.');
+    const paymentVersion = Number(pending.version || 1);
+    const commandKey = (globalThis.crypto?.randomUUID)
+      ? globalThis.crypto.randomUUID()
+      : `${Date.now()}-0000-0000-0000-000000000000`;
+    const { data: result, error: commandError } = await window.supabaseClient.rpc('approve_payment_v2', {
+      payment_id: pending.id,
+      expected_version: paymentVersion,
+      command_key: commandKey
+    });
+    if (commandError) {
+      const code = /CONFLICT|VERSION/.test(commandError.message || '') ? 'OPTIMISTIC_LOCK_CONFLICT' : commandError.message;
+      throw new Error(code || 'No se pudo aprobar el pago.');
+    }
+    return { payment: { ...pending, status: 'verificado', version: paymentVersion + 1 }, invoice: { id: invoiceId }, receipt: { id: result?.receipt_id || null } };
+    /* Legacy local approval retained below for migration reference only.
     const data = this.getData();
     const invoice = data.invoices.find(i => i.id === invoiceId);
     if (!invoice) throw new Error('Factura no encontrada.');
@@ -1374,7 +826,7 @@ class DatabaseService {
     }
 
     this.saveData(data);
-    return { payment, invoice, receipt };
+    return { payment, invoice, receipt }; */
   }
 
   getReceipts() {
@@ -1460,44 +912,7 @@ class DatabaseService {
 
   // --- MÓDULO DE CONFIGURACIÓN DE LA APP ---
   getSettings() {
-    const data = this.getData();
-    const defaults = {
-      // Configuración de Cuotas & Cánones
-      rate_locales_m2: 4.5,
-      rate_macrolotes_m2: 2.3,
-      rate_galpones_m2: 2.5,
-      condo_fee_aliquot_base: 8.0, // 8% sobre canon base
-      // Configuración de Alertas & Vencimientos
-      cutoff_day: 5,               // Día 5 de cada mes
-      alert_days_before: 5,        // Aviso preventivo 5 días antes
-      grace_days: 5,               // 5 días de gracia antes de liquidar mora
-      mora_monthly_rate: 3.0,      // 3.0% de mora mensual (Art. 30 G.O. 40.418 y Art. 108 Código de Comercio)
-      mora_recurrence_days: 3,     // Recordatorios recurrentes cada 3 días hasta liquidación efectiva
-      // Perfil Tributario & Régimen Fiscal (SENIAT / LOCAT)
-      tax_contributor_type: 'especial',
-      tax_iva_withhold_pct: 75,
-      tax_islr_withhold_pct: 2.0,
-      tax_company_name: 'CENTRO COMERCIAL MARIO SÁNCHEZ, C.A.',
-      tax_company_rif: 'J-30211544-2',
-      // Gastos Operativos, Aseo Urbano y Fruto Patrimonial
-      base_monthly_expenses_usd: 2540.00,
-      aseo_urbano_monthly_usd: 120.00,
-      reserve_fund_pct: 10.0,
-      admin_fee_pct: 5.0,
-      isae_rate_pct: 2.0,
-      // Features Multi-Tenant por Organización (Fase 0 y Fase 6)
-      organization_features: {
-        regimen_sucesoral: {
-          activo: true,
-          cuota_base: 400.00,
-          coherederos: 14
-        }
-      },
-      // Plantillas de Mensajes
-      msg_preventive_template: `Estimados *{inquilino}* ({unidad}):\nLe remitimos su aviso de cobro preventivo del período *{periodo}* por un total de *{monto_usd}* (Bs. {monto_bs} a tasa BCV {tasa_bcv}).\nFecha límite oportuna de pago: *{fecha_limite}*.\nPor favor remitir comprobante a este canal oficial para conciliación y emisión de su recibo fiscal.`,
-      msg_mora_template: `⚠️ *AVISO FORMAL DE MORA — CC MARIO SÁNCHEZ*\nEstimados *{inquilino}* ({unidad}):\nLe notificamos que su cuota del período *{periodo}* (vencida el *{fecha_limite}*) presenta *{dias_mora} días de retraso*.\n• Canon & Gastos Base: *{monto_usd}*\n• Recargo Moratorio Legal (Art. 30 G.O. 40.418): *{recargo_mora_usd}* (Bs. {recargo_mora_bs})\n• *TOTAL EXIGIBLE AL DÍA*: *{total_con_mora_usd}* (Bs. {total_con_mora_bs} a tasa BCV {tasa_bcv})\nPor favor consignar su comprobante a este canal para suspender las alertas automáticas y registrar su solvencia.`
-    };
-    return (data && data.app_settings) ? { ...defaults, ...data.app_settings } : defaults;
+    return this.getData().app_settings || {};
   }
 
   saveSettings(newSettings) {

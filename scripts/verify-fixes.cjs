@@ -110,15 +110,8 @@ async function runAll() {
       throw new Error(`FAIL: expected 401 for unsigned demo, got ${status}`);
     }
 
-    // Test signed demo token verification
-    const validDemoToken = geminiHandler.signDemoToken({ org_id: 'd0000000-0000-0000-0000-000000000001', role: 'demo_director' });
-    console.log(' - Generated signed demo token:', validDemoToken.slice(0, 30) + '...');
-    const verified = geminiHandler.verifyDemoToken(validDemoToken);
-    console.log(' - Token verified:', Boolean(verified), 'Org:', verified?.org_id);
-    if (!verified || verified?.org_id !== 'd0000000-0000-0000-0000-000000000001') {
-      throw new Error('FAIL: signed demo token verification failed');
-    }
-    console.log(' -> PASS: Gemini authentication bypass closed; server-signed demo tokens required.');
+    if (geminiHandler.signDemoToken) throw new Error('Legacy demo token issuer must be removed');
+    console.log(' -> PASS: unsigned access rejected and legacy issuer removed.');
   }
 
   // 4. HTML SENSITIVE SEED REMOVAL & SYNTHETIC FIXTURE CONSUMPTION
@@ -133,8 +126,8 @@ async function runAll() {
     if (loadsRealSeed) {
       throw new Error('FAIL: index.html still loads js/seed-data-39.js');
     }
-    if (!loadsSynthetic) {
-      throw new Error('FAIL: index.html does not load js/fixtures-synthetic.js');
+    if (loadsSynthetic) {
+      throw new Error('FAIL: index.html must not load demo fixtures in production');
     }
 
     // Check seed-data-39.js is sanitized
