@@ -702,10 +702,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const banner = document.getElementById('data-quality-banner');
     const text = document.getElementById('data-quality-banner-text');
     if (!banner || !text) return;
-    const exceptions = dbService.getData()?.data_quality_exceptions;
-    if (!Array.isArray(exceptions) || exceptions.length === 0) { banner.hidden = true; return; }
-    const pending = exceptions.filter(e => e.status === 'requiere_validacion').length;
-    text.textContent = `${pending} registro del libro requiere validación antes de incorporarse como unidad física operativa. Los indicadores excluyen datos incompletos.`;
+    const demoExceptions = dbService.getData()?.data_quality_exceptions;
+    const staged = typeof dbService.getAuthorizedImportStaging === 'function'
+      ? dbService.getAuthorizedImportStaging()
+      : [];
+    const pendingDemo = Array.isArray(demoExceptions)
+      ? demoExceptions.filter(e => e.status === 'requiere_validacion').length
+      : 0;
+    const pendingStaged = Array.isArray(staged)
+      ? staged.filter(e => e.status === 'pending_validation').length
+      : 0;
+    const pending = pendingDemo + pendingStaged;
+    if (pending === 0) { banner.hidden = true; return; }
+    text.textContent = pendingStaged > 0
+      ? `${pendingStaged} paquetes de origen están pendientes de validación antes de incorporarse a producción. Los indicadores excluyen datos no aprobados.`
+      : `${pending} registro del libro requiere validación antes de incorporarse como unidad física operativa. Los indicadores excluyen datos incompletos.`;
     banner.hidden = false;
   }
 
