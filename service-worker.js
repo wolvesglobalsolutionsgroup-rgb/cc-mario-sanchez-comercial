@@ -5,7 +5,7 @@
  * ==============================================================================
  */
 
-const CACHE_NAME = 'ccms-erp-v2.9.5-e2e-verified';
+const CACHE_NAME = 'ccms-erp-v2.9.6-overdue-kpi';
 const STATIC_ASSETS = [
   '/',
   '/index.html',

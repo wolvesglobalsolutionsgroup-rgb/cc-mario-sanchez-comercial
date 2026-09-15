@@ -900,7 +900,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // debe usar una única regla y no depender de un literal aislado.
   function isOverdueInvoice(invoice, today = new Date()) {
     if (!invoice || invoice.status === 'pagado' || invoice.status === 'anulado' || invoice.status === 'rechazado') return false;
-    const normalizedStatus = String(invoice.status || '').toLowerCase();
+    const normalizedStatus = String(invoice.status || '').trim().toLowerCase();
     if (['en_mora', 'vencida', 'overdue'].includes(normalizedStatus)) return true;
     if (!invoice.due_date) return false;
     const due = new Date(invoice.due_date);
