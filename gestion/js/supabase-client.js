@@ -1157,10 +1157,11 @@ try {
   var dbService = window.dbService;
 } catch (error) {
   console.error('[DB] No se pudo inicializar el servicio de datos:', error);
+  const fallbackData = (typeof globalThis !== 'undefined' && globalThis.CCMS_AUTHORIZED_DEMO_FIXTURES?.full_dataset) || { units: [], tenants: [], contracts: [], invoices: [], payments: [], receipts: [], condo_expenses: [], activos_fijos: [], consumibles: [], kardex_movimientos: [], special_agreements: [], receiving_accounts: [], settings: {}, audit_trail: [] };
   window.dbService = {
     persistenceState: 'error',
-    getData: () => ({ units: [], tenants: [], invoices: [], payments: [], receipts: [], condo_expenses: [], activos_fijos: [], consumibles: [], kardex_movimientos: [], special_agreements: [], receiving_accounts: [], settings: {}, audit_trail: [] }),
-    getSettings: () => ({}),
+    getData: () => JSON.parse(JSON.stringify(fallbackData)),
+    getUnits: () => fallbackData.units || [], getTenants: () => fallbackData.tenants || [], getContracts: () => fallbackData.contracts || [], getInvoices: () => fallbackData.invoices || [], getPayments: () => fallbackData.payments || [], getReceipts: () => fallbackData.receipts || [], getCondoExpenses: () => fallbackData.condo_expenses || [], getActivosFijos: () => fallbackData.activos_fijos || [], getConsumibles: () => fallbackData.consumibles || [], getKardexMovimientos: () => fallbackData.kardex_movimientos || [], getReceivingAccounts: () => fallbackData.receiving_accounts || [], getSettings: () => fallbackData.settings || {}, getAuditLogs: () => fallbackData.audit_trail || [],
     saveData: () => { throw new Error('REMOTE_PERSISTENCE_REQUIRED'); }
   };
   var dbService = window.dbService;
