@@ -27,6 +27,19 @@ server.listen(8103, async () => {
       await page.close();
       console.log(`[UI] login ${viewport.width}px: PASS (${metrics.scrollWidth}px content width)`);
     }
+    // Cada acceso demo debe ser realmente un acceso de un clic y conservar el
+    // rol solicitado en la sesión; esto evita botones visualmente inertes.
+    for (const roleButton of ['btn-demo-superadmin', 'btn-demo-finanzas', 'btn-demo-legal', 'btn-demo-mantenimiento', 'btn-demo-heredero', 'btn-demo-tenant']) {
+      const rolePage = await browser.newPage({ viewport: { width: 390, height: 844 } });
+      await rolePage.goto('http://localhost:8103/gestion/login.html?demo=1', { waitUntil: 'networkidle' });
+      await rolePage.locator(`#${roleButton}`).click();
+      await rolePage.waitForURL(/index\.html/, { timeout: 5000 });
+      const demoSession = await rolePage.evaluate(() => JSON.parse(localStorage.getItem('ccms_session') || '{}'));
+      if (!demoSession.is_demo || !demoSession.role) throw new Error(`Demo role did not create session: ${roleButton}`);
+      await rolePage.close();
+    }
+    console.log('[UI] demo role selector: PASS (6 accesos 1-clic verificados)');
+
     // Smoke autenticado del tablero demo: evita que una regresión de carga deje
     // la interfaz visualmente viva pero sin los datos que debe presentar.
     const demoPage = await browser.newPage({ viewport: { width: 390, height: 844 } });

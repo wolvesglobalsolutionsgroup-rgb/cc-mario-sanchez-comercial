@@ -7,6 +7,7 @@
 - Supabase `wgs-proptech-prod` tiene aplicadas las migraciones de identidad, RLS, comandos financieros y endurecimiento.
 - Demo pública verificada con datos autorizados de los libros: 38 locales, 38 inquilinos, facturación $7.560, recaudado $2.910, 30 cuotas vencidas por $4.650 y 159 gastos.
 - `npm test`: 57/57 pruebas; verificación de remediaciones y smoke UI 390/1440 aprobados.
+- Smoke UI ampliado: los seis botones de acceso demo crean sesión y navegan al tablero en un clic; los 11 módulos siguen navegables sin errores.
 - Los fixtures autorizados se consumen solo como snapshot demo; el fixture sintético no se carga en `index.html` y la política pública heredada de `units` fue eliminada.
 - Las escrituras de producción ya tienen frontera serverless `/api/records`: Bearer de Supabase, membresía activa, aislamiento por organización y RLS; la demo mantiene mutaciones solo en memoria.
 - Mesa de ayuda/tickets ya no reintroduce incidentes de muestra desde `localStorage`; usa el servicio de datos autorizado y falla cerrado cuando no existe persistencia.
