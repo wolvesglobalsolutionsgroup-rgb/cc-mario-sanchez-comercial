@@ -13,6 +13,7 @@
 - Mesa de ayuda/tickets ya no reintroduce incidentes de muestra desde `localStorage`; usa el servicio de datos autorizado y falla cerrado cuando no existe persistencia.
 - Supabase: se revocó la ejecución pública de `rls_auto_enable()`; el aviso de funciones SECURITY DEFINER pasó de 14 a 13 y las restantes corresponden a predicados/RPC que RLS y los comandos autorizados necesitan.
 - Modelo multi-inmueble: `units.property_id` y `property_memberships` ya están creados; el backfill de producción dejó 1 inmueble y 11/11 unidades vinculadas para `mario-sanchez`.
+- Contexto visual multi-inmueble: el encabezado ya incluye selector accesible, persistencia de preferencia y filtrado por inmueble para unidades, inquilinos, contratos, facturas y pagos cuando existan dos o más inmuebles.
 - Fidelidad de producción: gastos y cuentas receptoras ya no caen a valores de muestra cuando la lectura remota está vacía; los defaults quedan limitados a la demo autorizada.
 
 ## Bloqueos restantes antes de aceptar producción real
