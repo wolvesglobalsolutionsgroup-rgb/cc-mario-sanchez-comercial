@@ -14,6 +14,7 @@
 - Supabase: se revocó la ejecución pública de `rls_auto_enable()`; el aviso de funciones SECURITY DEFINER pasó de 14 a 13 y las restantes corresponden a predicados/RPC que RLS y los comandos autorizados necesitan.
 - Modelo multi-inmueble: `units.property_id` y `property_memberships` ya están creados; el backfill de producción dejó 1 inmueble y 11/11 unidades vinculadas para `mario-sanchez`.
 - Reconciliación de inventario: la fuente autorizada contiene 39 filas numeradas; 38 son unidades físicas identificables y una queda como excepción. La demo conserva las 38; producción aún requiere importar/mapear las 27 restantes sobre las 11 existentes, con revisión de duplicados y contratos antes de ejecutar el backfill.
+- Bandeja de importación productiva: `authorized_import_staging` ya está aplicada en Supabase y contiene 38 paquetes de arrendamiento y 1 excepción, todos `pending_validation`, con hash SHA-256 y payload de origen. Ningún registro incompleto se convirtió en unidad operativa.
 - Contexto visual multi-inmueble: el encabezado ya incluye selector accesible, persistencia de preferencia y filtrado por inmueble para unidades, inquilinos, contratos, facturas y pagos cuando existan dos o más inmuebles.
 - Calidad de datos visible: la demo muestra una advertencia cuando existen registros del libro pendientes de validación y explica que quedan fuera de los indicadores operativos.
 - Fidelidad de producción: gastos y cuentas receptoras ya no caen a valores de muestra cuando la lectura remota está vacía; los defaults quedan limitados a la demo autorizada.
@@ -22,7 +23,7 @@
 ## Bloqueos restantes antes de aceptar producción real
 
 1. Crear/validar usuarios reales en Supabase Auth y recorrer cada rol con dos organizaciones.
-2. Validar en entorno con usuarios reales las altas, ediciones y bajas remotas de cada módulo; la frontera serverless ya está implementada.
+2. Aprobar la bandeja de importación y materializar los 38 paquetes después de validar duplicados, RIF, fechas y contratos; luego validar en entorno con usuarios reales las altas, ediciones y bajas remotas de cada módulo.
 3. Validar Storage, exportaciones, restauración de base/archivos y ensayo RPO/RTO.
 4. Ejecutar E2E autenticado en 360/390/768/1440 px y revisión manual WCAG 2.2 AA.
 5. Cerrar aceptación del período contable patrón y revisar saldos contra libros originales.
