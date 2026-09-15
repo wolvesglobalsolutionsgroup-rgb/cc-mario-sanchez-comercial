@@ -2,7 +2,7 @@
 
 ## Evidencia verificada
 
-- SHA publicado en `main`: `5166a58`.
+- SHA publicado en `main`: se actualizará con el commit de esta entrega; incluye el smoke UI con puerto efímero.
 - Vercel responde `200` en `/login`, `/onboarding`, `/gestion`, `/gestion/login` y `/gestion/onboarding`.
 - Supabase `wgs-proptech-prod` tiene aplicadas las migraciones de identidad, RLS, comandos financieros y endurecimiento.
 - Demo pública verificada con datos autorizados de los libros: 38 unidades físicas operativas, 38 inquilinos, facturación $7.560, recaudado $2.910, 30 cuotas vencidas por $4.650 y 159 gastos. El libro contiene 39 registros numerados: `LUBRICANTES DANCO, C.A.` queda registrado como excepción pendiente (sin metraje/unidad física identificable), no como local inventado.
@@ -16,6 +16,7 @@
 - Contexto visual multi-inmueble: el encabezado ya incluye selector accesible, persistencia de preferencia y filtrado por inmueble para unidades, inquilinos, contratos, facturas y pagos cuando existan dos o más inmuebles.
 - Calidad de datos visible: la demo muestra una advertencia cuando existen registros del libro pendientes de validación y explica que quedan fuera de los indicadores operativos.
 - Fidelidad de producción: gastos y cuentas receptoras ya no caen a valores de muestra cuando la lectura remota está vacía; los defaults quedan limitados a la demo autorizada.
+- Reproducibilidad CI: `scripts/verify-ui.js` usa un puerto efímero para evitar falsos fallos `EADDRINUSE` cuando existe otra previsualización local.
 
 ## Bloqueos restantes antes de aceptar producción real
 

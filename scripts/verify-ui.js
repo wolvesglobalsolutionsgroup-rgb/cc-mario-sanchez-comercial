@@ -13,13 +13,17 @@ const server = http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': mimes[ext] || 'text/plain', 'Cache-Control': 'no-store' });
   res.end(fs.readFileSync(filePath));
 });
-server.listen(8103, async () => {
+// Use an ephemeral port so the verifier remains reproducible when another
+// local preview or a previous interrupted run still owns the default port.
+server.listen(0, async () => {
+  const port = server.address().port;
+  const baseUrl = `http://localhost:${port}`;
   let browser;
   try {
     browser = await chromium.launch({ headless: true });
     for (const viewport of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
       const page = await browser.newPage({ viewport });
-      await page.goto('http://localhost:8103/gestion/login.html', { waitUntil: 'networkidle' });
+      await page.goto(`${baseUrl}/gestion/login.html`, { waitUntil: 'networkidle' });
       const metrics = await page.evaluate(() => ({ scrollWidth: document.documentElement.scrollWidth, innerWidth: window.innerWidth, visibleText: /Acceso a Producción|Modo Demostración/i.test(document.body.innerText) }));
       if (metrics.scrollWidth > metrics.innerWidth) throw new Error(`Overflow login ${viewport.width}: ${metrics.scrollWidth} > ${metrics.innerWidth}`);
       if (!metrics.visibleText) throw new Error(`Login content missing at ${viewport.width}px`);
@@ -31,7 +35,7 @@ server.listen(8103, async () => {
     // rol solicitado en la sesión; esto evita botones visualmente inertes.
     for (const roleButton of ['btn-demo-superadmin', 'btn-demo-finanzas', 'btn-demo-legal', 'btn-demo-mantenimiento', 'btn-demo-heredero', 'btn-demo-tenant']) {
       const rolePage = await browser.newPage({ viewport: { width: 390, height: 844 } });
-      await rolePage.goto('http://localhost:8103/gestion/login.html?demo=1', { waitUntil: 'networkidle' });
+      await rolePage.goto(`${baseUrl}/gestion/login.html?demo=1`, { waitUntil: 'networkidle' });
       await rolePage.locator(`#${roleButton}`).click();
       await rolePage.waitForURL(/index\.html/, { timeout: 5000 });
       const demoSession = await rolePage.evaluate(() => JSON.parse(localStorage.getItem('ccms_session') || '{}'));
@@ -47,7 +51,7 @@ server.listen(8103, async () => {
       user_id: 'demo-ui-user', role: 'admin', display_name: 'Demo UI', is_demo: true,
       organization_id: 'd0000000-0000-0000-0000-000000000001', expires_at: Date.now() + 3600000
     })));
-    await demoPage.goto('http://localhost:8103/gestion/index.html', { waitUntil: 'networkidle' });
+    await demoPage.goto(`${baseUrl}/gestion/index.html`, { waitUntil: 'networkidle' });
     await demoPage.waitForFunction(() => document.getElementById('kpi-billed')?.textContent?.trim() !== '$0.00', null, { timeout: 5000 });
     const dashboard = await demoPage.evaluate(() => ({
       billed: document.getElementById('kpi-billed')?.textContent?.trim(),
