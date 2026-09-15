@@ -22,10 +22,13 @@
   const TicketsManager = {
     storageKey: 'ccms_service_tickets',
 
-    /**
-     * Obtiene los tickets registrados con fallback a incidentes muestra
-     */
+    /** Obtiene los tickets desde la fuente autorizada de la sesión. */
     getTickets() {
+      const db = global.dbService;
+      if (db && typeof db.getData === 'function') {
+        const snapshot = db.getData();
+        if (Array.isArray(snapshot.service_tickets)) return snapshot.service_tickets;
+      }
       try {
         const raw = localStorage.getItem(this.storageKey);
         if (raw) {
@@ -35,48 +38,22 @@
       } catch (e) {
         console.warn('[TicketsManager] Error leyendo storage:', e);
       }
-      return [
-        {
-          id: 'tk-1',
-          ticket_number: 'TK-2026-001',
-          tenant_id: 'ten-1',
-          tenant_name: 'Mueblería Juncal, C.A.',
-          unit_code: 'LOC-1',
-          category: 'electricidad',
-          priority: 'alta',
-          subject: 'Parpadeo en reflector exterior del pasillo PB',
-          description: 'El reflector que ilumina la entrada del local LOC-1 presenta intermitencia desde el día de ayer.',
-          status: 'en_atencion',
-          technician: 'Ing. Carlos Mendoza (Electricidad)',
-          admin_response: 'Técnico electricista asignado para revisión hoy a las 14:00 hrs.',
-          created_at: '2026-03-01T10:30:00Z',
-          updated_at: '2026-03-01T14:15:00Z'
-        },
-        {
-          id: 'tk-2',
-          ticket_number: 'TK-2026-002',
-          tenant_id: 'ten-2',
-          tenant_name: 'Distribuidora Oriente Marino, C.A.',
-          unit_code: 'LOC-2',
-          category: 'infraestructura',
-          priority: 'normal',
-          subject: 'Revisión preventiva de sello perimetral en ventanal',
-          description: 'Solicitud de verificación de silicón en la junta del ventanal antes del inicio de temporada de lluvias.',
-          status: 'abierto',
-          technician: '',
-          admin_response: '',
-          created_at: '2026-03-08T09:15:00Z',
-          updated_at: '2026-03-08T09:15:00Z'
-        }
-      ];
+      return [];
     },
 
-    /**
-     * Guarda los tickets en almacenamiento local y adaptador Supabase si aplica
-     */
+    /** Persiste tickets mediante DatabaseService; nunca usa localStorage en producción. */
     saveTickets(tickets) {
+      const db = global.dbService;
+      if (db && typeof db.getData === 'function' && typeof db.saveData === 'function') {
+        const snapshot = db.getData();
+        snapshot.service_tickets = Array.isArray(tickets) ? tickets : [];
+        db.saveData(snapshot);
+        return true;
+      }
       try {
-        localStorage.setItem(this.storageKey, JSON.stringify(tickets));
+        // Solo se permite este almacenamiento durante el arranque demo, antes
+        // de que DatabaseService quede disponible.
+        if (global.CCMS_DEMO_MODE === true) localStorage.setItem(this.storageKey, JSON.stringify(tickets));
       } catch (e) {
         console.error('[TicketsManager] Error guardando tickets:', e);
       }
@@ -124,6 +101,17 @@
      * Persiste ticket en Supabase con RLS o en localStorage según el modo activo
      */
     async crearTicket(ticketData) {
+      const db = global.dbService;
+      if (db?.persistenceState === 'demo_fixture') {
+        const nuevoTicket = {
+          ...ticketData, id: 'TCK-' + Date.now(), ticket_number: 'TK-DEMO-' + Date.now().toString().slice(-6),
+          status: 'abierto', created_at: new Date().toISOString(), updated_at: new Date().toISOString()
+        };
+        const snapshot = db.getData();
+        snapshot.service_tickets = [nuevoTicket, ...(snapshot.service_tickets || [])];
+        db.saveData(snapshot);
+        return nuevoTicket;
+      }
       const usarSupabase = window.supabaseClient && window.CCMS_DEMO_MODE !== true;
 
       if (usarSupabase) {
@@ -153,12 +141,7 @@
         return data[0];
       }
 
-      // Fallback offline/demo (solo si CCMS_DEMO_MODE === true)
-      const localTickets = JSON.parse(localStorage.getItem('ccms_tickets') || '[]');
-      const nuevoTicket = { ...ticketData, id: 'TCK-' + Date.now(), status: 'abierto' };
-      localTickets.unshift(nuevoTicket);
-      localStorage.setItem('ccms_tickets', JSON.stringify(localTickets));
-      return nuevoTicket;
+      throw new Error('REMOTE_PERSISTENCE_REQUIRED: No hay persistencia autorizada para tickets.');
     },
 
     /**
