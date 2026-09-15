@@ -2,7 +2,7 @@
 
 ## Evidencia verificada
 
-- SHA publicado en `main`: `e2a7dfe`.
+- SHA publicado en `main`: `ae1ae68`.
 - Vercel responde `200` en `/login`, `/onboarding`, `/gestion`, `/gestion/login` y `/gestion/onboarding`.
 - Supabase `wgs-proptech-prod` tiene aplicadas las migraciones de identidad, RLS, comandos financieros y endurecimiento.
 - Demo pública verificada con datos autorizados de los libros: 38 unidades físicas operativas, 38 inquilinos, facturación $7.560, recaudado $2.910, 30 cuotas vencidas por $4.650 y 159 gastos. El libro contiene 39 registros numerados: `LUBRICANTES DANCO, C.A.` queda registrado como excepción pendiente (sin metraje/unidad física identificable), no como local inventado.
@@ -24,6 +24,7 @@
 - Comando de revisión: RPC `review_authorized_import` aplicada en Supabase y protegida por sesión, alcance de inmueble y permiso `properties.manage`; rechaza aprobaciones con datos incompletos y registra revisor/fecha/motivo.
 - Edición controlada: RPC `update_authorized_import_payload` y formulario accesible permiten completar solo área, RIF, documento y fechas; preservan el resto del payload y no alteran tablas operativas.
 - Materialización transaccional: RPC `materialize_authorized_import` crea unidad, inquilino y contrato juntos, verifica duplicados y marca el origen como `imported` solo si las tres inserciones completan; cualquier error revierte todo.
+- Pruebas de contrato: la suite verifica separación de edición/aprobación/materialización, bloqueo de estado incorrecto, detección de duplicados y revocación de ejecución anónima.
 
 ## Bloqueos restantes antes de aceptar producción real
 
