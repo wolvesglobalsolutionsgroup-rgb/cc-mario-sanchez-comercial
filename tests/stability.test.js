@@ -852,6 +852,7 @@ describe("PILAR 11: REMEDIACIÓN TÉCNICA MAESTRA (FASES F1-F5 / T04-T22)", () =
 
   test("Persistencia de módulos operativos: tablas, RLS y diff remoto están conectados", () => {
     const migration = fs.readFileSync(path.join(rootDir, "supabase", "migrations", "20260915001400_operational_module_persistence.sql"), "utf8");
+    const performanceMigration = fs.readFileSync(path.join(rootDir, "supabase", "migrations", "20260915001500_operational_rls_performance.sql"), "utf8");
     const api = fs.readFileSync(path.join(rootDir, "api", "records.js"), "utf8");
     const client = fs.readFileSync(path.join(rootDir, "gestion", "js", "supabase-client.js"), "utf8");
     for (const table of ["special_agreements", "receiving_accounts", "activos_fijos", "consumibles", "kardex_movimientos"]) {
@@ -860,6 +861,10 @@ describe("PILAR 11: REMEDIACIÓN TÉCNICA MAESTRA (FASES F1-F5 / T04-T22)", () =
       assert.match(client, new RegExp(`['"]${table}['"]`));
     }
     assert.match(migration, /ENABLE ROW LEVEL SECURITY/);
+    assert.match(performanceMigration, /FOR INSERT TO authenticated/);
+    assert.match(performanceMigration, /FOR UPDATE TO authenticated/);
+    assert.match(performanceMigration, /FOR DELETE TO authenticated/);
+    assert.doesNotMatch(performanceMigration, /FOR ALL TO authenticated/);
     assert.match(client, /agreements: 'special_agreements'/);
     assert.doesNotMatch(client, /localStorage\.setItem\('ccms_agreements'/);
   });

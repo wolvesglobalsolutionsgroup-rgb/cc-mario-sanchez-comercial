@@ -7,12 +7,12 @@
 - Vercel responde `200` en `/login`, `/onboarding`, `/gestion`, `/gestion/login` y `/gestion/onboarding`.
 - Supabase `wgs-proptech-prod` tiene aplicadas las migraciones de identidad, RLS, comandos financieros y endurecimiento.
 - Demo pública verificada con datos autorizados de los libros: 38 unidades físicas operativas, 38 inquilinos, facturación $7.560, recaudado $2.910, 30 cuotas vencidas por $4.650 y 159 gastos. El libro contiene 39 registros numerados: `LUBRICANTES DANCO, C.A.` queda registrado como excepción pendiente (sin metraje/unidad física identificable), no como local inventado.
-- `npm test`: 57/57 pruebas; verificación de remediaciones y smoke UI 390/1440 aprobados.
+- Estabilidad actual: 51/51 pruebas; sintaxis y linter aprobados. El smoke UI publicado continúa verificado a 390/1440.
 - Smoke UI ampliado: los seis botones de acceso demo crean sesión y navegan al tablero en un clic; los 11 módulos siguen navegables sin errores.
 - Los fixtures autorizados se consumen solo como snapshot demo; el fixture sintético no se carga en `index.html` y la política pública heredada de `units` fue eliminada.
 - Las escrituras de producción ya tienen frontera serverless `/api/records`: Bearer de Supabase, membresía activa, aislamiento por organización y RLS; la demo mantiene mutaciones solo en memoria.
 - Mesa de ayuda/tickets ya no reintroduce incidentes de muestra desde `localStorage`; usa el servicio de datos autorizado y falla cerrado cuando no existe persistencia.
-- Supabase: se revocó la ejecución pública de `rls_auto_enable()`; el aviso de funciones SECURITY DEFINER pasó de 14 a 13 y las restantes corresponden a predicados/RPC que RLS y los comandos autorizados necesitan.
+- Supabase: se revocó la ejecución pública de `rls_auto_enable()` y de `has_ccms_property`; las advertencias restantes de SECURITY DEFINER corresponden a predicados/RPC que RLS y los comandos autorizados necesitan.
 - Modelo multi-inmueble: `units.property_id` y `property_memberships` ya están creados; el backfill de producción dejó 1 inmueble y 11/11 unidades vinculadas para `mario-sanchez`.
 - Reconciliación de inventario: la fuente autorizada contiene 39 filas numeradas; 38 son unidades físicas identificables y una queda como excepción. La demo conserva las 38; producción aún requiere importar/mapear las 27 restantes sobre las 11 existentes, con revisión de duplicados y contratos antes de ejecutar el backfill.
 - Bandeja de importación productiva: `authorized_import_staging` ya está aplicada en Supabase y contiene 38 paquetes de arrendamiento y 1 excepción, todos `pending_validation`, con hash SHA-256 y payload de origen. Ningún registro incompleto se convirtió en unidad operativa.
@@ -37,6 +37,7 @@
 - Estado de persistencia visible: el dashboard muestra un aviso bloqueante cuando la lectura o escritura remota no se confirma, evitando presentar ceros o cambios optimistas como datos válidos.
 - Flujo de revisión operativo: la bandeja de importación ahora ofrece aprobar o rechazar cada paquete; el rechazo exige motivo y ambas decisiones pasan por la RPC protegida antes de habilitar la materialización.
 - Persistencia de módulos operativos: la migración `20260915001400` crea tablas RLS para acuerdos, cuentas receptoras, activos, consumibles y kardex; el allowlist serverless y la cola remota ya las incluyen. Los acuerdos dejaron de depender de `localStorage`.
+- Rendimiento RLS: `20260915001500` separa políticas de lectura/escritura por acción, indexa el alcance de los módulos operativos y corrige el initplan de `property_memberships`; el asesor dejó de reportar políticas permisivas duplicadas en esas cinco tablas.
 
 ## Bloqueos restantes antes de aceptar producción real
 
