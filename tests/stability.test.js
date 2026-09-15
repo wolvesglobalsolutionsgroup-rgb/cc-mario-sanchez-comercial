@@ -856,6 +856,8 @@ describe("PILAR 11: REMEDIACIÓN TÉCNICA MAESTRA (FASES F1-F5 / T04-T22)", () =
     assert.match(app, /Rechazar/);
     assert.match(app, /decision === 'rejected' && !note\.trim\(\)/);
     assert.match(app, /reviewAuthorizedImport\(row\.id, decision, note\.trim\(\)\)/);
+    assert.doesNotMatch(app, /rows\.filter\(row => row\.status !== 'imported'\)\.slice\(0, 12\)/);
+    assert.match(app, /list\.style\.maxHeight = '430px'/);
   });
 
   test("Persistencia de módulos operativos: tablas, RLS y diff remoto están conectados", () => {

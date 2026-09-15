@@ -750,7 +750,9 @@ document.addEventListener('DOMContentLoaded', () => {
     badge.textContent = pending.length ? `${pending.length} por revisar` : 'Sin pendientes';
     badge.style.color = pending.length ? 'var(--amber)' : 'var(--emerald)';
     list.replaceChildren();
-    rows.filter(row => row.status !== 'imported').slice(0, 12).forEach(row => {
+    list.style.maxHeight = '430px';
+    list.style.overflowY = 'auto';
+    rows.filter(row => row.status !== 'imported').forEach(row => {
       const item = document.createElement('div');
       item.style.cssText = 'display:grid;gap:8px;padding:8px 10px;border:1px solid var(--border-subtle);border-radius:8px;background:var(--bg-card);font-size:11px;';
       const head = document.createElement('div');
