@@ -2,12 +2,12 @@
 
 ## Evidencia verificada
 
-- SHA publicado en `main`: `7f46d8e`.
+- SHA publicado en `main`: `1bdf274`.
 - Vercel responde `200` en `/login`, `/onboarding`, `/gestion`, `/gestion/login` y `/gestion/onboarding`.
 - Supabase `wgs-proptech-prod` tiene aplicadas las migraciones de identidad, RLS, comandos financieros y endurecimiento.
 - Demo pública verificada con datos autorizados de los libros: 38 locales, 38 inquilinos, facturación $7.560, recaudado $2.910, 30 cuotas vencidas por $4.650 y 159 gastos.
 - `npm test`: 57/57 pruebas; verificación de remediaciones y smoke UI 390/1440 aprobados.
-- Los fixtures reales se cargan solo en sesión demo y host permitido; producción no los incluye en `index.html`.
+- Los fixtures autorizados se consumen solo como snapshot demo; el fixture sintético no se carga en `index.html` y la política pública heredada de `units` fue eliminada.
 
 ## Bloqueos restantes antes de aceptar producción real
 
