@@ -762,6 +762,26 @@ document.addEventListener('DOMContentLoaded', () => {
       state.style.color = row.status === 'approved' ? 'var(--emerald)' : 'var(--amber)';
       state.textContent = row.status === 'approved' ? 'Aprobado · listo para materializar' : row.status === 'rejected' ? 'Rechazado' : 'Requiere validación';
       head.append(label, state); item.appendChild(head);
+      if (row.status === 'pending_validation' && typeof dbService.reviewAuthorizedImport === 'function') {
+        const actions = document.createElement('div');
+        actions.style.cssText = 'display:flex;gap:7px;flex-wrap:wrap;';
+        const approve = document.createElement('button');
+        approve.type = 'button'; approve.className = 'btn-primary'; approve.textContent = 'Aprobar revisión';
+        approve.style.cssText = 'padding:7px 10px;font-size:10.5px;background:var(--emerald);';
+        const reject = document.createElement('button');
+        reject.type = 'button'; reject.className = 'btn-secondary'; reject.textContent = 'Rechazar';
+        reject.style.cssText = 'padding:7px 10px;font-size:10.5px;color:var(--rose);';
+        const submitDecision = async (decision, button) => {
+          const note = window.prompt(decision === 'approved' ? 'Motivo o referencia de aprobación (opcional):' : 'Motivo obligatorio del rechazo:','');
+          if (note === null || (decision === 'rejected' && !note.trim())) return;
+          approve.disabled = true; reject.disabled = true; button.textContent = 'Procesando…';
+          try { await dbService.reviewAuthorizedImport(row.id, decision, note.trim()); renderAuthorizedImportReview(); renderDataQualityNotice(); }
+          catch (error) { console.error('[ImportReview] Decision failed:', error); alert(`No se pudo registrar la decisión: ${error.message}`); approve.disabled = false; reject.disabled = false; button.textContent = decision === 'approved' ? 'Aprobar revisión' : 'Rechazar'; }
+        };
+        approve.addEventListener('click', () => submitDecision('approved', approve));
+        reject.addEventListener('click', () => submitDecision('rejected', reject));
+        actions.append(approve, reject); item.appendChild(actions);
+      }
       if (row.status === 'approved' && typeof dbService.materializeAuthorizedImport === 'function') {
         const materialize = document.createElement('button');
         materialize.type = 'button'; materialize.className = 'btn-primary'; materialize.textContent = 'Materializar paquete'; materialize.style.cssText = 'justify-self:start;padding:7px 10px;font-size:10.5px;';

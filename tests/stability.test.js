@@ -842,6 +842,14 @@ describe("PILAR 11: REMEDIACIÓN TÉCNICA MAESTRA (FASES F1-F5 / T04-T22)", () =
     assert.match(app, /no deben considerarse guardados/);
   });
 
+  test("Bandeja de importación permite aprobar o rechazar con motivo", () => {
+    const app = fs.readFileSync(path.join(rootDir, "gestion", "js", "app.js"), "utf8");
+    assert.match(app, /Aprobar revisión/);
+    assert.match(app, /Rechazar/);
+    assert.match(app, /decision === 'rejected' && !note\.trim\(\)/);
+    assert.match(app, /reviewAuthorizedImport\(row\.id, decision, note\.trim\(\)\)/);
+  });
+
   test("Fixtures Sintéticos y Gobernanza de Acceso: Archivos desacoplados presentes", () => {
     const synPath = path.join(rootDir, "gestion", "js", "fixtures-synthetic.js");
     const accPath = path.join(rootDir, "gestion", "js", "modules", "access-management.js");
