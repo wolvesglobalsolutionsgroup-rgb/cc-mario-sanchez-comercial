@@ -1527,7 +1527,7 @@
         "rent_usd": 600.0,
         "condo_usd": 0,
         "total_usd": 600.0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1542,7 +1542,7 @@
         "rent_usd": 0,
         "condo_usd": 0,
         "total_usd": 0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1572,7 +1572,7 @@
         "rent_usd": 600.0,
         "condo_usd": 0,
         "total_usd": 600.0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1587,7 +1587,7 @@
         "rent_usd": 0,
         "condo_usd": 0,
         "total_usd": 0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1617,7 +1617,7 @@
         "rent_usd": 0,
         "condo_usd": 0,
         "total_usd": 0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1632,7 +1632,7 @@
         "rent_usd": 0,
         "condo_usd": 0,
         "total_usd": 0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1662,7 +1662,7 @@
         "rent_usd": 300.0,
         "condo_usd": 0,
         "total_usd": 300.0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1677,7 +1677,7 @@
         "rent_usd": 520.0,
         "condo_usd": 0,
         "total_usd": 520.0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1692,7 +1692,7 @@
         "rent_usd": 0,
         "condo_usd": 0,
         "total_usd": 0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1707,7 +1707,7 @@
         "rent_usd": 120.0,
         "condo_usd": 0,
         "total_usd": 120.0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1722,7 +1722,7 @@
         "rent_usd": 0,
         "condo_usd": 0,
         "total_usd": 0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1752,7 +1752,7 @@
         "rent_usd": 0,
         "condo_usd": 0,
         "total_usd": 0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1767,7 +1767,7 @@
         "rent_usd": 85.0,
         "condo_usd": 0,
         "total_usd": 85.0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1797,7 +1797,7 @@
         "rent_usd": 85.0,
         "condo_usd": 0,
         "total_usd": 85.0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1812,7 +1812,7 @@
         "rent_usd": 70.0,
         "condo_usd": 0,
         "total_usd": 70.0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1827,7 +1827,7 @@
         "rent_usd": 0,
         "condo_usd": 0,
         "total_usd": 0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1842,7 +1842,7 @@
         "rent_usd": 0,
         "condo_usd": 0,
         "total_usd": 0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1857,7 +1857,7 @@
         "rent_usd": 400.0,
         "condo_usd": 0,
         "total_usd": 400.0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1872,7 +1872,7 @@
         "rent_usd": 0,
         "condo_usd": 0,
         "total_usd": 0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1887,7 +1887,7 @@
         "rent_usd": 120.0,
         "condo_usd": 0,
         "total_usd": 120.0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1902,7 +1902,7 @@
         "rent_usd": 900.0,
         "condo_usd": 0,
         "total_usd": 900.0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1917,7 +1917,7 @@
         "rent_usd": 0,
         "condo_usd": 0,
         "total_usd": 0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1932,7 +1932,7 @@
         "rent_usd": 0,
         "condo_usd": 0,
         "total_usd": 0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1947,7 +1947,7 @@
         "rent_usd": 200.0,
         "condo_usd": 0,
         "total_usd": 200.0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1977,7 +1977,7 @@
         "rent_usd": 0,
         "condo_usd": 0,
         "total_usd": 0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -1992,7 +1992,7 @@
         "rent_usd": 350.0,
         "condo_usd": 0,
         "total_usd": 350.0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -2022,7 +2022,7 @@
         "rent_usd": 0,
         "condo_usd": 0,
         "total_usd": 0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -2037,7 +2037,7 @@
         "rent_usd": 300.0,
         "condo_usd": 0,
         "total_usd": 300.0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -2052,7 +2052,7 @@
         "rent_usd": 0,
         "condo_usd": 0,
         "total_usd": 0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
@@ -2067,7 +2067,7 @@
         "rent_usd": 0,
         "condo_usd": 0,
         "total_usd": 0,
-        "status": "pendiente",
+        "status": "vencida",
         "issue_date": "2026-08-01",
         "due_date": "2026-08-10",
         "source": "FLUJO DE CAJA ANUAL 2026 2027.xls"
