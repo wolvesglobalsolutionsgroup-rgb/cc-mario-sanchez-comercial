@@ -3608,8 +3608,21 @@
     "activos_fijos": [],
     "consumibles": [],
     "kardex_movimientos": [],
+    "data_quality_exceptions": [
+      {
+        "id": "demo-real-exception-039",
+        "source_sheet": "RELAC DE ARRE. 14 JUM 2026",
+        "source_row": 39,
+        "name": "LUBRICANTES DANCO, C.A.",
+        "unit_reference": null,
+        "area_m2": null,
+        "monthly_canon_usd": 144,
+        "status": "requiere_validacion",
+        "reason": "Registro numerado en el libro sin metraje/unidad física identificable; no se convierte en local operativo hasta validación contable."
+      }
+    ],
     "settings": {
-      "source_note": "Importado para demo autorizada; blancos no se convierten en cero.",
+      "source_note": "Importado para demo autorizada; 39 registros numerados: 38 unidades físicas y 1 excepción pendiente de validar. Blancos no se convierten en cero.",
       "cuota_base_heredero_usd": 400
     }
   }
