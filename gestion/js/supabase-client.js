@@ -282,8 +282,7 @@ class DatabaseService {
   async _persistRemoteDiff(previous, next) {
     const entities = {
       units: 'units', tenants: 'tenants', contracts: 'contracts', invoices: 'invoices',
-      payments: 'payments', condo_expenses: 'condo_expenses', properties: 'properties',
-      transactions: 'transactions', service_tickets: 'service_tickets',
+      condo_expenses: 'condo_expenses', properties: 'properties', service_tickets: 'service_tickets',
       organization_memberships: 'organization_memberships', organization_settings: 'organization_settings'
     };
     const session = (typeof window !== 'undefined' && window.AuthGuard?.currentUser)

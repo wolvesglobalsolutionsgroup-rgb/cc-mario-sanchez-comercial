@@ -1,5 +1,5 @@
 const {handle,uuid,HttpError,body}=require('../lib/server/session.cjs');
-const tables=new Set(['units','tenants','contracts','invoices','payments','condo_expenses','service_tickets','properties','transactions','organization_memberships','access_audit','organization_settings','authorized_import_staging']);
+const tables=new Set(['units','tenants','contracts','invoices','condo_expenses','service_tickets','properties','organization_memberships','access_audit','organization_settings','authorized_import_staging']);
 const readOnlyTables=new Set(['authorized_import_staging']);
 module.exports=handle(async(req,res,ctx)=>{
  if(req.method==='POST') {

@@ -782,6 +782,13 @@ describe("PILAR 11: REMEDIACIÓN TÉCNICA MAESTRA (FASES F1-F5 / T04-T22)", () =
     assert.match(materialize, /REVOKE ALL ON FUNCTION/);
   });
 
+  test("Persistencia financiera: records no permite escribir pagos ni asientos directamente", () => {
+    const records = fs.readFileSync(path.join(rootDir, "api", "records.js"), "utf8");
+    assert.ok(!records.match(/new Set\(\[[^\]]*['\"]payments['\"]/s), "payments debe pasar por comandos financieros");
+    assert.ok(!records.match(/new Set\(\[[^\]]*['\"]transactions['\"]/s), "transactions debe permanecer inmutable fuera del RPC");
+    assert.match(fs.readFileSync(path.join(rootDir, "api", "commands.js"), "utf8"), /payments\.approve/);
+  });
+
   test("Fixtures Sintéticos y Gobernanza de Acceso: Archivos desacoplados presentes", () => {
     const synPath = path.join(rootDir, "gestion", "js", "fixtures-synthetic.js");
     const accPath = path.join(rootDir, "gestion", "js", "modules", "access-management.js");
