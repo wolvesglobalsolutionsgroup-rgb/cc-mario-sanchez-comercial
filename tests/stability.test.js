@@ -850,6 +850,20 @@ describe("PILAR 11: REMEDIACIÓN TÉCNICA MAESTRA (FASES F1-F5 / T04-T22)", () =
     assert.match(app, /reviewAuthorizedImport\(row\.id, decision, note\.trim\(\)\)/);
   });
 
+  test("Persistencia de módulos operativos: tablas, RLS y diff remoto están conectados", () => {
+    const migration = fs.readFileSync(path.join(rootDir, "supabase", "migrations", "20260915001400_operational_module_persistence.sql"), "utf8");
+    const api = fs.readFileSync(path.join(rootDir, "api", "records.js"), "utf8");
+    const client = fs.readFileSync(path.join(rootDir, "gestion", "js", "supabase-client.js"), "utf8");
+    for (const table of ["special_agreements", "receiving_accounts", "activos_fijos", "consumibles", "kardex_movimientos"]) {
+      assert.match(migration, new RegExp(`public\\.${table}`));
+      assert.match(api, new RegExp(`['"]${table}['"]`));
+      assert.match(client, new RegExp(`['"]${table}['"]`));
+    }
+    assert.match(migration, /ENABLE ROW LEVEL SECURITY/);
+    assert.match(client, /agreements: 'special_agreements'/);
+    assert.doesNotMatch(client, /localStorage\.setItem\('ccms_agreements'/);
+  });
+
   test("Fixtures Sintéticos y Gobernanza de Acceso: Archivos desacoplados presentes", () => {
     const synPath = path.join(rootDir, "gestion", "js", "fixtures-synthetic.js");
     const accPath = path.join(rootDir, "gestion", "js", "modules", "access-management.js");

@@ -36,6 +36,7 @@
 - Separación de entorno reforzada: el fallback HTML del fixture autorizado exige sesión demo explícita y host permitido; producción no recibe datos demo ante fallos de carga.
 - Estado de persistencia visible: el dashboard muestra un aviso bloqueante cuando la lectura o escritura remota no se confirma, evitando presentar ceros o cambios optimistas como datos válidos.
 - Flujo de revisión operativo: la bandeja de importación ahora ofrece aprobar o rechazar cada paquete; el rechazo exige motivo y ambas decisiones pasan por la RPC protegida antes de habilitar la materialización.
+- Persistencia de módulos operativos: la migración `20260915001400` crea tablas RLS para acuerdos, cuentas receptoras, activos, consumibles y kardex; el allowlist serverless y la cola remota ya las incluyen. Los acuerdos dejaron de depender de `localStorage`.
 
 ## Bloqueos restantes antes de aceptar producción real
 

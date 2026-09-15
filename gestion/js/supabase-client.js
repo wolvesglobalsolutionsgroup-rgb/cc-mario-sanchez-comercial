@@ -55,7 +55,7 @@ class DatabaseService {
       return;
     }
     // Legacy storage is not an authoritative source, even if it contains 39 units.
-    this.remoteSnapshot = { units: [], tenants: [], invoices: [], payments: [], receipts: [], condo_expenses: [], activos_fijos: [], consumibles: [], kardex_movimientos: [], special_agreements: [], receiving_accounts: [], authorized_import_staging: [], settings: {} };
+    this.remoteSnapshot = { units: [], tenants: [], invoices: [], payments: [], receipts: [], condo_expenses: [], activos_fijos: [], consumibles: [], kardex_movimientos: [], agreements: [], receiving_accounts: [], authorized_import_staging: [], settings: {} };
     this.persistenceState = 'not_loaded';
     if (typeof window !== 'undefined' && window.supabaseClient?.from) this.loadRemoteSnapshot();
     return;
@@ -65,7 +65,7 @@ class DatabaseService {
   async loadRemoteSnapshot() {
     if (this.persistenceState === 'demo_fixture' || typeof window === 'undefined' || !window.supabaseClient?.from) return;
     const tables = ['organizations', 'properties', 'units', 'tenants', 'contracts', 'invoices', 'payments', 'payment_receipts', 'receipts', 'condo_expenses', 'expenses', 'activos_fijos', 'consumibles', 'kardex_movimientos', 'special_agreements', 'receiving_accounts', 'authorized_import_staging', 'audit_logs', 'app_settings'];
-    const snapshot = { units: [], tenants: [], contracts: [], invoices: [], payments: [], receipts: [], condo_expenses: [], activos_fijos: [], consumibles: [], kardex_movimientos: [], special_agreements: [], receiving_accounts: [], authorized_import_staging: [], settings: {}, audit_trail: [] };
+    const snapshot = { units: [], tenants: [], contracts: [], invoices: [], payments: [], receipts: [], condo_expenses: [], activos_fijos: [], consumibles: [], kardex_movimientos: [], agreements: [], receiving_accounts: [], authorized_import_staging: [], settings: {}, audit_trail: [] };
     let successfulReads = 0;
     for (const table of tables) {
       try {
@@ -73,6 +73,7 @@ class DatabaseService {
         if (error) continue; // tablas opcionales no deben ocultar las disponibles
         successfulReads += 1;
         if (table === 'payment_receipts' || table === 'receipts') snapshot.receipts.push(...(data || []));
+        else if (table === 'special_agreements') snapshot.agreements = data || [];
         else if (table === 'app_settings') {
           for (const row of (data || [])) {
             if (row.key) snapshot.settings[row.key] = row.value ?? row;
@@ -304,7 +305,9 @@ class DatabaseService {
     const entities = {
       units: 'units', tenants: 'tenants', contracts: 'contracts', invoices: 'invoices',
       condo_expenses: 'condo_expenses', properties: 'properties', service_tickets: 'service_tickets',
-      organization_memberships: 'organization_memberships', organization_settings: 'organization_settings'
+      organization_memberships: 'organization_memberships', organization_settings: 'organization_settings',
+      activos_fijos: 'activos_fijos', consumibles: 'consumibles', kardex_movimientos: 'kardex_movimientos',
+      agreements: 'special_agreements', receiving_accounts: 'receiving_accounts'
     };
     const session = (typeof window !== 'undefined' && window.AuthGuard?.currentUser)
       ? window.AuthGuard.currentUser() : null;
@@ -326,7 +329,13 @@ class DatabaseService {
         const before = new Map(beforeRows.filter(row => row?.id).map(row => [row.id, row]));
         const after = new Map(nextRows.filter(row => row?.id).map(row => [row.id, row]));
         for (const [id, row] of after) {
-          if (JSON.stringify(before.get(id)) !== JSON.stringify(row)) await send({ entity, operation: 'upsert', row });
+          if (JSON.stringify(before.get(id)) !== JSON.stringify(row)) {
+            const scopedRow = { ...row };
+            if (['activos_fijos', 'consumibles', 'kardex_movimientos', 'agreements', 'receiving_accounts'].includes(key) && !scopedRow.property_id) {
+              scopedRow.property_id = this.getActivePropertyId() || null;
+            }
+            await send({ entity, operation: 'upsert', row: scopedRow });
+          }
         }
         for (const id of before.keys()) {
           if (!after.has(id)) await send({ entity, operation: 'delete', id });
@@ -1075,14 +1084,7 @@ class DatabaseService {
   // --- MÓDULO DE ACUERDOS DE OBRAS Y DEDUCCIONES (ARTS. 13 & 32 G.O. 40.418) ---
   getAgreements() {
     const data = this.getData();
-    if (!data.agreements) {
-      try {
-        data.agreements = JSON.parse(localStorage.getItem('ccms_agreements') || '[]');
-      } catch (e) {
-        data.agreements = [];
-      }
-    }
-    return data.agreements || [];
+    return Array.isArray(data.agreements) ? data.agreements : [];
   }
 
   saveAgreement(agrData) {
@@ -1112,9 +1114,6 @@ class DatabaseService {
     }
 
     this.saveData(data);
-    try {
-      localStorage.setItem('ccms_agreements', JSON.stringify(data.agreements));
-    } catch (e) {}
     return newAgr;
   }
 
@@ -1123,9 +1122,6 @@ class DatabaseService {
     if (!data.agreements) return [];
     data.agreements = data.agreements.filter(a => a.id !== agreementId);
     this.saveData(data);
-    try {
-      localStorage.setItem('ccms_agreements', JSON.stringify(data.agreements));
-    } catch (e) {}
     return data.agreements;
   }
 
