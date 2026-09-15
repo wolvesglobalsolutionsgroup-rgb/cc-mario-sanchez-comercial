@@ -46,8 +46,20 @@ server.listen(8103, async () => {
       throw new Error(`Dashboard demo metrics incomplete: ${JSON.stringify(dashboard)}`);
     }
     if (demoPage.url().includes('login')) throw new Error('Demo session was rejected by auth guard');
+    const browserErrors = [];
+    demoPage.on('pageerror', error => browserErrors.push(error.message));
+    const internalTabs = await demoPage.locator('.nav-item[data-tab]').evaluateAll(nodes => nodes
+      .filter(n => n.offsetParent !== null && !n.classList.contains('is-hidden'))
+      .map(n => n.getAttribute('data-tab')).filter(Boolean));
+    for (const tabName of [...new Set(internalTabs)]) {
+      await demoPage.locator(`.nav-item[data-tab="${tabName}"]`).first().evaluate(el => el.click());
+      await demoPage.waitForTimeout(40);
+      const visiblePanel = await demoPage.locator(`#tab-${tabName}`).count();
+      if (!visiblePanel) throw new Error(`Missing panel for navigation tab: ${tabName}`);
+    }
+    if (browserErrors.length) throw new Error(`Runtime errors during module navigation: ${browserErrors.join(' | ')}`);
     await demoPage.close();
-    console.log('[UI] dashboard demo 390px: PASS (facturación, recaudación, mora y ocupación visibles)');
+    console.log(`[UI] dashboard demo 390px: PASS (KPIs y ${new Set(internalTabs).size} módulos navegables sin errores)`);
     console.log('[UI] Production guard verified: no synthetic session is injected by the smoke test.');
   } finally { if (browser) await browser.close(); server.close(); }
 });
