@@ -665,6 +665,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 6. RENDERIZACIÓN GLOBAL RESILIENTE (PROTECCIÓN AISLADA POR MÓDULO)
   function renderAll() {
+    try { renderDataQualityNotice(); } catch (e) { console.error('[RenderError] DataQuality:', e); }
     try { renderKPIsAndBalances(); } catch (e) { console.error('[RenderError] KPIs:', e); }
     try { renderAgingReport(); } catch (e) { console.error('[RenderError] AgingReport:', e); }
     try { renderRadialGauges(); } catch (e) { console.error('[RenderError] RadialGauges:', e); }
@@ -695,6 +696,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentTab === 'ayuda' && window.HelpContent && typeof window.HelpContent.render === 'function') {
       try { window.HelpContent.render(); } catch (e) { console.error('[RenderError] HelpContent:', e); }
     }
+  }
+
+  function renderDataQualityNotice() {
+    const banner = document.getElementById('data-quality-banner');
+    const text = document.getElementById('data-quality-banner-text');
+    if (!banner || !text) return;
+    const exceptions = dbService.getData()?.data_quality_exceptions;
+    if (!Array.isArray(exceptions) || exceptions.length === 0) { banner.hidden = true; return; }
+    const pending = exceptions.filter(e => e.status === 'requiere_validacion').length;
+    text.textContent = `${pending} registro del libro requiere validación antes de incorporarse como unidad física operativa. Los indicadores excluyen datos incompletos.`;
+    banner.hidden = false;
   }
 
   // --- RENDERIZAR CUENTAS RECEPTORAS OFICIALES (PORTAL INQUILINO / CLIENTE) ---
