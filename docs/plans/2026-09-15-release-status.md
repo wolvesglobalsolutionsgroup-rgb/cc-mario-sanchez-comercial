@@ -2,20 +2,21 @@
 
 ## Evidencia verificada
 
-- SHA publicado en `main`: `1bdf274`.
+- SHA publicado en `main`: `a7b9ca9`.
 - Vercel responde `200` en `/login`, `/onboarding`, `/gestion`, `/gestion/login` y `/gestion/onboarding`.
 - Supabase `wgs-proptech-prod` tiene aplicadas las migraciones de identidad, RLS, comandos financieros y endurecimiento.
 - Demo pública verificada con datos autorizados de los libros: 38 locales, 38 inquilinos, facturación $7.560, recaudado $2.910, 30 cuotas vencidas por $4.650 y 159 gastos.
 - `npm test`: 57/57 pruebas; verificación de remediaciones y smoke UI 390/1440 aprobados.
 - Los fixtures autorizados se consumen solo como snapshot demo; el fixture sintético no se carga en `index.html` y la política pública heredada de `units` fue eliminada.
+- Las escrituras de producción ya tienen frontera serverless `/api/records`: Bearer de Supabase, membresía activa, aislamiento por organización y RLS; la demo mantiene mutaciones solo en memoria.
 
 ## Bloqueos restantes antes de aceptar producción real
 
 1. Crear/validar usuarios reales en Supabase Auth y recorrer cada rol con dos organizaciones.
-2. Completar comandos remotos de altas, ediciones y bajas de módulos no financieros; la demo permanece deliberadamente de solo lectura.
+2. Validar en entorno con usuarios reales las altas, ediciones y bajas remotas de cada módulo; la frontera serverless ya está implementada.
 3. Validar Storage, exportaciones, restauración de base/archivos y ensayo RPO/RTO.
 4. Ejecutar E2E autenticado en 360/390/768/1440 px y revisión manual WCAG 2.2 AA.
 5. Cerrar aceptación del período contable patrón y revisar saldos contra libros originales.
 6. Activar, cuando el cliente lo autorice, las credenciales de IA, Telegram/WhatsApp, correo, alertas y dominio/Cloudflare.
 
-La versión actual es una demo operativa y una base de producción conectada; no se debe declarar producción contable definitiva hasta cerrar los seis puntos anteriores.
+Estimación operativa: **78 %**. La versión actual es una demo operativa y una base de producción conectada con persistencia remota inicial; no se debe declarar producción contable definitiva hasta cerrar los seis puntos anteriores.
