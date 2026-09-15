@@ -51,7 +51,7 @@ class DatabaseService {
       return;
     }
     // Legacy storage is not an authoritative source, even if it contains 39 units.
-    this.remoteSnapshot = { units: [], tenants: [], invoices: [], payments: [], receipts: [], condo_expenses: [], activos_fijos: [], consumibles: [], kardex_movimientos: [], special_agreements: [], receiving_accounts: [], settings: {} };
+    this.remoteSnapshot = { units: [], tenants: [], invoices: [], payments: [], receipts: [], condo_expenses: [], activos_fijos: [], consumibles: [], kardex_movimientos: [], special_agreements: [], receiving_accounts: [], authorized_import_staging: [], settings: {} };
     this.persistenceState = 'not_loaded';
     if (typeof window !== 'undefined' && window.supabaseClient?.from) this.loadRemoteSnapshot();
     return;
@@ -60,8 +60,8 @@ class DatabaseService {
 
   async loadRemoteSnapshot() {
     if (this.persistenceState === 'demo_fixture' || typeof window === 'undefined' || !window.supabaseClient?.from) return;
-    const tables = ['organizations', 'properties', 'units', 'tenants', 'contracts', 'invoices', 'payments', 'payment_receipts', 'receipts', 'condo_expenses', 'expenses', 'activos_fijos', 'consumibles', 'kardex_movimientos', 'special_agreements', 'receiving_accounts', 'audit_logs', 'app_settings'];
-    const snapshot = { units: [], tenants: [], contracts: [], invoices: [], payments: [], receipts: [], condo_expenses: [], activos_fijos: [], consumibles: [], kardex_movimientos: [], special_agreements: [], receiving_accounts: [], settings: {}, audit_trail: [] };
+    const tables = ['organizations', 'properties', 'units', 'tenants', 'contracts', 'invoices', 'payments', 'payment_receipts', 'receipts', 'condo_expenses', 'expenses', 'activos_fijos', 'consumibles', 'kardex_movimientos', 'special_agreements', 'receiving_accounts', 'authorized_import_staging', 'audit_logs', 'app_settings'];
+    const snapshot = { units: [], tenants: [], contracts: [], invoices: [], payments: [], receipts: [], condo_expenses: [], activos_fijos: [], consumibles: [], kardex_movimientos: [], special_agreements: [], receiving_accounts: [], authorized_import_staging: [], settings: {}, audit_trail: [] };
     let successfulReads = 0;
     for (const table of tables) {
       try {
@@ -100,6 +100,12 @@ class DatabaseService {
   getData() {
     return JSON.parse(JSON.stringify(this.remoteSnapshot));
 
+  }
+
+  // Source records awaiting authorized review; never treated as operational data.
+  getAuthorizedImportStaging() {
+    const rows = this.getData().authorized_import_staging;
+    return Array.isArray(rows) ? rows : [];
   }
 
   // --- MÓDULO DE ACTIVOS FIJOS / BIENES PROPIOS ---

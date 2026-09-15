@@ -1,9 +1,11 @@
 const {handle,uuid,HttpError,body}=require('../lib/server/session.cjs');
-const tables=new Set(['units','tenants','contracts','invoices','payments','condo_expenses','service_tickets','properties','transactions','organization_memberships','access_audit','organization_settings']);
+const tables=new Set(['units','tenants','contracts','invoices','payments','condo_expenses','service_tickets','properties','transactions','organization_memberships','access_audit','organization_settings','authorized_import_staging']);
+const readOnlyTables=new Set(['authorized_import_staging']);
 module.exports=handle(async(req,res,ctx)=>{
  if(req.method==='POST') {
   const command=body(req), org=uuid(command.organization_id), table=command.entity;
   if(!tables.has(table)||!['upsert','delete'].includes(command.operation))throw new HttpError(422,'INVALID_RECORD_COMMAND');
+  if(readOnlyTables.has(table))throw new HttpError(403,'READ_ONLY_ENTITY');
   const member=await ctx.rest(`organization_memberships?organization_id=eq.${org}&user_id=eq.${ctx.user.id}&status=eq.active&select=id`);
   if(member.length!==1)throw new HttpError(403,'FORBIDDEN');
   if(command.operation==='upsert') {
