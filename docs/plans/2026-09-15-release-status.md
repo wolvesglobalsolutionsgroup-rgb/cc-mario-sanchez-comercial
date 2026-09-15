@@ -2,7 +2,7 @@
 
 ## Evidencia verificada
 
-- SHA publicado en `main`: `04bf8c5`.
+- SHA publicado en `main`: `9fff146`.
 - Build de Vercel corregido: el proyecto ahora declara `npm run build` y genera el bundle de Speed Insights; la causa del fallo en `4cf77f2` era la ausencia del script `build`.
 - Vercel responde `200` en `/login`, `/onboarding`, `/gestion`, `/gestion/login` y `/gestion/onboarding`.
 - Supabase `wgs-proptech-prod` tiene aplicadas las migraciones de identidad, RLS, comandos financieros y endurecimiento.
@@ -31,9 +31,10 @@
 - E14 iniciada: RPC `create_organization_onboarding` y `/api/onboarding` crean organización + primer inmueble de forma atómica, solo para `platform_staff.role = founder`, con slug único y features permitidas.
 - E15 iniciada: RPC `update_organization_features` y `/api/organization-features` aplican whitelist, versión esperada, motivo obligatorio y auditoría para fiscalidad, sucesión, IA y marketplace.
 - E18 iniciada: migración `marketplace_foundation` aplicada con publicación opt-in por organización, listings y leads separados, consentimiento persistido y vista pública `security_invoker`; no existe concesión anónima todavía.
-- Verificación post-corrección: `npm run build`, sintaxis (48 archivos), linter y estabilidad (48/48) aprobados localmente.
+- Verificación post-corrección: `npm run build`, sintaxis (48 archivos), linter y estabilidad (49/49) aprobados localmente.
 - Persistencia defensiva: las escrituras remotas ahora se serializan y revierten el snapshot optimista cuando el servidor rechaza el cambio; la UI recibe `ccms:data-error` y no conserva un “guardado” falso.
 - Separación de entorno reforzada: el fallback HTML del fixture autorizado exige sesión demo explícita y host permitido; producción no recibe datos demo ante fallos de carga.
+- Estado de persistencia visible: el dashboard muestra un aviso bloqueante cuando la lectura o escritura remota no se confirma, evitando presentar ceros o cambios optimistas como datos válidos.
 
 ## Bloqueos restantes antes de aceptar producción real
 

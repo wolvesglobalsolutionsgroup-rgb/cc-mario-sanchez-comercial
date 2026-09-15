@@ -36,6 +36,18 @@ if ('serviceWorker' in navigator) {
 
 document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('ccms:data-ready', () => { try { renderAll(); } catch (e) { console.error('[RenderError] remote data:', e); } });
+  document.addEventListener('ccms:data-error', (event) => {
+    const banner = document.getElementById('persistence-status-banner');
+    const text = document.getElementById('persistence-status-banner-text');
+    if (!banner || !text) return;
+    banner.hidden = false;
+    text.textContent = 'No se pudo confirmar la conexión o el último cambio en la base de datos. Los importes mostrados no deben considerarse guardados; recarga la sesión antes de intentar otra operación.';
+    console.error('[CCMS] Estado de persistencia remoto no confirmado:', event?.detail?.error || 'unknown');
+  });
+  document.addEventListener('ccms:data-ready', () => {
+    const banner = document.getElementById('persistence-status-banner');
+    if (banner && window.dbService?.persistenceState === 'remote') banner.hidden = true;
+  });
   /**
    * Helper universal para sanitización anti-XSS y renderizado seguro de HTML
    */

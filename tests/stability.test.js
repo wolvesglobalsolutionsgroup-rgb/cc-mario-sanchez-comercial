@@ -833,6 +833,15 @@ describe("PILAR 11: REMEDIACIÓN TÉCNICA MAESTRA (FASES F1-F5 / T04-T22)", () =
     assert.match(html, /ccmsDemoFallback/);
   });
 
+  test("UI de persistencia distingue error de datos vacíos", () => {
+    const html = fs.readFileSync(path.join(rootDir, "gestion", "index.html"), "utf8");
+    const app = fs.readFileSync(path.join(rootDir, "gestion", "js", "app.js"), "utf8");
+    assert.match(html, /persistence-status-banner/);
+    assert.match(html, /role="alert"/);
+    assert.match(app, /ccms:data-error/);
+    assert.match(app, /no deben considerarse guardados/);
+  });
+
   test("Fixtures Sintéticos y Gobernanza de Acceso: Archivos desacoplados presentes", () => {
     const synPath = path.join(rootDir, "gestion", "js", "fixtures-synthetic.js");
     const accPath = path.join(rootDir, "gestion", "js", "modules", "access-management.js");
