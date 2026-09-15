@@ -37,7 +37,7 @@
 - Estado de persistencia visible: el dashboard muestra un aviso bloqueante cuando la lectura o escritura remota no se confirma, evitando presentar ceros o cambios optimistas como datos válidos.
 - Flujo de revisión operativo: la bandeja de importación ahora ofrece aprobar o rechazar cada paquete; el rechazo exige motivo y ambas decisiones pasan por la RPC protegida antes de habilitar la materialización.
 - Persistencia de módulos operativos: la migración `20260915001400` crea tablas RLS para acuerdos, cuentas receptoras, activos, consumibles y kardex; el allowlist serverless y la cola remota ya las incluyen. Los acuerdos dejaron de depender de `localStorage`.
-- Rendimiento RLS: `20260915001500` separa políticas de lectura/escritura por acción, indexa el alcance de los módulos operativos y corrige el initplan de `property_memberships`; el asesor dejó de reportar políticas permisivas duplicadas en esas cinco tablas. Los nuevos CRUD generan UUID en producción y conservan IDs legibles únicamente en la demo; esto evita rechazos contra las claves UUID de tenants, contratos, facturas, gastos y pagos. El endpoint de registros conserva validación UUID para tablas financieras y permite IDs textuales solo en los cinco módulos operativos que los definen.
+- Rendimiento RLS: `20260915001500` separa políticas de lectura/escritura por acción, indexa el alcance de los módulos operativos y corrige el initplan de `property_memberships`; el asesor dejó de reportar políticas permisivas duplicadas en esas cinco tablas. Los nuevos CRUD generan UUID en producción y conservan IDs legibles únicamente en la demo; esto evita rechazos contra las claves UUID de tenants, contratos, facturas, gastos y pagos. El endpoint de registros conserva validación UUID para tablas financieras y permite IDs textuales solo en los cinco módulos operativos que los definen; además codifica esos IDs antes de construir la consulta de borrado.
 
 ## Bloqueos restantes antes de aceptar producción real
 
@@ -49,6 +49,7 @@
 6. Activar, cuando el cliente lo autorice, las credenciales de IA, Telegram/WhatsApp, correo, alertas y dominio/Cloudflare.
 
 Estimación operativa: **80 % de avance de ingeniería; 65 % de aceptación productiva**. La versión actual es una demo operativa y una base de producción conectada con persistencia remota inicial; no se debe declarar producción contable definitiva hasta cerrar los seis puntos anteriores.
+
 
 
 
