@@ -34,6 +34,9 @@ class DatabaseService {
 
     this.isSupabaseConfigured = Boolean(this.supabaseUrl && this.supabaseKey);
     this.initDatabase();
+    if (typeof document !== 'undefined') {
+      document.addEventListener('supabase:ready', () => { this.loadRemoteSnapshot(); }, { once: true });
+    }
   }
 
   initDatabase() {
@@ -48,8 +51,38 @@ class DatabaseService {
     // Legacy storage is not an authoritative source, even if it contains 39 units.
     this.remoteSnapshot = { units: [], tenants: [], invoices: [], payments: [], receipts: [], condo_expenses: [], activos_fijos: [], consumibles: [], kardex_movimientos: [], special_agreements: [], receiving_accounts: [], settings: {} };
     this.persistenceState = 'not_loaded';
+    if (typeof window !== 'undefined' && window.supabaseClient?.from) this.loadRemoteSnapshot();
     return;
 
+  }
+
+  async loadRemoteSnapshot() {
+    if (this.persistenceState === 'demo_fixture' || typeof window === 'undefined' || !window.supabaseClient?.from) return;
+    const tables = ['organizations', 'properties', 'units', 'tenants', 'contracts', 'invoices', 'payments', 'payment_receipts', 'receipts', 'condo_expenses', 'expenses', 'activos_fijos', 'consumibles', 'kardex_movimientos', 'special_agreements', 'receiving_accounts', 'audit_logs', 'app_settings'];
+    const snapshot = { units: [], tenants: [], contracts: [], invoices: [], payments: [], receipts: [], condo_expenses: [], activos_fijos: [], consumibles: [], kardex_movimientos: [], special_agreements: [], receiving_accounts: [], settings: {}, audit_trail: [] };
+    let successfulReads = 0;
+    for (const table of tables) {
+      try {
+        const { data, error } = await window.supabaseClient.from(table).select('*');
+        if (error) continue; // tablas opcionales no deben ocultar las disponibles
+        successfulReads += 1;
+        if (table === 'payment_receipts' || table === 'receipts') snapshot.receipts.push(...(data || []));
+        else if (table === 'app_settings') {
+          for (const row of (data || [])) {
+            if (row.key) snapshot.settings[row.key] = row.value ?? row;
+          }
+        } else if (table === 'audit_logs') snapshot.audit_trail = data || [];
+        else if (Object.prototype.hasOwnProperty.call(snapshot, table)) snapshot[table] = data || [];
+      } catch (_) { /* fail closed: conservar estado vacío y trazable */ }
+    }
+    if (successfulReads > 0) {
+      this.remoteSnapshot = snapshot;
+      this.persistenceState = 'remote';
+      document.dispatchEvent(new CustomEvent('ccms:data-ready'));
+    } else {
+      this.persistenceState = 'remote_error';
+      document.dispatchEvent(new CustomEvent('ccms:data-error'));
+    }
   }
 
   resetDemoData() {

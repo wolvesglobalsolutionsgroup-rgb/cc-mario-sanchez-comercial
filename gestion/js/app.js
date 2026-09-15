@@ -35,6 +35,7 @@ if ('serviceWorker' in navigator) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('ccms:data-ready', () => { try { renderAll(); } catch (e) { console.error('[RenderError] remote data:', e); } });
   /**
    * Helper universal para sanitización anti-XSS y renderizado seguro de HTML
    */
