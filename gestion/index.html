@@ -4431,9 +4431,9 @@
     var isDemoSession = false;
     try { isDemoSession = JSON.parse(localStorage.getItem('ccms_session') || '{}').is_demo === true; } catch (_) {}
     if (isDemoSession && demoHosts.indexOf(location.hostname) >= 0) {
-      var realFixture = document.createElement('script');
-      realFixture.src = 'js/fixtures-' + 'authorized-demo.js?v=20260915_real';
-      document.head.appendChild(realFixture);
+      // document.write mantiene el orden de ejecución antes de los scripts
+      // diferidos que crean DatabaseService y renderizan el tablero.
+      document.write('<script src="js/fixtures-' + 'authorized-demo.js?v=20260915_real"><\\/script>');
     }
   }());
 </script>
