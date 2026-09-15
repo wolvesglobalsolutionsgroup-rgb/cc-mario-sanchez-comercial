@@ -21,7 +21,7 @@
 - Fidelidad de producción: gastos y cuentas receptoras ya no caen a valores de muestra cuando la lectura remota está vacía; los defaults quedan limitados a la demo autorizada.
 - Reproducibilidad CI: `scripts/verify-ui.js` usa un puerto efímero para evitar falsos fallos `EADDRINUSE` cuando existe otra previsualización local.
 - Revisión desde la app: la bandeja de origen se expone como lectura autorizada y permanece bloqueada para escrituras directas; el banner de calidad muestra los paquetes pendientes en producción.
-- UX de validación: Configuración incluye un panel accesible con conteo, excepciones y primeras filas pendientes; no ofrece acciones que salten la revisión contable.
+- UX de validación: Configuración incluye un panel accesible con conteo, excepciones y la cola completa de paquetes pendientes con desplazamiento interno; no ofrece acciones que salten la revisión contable.
 - Comando de revisión: RPC `review_authorized_import` aplicada en Supabase y protegida por sesión, alcance de inmueble y permiso `properties.manage`; rechaza aprobaciones con datos incompletos y registra revisor/fecha/motivo.
 - Edición controlada: RPC `update_authorized_import_payload` y formulario accesible permiten completar solo área, RIF, documento y fechas; preservan el resto del payload y no alteran tablas operativas.
 - Materialización transaccional: RPC `materialize_authorized_import` crea unidad, inquilino y contrato juntos, verifica duplicados y marca el origen como `imported` solo si las tres inserciones completan; cualquier error revierte todo.
@@ -49,6 +49,7 @@
 6. Activar, cuando el cliente lo autorice, las credenciales de IA, Telegram/WhatsApp, correo, alertas y dominio/Cloudflare.
 
 Estimación operativa: **80 % de avance de ingeniería; 65 % de aceptación productiva**. La versión actual es una demo operativa y una base de producción conectada con persistencia remota inicial; no se debe declarar producción contable definitiva hasta cerrar los seis puntos anteriores.
+
 
 
 
