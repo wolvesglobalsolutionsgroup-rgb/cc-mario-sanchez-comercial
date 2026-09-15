@@ -40,8 +40,8 @@ class DatabaseService {
     let demoSession = false;
     try { demoSession = JSON.parse(localStorage.getItem('ccms_session') || '{}').is_demo === true; } catch (_) {}
     const demoHost = typeof location !== 'undefined' && ['localhost', '127.0.0.1', 'cc-mario-sanchez-comercial.vercel.app'].includes(location.hostname);
-    if (demoSession && demoHost && globalThis.CCMS_SYNTHETIC_FIXTURES?.full_dataset) {
-      this.remoteSnapshot = JSON.parse(JSON.stringify(globalThis.CCMS_SYNTHETIC_FIXTURES.full_dataset));
+    if (demoSession && demoHost && (globalThis.CCMS_AUTHORIZED_DEMO_FIXTURES?.full_dataset || globalThis.CCMS_SYNTHETIC_FIXTURES?.full_dataset)) {
+      this.remoteSnapshot = JSON.parse(JSON.stringify(globalThis.CCMS_AUTHORIZED_DEMO_FIXTURES?.full_dataset || globalThis.CCMS_SYNTHETIC_FIXTURES.full_dataset));
       this.persistenceState = 'demo_fixture';
       return;
     }
@@ -1149,5 +1149,16 @@ class DatabaseService {
   }
 }
 
-// Instancia global
-window.dbService = new DatabaseService();
+// Instancia global: nunca dejar la aplicación en un estado silencioso sin servicio.
+try {
+  window.DatabaseService = DatabaseService;
+  window.dbService = new DatabaseService();
+} catch (error) {
+  console.error('[DB] No se pudo inicializar el servicio de datos:', error);
+  window.dbService = {
+    persistenceState: 'error',
+    getData: () => ({ units: [], tenants: [], invoices: [], payments: [], receipts: [], condo_expenses: [], activos_fijos: [], consumibles: [], kardex_movimientos: [], special_agreements: [], receiving_accounts: [], settings: {}, audit_trail: [] }),
+    getSettings: () => ({}),
+    saveData: () => { throw new Error('REMOTE_PERSISTENCE_REQUIRED'); }
+  };
+}
