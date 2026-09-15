@@ -48,6 +48,9 @@ server.listen(8103, async () => {
     if (demoPage.url().includes('login')) throw new Error('Demo session was rejected by auth guard');
     const browserErrors = [];
     demoPage.on('pageerror', error => browserErrors.push(error.message));
+    demoPage.on('console', message => {
+      if (message.type() === 'error' && /RenderError|TypeError|ReferenceError|SyntaxError|Uncaught/i.test(message.text())) browserErrors.push(message.text());
+    });
     const internalTabs = await demoPage.locator('.nav-item[data-tab]').evaluateAll(nodes => nodes
       .filter(n => n.offsetParent !== null && !n.classList.contains('is-hidden'))
       .map(n => n.getAttribute('data-tab')).filter(Boolean));

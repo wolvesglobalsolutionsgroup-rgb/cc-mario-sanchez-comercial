@@ -4098,12 +4098,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const bcvRate = financialEngine.getRates().VES.toFixed(2);
 
     // Seleccionar plantilla según el estado de mora
-    let template = (moraInfo.inMora || invoice.status === 'en_mora') ? settings.msg_mora_template : settings.msg_preventive_template;
+    const defaultPreventiveTemplate = 'Estimado {inquilino}, su cuota del período {periodo} por {monto_usd} vence el {fecha_limite}. Puede pagar en USD, EUR, Bs. o USDT.';
+    const defaultMoraTemplate = 'AVISO DE MORA para {inquilino} ({unidad}): la cuota del período {periodo} venció el {fecha_limite} y presenta {dias_mora} días de retraso. Total exigible: {total_con_mora_usd}.';
+    let template = String((moraInfo.inMora || invoice.status === 'en_mora' || invoice.status === 'vencida')
+      ? (settings.msg_mora_template || defaultMoraTemplate)
+      : (settings.msg_preventive_template || defaultPreventiveTemplate));
 
     // Remplazo de variables dinámicas ampliadas
     let body = template
-      .replace(/{inquilino}/g, tenant.business_name)
-      .replace(/{unidad}/g, invoice.unit_code)
+      .replace(/{inquilino}/g, tenant.business_name || tenant.trade_name || 'Arrendatario')
+      .replace(/{unidad}/g, invoice.unit_code || tenant.unit_code || 'Local')
       .replace(/{periodo}/g, `${invoice.period_month}/${invoice.period_year}`)
       .replace(/{monto_usd}/g, `$ ${baseUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD`)
       .replace(/{monto_bs}/g, `${financialEngine.convert(baseUsd, 'USD', 'VES').toLocaleString('es-VE', { minimumFractionDigits: 2 })}`)
