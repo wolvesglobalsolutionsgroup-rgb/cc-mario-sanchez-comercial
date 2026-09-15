@@ -766,6 +766,22 @@ describe("PILAR 11: REMEDIACIÓN TÉCNICA MAESTRA (FASES F1-F5 / T04-T22)", () =
     assert.ok(sql.includes("OPTIMISTIC_LOCK_CONFLICT"), "RPC debe manejar OPTIMISTIC_LOCK_CONFLICT");
   });
 
+  test("Importación autorizada: edición, aprobación y materialización permanecen separadas y transaccionales", () => {
+    const review = fs.readFileSync(path.join(rootDir, "supabase", "migrations", "20260915000700_authorized_import_review_rpc.sql"), "utf8");
+    const update = fs.readFileSync(path.join(rootDir, "supabase", "migrations", "20260915000800_authorized_import_update_rpc.sql"), "utf8");
+    const materialize = fs.readFileSync(path.join(rootDir, "supabase", "migrations", "20260915000900_authorized_import_materialize_rpc.sql"), "utf8");
+    assert.match(review, /IMPORT_INCOMPLETE_REQUIRES_DATA/);
+    assert.match(review, /FOR UPDATE/);
+    assert.match(update, /jsonb_set/);
+    assert.match(update, /status <> 'pending_validation'/);
+    assert.match(materialize, /status <> 'approved'/);
+    assert.match(materialize, /DUPLICATE_UNIT_CODE/);
+    assert.match(materialize, /DUPLICATE_TENANT_RIF/);
+    assert.match(materialize, /DUPLICATE_CONTRACT_NUMBER/);
+    assert.match(materialize, /status='imported'/);
+    assert.match(materialize, /REVOKE ALL ON FUNCTION/);
+  });
+
   test("Fixtures Sintéticos y Gobernanza de Acceso: Archivos desacoplados presentes", () => {
     const synPath = path.join(rootDir, "gestion", "js", "fixtures-synthetic.js");
     const accPath = path.join(rootDir, "gestion", "js", "modules", "access-management.js");
