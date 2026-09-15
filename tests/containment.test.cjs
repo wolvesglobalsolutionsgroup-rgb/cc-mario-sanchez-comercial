@@ -32,3 +32,17 @@ test('production ignores legacy cache and synthetic fixture', () => {
   assert.equal(storage.get('ccms_inmobiliario_db_v1'),oldData,'do not destroy historical cache during containment');
   assert.throws(()=>sandbox.dbService.saveData({units:[]}),/REMOTE_PERSISTENCE_REQUIRED/);
 });
+
+test('authorized demo reconciles all identifiable Excel records without inventing the incomplete row', () => {
+  const sandbox = {};
+  vm.createContext(sandbox);
+  vm.runInContext(fs.readFileSync(require.resolve('../gestion/js/fixtures-authorized-demo.js'), 'utf8'), sandbox);
+  const dataset = sandbox.CCMS_AUTHORIZED_DEMO_FIXTURES.full_dataset;
+  assert.equal(dataset.units.length, 38, 'El Excel produce 38 unidades físicas identificables');
+  assert.equal(dataset.tenants.length, 38, 'Cada unidad identificable conserva su arrendatario');
+  assert.equal(dataset.contracts.length, 38, 'Cada unidad identificable conserva su contrato demo');
+  assert.equal(dataset.data_quality_exceptions.length, 1, 'El registro incompleto debe quedar como excepción auditable');
+  assert.match(dataset.data_quality_exceptions[0].name, /LUBRICANTES DANCO/i);
+  assert.equal(dataset.data_quality_exceptions[0].unit_reference, null);
+  assert.ok(!dataset.units.some(unit => /LUBRICANTES DANCO/i.test(unit.name)), 'No se inventa un local sin metraje/unidad');
+});
