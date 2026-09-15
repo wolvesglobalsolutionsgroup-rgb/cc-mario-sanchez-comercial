@@ -2,7 +2,8 @@
 
 ## Evidencia verificada
 
-- SHA publicado en `main`: `4cf77f2`.
+- SHA publicado en `main`: `04bf8c5`.
+- Build de Vercel corregido: el proyecto ahora declara `npm run build` y genera el bundle de Speed Insights; la causa del fallo en `4cf77f2` era la ausencia del script `build`.
 - Vercel responde `200` en `/login`, `/onboarding`, `/gestion`, `/gestion/login` y `/gestion/onboarding`.
 - Supabase `wgs-proptech-prod` tiene aplicadas las migraciones de identidad, RLS, comandos financieros y endurecimiento.
 - Demo pública verificada con datos autorizados de los libros: 38 unidades físicas operativas, 38 inquilinos, facturación $7.560, recaudado $2.910, 30 cuotas vencidas por $4.650 y 159 gastos. El libro contiene 39 registros numerados: `LUBRICANTES DANCO, C.A.` queda registrado como excepción pendiente (sin metraje/unidad física identificable), no como local inventado.
@@ -29,6 +30,8 @@
 - Supabase Security Advisor: se eliminó la alerta de ejecución anónima de `has_ccms_property`; el predicado queda ejecutable solo por `authenticated`. Permanecen advertencias de funciones SECURITY DEFINER usadas intencionalmente por RLS y comandos protegidos.
 - E14 iniciada: RPC `create_organization_onboarding` y `/api/onboarding` crean organización + primer inmueble de forma atómica, solo para `platform_staff.role = founder`, con slug único y features permitidas.
 - E15 iniciada: RPC `update_organization_features` y `/api/organization-features` aplican whitelist, versión esperada, motivo obligatorio y auditoría para fiscalidad, sucesión, IA y marketplace.
+- E18 iniciada: migración `marketplace_foundation` aplicada con publicación opt-in por organización, listings y leads separados, consentimiento persistido y vista pública `security_invoker`; no existe concesión anónima todavía.
+- Verificación post-corrección: `npm run build`, sintaxis (48 archivos), linter y estabilidad (46/46) aprobados localmente.
 
 ## Bloqueos restantes antes de aceptar producción real
 
