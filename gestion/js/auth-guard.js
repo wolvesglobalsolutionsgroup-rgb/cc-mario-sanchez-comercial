@@ -26,7 +26,7 @@
     {
       id: 'u-superadmin-1',
       role: 'superadmin',
-      display_name: 'SuperAdministrador Principal (Bypass Total)',
+      display_name: 'Dirección General de la Plataforma',
       identifier: 'superadmin@ccmariosanchez.com',
       password_sha256: '43434d535f323032365f53414c545f56:f1f52c83808596560eb7cd953f5f3a98a0e4f998bb685eb6d0fa920bbc8557ff',
       tenant_id: null,
@@ -137,7 +137,7 @@
           modified = true;
         } else {
           // Si el hash o status del default user está corrupto o incompatible, restaurar
-          if (parsed[idx].password_sha256 !== defUser.password_sha256 && defUser.role !== 'tenant') {
+          if ((parsed[idx].password_sha256 !== defUser.password_sha256 && defUser.role !== 'tenant') || parsed[idx].display_name !== defUser.display_name) {
             parsed[idx].password_sha256 = defUser.password_sha256;
             parsed[idx].status = 'active';
             parsed[idx].role = defUser.role;
