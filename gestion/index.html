@@ -3,7 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <base href="/gestion/">
-  <style>html[data-auth-pending] body { visibility: hidden; }</style>
+  <style>html[data-auth-pending] body { visibility: hidden; } #ccms-boot-fallback { display:none; position:fixed; inset:0; z-index:99999; place-content:center; padding:24px; background:#060b18; color:#f8fafc; font:600 15px/1.5 system-ui,sans-serif; text-align:center; } #ccms-boot-fallback strong { color:#f59e0b; display:block; margin-bottom:8px; }</style>
+  <script>
+    // Evita una pantalla blanca cuando se abre el archivo directamente con file://.
+    // En producción el guard de autenticación reemplaza este estado inmediatamente.
+    window.setTimeout(function () {
+      if (!document.documentElement.hasAttribute('data-auth-pending')) return;
+      document.documentElement.removeAttribute('data-auth-pending');
+      var fallback = document.getElementById('ccms-boot-fallback');
+      if (fallback) fallback.style.display = 'grid';
+    }, 3500);
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CC Mario Sánchez — Gestión Inmobiliaria, Cobranzas & ERP</title>
   
@@ -34,6 +44,8 @@
   <script defer src="/assets/speed-insights.js"></script>
 </head>
 <body>
+
+<div id="ccms-boot-fallback" role="alert"><div><strong>CCMS no pudo iniciar la sesión</strong><span>Abre esta aplicación desde Vercel o un servidor local (http://localhost), no como archivo file://. La sesión y los datos se cargan de forma segura desde Supabase.</span></div></div>
 
 <div class="app-container">
   
