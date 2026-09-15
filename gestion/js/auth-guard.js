@@ -551,7 +551,14 @@
   }
 
   function currentUser() {
-    return getSession();
+    const sess = getSession();
+    // Migra sesiones demo antiguas para que no aparezca terminología de
+    // bypass en la interfaz después de una actualización de la aplicación.
+    if (sess && sess.display_name === 'SuperAdministrador Principal (Bypass Total)') {
+      sess.display_name = 'Dirección General de la Plataforma';
+      setSession(sess);
+    }
+    return sess;
   }
 
   function currentTenant() {
