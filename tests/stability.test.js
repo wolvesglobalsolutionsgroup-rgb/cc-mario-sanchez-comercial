@@ -818,6 +818,14 @@ describe("PILAR 11: REMEDIACIÓN TÉCNICA MAESTRA (FASES F1-F5 / T04-T22)", () =
     assert.match(sql, /consent_at/);
   });
 
+  test("Persistencia remota: cambios optimistas se serializan y revierten ante rechazo", () => {
+    const source = fs.readFileSync(path.join(rootDir, "gestion", "js", "supabase-client.js"), "utf8");
+    assert.match(source, /this\._persistQueue\s*=\s*Promise\.resolve\(\)/);
+    assert.match(source, /nextSnapshot/);
+    assert.match(source, /this\.remoteSnapshot\s*=\s*JSON\.parse\(JSON\.stringify\(previous\)\)/);
+    assert.match(source, /ccms:data-error/);
+  });
+
   test("Fixtures Sintéticos y Gobernanza de Acceso: Archivos desacoplados presentes", () => {
     const synPath = path.join(rootDir, "gestion", "js", "fixtures-synthetic.js");
     const accPath = path.join(rootDir, "gestion", "js", "modules", "access-management.js");

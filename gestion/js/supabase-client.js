@@ -33,6 +33,10 @@ class DatabaseService {
     }
 
     this.isSupabaseConfigured = Boolean(this.supabaseUrl && this.supabaseKey);
+    // Las escrituras de negocio se serializan para evitar que dos cambios
+    // consecutivos se pisen y para poder revertir de forma determinista si
+    // el servidor rechaza alguno de ellos.
+    this._persistQueue = Promise.resolve();
     this.initDatabase();
     if (typeof document !== 'undefined') {
       document.addEventListener('supabase:ready', () => { this.loadRemoteSnapshot(); }, { once: true });
@@ -286,10 +290,13 @@ class DatabaseService {
     }
     const previous = this.remoteSnapshot || {};
     this.remoteSnapshot = JSON.parse(JSON.stringify(data || {}));
+    const nextSnapshot = JSON.parse(JSON.stringify(this.remoteSnapshot));
     // Actualización optimista para que la interfaz siga siendo reactiva; el
     // servidor vuelve a validar sesión, pertenencia, organización y RLS.
     if (typeof document !== 'undefined') document.dispatchEvent(new CustomEvent('ccms:data-ready'));
-    void this._persistRemoteDiff(previous, this.remoteSnapshot);
+    this._persistQueue = this._persistQueue
+      .then(() => this._persistRemoteDiff(previous, nextSnapshot))
+      .catch(error => console.error('[CCMS] Cola de persistencia detenida', error));
     return true;
   }
 
@@ -327,6 +334,12 @@ class DatabaseService {
       }
     } catch (error) {
       this.persistenceState = 'remote_error';
+      // Nunca dejamos que el optimismo de UI se convierta en un dato falso:
+      // solo revertimos si nadie ha escrito un snapshot posterior mientras
+      // este lote estaba en vuelo.
+      if (JSON.stringify(this.remoteSnapshot) === JSON.stringify(next)) {
+        this.remoteSnapshot = JSON.parse(JSON.stringify(previous));
+      }
       if (typeof document !== 'undefined') document.dispatchEvent(new CustomEvent('ccms:data-error', { detail: { error } }));
       console.error('[CCMS] No se pudo persistir el cambio remoto', error);
     }
