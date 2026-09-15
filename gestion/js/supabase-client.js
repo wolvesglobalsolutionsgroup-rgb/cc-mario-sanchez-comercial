@@ -213,7 +213,56 @@ class DatabaseService {
       if (typeof document !== 'undefined') document.dispatchEvent(new CustomEvent('ccms:data-ready'));
       return true;
     }
-    throw new Error('REMOTE_PERSISTENCE_REQUIRED: La operación requiere un comando remoto confirmado.');
+    if (this.persistenceState !== 'remote') {
+      throw new Error('REMOTE_PERSISTENCE_REQUIRED: La operación requiere una sesión remota válida.');
+    }
+    const previous = this.remoteSnapshot || {};
+    this.remoteSnapshot = JSON.parse(JSON.stringify(data || {}));
+    // Actualización optimista para que la interfaz siga siendo reactiva; el
+    // servidor vuelve a validar sesión, pertenencia, organización y RLS.
+    if (typeof document !== 'undefined') document.dispatchEvent(new CustomEvent('ccms:data-ready'));
+    void this._persistRemoteDiff(previous, this.remoteSnapshot);
+    return true;
+  }
+
+  async _persistRemoteDiff(previous, next) {
+    const entities = {
+      units: 'units', tenants: 'tenants', contracts: 'contracts', invoices: 'invoices',
+      payments: 'payments', condo_expenses: 'condo_expenses', properties: 'properties',
+      transactions: 'transactions', service_tickets: 'service_tickets',
+      organization_memberships: 'organization_memberships', organization_settings: 'organization_settings'
+    };
+    const session = (typeof window !== 'undefined' && window.AuthGuard?.currentUser)
+      ? window.AuthGuard.currentUser() : null;
+    const token = session?.access_token || (await window.supabaseClient?.auth?.getSession?.())?.data?.session?.access_token;
+    const organizationId = session?.organization_id || session?.org_id || next.organization_id;
+    if (!token || !organizationId) throw new Error('REMOTE_SESSION_REQUIRED');
+    const send = async (payload) => {
+      const response = await fetch('/api/records', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ organization_id: organizationId, ...payload })
+      });
+      if (!response.ok) throw new Error(`REMOTE_WRITE_${response.status}`);
+      return response.json();
+    };
+    try {
+      for (const [key, entity] of Object.entries(entities)) {
+        const beforeRows = Array.isArray(previous[key]) ? previous[key] : [];
+        const nextRows = Array.isArray(next[key]) ? next[key] : [];
+        const before = new Map(beforeRows.filter(row => row?.id).map(row => [row.id, row]));
+        const after = new Map(nextRows.filter(row => row?.id).map(row => [row.id, row]));
+        for (const [id, row] of after) {
+          if (JSON.stringify(before.get(id)) !== JSON.stringify(row)) await send({ entity, operation: 'upsert', row });
+        }
+        for (const id of before.keys()) {
+          if (!after.has(id)) await send({ entity, operation: 'delete', id });
+        }
+      }
+    } catch (error) {
+      this.persistenceState = 'remote_error';
+      if (typeof document !== 'undefined') document.dispatchEvent(new CustomEvent('ccms:data-error', { detail: { error } }));
+      console.error('[CCMS] No se pudo persistir el cambio remoto', error);
+    }
   }
 
   // --- MÉTODOS CRUD ---
