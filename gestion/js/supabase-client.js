@@ -39,7 +39,8 @@ class DatabaseService {
   initDatabase() {
     let demoSession = false;
     try { demoSession = JSON.parse(localStorage.getItem('ccms_session') || '{}').is_demo === true; } catch (_) {}
-    if (demoSession && globalThis.CCMS_SYNTHETIC_FIXTURES?.full_dataset) {
+    const demoHost = typeof location !== 'undefined' && ['localhost', '127.0.0.1', 'cc-mario-sanchez-comercial.vercel.app'].includes(location.hostname);
+    if (demoSession && demoHost && globalThis.CCMS_SYNTHETIC_FIXTURES?.full_dataset) {
       this.remoteSnapshot = JSON.parse(JSON.stringify(globalThis.CCMS_SYNTHETIC_FIXTURES.full_dataset));
       this.persistenceState = 'demo_fixture';
       return;

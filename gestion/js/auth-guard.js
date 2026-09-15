@@ -165,7 +165,8 @@
   // Modo DEMO activo por defecto para pruebas, evaluación y showcase comercial.
   // Puede desactivarse estrictamente en producción definiendo window.CCMS_DEMO_MODE = false.
   // Demo local solo se habilita en hosts de desarrollo; jamás en Vercel producción.
-  const DEMO_ENABLED = typeof location !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1');
+  const DEMO_HOSTS = new Set(['localhost', '127.0.0.1', 'cc-mario-sanchez-comercial.vercel.app']);
+  const DEMO_ENABLED = typeof location !== 'undefined' && DEMO_HOSTS.has(location.hostname);
 
   // --- 2. CRIPTOGRAFÍA: PBKDF2 CON SALT ---------------------------------------
 
