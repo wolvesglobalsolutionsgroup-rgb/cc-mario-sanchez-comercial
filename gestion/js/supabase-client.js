@@ -37,6 +37,13 @@ class DatabaseService {
   }
 
   initDatabase() {
+    let demoSession = false;
+    try { demoSession = JSON.parse(localStorage.getItem('ccms_session') || '{}').is_demo === true; } catch (_) {}
+    if (demoSession && globalThis.CCMS_SYNTHETIC_FIXTURES?.full_dataset) {
+      this.remoteSnapshot = JSON.parse(JSON.stringify(globalThis.CCMS_SYNTHETIC_FIXTURES.full_dataset));
+      this.persistenceState = 'demo_fixture';
+      return;
+    }
     // Legacy storage is not an authoritative source, even if it contains 39 units.
     this.remoteSnapshot = { units: [], tenants: [], invoices: [], payments: [], receipts: [], condo_expenses: [], activos_fijos: [], consumibles: [], kardex_movimientos: [], special_agreements: [], receiving_accounts: [], settings: {} };
     this.persistenceState = 'not_loaded';

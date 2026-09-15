@@ -164,7 +164,8 @@
   const THEME_KEY = 'ccms_theme';
   // Modo DEMO activo por defecto para pruebas, evaluación y showcase comercial.
   // Puede desactivarse estrictamente en producción definiendo window.CCMS_DEMO_MODE = false.
-  const DEMO_ENABLED = false; // Legacy local authentication is retired; demo uses real isolated Auth sessions.
+  // Demo local solo se habilita en hosts de desarrollo; jamás en Vercel producción.
+  const DEMO_ENABLED = typeof location !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1');
 
   // --- 2. CRIPTOGRAFÍA: PBKDF2 CON SALT ---------------------------------------
 
@@ -312,7 +313,7 @@
       const raw = localStorage.getItem(SESSION_KEY);
       if (!raw) return null;
       const sess = JSON.parse(raw);
-      if (!sess || sess.is_demo || sess.is_supabase_auth !== true) return null;
+      if (!sess || (sess.is_demo && !DEMO_ENABLED) || (!sess.is_demo && sess.is_supabase_auth !== true)) return null;
       if (!sess || !sess.user_id || !sess.role || !sess.expires_at) return null;
       if (sess.expires_at < now()) {
         localStorage.removeItem(SESSION_KEY);
