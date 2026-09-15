@@ -36,6 +36,8 @@ class DatabaseService {
     this.initDatabase();
     if (typeof document !== 'undefined') {
       document.addEventListener('supabase:ready', () => { this.loadRemoteSnapshot(); }, { once: true });
+      document.addEventListener('ccms:data-ready', () => { this.renderPropertySelector(); });
+      this.renderPropertySelector();
     }
   }
 
@@ -267,14 +269,56 @@ class DatabaseService {
 
   // --- MÉTODOS CRUD ---
 
+  getProperties() {
+    const data = this.getData();
+    return Array.isArray(data.properties) ? data.properties : [];
+  }
+
+  getActivePropertyId() {
+    try { return localStorage.getItem('ccms_active_property') || ''; } catch (_) { return ''; }
+  }
+
+  setActiveProperty(propertyId) {
+    const valid = !propertyId || this.getProperties().some(p => p.id === propertyId);
+    if (!valid) throw new Error('PROPERTY_NOT_AUTHORIZED');
+    try {
+      if (propertyId) localStorage.setItem('ccms_active_property', propertyId);
+      else localStorage.removeItem('ccms_active_property');
+    } catch (_) {}
+    if (typeof document !== 'undefined') document.dispatchEvent(new CustomEvent('ccms:property-changed', { detail: { propertyId: propertyId || null } }));
+  }
+
+  _filterByActiveProperty(rows) {
+    const propertyId = this.getActivePropertyId();
+    if (!propertyId || !Array.isArray(rows)) return rows;
+    const data = this.getData();
+    const units = Array.isArray(data.units) ? data.units : [];
+    const unitCodes = new Set(units.filter(u => u.property_id === propertyId).map(u => u.code));
+    const unitIds = new Set(units.filter(u => u.property_id === propertyId).map(u => u.id));
+    const tenants = Array.isArray(data.tenants) ? data.tenants : [];
+    const tenantIds = new Set(tenants.filter(t => t.property_id === propertyId || unitCodes.has(t.unit_code) || unitIds.has(t.unit_id)).map(t => t.id));
+    return rows.filter(row => row.property_id === propertyId || unitCodes.has(row.unit_code) || unitIds.has(row.unit_id) || tenantIds.has(row.tenant_id));
+  }
+
+  renderPropertySelector() {
+    if (typeof document === 'undefined') return;
+    const select = document.getElementById('property-selector');
+    if (!select) return;
+    const properties = this.getProperties();
+    const previous = this.getActivePropertyId();
+    select.innerHTML = `<option value="">Todos los inmuebles</option>` + properties.map(p => `<option value="${String(p.id).replace(/"/g, '&quot;')}">${String(p.name || 'Inmueble').replace(/</g, '&lt;')}</option>`).join('');
+    select.value = properties.some(p => p.id === previous) ? previous : '';
+    select.hidden = properties.length < 2;
+  }
+
   getUnits() {
     const data = this.getData();
-    return (data && Array.isArray(data.units)) ? data.units : [];
+    return (data && Array.isArray(data.units)) ? this._filterByActiveProperty(data.units) : [];
   }
 
   getTenants() {
     const data = this.getData();
-    return (data && Array.isArray(data.tenants)) ? data.tenants : [];
+    return (data && Array.isArray(data.tenants)) ? this._filterByActiveProperty(data.tenants) : [];
   }
 
   /**
@@ -299,9 +343,9 @@ class DatabaseService {
     if (!data || !Array.isArray(data.contracts)) return [];
     const effectiveTenantId = this._sessionTenantId(tenantId);
     if (effectiveTenantId) {
-      return data.contracts.filter(c => c.tenant_id === effectiveTenantId);
+      return this._filterByActiveProperty(data.contracts.filter(c => c.tenant_id === effectiveTenantId));
     }
-    return data.contracts;
+    return this._filterByActiveProperty(data.contracts);
   }
 
   getInvoices(tenantId = null) {
@@ -309,9 +353,9 @@ class DatabaseService {
     if (!data || !Array.isArray(data.invoices)) return [];
     const effectiveTenantId = this._sessionTenantId(tenantId);
     if (effectiveTenantId) {
-      return data.invoices.filter(i => i.tenant_id === effectiveTenantId);
+      return this._filterByActiveProperty(data.invoices.filter(i => i.tenant_id === effectiveTenantId));
     }
-    return data.invoices;
+    return this._filterByActiveProperty(data.invoices);
   }
 
   getPayments(tenantId = null) {
@@ -320,9 +364,9 @@ class DatabaseService {
     const effectiveTenantId = this._sessionTenantId(tenantId);
     if (effectiveTenantId) {
       const tenantInvoiceIds = new Set(this.getInvoices(effectiveTenantId).map(i => i.id));
-      return data.payments.filter(p => p.tenant_id === effectiveTenantId || tenantInvoiceIds.has(p.invoice_id));
+      return this._filterByActiveProperty(data.payments.filter(p => p.tenant_id === effectiveTenantId || tenantInvoiceIds.has(p.invoice_id)));
     }
-    return data.payments;
+    return this._filterByActiveProperty(data.payments);
   }
 
   addTenant(tenantData, contractData) {
