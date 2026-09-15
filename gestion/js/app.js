@@ -895,6 +895,22 @@ document.addEventListener('DOMContentLoaded', () => {
     return allTenants;
   }
 
+  // Una factura en mora puede llegar con distintos estados según el origen
+  // (importación bancaria, migración histórica o comando financiero). La UI
+  // debe usar una única regla y no depender de un literal aislado.
+  function isOverdueInvoice(invoice, today = new Date()) {
+    if (!invoice || invoice.status === 'pagado' || invoice.status === 'anulado' || invoice.status === 'rechazado') return false;
+    const normalizedStatus = String(invoice.status || '').toLowerCase();
+    if (['en_mora', 'vencida', 'overdue'].includes(normalizedStatus)) return true;
+    if (!invoice.due_date) return false;
+    const due = new Date(invoice.due_date);
+    if (Number.isNaN(due.getTime())) return false;
+    due.setHours(0, 0, 0, 0);
+    const reference = new Date(today);
+    reference.setHours(0, 0, 0, 0);
+    return due < reference;
+  }
+
   // A. BALANCES Y KPIS FINANCIEROS
   function renderKPIsAndBalances() {
     const units = dbService.getUnits();
@@ -1041,7 +1057,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 4. Mora
-    const overdueInvoices = invoices.filter(i => i.status === 'en_mora');
+    const overdueInvoices = invoices.filter(i => isOverdueInvoice(i));
     const totalOverdueUsd = overdueInvoices.reduce((acc, i) => acc + (parseFloat(i.total_usd) || 0), 0);
     const overEl = document.getElementById('kpi-overdue');
     if (overEl) {
@@ -9723,7 +9739,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (subOcc) subOcc.textContent = `${occupiedUnits} de ${totalUnits} Locales`;
 
       // 3. Índice de Mora / Riesgo
-      const overdueInvoices = invoices.filter(i => i.status === 'en_mora');
+      const overdueInvoices = invoices.filter(i => isOverdueInvoice(i));
       const totalOverdue = overdueInvoices.reduce((acc, i) => acc + (parseFloat(i.total_usd) || 0), 0);
       const moraPct = totalBilled > 0 ? Math.min(100, Math.round((totalOverdue / totalBilled) * 100)) : 0;
 
@@ -9736,7 +9752,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // 4. Solvencia de Arrendatarios (Inquilinos al Día con el Centro Comercial)
       const overdueTenantIds = new Set(
-        invoices.filter(i => i.status === 'en_mora').map(i => i.tenant_id)
+        invoices.filter(i => isOverdueInvoice(i)).map(i => i.tenant_id)
       );
       const totalTenantsCount = tenants.length;
       const solventTenants = tenants.filter(t => !overdueTenantIds.has(t.id)).length;
