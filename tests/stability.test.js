@@ -789,6 +789,13 @@ describe("PILAR 11: REMEDIACIÓN TÉCNICA MAESTRA (FASES F1-F5 / T04-T22)", () =
     assert.match(fs.readFileSync(path.join(rootDir, "api", "commands.js"), "utf8"), /payments\.approve/);
   });
 
+  test("API de registros: elimina IDs textuales de módulos operativos sin relajar UUIDs financieros", () => {
+    const records = fs.readFileSync(path.join(rootDir, "api", "records.js"), "utf8");
+    assert.match(records, /const textIdTables=new Set/);
+    assert.match(records, /textIdTables\.has\(table\)/);
+    assert.ok(records.includes("const id=textIdTables.has(table) ? String(command.id||'').trim() : uuid(command.id);"));
+  });
+
   test("Onboarding: alta de organización exige fundador y limita features", () => {
     const sql = fs.readFileSync(path.join(rootDir, "supabase", "migrations", "20260915001100_onboarding_organization_rpc.sql"), "utf8");
     assert.match(sql, /PLATFORM_FOUNDER_REQUIRED/);
@@ -977,3 +984,5 @@ afterEach(() => {
   for (const key of Object.keys(process.env)) if (!(key in originalEnv)) delete process.env[key];
   Object.assign(process.env, originalEnv);
 });
+
+

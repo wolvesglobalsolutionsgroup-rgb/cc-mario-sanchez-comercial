@@ -1,6 +1,7 @@
 const {handle,uuid,HttpError,body}=require('../lib/server/session.cjs');
 const tables=new Set(['units','tenants','contracts','invoices','condo_expenses','service_tickets','properties','organization_memberships','access_audit','organization_settings','special_agreements','receiving_accounts','activos_fijos','consumibles','kardex_movimientos','authorized_import_staging']);
 const readOnlyTables=new Set(['authorized_import_staging']);
+const textIdTables=new Set(['special_agreements','receiving_accounts','activos_fijos','consumibles','kardex_movimientos']);
 module.exports=handle(async(req,res,ctx)=>{
  if(req.method==='POST') {
   const command=body(req), org=uuid(command.organization_id), table=command.entity;
@@ -15,7 +16,8 @@ module.exports=handle(async(req,res,ctx)=>{
    const result=await ctx.rest(table,{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=representation'},body:JSON.stringify(row)});
    return res.status(200).json({ok:true,row:Array.isArray(result)?result[0]:result});
   }
-  const id=uuid(command.id);
+  const id=textIdTables.has(table) ? String(command.id||'').trim() : uuid(command.id);
+  if(textIdTables.has(table) && !id) throw new HttpError(422,'INVALID_ID');
   const result=await ctx.rest(`${table}?id=eq.${id}&organization_id=eq.${org}`,{method:'DELETE',headers:{Prefer:'return=representation'}});
   return res.status(200).json({ok:true,deleted:Array.isArray(result)?result.length:0});
  }
