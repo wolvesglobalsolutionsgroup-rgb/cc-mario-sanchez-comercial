@@ -808,6 +808,16 @@ describe("PILAR 11: REMEDIACIÓN TÉCNICA MAESTRA (FASES F1-F5 / T04-T22)", () =
     assert.match(fs.readFileSync(path.join(rootDir, "api", "organization-features.js"), "utf8"), /update_organization_features/);
   });
 
+  test("Marketplace: publicación opt-in y leads quedan separados de datos operativos", () => {
+    const sql = fs.readFileSync(path.join(rootDir, "supabase", "migrations", "20260915001300_marketplace_foundation.sql"), "utf8");
+    assert.match(sql, /marketplace_opt_in/);
+    assert.match(sql, /marketplace_listings/);
+    assert.match(sql, /marketplace_leads/);
+    assert.match(sql, /status='published'/);
+    assert.match(sql, /security_invoker/);
+    assert.match(sql, /consent_at/);
+  });
+
   test("Fixtures Sintéticos y Gobernanza de Acceso: Archivos desacoplados presentes", () => {
     const synPath = path.join(rootDir, "gestion", "js", "fixtures-synthetic.js");
     const accPath = path.join(rootDir, "gestion", "js", "modules", "access-management.js");

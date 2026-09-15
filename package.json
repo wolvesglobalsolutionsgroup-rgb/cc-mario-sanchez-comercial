@@ -4,6 +4,7 @@
   "private": true,
   "description": "Centro Comercial Mario Sánchez - Portal Comercial + ERP Inmobiliario",
   "scripts": {
+    "build": "npm run build:speed-insights",
     "test": "node scripts/check-syntax.js && node scripts/lint-guard.js && node --test tests/stability.test.js tests/*.test.cjs && node scripts/verify-fixes.cjs && node scripts/verify-ui.js",
     "serve": "node scripts/serve.cjs",
     "build:speed-insights": "node scripts/build-speed-insights.js",
