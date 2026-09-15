@@ -623,7 +623,7 @@ class DatabaseService {
     const data = this.getData();
     return (data && data.condo_expenses && Array.isArray(data.condo_expenses))
       ? data.condo_expenses
-      : this.getDefaultCondoExpenses();
+      : (this.persistenceState === 'demo_fixture' ? this.getDefaultCondoExpenses() : []);
   }
 
   getExpenses() {
@@ -1115,7 +1115,7 @@ class DatabaseService {
     const data = this.getData();
     const accounts = (data && data.receiving_accounts && Array.isArray(data.receiving_accounts))
       ? data.receiving_accounts
-      : this.getDefaultReceivingAccounts();
+      : (this.persistenceState === 'demo_fixture' ? this.getDefaultReceivingAccounts() : []);
 
     if (!tenantId) {
       return accounts;
