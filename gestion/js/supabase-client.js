@@ -206,6 +206,13 @@ class DatabaseService {
   }
 
   saveData(data) {
+    if (this.persistenceState === 'demo_fixture') {
+      // La demo es un sandbox por sesión: permite probar altas/ediciones y
+      // descartar todo al cerrar sesión, sin tocar localStorage ni Supabase.
+      this.remoteSnapshot = JSON.parse(JSON.stringify(data || {}));
+      if (typeof document !== 'undefined') document.dispatchEvent(new CustomEvent('ccms:data-ready'));
+      return true;
+    }
     throw new Error('REMOTE_PERSISTENCE_REQUIRED: La operación requiere un comando remoto confirmado.');
   }
 
