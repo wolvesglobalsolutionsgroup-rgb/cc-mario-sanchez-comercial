@@ -640,6 +640,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (currentTab === 'configuracion' && window.AccessManagement && typeof window.AccessManagement.render === 'function') {
         try {
           window.AccessManagement.render();
+          renderAuthorizedImportReview();
           const orgId = window.currentOrganization?.id;
           if (orgId && typeof window.AccessManagement.loadRemote === 'function') {
             window.AccessManagement.loadRemote(orgId).catch(err => console.warn('[AccessManagement] Remote load unavailable:', err.message));
@@ -718,6 +719,43 @@ document.addEventListener('DOMContentLoaded', () => {
       ? `${pendingStaged} paquetes de origen están pendientes de validación antes de incorporarse a producción. Los indicadores excluyen datos no aprobados.`
       : `${pending} registro del libro requiere validación antes de incorporarse como unidad física operativa. Los indicadores excluyen datos incompletos.`;
     banner.hidden = false;
+  }
+
+  function renderAuthorizedImportReview() {
+    const summary = document.getElementById('authorized-import-review-summary');
+    const list = document.getElementById('authorized-import-review-list');
+    const badge = document.getElementById('authorized-import-review-badge');
+    if (!summary || !list || !badge) return;
+    const rows = typeof dbService.getAuthorizedImportStaging === 'function'
+      ? dbService.getAuthorizedImportStaging()
+      : [];
+    const pending = rows.filter(row => row.status === 'pending_validation');
+    const imported = rows.filter(row => row.status === 'imported');
+    const exceptions = pending.filter(row => row.record_type === 'data_quality_exception');
+    summary.textContent = rows.length
+      ? `${pending.length} pendientes · ${imported.length} materializados · ${exceptions.length} excepciones de calidad. La revisión no modifica operaciones automáticamente.`
+      : 'No hay registros de origen pendientes en este entorno.';
+    badge.textContent = pending.length ? `${pending.length} por revisar` : 'Sin pendientes';
+    badge.style.color = pending.length ? 'var(--amber)' : 'var(--emerald)';
+    list.replaceChildren();
+    pending.slice(0, 12).forEach(row => {
+      const item = document.createElement('div');
+      item.style.cssText = 'display:flex;justify-content:space-between;gap:12px;align-items:center;padding:8px 10px;border:1px solid var(--border-subtle);border-radius:8px;background:var(--bg-card);font-size:11px;';
+      const label = document.createElement('span');
+      label.style.color = 'var(--txt-primary)';
+      label.textContent = `${row.record_type === 'data_quality_exception' ? 'Excepción' : 'Paquete'} · ${row.source_record_key || 'sin clave'} · fila ${row.source_row}`;
+      const state = document.createElement('span');
+      state.style.color = 'var(--amber)';
+      state.textContent = 'Requiere validación';
+      item.append(label, state);
+      list.appendChild(item);
+    });
+    if (pending.length > 12) {
+      const more = document.createElement('div');
+      more.style.cssText = 'color:var(--txt-muted);font-size:10.5px;padding-top:3px;';
+      more.textContent = `Se muestran 12 de ${pending.length}.`;
+      list.appendChild(more);
+    }
   }
 
   // --- RENDERIZAR CUENTAS RECEPTORAS OFICIALES (PORTAL INQUILINO / CLIENTE) ---
