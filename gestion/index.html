@@ -4455,7 +4455,14 @@
 <script src="js/modules/gemini-assistant.js?v=20260913_v2" defer></script>
 <script src="js/modules/access-management.js?v=20260914_v1" defer></script>
 <script>
-  if (!window.dbService && window.CCMS_AUTHORIZED_DEMO_FIXTURES?.full_dataset) {
+  // Respaldo estrictamente acotado: solo una sesión demo explícita en un host
+  // permitido puede usar el fixture. Nunca se rellena producción ante errores.
+  let ccmsDemoFallback = false;
+  try {
+    const session = JSON.parse(localStorage.getItem('ccms_session') || '{}');
+    ccmsDemoFallback = session.is_demo === true && ['localhost', '127.0.0.1', 'cc-mario-sanchez-comercial.vercel.app'].includes(location.hostname);
+  } catch (_) { ccmsDemoFallback = false; }
+  if (!window.dbService && ccmsDemoFallback && window.CCMS_AUTHORIZED_DEMO_FIXTURES?.full_dataset) {
     const demoData = window.CCMS_AUTHORIZED_DEMO_FIXTURES.full_dataset;
     window.dbService = { persistenceState: 'demo_fixture', getData: () => JSON.parse(JSON.stringify(demoData)), getSettings: () => demoData.settings || {} };
     var dbService = window.dbService;

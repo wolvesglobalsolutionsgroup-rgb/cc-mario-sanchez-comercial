@@ -31,8 +31,9 @@
 - E14 iniciada: RPC `create_organization_onboarding` y `/api/onboarding` crean organización + primer inmueble de forma atómica, solo para `platform_staff.role = founder`, con slug único y features permitidas.
 - E15 iniciada: RPC `update_organization_features` y `/api/organization-features` aplican whitelist, versión esperada, motivo obligatorio y auditoría para fiscalidad, sucesión, IA y marketplace.
 - E18 iniciada: migración `marketplace_foundation` aplicada con publicación opt-in por organización, listings y leads separados, consentimiento persistido y vista pública `security_invoker`; no existe concesión anónima todavía.
-- Verificación post-corrección: `npm run build`, sintaxis (48 archivos), linter y estabilidad (47/47) aprobados localmente.
+- Verificación post-corrección: `npm run build`, sintaxis (48 archivos), linter y estabilidad (48/48) aprobados localmente.
 - Persistencia defensiva: las escrituras remotas ahora se serializan y revierten el snapshot optimista cuando el servidor rechaza el cambio; la UI recibe `ccms:data-error` y no conserva un “guardado” falso.
+- Separación de entorno reforzada: el fallback HTML del fixture autorizado exige sesión demo explícita y host permitido; producción no recibe datos demo ante fallos de carga.
 
 ## Bloqueos restantes antes de aceptar producción real
 
