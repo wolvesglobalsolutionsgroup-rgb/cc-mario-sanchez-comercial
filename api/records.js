@@ -18,7 +18,7 @@ module.exports=handle(async(req,res,ctx)=>{
   }
   const id=textIdTables.has(table) ? String(command.id||'').trim() : uuid(command.id);
   if(textIdTables.has(table) && !id) throw new HttpError(422,'INVALID_ID');
-  const result=await ctx.rest(`${table}?id=eq.${id}&organization_id=eq.${org}`,{method:'DELETE',headers:{Prefer:'return=representation'}});
+  const result=await ctx.rest(`${table}?id=eq.${encodeURIComponent(id)}&organization_id=eq.${org}`,{method:'DELETE',headers:{Prefer:'return=representation'}});
   return res.status(200).json({ok:true,deleted:Array.isArray(result)?result.length:0});
  }
  const org=uuid(req.query?.organization_id),table=req.query?.entity;

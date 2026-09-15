@@ -794,6 +794,7 @@ describe("PILAR 11: REMEDIACIÓN TÉCNICA MAESTRA (FASES F1-F5 / T04-T22)", () =
     assert.match(records, /const textIdTables=new Set/);
     assert.match(records, /textIdTables\.has\(table\)/);
     assert.ok(records.includes("const id=textIdTables.has(table) ? String(command.id||'').trim() : uuid(command.id);"));
+    assert.match(records, /encodeURIComponent\(id\)/);
   });
 
   test("Onboarding: alta de organización exige fundador y limita features", () => {
