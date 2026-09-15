@@ -10,6 +10,7 @@
 - Los fixtures autorizados se consumen solo como snapshot demo; el fixture sintético no se carga en `index.html` y la política pública heredada de `units` fue eliminada.
 - Las escrituras de producción ya tienen frontera serverless `/api/records`: Bearer de Supabase, membresía activa, aislamiento por organización y RLS; la demo mantiene mutaciones solo en memoria.
 - Mesa de ayuda/tickets ya no reintroduce incidentes de muestra desde `localStorage`; usa el servicio de datos autorizado y falla cerrado cuando no existe persistencia.
+- Supabase: se revocó la ejecución pública de `rls_auto_enable()`; el aviso de funciones SECURITY DEFINER pasó de 14 a 13 y las restantes corresponden a predicados/RPC que RLS y los comandos autorizados necesitan.
 
 ## Bloqueos restantes antes de aceptar producción real
 
