@@ -124,6 +124,21 @@ class DatabaseService {
     return response.json();
   }
 
+  async updateAuthorizedImport(stagingId, patch) {
+    if (this.persistenceState === 'demo_fixture') throw new Error('REMOTE_PERSISTENCE_REQUIRED: La edición de origen solo está disponible en producción.');
+    const session = (typeof window !== 'undefined' && window.AuthGuard?.currentUser)
+      ? window.AuthGuard.currentUser() : null;
+    const token = session?.access_token || (await window.supabaseClient?.auth?.getSession?.())?.data?.session?.access_token;
+    if (!token) throw new Error('REMOTE_SESSION_REQUIRED');
+    const response = await fetch('/api/import-review', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ operation: 'update', staging_id: stagingId, patch })
+    });
+    if (!response.ok) throw new Error(`IMPORT_UPDATE_${response.status}`);
+    await this.loadRemoteSnapshot();
+    return response.json();
+  }
+
   // --- MÓDULO DE ACTIVOS FIJOS / BIENES PROPIOS ---
   getActivosFijos() {
     const data = this.getData();

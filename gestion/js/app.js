@@ -740,14 +740,46 @@ document.addEventListener('DOMContentLoaded', () => {
     list.replaceChildren();
     pending.slice(0, 12).forEach(row => {
       const item = document.createElement('div');
-      item.style.cssText = 'display:flex;justify-content:space-between;gap:12px;align-items:center;padding:8px 10px;border:1px solid var(--border-subtle);border-radius:8px;background:var(--bg-card);font-size:11px;';
+      item.style.cssText = 'display:grid;gap:8px;padding:8px 10px;border:1px solid var(--border-subtle);border-radius:8px;background:var(--bg-card);font-size:11px;';
+      const head = document.createElement('div');
+      head.style.cssText = 'display:flex;justify-content:space-between;gap:12px;align-items:center;';
       const label = document.createElement('span');
       label.style.color = 'var(--txt-primary)';
       label.textContent = `${row.record_type === 'data_quality_exception' ? 'Excepción' : 'Paquete'} · ${row.source_record_key || 'sin clave'} · fila ${row.source_row}`;
       const state = document.createElement('span');
       state.style.color = 'var(--amber)';
       state.textContent = 'Requiere validación';
-      item.append(label, state);
+      head.append(label, state); item.appendChild(head);
+      if (row.record_type === 'lease_bundle') {
+        const details = document.createElement('details');
+        const summaryEl = document.createElement('summary');
+        summaryEl.textContent = 'Editar campos faltantes';
+        summaryEl.style.cssText = 'cursor:pointer;color:var(--cyan);font-size:10.5px;';
+        const form = document.createElement('form');
+        form.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:7px;margin-top:8px;';
+        const fields = [
+          ['area_m2', 'Área m²', row.payload?.unit?.area_m2 ?? ''],
+          ['start_date', 'Inicio contrato', row.payload?.contract?.start_date ?? '', 'date'],
+          ['end_date', 'Fin contrato', row.payload?.contract?.end_date ?? '', 'date'],
+          ['rif', 'RIF', row.payload?.tenant?.rif ?? ''],
+          ['legal_rep_dni', 'C.I. representante', row.payload?.tenant?.legal_rep_dni ?? '']
+        ];
+        const controls = {};
+        fields.forEach(([key, labelText, value, type = 'text']) => {
+          const wrap = document.createElement('label'); wrap.style.cssText = 'display:grid;gap:3px;color:var(--txt-muted);font-size:10px;'; wrap.textContent = labelText;
+          const input = document.createElement('input'); input.type = type; input.value = value; input.name = key; input.className = 'form-control'; input.style.fontSize = '11px'; controls[key] = input; wrap.appendChild(input); form.appendChild(wrap);
+        });
+        const save = document.createElement('button'); save.type = 'submit'; save.className = 'btn-primary'; save.textContent = 'Guardar corrección'; save.style.cssText = 'align-self:end;padding:7px 10px;font-size:10.5px;'; form.appendChild(save);
+        form.addEventListener('submit', async event => {
+          event.preventDefault(); save.disabled = true; save.textContent = 'Guardando…';
+          try {
+            await dbService.updateAuthorizedImport(row.id, { unit: { area_m2: controls.area_m2.value }, tenant: { rif: controls.rif.value, legal_rep_dni: controls.legal_rep_dni.value }, contract: { start_date: controls.start_date.value, end_date: controls.end_date.value } });
+            renderAuthorizedImportReview(); renderDataQualityNotice();
+          } catch (error) { console.error('[ImportReview] Update failed:', error); alert(`No se pudo guardar la corrección: ${error.message}`); }
+          finally { save.disabled = false; save.textContent = 'Guardar corrección'; }
+        });
+        details.append(summaryEl, form); item.appendChild(details);
+      }
       list.appendChild(item);
     });
     if (pending.length > 12) {
