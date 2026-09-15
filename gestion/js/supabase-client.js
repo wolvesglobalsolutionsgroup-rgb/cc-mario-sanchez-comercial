@@ -456,9 +456,14 @@ class DatabaseService {
     return this._filterByActiveProperty(data.payments);
   }
 
+  _newId(prefix = 'ccms') {
+    if (this.persistenceState !== 'demo_fixture' && globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+    return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  }
+
   addTenant(tenantData, contractData) {
     const data = this.getData();
-    const newTenantId = 't-' + Date.now();
+    const newTenantId = this._newId('tenant');
     const newTenant = {
       id: newTenantId,
       ...tenantData,
@@ -474,7 +479,7 @@ class DatabaseService {
     }
 
     // Crear contrato asociado
-    const newContractId = 'c-' + Date.now();
+    const newContractId = this._newId('contract');
     const newContract = {
       id: newContractId,
       contract_number: `CCMS-CTR-2026-${Math.floor(100 + Math.random() * 900)}`,
@@ -492,7 +497,7 @@ class DatabaseService {
 
     // Crear primera cuota de alquiler
     const firstInvoice = {
-      id: 'inv-' + Date.now(),
+      id: this._newId('invoice'),
       invoice_number: `REC-2026-03-${Math.floor(100 + Math.random() * 900)}`,
       tenant_id: newTenantId,
       unit_code: tenantData.unit_code,
@@ -537,7 +542,7 @@ class DatabaseService {
     let idx = data.contracts.findIndex(c => c.tenant_id === tenantId);
     let updated;
     if (idx === -1) {
-      updated = { id: 'c-' + Date.now(), tenant_id: tenantId, ...updateData };
+      updated = { id: this._newId('contract'), tenant_id: tenantId, ...updateData };
       data.contracts.push(updated);
     } else {
       data.contracts[idx] = { ...data.contracts[idx], ...updateData };
@@ -557,24 +562,24 @@ class DatabaseService {
   // --- MÓDULO DE ACUERDOS ESPECIALES, REPARACIONES & COMPENSACIONES ---
   getSpecialAgreements(tenantId = null) {
     const data = this.getData();
-    if (!data || !Array.isArray(data.special_agreements)) return [];
+    if (!data || !Array.isArray(data.agreements)) return [];
     const effectiveTenantId = this._sessionTenantId(tenantId);
     if (effectiveTenantId) {
-      return data.special_agreements.filter(a => a.tenant_id === effectiveTenantId);
+      return data.agreements.filter(a => a.tenant_id === effectiveTenantId);
     }
-    return data.special_agreements;
+    return data.agreements;
   }
 
   saveSpecialAgreement(agreement) {
     const data = this.getData();
-    if (!data.special_agreements) data.special_agreements = [];
+    if (!data.agreements) data.agreements = [];
     let saved = null;
     if (agreement.id) {
-      const idx = data.special_agreements.findIndex(a => a.id === agreement.id);
+      const idx = data.agreements.findIndex(a => a.id === agreement.id);
       if (idx >= 0) {
-        const oldState = { ...data.special_agreements[idx] };
-        data.special_agreements[idx] = { ...data.special_agreements[idx], ...agreement };
-        saved = data.special_agreements[idx];
+        const oldState = { ...data.agreements[idx] };
+        data.agreements[idx] = { ...data.agreements[idx], ...agreement };
+        saved = data.agreements[idx];
         this.logAuditAction({
           action: 'UPDATE',
           entity: 'AGREEMENT',
@@ -592,7 +597,7 @@ class DatabaseService {
         status: agreement.status || 'activo',
         created_at: new Date().toISOString()
       };
-      data.special_agreements.push(newAgr);
+      data.agreements.push(newAgr);
       saved = newAgr;
       this.logAuditAction({
         action: 'CREATE',
@@ -609,9 +614,9 @@ class DatabaseService {
 
   deleteSpecialAgreement(id) {
     const data = this.getData();
-    if (!data.special_agreements) return [];
-    const target = data.special_agreements.find(a => a.id === id);
-    data.special_agreements = data.special_agreements.filter(a => a.id !== id);
+    if (!data.agreements) return [];
+    const target = data.agreements.find(a => a.id === id);
+    data.agreements = data.agreements.filter(a => a.id !== id);
     this.saveData(data);
     if (target) {
       this.logAuditAction({
@@ -623,7 +628,7 @@ class DatabaseService {
         previous_state: target
       });
     }
-    return data.special_agreements;
+    return data.agreements;
   }
 
   getDefaultCondoExpenses() {
@@ -763,7 +768,9 @@ class DatabaseService {
 
   saveCondoExpense(expenseData) {
     const data = this.getData();
-    if (!data.condo_expenses) data.condo_expenses = this.getDefaultCondoExpenses();
+    if (!data.condo_expenses) {
+      data.condo_expenses = this.persistenceState === 'demo_fixture' ? this.getDefaultCondoExpenses() : [];
+    }
 
     if (expenseData.id) {
       const idx = data.condo_expenses.findIndex(e => e.id === expenseData.id);
@@ -775,7 +782,7 @@ class DatabaseService {
     } else {
       const newExp = {
         ...expenseData,
-        id: 'exp-' + Date.now(),
+        id: this._newId('expense'),
         created_at: new Date().toISOString()
       };
       data.condo_expenses.unshift(newExp);
@@ -798,7 +805,7 @@ class DatabaseService {
     if (!invoice) throw new Error('Cuota no encontrada');
 
     const newPayment = {
-      id: 'p-' + Date.now(),
+      id: this._newId('payment'),
       invoice_id: invoiceId,
       payment_date: paymentData.payment_date || new Date().toISOString().split('T')[0],
       payment_method: paymentData.payment_method,
@@ -844,7 +851,7 @@ class DatabaseService {
     if (invoice.status === 'pagado') throw new Error('Esta cuota ya figura como pagada');
 
     const payment = {
-      id: 'p-' + Date.now(),
+      id: this._newId('payment'),
       invoice_id: invoiceId,
       payment_date: paymentData.payment_date || new Date().toISOString().split('T')[0],
       payment_method: paymentData.payment_method,
@@ -1364,7 +1371,7 @@ try {
   var dbService = window.dbService;
 } catch (error) {
   console.error('[DB] No se pudo inicializar el servicio de datos:', error);
-  const fallbackData = (typeof globalThis !== 'undefined' && globalThis.CCMS_AUTHORIZED_DEMO_FIXTURES?.full_dataset) || { units: [], tenants: [], contracts: [], invoices: [], payments: [], receipts: [], condo_expenses: [], activos_fijos: [], consumibles: [], kardex_movimientos: [], special_agreements: [], receiving_accounts: [], settings: {}, audit_trail: [] };
+  const fallbackData = (typeof globalThis !== 'undefined' && globalThis.CCMS_AUTHORIZED_DEMO_FIXTURES?.full_dataset) || { units: [], tenants: [], contracts: [], invoices: [], payments: [], receipts: [], condo_expenses: [], activos_fijos: [], consumibles: [], kardex_movimientos: [], agreements: [], receiving_accounts: [], settings: {}, audit_trail: [] };
   window.dbService = {
     persistenceState: 'error',
     getData: () => JSON.parse(JSON.stringify(fallbackData)),

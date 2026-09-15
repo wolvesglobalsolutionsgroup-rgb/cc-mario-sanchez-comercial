@@ -869,6 +869,15 @@ describe("PILAR 11: REMEDIACIÓN TÉCNICA MAESTRA (FASES F1-F5 / T04-T22)", () =
     assert.doesNotMatch(client, /localStorage\.setItem\('ccms_agreements'/);
   });
 
+  test("CRUD remoto: los nuevos registros usan UUID en producción y prefijos solo en demo", () => {
+    const client = fs.readFileSync(path.join(rootDir, "gestion", "js", "supabase-client.js"), "utf8");
+    assert.match(client, /_newId\(prefix = 'ccms'\)/);
+    for (const entity of ["tenant", "contract", "invoice", "expense", "payment"]) {
+      assert.match(client, new RegExp(`this\\._newId\\('${entity}'\\)`));
+    }
+    assert.match(client, /persistenceState !== 'demo_fixture'/);
+  });
+
   test("Fixtures Sintéticos y Gobernanza de Acceso: Archivos desacoplados presentes", () => {
     const synPath = path.join(rootDir, "gestion", "js", "fixtures-synthetic.js");
     const accPath = path.join(rootDir, "gestion", "js", "modules", "access-management.js");
