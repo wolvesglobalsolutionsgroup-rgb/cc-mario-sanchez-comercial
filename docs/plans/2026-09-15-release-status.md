@@ -12,6 +12,7 @@
 - Las escrituras de producción ya tienen frontera serverless `/api/records`: Bearer de Supabase, membresía activa, aislamiento por organización y RLS; la demo mantiene mutaciones solo en memoria.
 - Mesa de ayuda/tickets ya no reintroduce incidentes de muestra desde `localStorage`; usa el servicio de datos autorizado y falla cerrado cuando no existe persistencia.
 - Supabase: se revocó la ejecución pública de `rls_auto_enable()`; el aviso de funciones SECURITY DEFINER pasó de 14 a 13 y las restantes corresponden a predicados/RPC que RLS y los comandos autorizados necesitan.
+- Modelo multi-inmueble: `units.property_id` y `property_memberships` ya están creados; el backfill de producción dejó 1 inmueble y 11/11 unidades vinculadas para `mario-sanchez`.
 
 ## Bloqueos restantes antes de aceptar producción real
 
