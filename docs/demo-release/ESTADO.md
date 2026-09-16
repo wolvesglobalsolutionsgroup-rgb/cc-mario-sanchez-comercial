@@ -3,13 +3,13 @@
 **Fecha de verificación:** 2026-09-15
 **Repositorio:** `cc-mario-sanchez-comercial`
 **HEAD auditado:** `6f148ca839a79c808c106e0f12a6843bfbb02c03`
-**Estado:** DEMO FUNCIONAL PARA PILOTO / aceptación independiente D-T01…D-T30 pendiente / producción pendiente
+**Estado:** DEMO FUNCIONAL PUBLICADA PARA PILOTO / aceptación independiente D-T01…D-T30 pendiente / producción pendiente
 
 **Datos de demostración:** la ruta explícita `gestion/login.html?demo=1&dataset=mario` carga el fixture autorizado de 38 locales y gastos extraído de los libros proporcionados por Freddy. Permanece aislado en IndexedDB y no realiza escritura cloud. La ruta demo ordinaria conserva el escenario sintético de 39 unidades.
 
-**Despliegue Vercel:** la URL `https://cc-mario-sanchez-comercial.vercel.app` responde HTTP 200, pero sirve el `main` remoto del SHA base `6f148ca839a79c808c106e0f12a6843bfbb02c03`; las modificaciones de esta entrega permanecen locales sin publicar. `/gestion/demo-lab.html` aún responde 404 en Vercel. No se ejecutó ningún despliegue ni escritura cloud.
+**Despliegue Vercel:** publicado desde `main` tras el commit `e2f76ea194f0e737385298f48f3f2ef0393885f0`; GitHub registra el estado Vercel como `success`. La URL pública `https://cc-mario-sanchez-comercial.vercel.app/gestion/login.html?demo=1&dataset=mario` sirve la entrada de demo autorizada y el panel muestra 38 de 38 locales. `/gestion/demo-lab.html?dataset=mario` también queda disponible.
 
-**Conectores verificados el 2026-09-15 (solo lectura):** GitHub confirmó `wolvesglobalsolutionsgroup-rgb/cc-mario-sanchez-comercial` como repositorio público con `main` como rama predeterminada. Supabase mostró el proyecto `wgs-proptech-prod` en estado `ACTIVE_HEALTHY`. Vercel devolvió `teams: []` y `403 Forbidden` al consultar el proyecto asociado en `.vercel/project.json`; por eso no se publicó esta entrega.
+**Conectores verificados el 2026-09-16:** GitHub confirmó `wolvesglobalsolutionsgroup-rgb/cc-mario-sanchez-comercial` como repositorio público con `main` como rama predeterminada. Supabase mostró el proyecto `wgs-proptech-prod` en estado `ACTIVE_HEALTHY`, sin escrituras durante esta entrega. El conector administrativo de Vercel mantiene un alcance distinto y devolvió `403`, pero el estado de despliegue de GitHub y la comprobación autenticada del panel Vercel confirmaron la publicación.
 
 **Despliegue demo Hobby:** Vercel limita el plan Hobby a 12 funciones. `.vercelignore` excluye `api/` para este artefacto de demo offline, que no usa endpoints. El código de APIs permanece versionado y solo debe incluirse en producción con un plan compatible.
 
