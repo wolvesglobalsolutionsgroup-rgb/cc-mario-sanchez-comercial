@@ -11,6 +11,8 @@
 
 **Conectores verificados el 2026-09-15 (solo lectura):** GitHub confirmó `wolvesglobalsolutionsgroup-rgb/cc-mario-sanchez-comercial` como repositorio público con `main` como rama predeterminada. Supabase mostró el proyecto `wgs-proptech-prod` en estado `ACTIVE_HEALTHY`. Vercel devolvió `teams: []` y `403 Forbidden` al consultar el proyecto asociado en `.vercel/project.json`; por eso no se publicó esta entrega.
 
+**Despliegue demo Hobby:** Vercel limita el plan Hobby a 12 funciones. `.vercelignore` excluye `api/` para este artefacto de demo offline, que no usa endpoints. El código de APIs permanece versionado y solo debe incluirse en producción con un plan compatible.
+
 ## Entregado
 
 - Dataset 100 % sintético cargado en el runtime de demo; el fixture autorizado de migración ya no se carga.

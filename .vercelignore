@@ -1,0 +1,4 @@
+# La demo offline no ejecuta endpoints serverless. Excluirlos permite desplegar
+# la superficie estática dentro del límite de 12 funciones del plan Hobby.
+# Producción debe quitar esta regla y desplegar las APIs con un plan compatible.
+api
