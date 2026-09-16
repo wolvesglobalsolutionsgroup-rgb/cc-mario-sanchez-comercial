@@ -17,7 +17,7 @@ const HelpContent = {
     const currentUser = (window.AuthGuard && typeof window.AuthGuard.currentUser === 'function') 
       ? window.AuthGuard.currentUser() 
       : null;
-    const isTenant = currentUser?.role === 'tenant';
+    const isTenant = currentUser?.role === 'tenant' || currentUser?.role === 'tenant_user';
 
     if (isTenant) {
       // Menú exclusivo para el perfil de Inquilino / Arrendatario
@@ -47,6 +47,12 @@ const HelpContent = {
           </button>
           <button class="help-nav-btn" data-help-tab="formulas" style="flex: 1; min-width: 130px; padding: 8px 12px; background: transparent; border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--txt-secondary); font-size: 11.5px; font-weight: 700; cursor: pointer;">
             <i class="fa-solid fa-square-root-variable"></i> Fórmulas & Ley
+          </button>
+          <button class="help-nav-btn" data-help-tab="funciones" style="flex: 1; min-width: 130px; padding: 8px 12px; background: transparent; border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--txt-secondary); font-size: 11.5px; font-weight: 700; cursor: pointer;">
+            <i class="fa-solid fa-list-check"></i> Funciones de la App
+          </button>
+          <button class="help-nav-btn" data-help-tab="roles" style="flex: 1; min-width: 130px; padding: 8px 12px; background: transparent; border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--txt-secondary); font-size: 11.5px; font-weight: 700; cursor: pointer;">
+            <i class="fa-solid fa-user-shield"></i> Roles y Permisos
           </button>
         </div>
 
@@ -90,6 +96,12 @@ const HelpContent = {
           </button>
           <button class="help-nav-btn" data-help-tab="faq" style="flex: 1; min-width: 110px; padding: 8px 12px; background: transparent; border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--txt-secondary); font-size: 11.5px; font-weight: 700; cursor: pointer;">
             <i class="fa-solid fa-circle-question"></i> FAQ & Errores
+          </button>
+          <button class="help-nav-btn" data-help-tab="funciones" style="flex: 1; min-width: 110px; padding: 8px 12px; background: transparent; border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--txt-secondary); font-size: 11.5px; font-weight: 700; cursor: pointer;">
+            <i class="fa-solid fa-list-check"></i> Funciones
+          </button>
+          <button class="help-nav-btn" data-help-tab="roles" style="flex: 1; min-width: 110px; padding: 8px 12px; background: transparent; border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--txt-secondary); font-size: 11.5px; font-weight: 700; cursor: pointer;">
+            <i class="fa-solid fa-user-shield"></i> Roles
           </button>
         </div>
 
@@ -139,10 +151,40 @@ const HelpContent = {
     area.innerHTML = content;
   },
 
+  getFuncionesContent() {
+    const modules = [
+      ['Panel e indicadores', 'Resume ocupación, facturación, cobranza, mora, gastos, utilidad y alertas para priorizar el día.', 'Dirección, Administración, Finanzas y Auditoría'],
+      ['Locales y contratos', 'Crea y consulta fichas de locales, disponibilidad, medidas, inquilinos, vencimientos, contratos y planos.', 'Dirección, Administración y Operaciones; el inquilino ve solo su local'],
+      ['Cobranzas y recibos', 'Emite cuotas, registra comprobantes, revisa pagos, concilia, genera recibos verificables y controla reversos.', 'Dirección, Administración y Finanzas; el inquilino reporta y consulta lo propio'],
+      ['Gastos, bancos e informes', 'Registra egresos, concilia movimientos, consulta libros, exporta reportes y prepara respaldos.', 'Dirección, Finanzas y Auditoría según su alcance'],
+      ['Operación del inmueble', 'Controla tickets, mantenimiento, activos, inventario, reservas y la representación visual de espacios.', 'Operaciones y Administración'],
+      ['Alertas y calendario', 'Ordena vencimientos de contratos, cuotas, tareas, mantenimientos y eventos de cobranza.', 'Cada rol recibe solo lo que puede atender'],
+      ['Catálogo y marketplace', 'Publica locales disponibles, su información comercial y solicitudes de interesados cuando la organización lo habilite.', 'Dirección y Administración'],
+      ['Equipo, seguridad y respaldo', 'Administra acceso por rol, revisa el historial, exporta datos y restaura copias autorizadas.', 'Dirección; Administración solo donde la política se lo conceda'],
+      ['Asistentes de IA y conectores', 'Prepara información para análisis y exportación; cualquier conexión externa debe habilitarse por organización y respetar sus permisos.', 'Dirección y usuarios autorizados']
+    ];
+    return `<div class="data-card" style="padding:28px;"><h3 style="font-family:var(--font-heading);font-size:22px;color:var(--txt-primary);margin:0 0 8px;"><i class="fa-solid fa-list-check" style="color:var(--cyan);"></i> Guía completa de funciones</h3><p style="font-size:13px;color:var(--txt-secondary);line-height:1.7;margin:0 0 18px;">Use esta guía como mapa de la plataforma. Que una función exista no significa que todos puedan usarla: el acceso depende del rol, de la organización y de los permisos asignados.</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:12px;">${modules.map(([title, description, roles], index) => `<article style="border:1px solid var(--border-subtle);border-radius:9px;padding:15px;background:rgba(255,255,255,.02);"><div style="display:flex;gap:10px;align-items:flex-start;"><span style="width:27px;height:27px;flex:0 0 27px;display:grid;place-items:center;border-radius:50%;background:var(--cyan-glow);color:var(--cyan);font-size:11px;font-weight:800;">${index + 1}</span><div><h4 style="margin:0 0 6px;color:var(--txt-primary);font-size:13px;">${title}</h4><p style="margin:0;color:var(--txt-secondary);font-size:11.5px;line-height:1.55;">${description}</p><p style="margin:9px 0 0;color:var(--amber);font-size:10.5px;line-height:1.45;"><i class="fa-solid fa-user-group"></i> ${roles}</p></div></div></article>`).join('')}</div><div role="note" style="margin-top:18px;padding:12px;border-left:3px solid var(--amber);background:rgba(245,158,11,.08);color:var(--txt-secondary);font-size:11.5px;line-height:1.6;"><strong style="color:var(--txt-primary);">En la demo:</strong> se pueden recorrer los flujos y usar datos de muestra autorizados. Las integraciones externas, mensajes y cambios persistentes de usuarios no se ejecutan desde esta versión pública.</div></div>`;
+  },
+
+  getRolesContent() {
+    const roles = [
+      ['Director General o Junta Directiva', 'Define políticas, aprueba decisiones y supervisa toda la organización.', 'Puede consultar, gestionar y, cuando la política lo permite, anular registros y configurar el equipo.'],
+      ['Administrador de la organización', 'Dirige la operación cotidiana del inmueble.', 'Gestiona locales, contratos, cuotas y cobros; consulta información financiera y de configuración.'],
+      ['Contador y finanzas', 'Mantiene el orden financiero y los soportes de auditoría.', 'Gestiona facturación, comprobantes, conciliaciones, gastos, libros e informes contables.'],
+      ['Auditor fiscal y tributario', 'Revisa evidencia y cumplimiento sin alterar el resultado operativo.', 'Solo consulta y exporta los soportes permitidos; nunca registra, modifica ni elimina.'],
+      ['Gerente de operaciones y mantenimiento', 'Cuida los espacios, activos, inventario y solicitudes del inmueble.', 'Consulta locales y trabaja los flujos operativos asignados; no administra saldos ni políticas financieras.'],
+      ['Copropietario heredero', 'Consulta la información patrimonial y los frutos que le corresponden.', 'Solo consulta los informes definidos por la organización; nunca modifica registros.'],
+      ['Inquilino comercial', 'Autogestiona la relación de su propio local.', 'Consulta su contrato, cuotas, recibos y alertas; puede reportar sus comprobantes y solicitudes.']
+    ];
+    return `<div class="data-card" style="padding:28px;"><h3 style="font-family:var(--font-heading);font-size:22px;color:var(--txt-primary);margin:0 0 8px;"><i class="fa-solid fa-user-shield" style="color:var(--amber);"></i> Roles, permisos y responsabilidades</h3><p style="font-size:13px;color:var(--txt-secondary);line-height:1.7;margin:0 0 18px;">La organización asigna un rol a cada persona. La matriz de permisos traduce ese rol en tres acciones: <strong>Consultar</strong>, <strong>Gestionar</strong> y <strong>Eliminar</strong>. Los roles de Auditoría y Copropietario son siempre de solo consulta.</p><div style="display:flex;flex-direction:column;gap:10px;">${roles.map(([name, purpose, scope], index) => `<article style="display:grid;grid-template-columns:32px 1fr;gap:12px;border:1px solid var(--border-subtle);border-radius:9px;padding:14px;background:rgba(255,255,255,.02);"><span style="width:28px;height:28px;display:grid;place-items:center;border-radius:7px;background:var(--amber-glow);color:var(--amber);font-size:11px;font-weight:800;">${index + 1}</span><div><h4 style="margin:0 0 4px;color:var(--txt-primary);font-size:13px;">${name}</h4><p style="margin:0 0 4px;color:var(--txt-secondary);font-size:11.5px;line-height:1.55;">${purpose}</p><p style="margin:0;color:var(--cyan);font-size:11px;line-height:1.5;">${scope}</p></div></article>`).join('')}</div><p style="margin:18px 0 0;color:var(--txt-secondary);font-size:11.5px;line-height:1.6;"><i class="fa-solid fa-circle-info" style="color:var(--cyan);"></i> Dirección es responsable de invitar usuarios, revisar sus accesos y retirar el acceso al finalizar una relación laboral o contractual. Cada cambio debe quedar registrado y revisable.</p></div>`;
+  },
+
   /**
    * Devuelve el HTML de cada sub-pestaña didáctica
    */
   getTabContent(tab) {
+    if (tab === 'funciones') return this.getFuncionesContent();
+    if (tab === 'roles') return this.getRolesContent();
     const templates = {
 
       // =========================================================================
