@@ -1,5 +1,6 @@
 {
   "name": "cc-mario-sanchez-comercial",
+  "outputDirectory": "public",
   "cleanUrls": false,
   "rewrites": [
     { "source": "/favicon.ico", "destination": "/favicon_2k.ico" },
