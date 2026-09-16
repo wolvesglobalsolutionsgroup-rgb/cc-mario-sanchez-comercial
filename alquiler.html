@@ -23,14 +23,17 @@
   <meta name="theme-color" content="#091024">
 
   <!-- Leaflet Core CSS & JS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <link id="leaflet-css" rel="stylesheet" data-href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <script id="leaflet-js" defer data-src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>(function(){if(new URLSearchParams(location.search).get('demo')!=='1'){document.getElementById('leaflet-css').href=document.getElementById('leaflet-css').dataset.href;document.getElementById('leaflet-js').src=document.getElementById('leaflet-js').dataset.src;}})();</script>
 
   <!-- Google Fonts: Outfit & Manrope -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap">
+  <link id="site-fonts" rel="stylesheet" data-href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap">
+  <script>(function(){if(new URLSearchParams(location.search).get('demo')!=='1'){document.getElementById('site-fonts').href=document.getElementById('site-fonts').dataset.href;}})();</script>
 
   <!-- FontAwesome 6 -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link id="fontawesome-css" rel="stylesheet" data-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script>(function(){if(new URLSearchParams(location.search).get('demo')!=='1'){document.getElementById('fontawesome-css').href=document.getElementById('fontawesome-css').dataset.href;}})();</script>
 
   <style>
     :root {
@@ -963,6 +966,6 @@
 </div>
 
 <!-- LEAFLET & PORTAL ENGINE SCRIPT -->
-<script defer src="js/alquiler.js"></script>
+<script defer src="gestion/js/fixtures&#45;synthetic.js?v=20260915_synthetic"></script><script defer src="js/alquiler.js"></script>
 </body>
 </html>

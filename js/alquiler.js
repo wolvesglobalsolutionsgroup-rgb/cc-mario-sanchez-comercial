@@ -3,6 +3,13 @@
  * Interactive Leaflet Map & Space Selection Engine
  */
 
+// Mock cartográfico local para la demo: permite renderizar fichas y filtros sin
+// descargar Leaflet, tiles ni consultar un proveedor de mapas.
+if (new URLSearchParams(location.search).get('demo') === '1' && typeof window.L === 'undefined') {
+  const layer = () => ({ addTo: () => layer(), on: () => layer(), getBounds: () => ({ getCenter: () => ({ lat: 0, lng: 0 }) }), setStyle: () => layer() });
+  window.L = { map: () => ({ setView: () => {}, on: () => {}, invalidateSize: () => {}, flyToBounds: () => {}, hasLayer: () => false, addLayer: () => {}, removeLayer: () => {} }), control: { zoom: () => ({ addTo: () => {} }) }, tileLayer: () => layer(), layerGroup: () => ({ addTo: () => layer(), addLayer: () => {}, removeLayer: () => {} }), polygon: () => layer(), marker: () => layer(), divIcon: () => ({}) };
+}
+
 // 1. Initial Leaflet Map
 const map = L.map('map', {
   center: [10.20468, -64.63290],
@@ -22,7 +29,7 @@ L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
 }).addTo(map);
 
 // 2. Real Estate Database with Real Architectural Photography & 100% Stable URLs
-const catalog = [
+let catalog = [
   {
     id: "LOT-C01",
     name: "Macro-Lote C01 (Norte)",
@@ -236,6 +243,19 @@ const catalog = [
     ]
   }
 ];
+
+let demoPublicListings = [];
+if (new URLSearchParams(location.search).get('demo') === '1') {
+  try { demoPublicListings = JSON.parse(localStorage.getItem('ccms-demo-public-listings') || '[]'); } catch (_) { demoPublicListings = []; }
+}
+if (new URLSearchParams(location.search).get('demo') === '1' && window.CCMS_SYNTHETIC_FIXTURES?.full_dataset?.units) {
+  catalog = window.CCMS_SYNTHETIC_FIXTURES.full_dataset.units.map((u, index) => {
+    const lat = 10.2055 - (index % 10) * 0.00008, lng = -64.6333 + Math.floor(index / 10) * 0.00008;
+    const listing = demoPublicListings.find(item => item.unit_id === u.id);
+    const status = listing?.status === 'retirado' ? 'retirado' : (u.status || 'disponible');
+    return { id: u.code, name: listing?.title || u.name || `Unidad ${u.code}`, category: u.category || 'locales', area: `${Number(u.area_m2 || 0).toLocaleString('es-VE')} m²`, status, statusText: status === 'retirado' ? 'No publicado' : status === 'arrendado' ? 'Arrendado' : status === 'en_litigio' ? 'En litigio' : listing ? 'Publicado' : 'Disponible', color: status === 'disponible' ? '#10b981' : '#f59e0b', image: '', road: 'Acceso interno demo', power: 'Según ficha técnica', truck: 'Acceso operativo', parking: 'Según ficha', description: 'Registro sintético del escenario demo.', useCases: ['Uso comercial sujeto a aprobación'], coords: [[lat, lng], [lat, lng + 0.00004], [lat - 0.00004, lng + 0.00004], [lat - 0.00004, lng]] };
+  }).filter(item => item.status !== 'retirado');
+}
 
 // 3. Render Geometry & Polygons
 const mapItems = {};

@@ -77,7 +77,20 @@ class FinancialEngine {
     return this.fetchLiveRates();
   }
 
+  isDemoOffline() {
+    try {
+      const session = JSON.parse(localStorage.getItem('ccms_session') || '{}');
+      const host = typeof location !== 'undefined' ? location.hostname : '';
+      return session.is_demo === true && ['localhost', '127.0.0.1', 'cc-mario-sanchez-comercial.vercel.app'].includes(host);
+    } catch (_) { return false; }
+  }
+
   async fetchLiveRates() {
+    if (this.isDemoOffline()) {
+      this.rates.source = 'Demo offline (tasa sintética)';
+      this.rates.usdtSource = 'Demo offline (tasa sintética)';
+      return { success: false, rates: { ...this.rates }, date: this.rates.lastUpdated, source: this.rates.source, usdtSource: this.rates.usdtSource, errors: 'DEMO_OFFLINE_NO_PROVIDER' };
+    }
     let vesUpdated = false;
     let eurUpdated = false;
     let usdtUpdated = false;
@@ -451,4 +464,3 @@ class FinancialEngine {
 
 // Instancia global del motor financiero
 window.financialEngine = new FinancialEngine();
-

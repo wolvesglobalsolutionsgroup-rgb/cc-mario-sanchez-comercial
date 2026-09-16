@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CCMS · Laboratorio Demo</title>
+  <style>
+    :root{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#eaf2fb;background:#070d16;--card:#111a28;--line:#26384b;--gold:#f3a712;--green:#16c79a;--blue:#24a8e8;--red:#f15b7a}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 80% -10%,#15324c 0,#070d16 48%);padding:24px}.shell{max-width:1180px;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:18px;border-bottom:1px solid var(--line);padding:8px 0 20px}.brand{font-weight:900;letter-spacing:.5px}.brand small{display:block;color:#91a9bf;font-size:11px;margin-top:4px}.badge{border:1px solid #75521a;background:#30230c;color:#ffc44d;border-radius:999px;padding:8px 13px;font-size:12px;font-weight:800}.intro{padding:28px 0 18px}.intro h1{margin:0 0 8px;font-size:clamp(25px,4vw,42px)}.intro p{max-width:760px;color:#9db1c5;line-height:1.6;margin:0}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.card{background:linear-gradient(145deg,#121d2d,#0e1622);border:1px solid var(--line);border-radius:14px;padding:18px;min-height:178px;box-shadow:0 10px 28px #0003}.card h2{font-size:15px;margin:0 0 8px}.card p{color:#9db1c5;font-size:12px;line-height:1.45;min-height:36px}.row{display:flex;flex-wrap:wrap;gap:8px}.btn{border:1px solid #35506a;background:#17283a;color:#eaf2fb;border-radius:9px;padding:9px 12px;font-weight:800;font-size:12px;cursor:pointer}.btn:hover{border-color:var(--blue);transform:translateY(-1px)}.btn.gold{border-color:#805c1d;color:#ffd071}.btn.green{border-color:#167b65;color:#68e4c1}.btn.blue{border-color:#1b668a;color:#70cefb}.btn.red{border-color:#87334a;color:#ff9bb1}.status{margin:16px 0;border:1px solid #174e65;background:#0c2330;color:#82d6fb;border-radius:10px;padding:12px;font-size:12px;white-space:pre-wrap;min-height:44px}.scope{display:flex;gap:10px;overflow:auto;padding-bottom:5px}.scope div{min-width:210px;background:#0c1522;border:1px solid var(--line);border-radius:10px;padding:12px}.scope b{display:block;color:#fff;font-size:13px;margin-bottom:5px}.scope span{color:#8fa7bb;font-size:11px}.log{background:#070b12;border:1px solid #1d2b3c;border-radius:10px;padding:12px;min-height:120px;max-height:230px;overflow:auto;color:#a7bbcc;font:11px ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap}.footer{color:#6f879a;font-size:11px;padding:18px 0;text-align:center}@media(max-width:820px){body{padding:14px}.grid{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.card{min-height:0}}
+  </style>
+</head>
+<body>
+<main class="shell">
+  <header class="top"><div class="brand">C.C. MARIO SÁNCHEZ <small>ERP INMOBILIARIO · LABORATORIO DE DEMO</small></div><div class="badge" id="lab-dataset-badge">● OFFLINE · DATOS SINTÉTICOS</div></header>
+  <section class="intro"><h1>Laboratorio de recorrido completo</h1><p>Esta pantalla hace visibles las operaciones que se presentan en el piloto: alcance multi-inmueble, contratos, cobranza maker-checker, importación, planos, marketplace, conectores simulados y respaldo. Todo queda en IndexedDB local.</p></section>
+  <div id="status" class="status">Preparando escenario demo…</div>
+  <section id="scope" class="scope"></section>
+  <section class="grid">
+    <article class="card"><h2>1 · Escenario y alcance</h2><p>Restablece el fixture o crea una organización, inmueble y unidad aislados.</p><div class="row"><button class="btn gold" id="reset">Restablecer</button><button class="btn" id="create-entity">Crear entidad</button></div></article>
+    <article class="card"><h2>2 · Cobranza</h2><p>Registra un pago parcial, intenta autoaprobarlo y confirma con un segundo actor.</p><div class="row"><button class="btn green" id="payment-flow">Ejecutar pago</button><button class="btn" id="reverse-flow">Reversar último</button></div></article>
+    <article class="card"><h2>3 · Importación</h2><p>Previsualiza un CSV inválido y uno válido sin efectos silenciosos.</p><div class="row"><button class="btn blue" id="import-flow">Probar CSV</button></div></article>
+    <article class="card"><h2>4 · Plano y agenda</h2><p>Calibra 10×5 m², genera SVG y crea una reserva sin solapamientos.</p><div class="row"><button class="btn blue" id="plan-flow">Generar plano</button></div></article>
+    <article class="card"><h2>5 · Marketplace y conectores</h2><p>Publica un local, captura un lead consentido y simula email, banco, IA e invitación.</p><div class="row"><button class="btn gold" id="market-flow">Simular publicación</button></div></article>
+    <article class="card"><h2>6 · Backup y exportación</h2><p>Descarga JSON/CSV y un reporte HTML listo para imprimir como PDF; restaura con validación de versión.</p><div class="row"><button class="btn green" id="backup">Descargar backup</button><button class="btn" id="csv">Descargar CSV</button><button class="btn" id="report">Reporte PDF</button><label class="btn">Restaurar<input id="restore" type="file" accept="application/json" hidden></label></div></article>
+  </section>
+  <h2 style="font-size:15px;margin:25px 0 8px">Registro de ejecución</h2><pre id="log" class="log"></pre>
+  <div class="footer">Modo demo: no se envían correos, no se cobran suscripciones y no se consulta ningún banco o proveedor de IA.</div>
+</main>
+<script>
+(() => {
+  let isMario = false;
+  try {
+    if (new URLSearchParams(location.search).get('dataset') === 'mario') sessionStorage.setItem('ccms_demo_dataset', 'mario-authorized');
+    isMario = sessionStorage.getItem('ccms_demo_dataset') === 'mario-authorized';
+    window.CCMS_DEMO_DATASET = isMario ? 'mario-authorized' : 'synthetic';
+    localStorage.setItem('ccms_session', JSON.stringify({ user_id: 'demo-lab', role: 'superadmin', display_name: 'Dirección Demo', is_demo: true, organization_id: isMario ? 'd0000000-0000-0000-0000-000000000099' : 'd0000000-0000-0000-0000-000000000001', expires_at: Date.now() + 3600000 }));
+    if (isMario) {
+      document.getElementById('lab-dataset-badge').textContent = '● OFFLINE · DATOS AUTORIZADOS';
+      document.write('<script src="js/fixtures-authorized-demo.js?v=20260915_mario"><\\/script>');
+    }
+  } catch (_) { window.CCMS_DEMO_DATASET = 'synthetic'; }
+})();
+</script>
+<script src="js/fixtures&#45;synthetic.js?v=20260915_synthetic"></script><script src="js/supabase-client.js?v=20260915_demo"></script>
+<script>
+(() => { const db=window.dbService; const $=id=>document.getElementById(id); const log=(m)=>{$('log').textContent+=`[${new Date().toLocaleTimeString()}] ${m}\n`; $('log').scrollTop=$('log').scrollHeight}; const status=(m,kind='info')=>{$('status').textContent=m;$('status').style.borderColor=kind==='ok'?'#167b65':kind==='error'?'#87334a':'#174e65'};
+function renderScope(){const d=db.getData();$('scope').innerHTML=(d.organizations||[]).map(o=>{const p=(d.properties||[]).filter(x=>x.organization_id===o.id);return `<div><b>${o.name}</b><span>${p.length} inmuebles · ${p.reduce((n,x)=>n+d.units.filter(u=>u.property_id===x.id).length,0)} unidades</span></div>`}).join('');}
+function ready(){if(!db||db.persistenceState!=='demo_fixture'){status('No se pudo iniciar el almacén demo.', 'error');return}renderScope();status('Demo lista: almacén local activo, sin proveedores externos.','ok');log(`Seed ${db.getData().seedVersion} · ${db.getData().units.length} unidades sintéticas`)}
+$('reset').onclick=()=>{db.resetDemoData();renderScope();status('Escenario restablecido.','ok');log('resetDemoData() ejecutado')};
+$('create-entity').onclick=()=>{try{const d=db.getData(),o=db.createOrganization({name:'Organización Presentación'}),p=db.createProperty({organization_id:o.id,name:'Inmueble Presentación',city:'Caracas'}),u=db.createUnit({property_id:p.id,code:'LAB-01',area_m2:50});renderScope();log(`Creado ${o.name} → ${p.name} → ${u.code}`);status('Entidad creada y persistida en IndexedDB.','ok')}catch(e){status(e.message,'error');log(`ERROR ${e.message}`)}};
+$('payment-flow').onclick=async()=>{try{const d=db.getData(),i=d.invoices.find(x=>!['pagado','verificando'].includes(x.status));if(!i)throw Error('No hay factura cobrable en el escenario');const p=db.submitPayment(i.id,{payment_method:'transferencia',reference_number:`LAB-${Date.now()}`,amount_paid:i.total_usd,currency:'USD',submitted_by:'inquilino-demo'});try{await db.approvePayment(i.id,'inquilino-demo')}catch(e){log(`Autoaprobación bloqueada: ${e.message}`)}const r=await db.approvePayment(i.id,'finanzas-demo');window._lastPayment=p.id;log(`Pago ${p.reference_number} verificado · ${r.receipt.receipt_number}`);status('Pago aprobado por segundo actor y recibo emitido.','ok')}catch(e){status(e.message,'error');log(`ERROR ${e.message}`)}};
+$('reverse-flow').onclick=()=>{try{if(!window._lastPayment)throw Error('Ejecuta primero el pago');const p=db.reversePayment(window._lastPayment,'Ajuste solicitado en demo');log(`Pago reversado: ${p.id}`);status('Reverso registrado; historia conservada.','ok')}catch(e){status(e.message,'error');log(`ERROR ${e.message}`)}};
+$('import-flow').onclick=()=>{const u=db.getData().units.find(x=>x.status==='disponible');const bad=db.importTenantsCsv(`rif,business_name,unit_code,rent_usd,start_date,end_date\nJ-LAB-1,Demo,${u.code},abc,2026-05-01,2027-04-30`);const good=db.importTenantsCsv(`rif,business_name,unit_code,rent_usd,start_date,end_date\nJ-LAB-2,Importado Demo,${u.code},1250,2026-05-01,2027-04-30`,{commit:true});log(`Preview inválido: ${bad.errors[0]?.code}; válido comprometido: ${good.committed}`);status('Preview y confirmación CSV ejecutados.','ok')};
+$('plan-flow').onclick=()=>{try{const p=db.calibrateFloorPlan({width:10,height:5,scale_m_per_unit:1}),svg=db.exportFloorPlanSvg({width:10,height:5,scale_m_per_unit:1});log(`Plano calibrado: ${p.area_m2} m² · SVG ${svg.length} bytes`);status('Plano SVG generado; sin escala el área queda nula.','ok')}catch(e){status(e.message,'error')}};
+$('market-flow').onclick=()=>{try{const u=db.getData().units.find(x=>x.status==='disponible'),l=db.publishListing(u.id,{title:`Local ${u.code}`}),lead=db.captureLead(l.id,{name:'Prospecto Demo',email:'prospecto@example.test',consent:true});['email','bank','ia','invitation','subscription'].forEach(k=>db.simulateIntegration(k,{demo:true}));log(`Listing publicado y lead ${lead.id} con consentimiento; 5 conectores simulados`);status('Marketplace y conectores simulados registrados localmente.','ok')}catch(e){status(e.message,'error')}};
+function download(name,content,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
+$('backup').onclick=()=>download('ccms-demo-backup.json',JSON.stringify(db.exportDemoBackup(),null,2),'application/json'); $('csv').onclick=()=>download('ccms-demo-invoices.csv',db.exportDemoCsv('invoices'),'text/csv;charset=utf-8'); $('report').onclick=()=>download('ccms-demo-report.html',db.exportDemoReportHtml('invoices'),'text/html;charset=utf-8'); $('restore').onchange=async e=>{try{const text=await e.target.files[0].text();db.restoreDemoBackup(JSON.parse(text));renderScope();status('Backup restaurado y validado.','ok');log('restoreDemoBackup() ejecutado')}catch(err){status(err.message,'error');log(`RESTORE RECHAZADO ${err.message}`)}}; ready(); })();
+</script>
+</body></html>

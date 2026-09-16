@@ -23,7 +23,8 @@ server.listen(0, async () => {
     browser = await chromium.launch({ headless: true });
     for (const viewport of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
       const page = await browser.newPage({ viewport });
-      await page.goto(`${baseUrl}/gestion/login.html`, { waitUntil: 'networkidle' });
+      await page.goto(`${baseUrl}/gestion/login.html`, { waitUntil: 'domcontentloaded' });
+      await page.locator('#panel-auth-real').waitFor({ state: 'visible', timeout: 5000 });
       const metrics = await page.evaluate(() => ({ scrollWidth: document.documentElement.scrollWidth, innerWidth: window.innerWidth, visibleText: /Acceso a Producción|Modo Demostración/i.test(document.body.innerText) }));
       if (metrics.scrollWidth > metrics.innerWidth) throw new Error(`Overflow login ${viewport.width}: ${metrics.scrollWidth} > ${metrics.innerWidth}`);
       if (!metrics.visibleText) throw new Error(`Login content missing at ${viewport.width}px`);
@@ -35,7 +36,8 @@ server.listen(0, async () => {
     // rol solicitado en la sesión; esto evita botones visualmente inertes.
     for (const roleButton of ['btn-demo-superadmin', 'btn-demo-finanzas', 'btn-demo-legal', 'btn-demo-mantenimiento', 'btn-demo-heredero', 'btn-demo-tenant']) {
       const rolePage = await browser.newPage({ viewport: { width: 390, height: 844 } });
-      await rolePage.goto(`${baseUrl}/gestion/login.html?demo=1`, { waitUntil: 'networkidle' });
+      await rolePage.goto(`${baseUrl}/gestion/login.html?demo=1`, { waitUntil: 'domcontentloaded' });
+      await rolePage.locator('#panel-auth-demo').waitFor({ state: 'visible', timeout: 5000 });
       await rolePage.locator(`#${roleButton}`).click();
       await rolePage.waitForURL(/index\.html/, { timeout: 5000 });
       const demoSession = await rolePage.evaluate(() => JSON.parse(localStorage.getItem('ccms_session') || '{}'));
@@ -51,7 +53,8 @@ server.listen(0, async () => {
       user_id: 'demo-ui-user', role: 'admin', display_name: 'Demo UI', is_demo: true,
       organization_id: 'd0000000-0000-0000-0000-000000000001', expires_at: Date.now() + 3600000
     })));
-    await demoPage.goto(`${baseUrl}/gestion/index.html`, { waitUntil: 'networkidle' });
+    await demoPage.goto(`${baseUrl}/gestion/index.html`, { waitUntil: 'domcontentloaded' });
+    await demoPage.waitForSelector('#kpi-billed', { state: 'visible', timeout: 10000 });
     await demoPage.waitForFunction(() => document.getElementById('kpi-billed')?.textContent?.trim() !== '$0.00', null, { timeout: 5000 });
     const dashboard = await demoPage.evaluate(() => ({
       billed: document.getElementById('kpi-billed')?.textContent?.trim(),
@@ -59,7 +62,7 @@ server.listen(0, async () => {
       overdue: document.getElementById('kpi-overdue')?.textContent?.trim(),
       units: document.getElementById('kpi-occupancy')?.textContent?.trim()
     }));
-    if (!/\$\s*7,560\.00/.test(dashboard.billed || '') || !/\$\s*4,650\.00/.test(dashboard.overdue || '') || dashboard.units !== '100%') {
+    if (!/\$\s*34,429\.50/.test(dashboard.billed || '') || !/\$\s*11,745\.50/.test(dashboard.overdue || '') || dashboard.units !== '92%') {
       throw new Error(`Dashboard demo metrics incomplete: ${JSON.stringify(dashboard)}`);
     }
     if (demoPage.url().includes('login')) throw new Error('Demo session was rejected by auth guard');
@@ -77,6 +80,8 @@ server.listen(0, async () => {
       const visiblePanel = await demoPage.locator(`#tab-${tabName}`).count();
       if (!visiblePanel) throw new Error(`Missing panel for navigation tab: ${tabName}`);
     }
+    const duplicateIds = await demoPage.evaluate(() => { const counts = {}; document.querySelectorAll('[id]').forEach(node => { counts[node.id] = (counts[node.id] || 0) + 1; }); return Object.entries(counts).filter(([, count]) => count > 1).map(([id]) => id); });
+    if (duplicateIds.length) throw new Error(`IDs duplicados en dashboard demo: ${duplicateIds.join(', ')}`);
     if (browserErrors.length) throw new Error(`Runtime errors during module navigation: ${browserErrors.join(' | ')}`);
     await demoPage.close();
     console.log(`[UI] dashboard demo 390px: PASS (KPIs y ${new Set(internalTabs).size} módulos navegables sin errores)`);

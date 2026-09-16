@@ -6,7 +6,12 @@
   "scripts": {
     "build": "npm run build:speed-insights",
     "test": "node scripts/check-syntax.js && node scripts/lint-guard.js && node --test tests/stability.test.js tests/*.test.cjs && node scripts/verify-fixes.cjs && node scripts/verify-ui.js",
+    "test:demo:unit": "node scripts/verify-demo-unit.cjs",
+    "test:demo:e2e": "node scripts/verify-demo.cjs",
+    "test:demo:exports": "node scripts/verify-demo-exports.cjs",
+    "test:demo": "npm run test:demo:unit && npm run test:demo:exports && npm run test:demo:e2e",
     "serve": "node scripts/serve.cjs",
+    "demo": "node scripts/serve.cjs",
     "build:speed-insights": "node scripts/build-speed-insights.js",
     "dev": "node scripts/build-speed-insights.js"
   },

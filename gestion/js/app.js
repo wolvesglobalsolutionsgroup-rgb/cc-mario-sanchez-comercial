@@ -24,7 +24,6 @@ window.addEventListener('pageshow', function(event) {
     }
   }
 });
-
 // PWA Service Worker Registration
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -41,7 +40,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const text = document.getElementById('persistence-status-banner-text');
     if (!banner || !text) return;
     banner.hidden = false;
-    text.textContent = 'No se pudo confirmar la conexión o el último cambio en la base de datos. Los importes mostrados no deben considerarse guardados; recarga la sesión antes de intentar otra operación.';
+    const errorCode = String(event?.detail?.error?.message || '');
+    text.textContent = errorCode.startsWith('DEMO_STORAGE_') || errorCode === 'INDEXEDDB_UNAVAILABLE'
+      ? 'El almacenamiento local no está disponible. El borrador permanece en memoria: expórtalo como respaldo antes de cerrar o recargar esta pestaña.'
+      : 'No se pudo confirmar la conexión o el último cambio en la base de datos. Los importes mostrados no deben considerarse guardados; recarga la sesión antes de intentar otra operación.';
     console.error('[CCMS] Estado de persistencia remoto no confirmado:', event?.detail?.error || 'unknown');
   });
   document.addEventListener('ccms:data-ready', () => {
@@ -76,16 +78,25 @@ document.addEventListener('DOMContentLoaded', () => {
   // ==============================================================================
   // GESTOR UNIVERSAL DE MODALES (EJECUTIVO, ROBUSTO Y MULTI-NAVEGADOR)
   // ==============================================================================
+  const modalFocusState = new WeakMap();
+  const modalFocusableSelector = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
   window.openModal = function(modalOrId) {
     const modal = (typeof modalOrId === 'string') 
       ? document.getElementById(modalOrId) 
       : modalOrId;
     if (modal) {
+      const activeElement = document.activeElement;
+      if (activeElement && activeElement !== document.body && !modal.contains(activeElement)) {
+        modalFocusState.set(modal, activeElement);
+      }
       modal.style.removeProperty('display');
       modal.style.display = 'flex';
       modal.classList.add('open', 'active');
       const win = modal.querySelector('.modal-window');
       if (win) win.scrollTop = 0;
+      const focusTarget = modal.querySelector(modalFocusableSelector) || win || modal;
+      if (focusTarget === modal && !modal.hasAttribute('tabindex')) modal.setAttribute('tabindex', '-1');
+      if (focusTarget && typeof focusTarget.focus === 'function') focusTarget.focus({ preventScroll: true });
     }
   };
 
@@ -96,10 +107,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (modal) {
       modal.classList.remove('open', 'active');
       modal.style.display = 'none';
+      const returnFocus = modalFocusState.get(modal);
+      modalFocusState.delete(modal);
+      if (returnFocus && returnFocus.isConnected && !modal.contains(returnFocus) && typeof returnFocus.focus === 'function') {
+        returnFocus.focus({ preventScroll: true });
+      }
     }
   };
 
   window.closeAllModals = function() {
+    const openModals = Array.from(document.querySelectorAll('.modal-overlay.open, .modal-overlay.active'));
+    const lastOpen = openModals[openModals.length - 1];
+    if (lastOpen) window.closeModal(lastOpen);
     document.querySelectorAll('.modal-overlay').forEach(m => {
       m.classList.remove('open', 'active');
       m.style.display = 'none';
@@ -595,8 +614,8 @@ document.addEventListener('DOMContentLoaded', () => {
       navItem.click();
     } else {
       document.querySelectorAll('.tab-view').forEach(v => v.style.display = 'none');
-      const activeView = document.getElementById(`tab-${tabName}`);
-      if (activeView) activeView.style.display = 'block';
+      const activeViews = document.querySelectorAll(`.tab-view[id="tab-${tabName}"], .tab-view[data-tab-alias="${tabName}"]`);
+      activeViews.forEach(activeView => { activeView.style.display = 'block'; });
       currentTab = tabName;
       renderAll();
     }
@@ -624,8 +643,8 @@ document.addEventListener('DOMContentLoaded', () => {
       currentTab = item.getAttribute('data-tab');
       
       document.querySelectorAll('.tab-view').forEach(v => v.style.display = 'none');
-      const activeView = document.getElementById(`tab-${currentTab}`);
-      if (activeView) activeView.style.display = 'block';
+      const activeViews = document.querySelectorAll(`.tab-view[id="tab-${currentTab}"], .tab-view[data-tab-alias="${currentTab}"]`);
+      activeViews.forEach(activeView => { activeView.style.display = 'block'; });
 
       // Desplazar al inicio superior en cambio de tab
       window.scrollTo({ top: 0, behavior: 'instant' });
@@ -11156,77 +11175,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const alicuota = parseFloat(document.getElementById('qadd-alicuota').value) || 5.0;
     const repName = document.getElementById('qadd-rep-name').value.trim();
     const repDni = document.getElementById('qadd-rep-dni').value.trim();
-
-    const tenants = (typeof dbService !== 'undefined' && dbService.getTenants) ? dbService.getTenants() : [];
-    const newId = 'ten-' + Date.now();
-    const newTenant = {
-      id: newId,
-      business_name: bName,
-      trade_name: bName,
-      rif: rif,
-      phone: phone,
-      whatsapp: phone,
-      email: `${rif.toLowerCase().replace(/[^a-z0-9]/g, '')}@ejemplo.com`,
-      unit_code: unitCode,
-      canon_usd: canonUsd,
-      monthly_rent_usd: canonUsd,
-      alicuota_pct: alicuota,
-      legal_rep_name: repName || 'Representante Legal',
-      legal_rep_dni: repDni || 'V-00000000',
-      status: 'solvente',
-      contract_start: new Date().toISOString().split('T')[0],
-      contract_end: new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString().split('T')[0],
-      contract_number: `CTR-2026-${unitCode}`,
-      deposit_held_usd: canonUsd * 2,
-      created_at: new Date().toISOString()
-    };
-
-    tenants.push(newTenant);
-    if (typeof dbService.saveTenants === 'function') dbService.saveTenants(tenants);
-    else localStorage.setItem('ccms_tenants_v5', JSON.stringify(tenants));
-
-    const units = (typeof dbService !== 'undefined' && dbService.getUnits) ? dbService.getUnits() : [];
-    const targetUnit = units.find(u => u.code === unitCode);
-    if (targetUnit) {
-      targetUnit.status = 'ocupado';
-      targetUnit.current_tenant_id = newId;
-      targetUnit.current_tenant_name = bName;
-      if (typeof dbService.saveUnits === 'function') dbService.saveUnits(units);
-      else localStorage.setItem('ccms_units_v5', JSON.stringify(units));
+    if (!bName || !rif || !phone || !unitCode || !repName || !repDni) {
+      alert('Complete los datos obligatorios del arrendatario y representante legal.');
+      return;
     }
-
-    const invoices = (typeof dbService !== 'undefined' && dbService.getInvoices) ? dbService.getInvoices() : [];
-    const bcvRate = (financialEngine && financialEngine.getExchangeRate) ? financialEngine.getExchangeRate('USD', 'VES') : 832.49;
-    const newInvoice = {
-      id: 'inv-' + Date.now(),
-      receipt_number: `REC-2026-${String(invoices.length + 1).padStart(4, '0')}`,
-      control_number: `00-${String(invoices.length + 101).padStart(6, '0')}`,
-      tenant_id: newId,
-      tenant_name: bName,
-      tenant_rif: rif,
-      unit_code: unitCode,
-      concept: `Canon Apertura Arrendamiento Local ${unitCode}`,
-      total_usd: canonUsd,
-      bcv_rate: bcvRate,
-      status: 'pendiente',
-      due_date: new Date(Date.now() + 5 * 24 * 3600 * 1000).toISOString().split('T')[0],
-      created_at: new Date().toISOString()
-    };
-    invoices.push(newInvoice);
-    if (typeof dbService.saveInvoices === 'function') dbService.saveInvoices(invoices);
-    else localStorage.setItem('ccms_invoices_v5', JSON.stringify(invoices));
-
-    if (window.AuthGuard && window.AuthGuard.audit) {
-      AuthGuard.audit('quick_add_tenant', { tenant_id: newId, business_name: bName, unit_code: unitCode });
+    if (typeof dbService?.addTenant !== 'function') {
+      alert('La persistencia remota no está disponible; no se guardó ningún dato.');
+      return;
     }
-
-    window.closeQuickAddClientModal();
-    renderAll();
-    if (typeof renderTenantsDirectory === 'function') renderTenantsDirectory();
-    alert(`Inquilino "${bName}" registrado exitosamente en el Local ${unitCode}.`);
+    const today = new Date().toISOString().split('T')[0];
+    const endDate = new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString().split('T')[0];
+    try {
+      dbService.addTenant({
+        business_name: bName, trade_name: bName, rif, phone, whatsapp: phone,
+        email: `${rif.toLowerCase().replace(/[^a-z0-9]/g, '')}@ejemplo.com`, unit_code: unitCode,
+        canon_usd: canonUsd, monthly_rent_usd: canonUsd, alicuota_pct: alicuota,
+        legal_rep_name: repName, legal_rep_dni: repDni, status: 'activo',
+        contract_start: today, contract_end: endDate, deposit_held_usd: canonUsd * 2
+      }, { start_date: today, end_date: endDate, rent_usd: canonUsd, deposit_usd: canonUsd * 2, deposit_months: 2 });
+      window.closeQuickAddClientModal();
+      renderAll();
+      if (typeof renderTenantsDirectory === 'function') renderTenantsDirectory();
+      alert(`Inquilino "${bName}" registrado exitosamente en el Local ${unitCode}.`);
+    } catch (error) {
+      console.error('[QUICK_ADD] No se pudo guardar el arrendatario:', error);
+      alert(`No se pudo registrar el inquilino: ${error.message}`);
+    }
   };
-
-  // =========================================================================
   // CONTROLADOR: REPORTE DE PAGO DE ARRENDATARIO (CONCILIACIÓN)
   // =========================================================================
   window.openTenantReportPaymentModal = function() {
@@ -11299,33 +11274,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let targetInv = invoices.find(i => (i.tenant_id === tenant.id || i.tenant_rif === tenant.rif) && (i.status === 'pendiente' || i.status === 'en_mora'));
     if (!targetInv) {
-      targetInv = {
-        id: 'inv-' + Date.now(),
-        receipt_number: `REC-2026-${String(invoices.length + 1).padStart(4, '0')}`,
-        control_number: `00-${String(invoices.length + 101).padStart(6, '0')}`,
-        tenant_id: tenant.id,
-        tenant_name: tenant.business_name,
-        tenant_rif: tenant.rif,
-        unit_code: tenant.unit_code,
-        concept: concept,
-        total_usd: amountUsd,
-        bcv_rate: bcvRate,
-        status: 'pendiente_aprobacion',
-        created_at: new Date().toISOString()
-      };
-      invoices.push(targetInv);
-    } else {
-      targetInv.status = 'pendiente_aprobacion';
+      alert('No existe una cuota pendiente para este arrendatario. La cuota debe ser emitida por Administración antes de reportar el pago.');
+      return;
     }
-
-    targetInv.payment_method = method;
-    targetInv.reference_number = ref;
-    targetInv.payment_date = pDate;
-    targetInv.payment_proof_file = _attachedTrpFile || 'comprobante_pago.pdf';
-    targetInv.notes = notes;
-
-    if (typeof dbService.saveInvoices === 'function') dbService.saveInvoices(invoices);
-    else localStorage.setItem('ccms_invoices_v5', JSON.stringify(invoices));
+    if (typeof dbService?.submitPayment !== 'function') {
+      alert('La persistencia remota no está disponible; el reporte no se guardó.');
+      return;
+    }
+    dbService.submitPayment(targetInv.id, {
+      payment_date: pDate, payment_method: method, reference_number: ref,
+      amount_paid: amountUsd, currency: 'USD', receipt_proof: _attachedTrpFile || null,
+      origin_doc: tenant.legal_rep_dni || null, submitted_by: tenant.id, notes
+    });
 
     if (window.AuthGuard && window.AuthGuard.audit) {
       AuthGuard.audit('tenant_reported_payment', { tenant: tenant.business_name, ref, amount: amountUsd });

@@ -1,0 +1,14 @@
+const assert = require('node:assert/strict');
+const fs = require('fs'); const vm = require('vm');
+const fixture = require('../gestion/js/fixtures-synthetic.js');
+const values = new Map([['ccms_session', JSON.stringify({ is_demo: true, organization_id: 'd0000000-0000-0000-0000-000000000001' })]]);
+const context = { console, Date, Math, JSON, localStorage: { getItem: k => values.get(k) || null, setItem: (k, v) => values.set(k, String(v)), removeItem: k => values.delete(k) }, location: { hostname: 'localhost' }, document: { addEventListener() {}, dispatchEvent() {}, getElementById() { return null; } }, CustomEvent: function CustomEvent(t, i) { this.type = t; this.detail = i?.detail; }, window: {} };
+context.window.localStorage = context.localStorage; context.globalThis = context; context.CCMS_SYNTHETIC_FIXTURES = fixture; vm.createContext(context);
+vm.runInContext(fs.readFileSync('./gestion/js/supabase-client.js', 'utf8'), context, { filename: 'supabase-client.js' });
+const db = context.window.dbService; db.resetDemoData();
+const csv = db.exportDemoCsv('invoices'); assert.match(csv, /^id,/); assert.ok(!csv.includes('[object Object]'));
+assert.match(db.exportDemoReportHtml('invoices'), /<table>/); assert.match(db.exportDemoReportHtml('invoices'), /@page/);
+const backup = db.exportDemoBackup(); assert.equal(backup.schema, 'ccms-demo-backup'); assert.equal(backup.version, 1); assert.ok(Array.isArray(backup.attachment_manifest));
+const before = db.getData().units.length; assert.throws(() => db.restoreDemoBackup({ schema: 'ccms-demo-backup', version: 999, dataset: {} }), /BACKUP_INVALID/); assert.equal(db.getData().units.length, before);
+const formula = db.getData(); formula.invoices.push({ id: 'x', invoice_number: '=FORMULA', status: 'pendiente' }); db.remoteSnapshot = formula; assert.match(db.exportDemoCsv('invoices'), /'\=FORMULA/);
+console.log('[DEMO-EXPORTS] PASS: CSV exacto y neutralizado contra fórmulas; backup versionado, restore válido e inválido sin mutación.');

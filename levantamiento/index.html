@@ -10,19 +10,24 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230b1120'/><path d='M20 75 L50 20 L80 75 Z' fill='none' stroke='%230284c7' stroke-width='9'/><circle cx='50' cy='52' r='10' fill='%23f59e0b'/></svg>">
 
   <!-- Leaflet Core -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script>(function(){window.__ccmsDemoMode=new URLSearchParams(location.search).get('demo')==='1';})();</script>
+  <script>(function(){if(window.__ccmsDemoMode){const m=document.createElement('meta');m.httpEquiv='Content-Security-Policy';m.content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:";document.head.appendChild(m);}})();</script>
+  <template id="vendor-map-assets">
+  <link id="leaflet-css" rel="stylesheet" data-href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-  <!-- Proj4js (UTM 19N) -->
+  <!-- Proj4js (UTM 19N). En demo se usa la pantalla offline. -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js" integrity="sha512-lO8f7sIViqr9x5VE6Q72PS6f4FoZcuh5W9YzeSyfNRJ9z/qL3bkweiwG6keGzWS0BQzNDqAWXdBhYzFD6KffIw==" crossorigin="anonymous"></script>
 
+  </template>
+  <script>(function(){if(!window.__ccmsDemoMode){const t=document.getElementById('vendor-map-assets');t.content.childNodes.forEach(n=>document.head.appendChild(n.cloneNode(true)));const c=document.getElementById('leaflet-css');if(c)c.href=c.dataset.href;const l=document.getElementById('leaflet-js');if(l)l.src=l.dataset.src;const p=document.getElementById('proj4-js');if(p)p.src=p.dataset.src;}})();</script>
   <!-- AuthGuard (Protección Técnica / Junta Directiva) -->
   <script src="/gestion/js/auth-guard.js?v=2.7.3"></script>
   <script>
     (function() {
       if (typeof AuthGuard !== 'undefined') {
         const sess = AuthGuard.currentUser();
-        if (!sess || sess.role !== 'admin') {
+        if (!window.__ccmsDemoMode && (!sess || !['admin', 'superadmin', 'org_director'].includes(sess.role))) {
           window.location.replace('/gestion/login.html?expired=admin_required');
         }
       }
@@ -30,6 +35,7 @@
   </script>
 
   <!-- Google Fonts: Inter & JetBrains Mono -->
+  <template id="vendor-font-assets">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
@@ -37,6 +43,8 @@
   <!-- FontAwesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
 
+  </template>
+  <script>(function(){if(!window.__ccmsDemoMode){const t=document.getElementById('vendor-font-assets');t.content.childNodes.forEach(n=>document.head.appendChild(n.cloneNode(true)));}})();</script>
   <style>
     :root {
       --bg-base: #090d16;

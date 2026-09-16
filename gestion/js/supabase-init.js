@@ -5,6 +5,18 @@
  */
 (async function initSupabaseClient() {
   try {
+    // El modo demo debe ser autónomo y no consultar configuración, SDK ni API
+    // remotos. La sesión demo es explícita y está restringida a hosts locales o
+    // al despliegue público de demostración.
+    let demoSession = false;
+    try { demoSession = JSON.parse(localStorage.getItem('ccms_session') || '{}').is_demo === true; } catch (_) {}
+    const demoHost = ['localhost', '127.0.0.1', 'cc-mario-sanchez-comercial.vercel.app'].includes(location.hostname);
+    const demoQuery = new URLSearchParams(location.search).get('demo') === '1';
+    if ((demoSession || demoQuery) && demoHost) {
+      window.supabaseClient = null;
+      document.dispatchEvent(new CustomEvent('supabase:failed', { detail: new Error('DEMO_OFFLINE_MODE') }));
+      return;
+    }
     // Cargar el SDK de Supabase JS (UMD) si no está ya presente
     if (!window.supabase) {
       await new Promise((resolve, reject) => {

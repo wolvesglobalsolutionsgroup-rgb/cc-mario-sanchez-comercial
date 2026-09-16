@@ -1,4 +1,9 @@
-
+const __ccmsDemoMode = new URLSearchParams(location.search).get('demo') === '1';
+if (__ccmsDemoMode) {
+  const demoMap = document.getElementById('map');
+  if (demoMap) demoMap.innerHTML = '<div style="height:100%;display:grid;place-items:center;padding:24px;background:linear-gradient(135deg,#0b1220,#102a3d);color:#d9efff;text-align:center"><div><strong style="display:block;font-size:20px;margin-bottom:8px">Plano ejecutivo demo · vista offline</strong><span style="display:block;color:#9fc2d8;font-size:13px">El levantamiento cartográfico se presenta con datos sintéticos. Usa el Laboratorio Demo para calibrar un rectángulo, generar SVG y exportar la ficha sin mapas externos.</span></div></div>';
+}
+else {
   // 1. Configuración Proj4 UTM 19N (EPSG:32619)
   proj4.defs("EPSG:32619", "+proj=utm +zone=19 +ellps=WGS84 +datum=WGS84 +units=m +no_defs");
 
@@ -510,3 +515,4 @@ document.querySelectorAll('[data-view]').forEach(btn => {
     goToView(this.getAttribute('data-view'));
   });
 });
+}

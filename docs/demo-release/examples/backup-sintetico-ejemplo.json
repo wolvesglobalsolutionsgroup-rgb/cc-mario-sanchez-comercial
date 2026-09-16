@@ -1,0 +1,15 @@
+{
+  "schema": "ccms-demo-backup",
+  "version": 1,
+  "seedVersion": "demo-2026-09-15-v1",
+  "dataset": {
+    "organizations": [{ "id": "d0000000-0000-0000-0000-000000000001", "name": "Organización Demo Centro Oriente" }],
+    "properties": [{ "id": "p-syn-a1", "organization_id": "d0000000-0000-0000-0000-000000000001", "name": "Centro Demo Puerto" }],
+    "units": [{ "id": "u-example", "code": "TEST-01", "property_id": "p-syn-a1", "organization_id": "d0000000-0000-0000-0000-000000000001", "status": "disponible", "area_m2": 50 }],
+    "tenants": [],
+    "contracts": [],
+    "invoices": [],
+    "payments": [],
+    "receipts": []
+  }
+}

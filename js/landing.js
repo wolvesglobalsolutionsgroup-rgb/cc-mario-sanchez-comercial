@@ -18,6 +18,7 @@ let leafletLoading = false;
 const mapLayers = {};
 
 function loadLeafletAssets(callback) {
+  if (new URLSearchParams(location.search).get('demo') === '1') { callback(); return; }
   if (typeof L !== 'undefined') {
     callback();
     return;
@@ -99,7 +100,7 @@ function initLandingMap() {
 }
 
 // 2. Spaces Catalog Data with Mobile-Optimized WebP Dimensions
-const spacesData = [
+let spacesData = [
   {
     id: "LOT-C01",
     name: "Macro-Lote C01 (Norte)",
@@ -272,6 +273,23 @@ const spacesData = [
     ]
   }
 ];
+
+// En la demo el ERP es la única fuente de verdad del catálogo. La vista
+// pública mantiene su contenido editorial en producción, pero al abrirse con
+// ?demo=1 proyecta las mismas unidades sintéticas del escenario local.
+let demoPublicListings = [];
+if (new URLSearchParams(location.search).get('demo') === '1') {
+  try { demoPublicListings = JSON.parse(localStorage.getItem('ccms-demo-public-listings') || '[]'); } catch (_) { demoPublicListings = []; }
+}
+if (new URLSearchParams(location.search).get('demo') === '1' && window.CCMS_SYNTHETIC_FIXTURES?.full_dataset?.units) {
+  spacesData = window.CCMS_SYNTHETIC_FIXTURES.full_dataset.units.map((u, index) => {
+    const lat = 10.2055 - (index % 10) * 0.00008, lng = -64.6333 + Math.floor(index / 10) * 0.00008;
+    const listing = demoPublicListings.find(item => item.unit_id === u.id);
+    const retired = listing?.status === 'retirado';
+    const status = retired ? 'No publicado' : u.status === 'arrendado' ? 'Arrendado' : u.status === 'en_litigio' ? 'En litigio' : listing ? 'Publicado' : 'Disponible';
+    return { id: u.code, name: listing?.title || u.name || `Unidad ${u.code}`, category: u.category || 'locales', area: `${Number(u.area_m2 || 0).toLocaleString('es-VE')} m²`, status, color: status === 'Disponible' || status === 'Publicado' ? '#10b981' : '#f59e0b', image: '', road: 'Acceso interno demo', power: 'Según ficha técnica', use: 'Uso comercial sujeto a aprobación', desc: 'Registro sintético del escenario demo.', coords: [[lat, lng], [lat, lng + 0.00004], [lat - 0.00004, lng + 0.00004], [lat - 0.00004, lng]] };
+  }).filter(item => item.status !== 'No publicado');
+}
 
 function getSpaceThumb(item) {
   const color = encodeURIComponent(item.color || '#f59e0b');

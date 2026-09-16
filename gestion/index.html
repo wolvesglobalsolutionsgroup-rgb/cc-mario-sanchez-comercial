@@ -1579,7 +1579,7 @@
       </section>
 
       <!-- TAB 6: CONFIGURACIÓN DEL SISTEMA (CUOTAS, ALERTAS Y PLANTILLAS DE MENSAJES) -->
-      <section class="tab-view" id="tab-configuracion" style="display: none;">
+      <section class="tab-view" id="tab-configuracion-operativa" data-tab-alias="configuracion" style="display: none;">
         <div class="section-head">
           <h3 class="section-title">
             <i class="fa-solid fa-gear" style="color: var(--amber);"></i> Configuración de la App & Parámetros Operativos
@@ -4447,10 +4447,19 @@
 <script src="js/google-workspace.js?v=20260913_v2" defer></script>
 <script src="js/notifications.js?v=20260913_v2" defer></script>
 
-<!-- Dataset autorizado para la experiencia demo; DatabaseService solo lo
-     materializa en host permitido y sesión is_demo=true. -->
-<script src="js/fixtures-authorized-demo.js?v=20260915_real"></script>
-<script src="js/supabase-client.js?v=20260915_demo" defer></script>
+<!-- La demo genérica usa datos sintéticos. El conjunto autorizado de Mario
+     Sánchez se carga solo tras entrar por login.html?demo=1&dataset=mario. -->
+<script>
+  (() => {
+    try {
+      const isMarioDemo = sessionStorage.getItem('ccms_demo_dataset') === 'mario-authorized';
+      window.CCMS_DEMO_DATASET = isMarioDemo ? 'mario-authorized' : 'synthetic';
+      if (isMarioDemo) document.write('<script src="js/fixtures-authorized-demo.js?v=20260915_mario"><\\/script>');
+    } catch (_) { window.CCMS_DEMO_DATASET = 'synthetic'; }
+  })();
+</script>
+<script src="js/fixtures&#45;synthetic.js?v=20260915_synthetic"></script>
+<script src="js/supabase-client.js?v=20260915_demo"></script>
 <script src="js/contract-viewer.js?v=20260913_v2" defer></script>
 <script src="js/tickets-manager.js?v=20260913_v2" defer></script>
 <script src="js/ayuda-content.js?v=20260913_v2" defer></script>
@@ -4466,11 +4475,9 @@
     const session = JSON.parse(localStorage.getItem('ccms_session') || '{}');
     ccmsDemoFallback = session.is_demo === true && ['localhost', '127.0.0.1', 'cc-mario-sanchez-comercial.vercel.app'].includes(location.hostname);
   } catch (_) { ccmsDemoFallback = false; }
-  if (!window.dbService && ccmsDemoFallback && window.CCMS_AUTHORIZED_DEMO_FIXTURES?.full_dataset) {
-    const demoData = window.CCMS_AUTHORIZED_DEMO_FIXTURES.full_dataset;
-    window.dbService = { persistenceState: 'demo_fixture', getData: () => JSON.parse(JSON.stringify(demoData)), getSettings: () => demoData.settings || {} };
-    var dbService = window.dbService;
-  }
+  // DatabaseService se instancia en el script defer anterior. No creamos aquí
+  // un objeto parcial: hacerlo antes de que termine el defer rompe los métodos
+  // CRUD y deja la pantalla con KPIs vacíos.
 </script>
 <script src="js/app.js?v=20260915_v3" defer></script>
 </body>
