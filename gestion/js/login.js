@@ -6,6 +6,14 @@
   const isLogout = urlParams.has('logout') || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ccms_just_logged_out') === '1');
   const isExpired = urlParams.has('expired');
 
+  // Debe ocurrir antes de redirigir una sesión existente. De esa forma el
+  // enlace público de Mario siempre abre sus 38 locales autorizados, incluso
+  // si este navegador venía de la demo sintética.
+  try {
+    if (urlParams.get('dataset') === 'mario') sessionStorage.setItem('ccms_demo_dataset', 'mario-authorized');
+    else if (urlParams.has('demo')) sessionStorage.removeItem('ccms_demo_dataset');
+  } catch (_) {}
+
   if (isLogout || isExpired) {
     try {
       if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem('ccms_just_logged_out');
@@ -264,15 +272,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(window.location.search);
   const isDemoParam = urlParams.has('demo') && (urlParams.get('demo') === 'true' || urlParams.get('demo') === '1');
   const isDemoForced = localStorage.getItem('CCMS_FORCE_DEMO') === 'true';
-  const requestedDataset = urlParams.get('dataset');
-
-  // La fuente autorizada de Mario Sánchez se activa únicamente desde su URL
-  // explícita. La demo genérica conserva el fixture sintético por defecto.
-  try {
-    if (requestedDataset === 'mario') sessionStorage.setItem('ccms_demo_dataset', 'mario-authorized');
-    else if (isDemoParam) sessionStorage.removeItem('ccms_demo_dataset');
-  } catch (_) {}
-
   if (isDemoParam || (isDemoForced && !urlParams.has('logout'))) {
     switchEnvironmentTab('demo');
   } else {
